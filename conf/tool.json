@@ -1,6 +1,7 @@
 {
   "databaseIp": "127.0.0.1",
-  "crossMultiDatabase": true,
+  "crossMultiDatabase": false,
+  "databaseName": "tpch",
   "databasePort": "4000",
   "databasePwd": "",
   "databaseUser": "root",

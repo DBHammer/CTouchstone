@@ -115,7 +115,13 @@ public abstract class AbstractAnalyzer {
                         (double) node.getOutputRows() / schemas.get(tableNameAndSelectCondition.getLeft()).getTableSize() + "];";
                 return new QueryInfoChain(selectInfo, tableNameAndSelectCondition.getLeft(), node.getOutputRows());
             } else if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
-                String tableName = node.getInfo().split(",")[0].substring(6).toLowerCase();
+                String tableName = "";
+                if (node.getInfo().contains("funcs")) {
+                    int index = node.getInfo().split(",")[1].lastIndexOf(".");
+                    tableName = node.getInfo().split(",")[1].substring(6, index).toLowerCase();
+                } else {
+                    tableName = node.getInfo().split(",")[0].substring(6).toLowerCase();
+                }
                 if (aliasDic != null && aliasDic.containsKey(tableName)) {
                     tableName = aliasDic.get(tableName);
                 }
