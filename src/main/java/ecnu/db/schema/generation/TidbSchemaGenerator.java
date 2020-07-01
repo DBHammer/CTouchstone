@@ -2,6 +2,7 @@ package ecnu.db.schema.generation;
 
 import com.alibaba.fastjson.JSON;
 import ecnu.db.dbconnector.AbstractDbConnector;
+import ecnu.db.dbconnector.DumpFileConnector;
 import ecnu.db.dbconnector.TidbConnector;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.*;
@@ -9,6 +10,8 @@ import ecnu.db.utils.TidbStatsJsonObject;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -19,6 +22,9 @@ import java.util.HashMap;
  * @author wangqingshuai
  */
 public class TidbSchemaGenerator extends AbstractSchemaGenerator {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TidbSchemaGenerator.class);
+
     @Override
     Pair<String[], String> getColumnSqlAndKeySql(String createTableSql) {
         createTableSql = createTableSql.toLowerCase();
@@ -65,7 +71,7 @@ public class TidbSchemaGenerator extends AbstractSchemaGenerator {
                 case BOOL:
                     break;
                 default:
-                    throw new TouchstoneToolChainException("未匹配到的类型");
+                    LOGGER.warn("未匹配到的类型");
             }
         }
         return sql.substring(0, sql.length() - 1);

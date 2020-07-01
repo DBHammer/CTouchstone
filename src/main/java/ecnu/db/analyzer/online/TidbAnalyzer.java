@@ -9,6 +9,8 @@ import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.schema.Schema;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -21,6 +23,9 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
  * @author qingshuai.wang
  */
 public class TidbAnalyzer extends AbstractAnalyzer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TidbAnalyzer.class);
+
     private static final Pattern ROW_COUNTS = Pattern.compile("rows:[0-9]*");
     private static final Pattern INNER_JOIN_OUTER_KEY = Pattern.compile("outer key:.*,");
     private static final Pattern INNER_JOIN_INNER_KEY = Pattern.compile("inner key:.*");

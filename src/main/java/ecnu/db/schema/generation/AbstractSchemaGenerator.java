@@ -1,11 +1,14 @@
 package ecnu.db.schema.generation;
 
 import ecnu.db.dbconnector.AbstractDbConnector;
+import ecnu.db.dbconnector.DumpFileConnector;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.*;
 import ecnu.db.utils.ConfigConvert;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -23,6 +26,9 @@ public abstract class AbstractSchemaGenerator {
      * @param createTableSql create table sql
      * @return 1.column info sqls 2. keys info sql, including primary key and foreign keys
      */
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSchemaGenerator.class);
+
     abstract Pair<String[], String> getColumnSqlAndKeySql(String createTableSql);
 
     /**
@@ -57,7 +63,7 @@ public abstract class AbstractSchemaGenerator {
                     columns.put(columnNameAndType.getKey(), new DateColumn(columnNameAndType.getKey()));
                     break;
                 default:
-                    throw new TouchstoneToolChainException("没有实现的类型转换");
+                    LOGGER.warn("没有实现的类型转换");
             }
         }
         return columns;

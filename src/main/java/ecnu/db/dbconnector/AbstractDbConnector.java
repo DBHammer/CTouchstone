@@ -1,7 +1,10 @@
 package ecnu.db.dbconnector;
 
+import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -14,6 +17,9 @@ import java.util.Map;
  * 数据库驱动连接器
  */
 public abstract class AbstractDbConnector implements DatabaseConnectorInterface {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDbConnector.class);
+
     public DatabaseMetaData databaseMetaData;
     /**
      * JDBC 驱动名及数据库 URL
@@ -36,7 +42,7 @@ public abstract class AbstractDbConnector implements DatabaseConnectorInterface 
             databaseMetaData = DriverManager.getConnection(dbUrl(config), user, pass).getMetaData();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
-            throw new TouchstoneToolChainException("无法建立数据库连接,连接信息为\n" + dbUrl(config));
+            LOGGER.error("无法建立数据库连接,连接信息为\n" + dbUrl(config));
         }
     }
 

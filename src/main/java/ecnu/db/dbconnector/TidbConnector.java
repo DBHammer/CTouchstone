@@ -2,6 +2,8 @@ package ecnu.db.dbconnector;
 
 import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +16,9 @@ import java.nio.charset.StandardCharsets;
  * @author wangqingshuai
  */
 public class TidbConnector extends AbstractDbConnector {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TidbConnector.class);
+
     String statsUrl;
 
     public TidbConnector(SystemConfig config) throws TouchstoneToolChainException {

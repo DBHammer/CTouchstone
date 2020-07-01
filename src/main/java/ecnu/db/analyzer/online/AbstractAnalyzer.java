@@ -8,9 +8,12 @@ import ecnu.db.analyzer.online.node.NodeTypeRefFactory;
 import ecnu.db.analyzer.statical.QueryAliasParser;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.schema.Schema;
+import ecnu.db.utils.ConfigConvert;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -24,6 +27,9 @@ import java.util.stream.IntStream;
  * @author wangqingshuai
  */
 public abstract class AbstractAnalyzer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAnalyzer.class);
+
     protected DatabaseConnectorInterface dbConnector;
     protected Map<String, String> aliasDic;
     protected QueryAliasParser queryAliasParser = new QueryAliasParser();
@@ -270,7 +276,7 @@ public abstract class AbstractAnalyzer {
                                     primaryKey.replace(',', '#') + "," +
                                     node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
                             //设置外键
-                            System.out.println("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
+                           LOGGER.debug("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
                                     fkCol + ".column:" + fkTable);
                             schemas.get(pkTable).addForeignKey(pkCol, fkTable, fkCol);
                             constraintChain.setLastNodeLineCount(node.getOutputRows());
