@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class DumpFileConnector implements DatabaseConnectorInterface {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DumpFileConnector.class);
+    private static final Logger logger = LoggerFactory.getLogger(DumpFileConnector.class);
 
     private final List<String> tableNames;
 
@@ -33,7 +33,7 @@ public class DumpFileConnector implements DatabaseConnectorInterface {
     public List<String[]> explainQuery(String queryCanonicalName, String sql, String[] sqlInfoColumns) throws TouchstoneToolChainException {
         List<String[]> queryPlan = this.queryPlanMap.get(String.format("%s_dump", queryCanonicalName));
         if (queryPlan == null) {
-            LOGGER.warn("cannot find query plan for %s", queryCanonicalName);
+            throw new TouchstoneToolChainException(String.format("cannot find query plan for %s", queryCanonicalName));
         }
         return queryPlan;
     }
@@ -42,7 +42,7 @@ public class DumpFileConnector implements DatabaseConnectorInterface {
     public int getMultiColNdv(String schema, String columns) throws TouchstoneToolChainException {
         Integer ndv = this.multiColumnsNdvMap.get(String.format("%s.%s", schema, columns));
         if (ndv == null) {
-            LOGGER.warn(String.format("cannot find multicolumn ndv information for schema:%s, cols:%s", schema, columns));
+            throw new TouchstoneToolChainException(String.format("cannot find multicolumn ndv information for schema:%s, cols:%s", schema, columns));
         }
         return ndv;
     }

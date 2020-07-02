@@ -27,7 +27,7 @@ public abstract class AbstractSchemaGenerator {
      * @return 1.column info sqls 2. keys info sql, including primary key and foreign keys
      */
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSchemaGenerator.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractSchemaGenerator.class);
 
     abstract Pair<String[], String> getColumnSqlAndKeySql(String createTableSql);
 
@@ -63,7 +63,7 @@ public abstract class AbstractSchemaGenerator {
                     columns.put(columnNameAndType.getKey(), new DateColumn(columnNameAndType.getKey()));
                     break;
                 default:
-                    LOGGER.warn("没有实现的类型转换");
+                    logger.warn("没有实现的类型转换");
             }
         }
         return columns;

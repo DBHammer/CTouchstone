@@ -24,7 +24,7 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
  */
 public class TidbAnalyzer extends AbstractAnalyzer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TidbAnalyzer.class);
+    private static final Logger logger = LoggerFactory.getLogger(TidbAnalyzer.class);
 
     private static final Pattern ROW_COUNTS = Pattern.compile("rows:[0-9]*");
     private static final Pattern INNER_JOIN_OUTER_KEY = Pattern.compile("outer key:.*,");

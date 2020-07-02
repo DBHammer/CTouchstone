@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
  */
 public abstract class AbstractAnalyzer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAnalyzer.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
 
     protected DatabaseConnectorInterface dbConnector;
     protected Map<String, String> aliasDic;
@@ -276,7 +276,7 @@ public abstract class AbstractAnalyzer {
                                     primaryKey.replace(',', '#') + "," +
                                     node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
                             //设置外键
-                           LOGGER.debug("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
+                            logger.debug("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
                                     fkCol + ".column:" + fkTable);
                             schemas.get(pkTable).addForeignKey(pkCol, fkTable, fkCol);
                             constraintChain.setLastNodeLineCount(node.getOutputRows());

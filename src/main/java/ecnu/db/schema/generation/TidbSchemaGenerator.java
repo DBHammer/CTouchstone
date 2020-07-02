@@ -23,7 +23,7 @@ import java.util.HashMap;
  */
 public class TidbSchemaGenerator extends AbstractSchemaGenerator {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TidbSchemaGenerator.class);
+    private static final Logger logger = LoggerFactory.getLogger(TidbSchemaGenerator.class);
 
     @Override
     Pair<String[], String> getColumnSqlAndKeySql(String createTableSql) {
@@ -71,7 +71,7 @@ public class TidbSchemaGenerator extends AbstractSchemaGenerator {
                 case BOOL:
                     break;
                 default:
-                    LOGGER.warn("未匹配到的类型");
+                    logger.warn("未匹配到的类型");
             }
         }
         return sql.substring(0, sql.length() - 1);

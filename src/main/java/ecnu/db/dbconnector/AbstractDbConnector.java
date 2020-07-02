@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public abstract class AbstractDbConnector implements DatabaseConnectorInterface {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDbConnector.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnector.class);
 
     public DatabaseMetaData databaseMetaData;
     /**
@@ -42,7 +42,7 @@ public abstract class AbstractDbConnector implements DatabaseConnectorInterface 
             databaseMetaData = DriverManager.getConnection(dbUrl(config), user, pass).getMetaData();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
-            LOGGER.error("无法建立数据库连接,连接信息为\n" + dbUrl(config));
+            logger.error("无法建立数据库连接,连接信息为\n" + dbUrl(config));
         }
     }
 

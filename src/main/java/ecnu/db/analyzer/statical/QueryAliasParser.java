@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class QueryAliasParser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(QueryAliasParser.class);
+    private static final Logger logger = LoggerFactory.getLogger(QueryAliasParser.class);
 
     private final ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor();
 

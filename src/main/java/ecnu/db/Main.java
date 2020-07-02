@@ -48,7 +48,7 @@ public class Main {
      * @throws TouchstoneToolChainException
      */
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static String templatizeSql(String sql, HashMap<String, List<String>> argsAndIndex, ArrayList<String> cannotFindArgs,
                                        ArrayList<String> conflictArgs) throws TouchstoneToolChainException {
@@ -155,20 +155,20 @@ public class Main {
         DatabaseConnectorInterface dbConnector = getDatabaseConnector(systemConfig, loadDir);
         AbstractSchemaGenerator dbSchemaGenerator = new TidbSchemaGenerator();
 
-        LOGGER.info("开始获取表名");
+        logger.info("开始获取表名");
         List<String> tableNames;
         tableNames = getTableNames(systemConfig, files, dbConnector);
-        LOGGER.debug("获取表名成功，表名为:" + tableNames);
+        logger.debug("获取表名成功，表名为:" + tableNames);
         if (dumpDir != null && dumpDir.isDirectory()) {
             dumpTableNames(dumpDir, tableNames);
-            LOGGER.info("表名持久化成功");
+            logger.info("表名持久化成功");
         }
-        LOGGER.info("开始获取表结构和数据分布");
+        logger.info("开始获取表结构和数据分布");
         HashMap<String, Schema> schemas = getSchemas(loadDir, dbConnector, dbSchemaGenerator, tableNames);
-        LOGGER.info("获取表结构和数据分布成功，开始获取query查询计划");
+        logger.info("获取表结构和数据分布成功，开始获取query查询计划");
         if (dumpDir != null && dumpDir.isDirectory()) {
             dumpSchemas(dumpDir, schemas);
-            LOGGER.info("表结构和数据分布持久化成功");
+            logger.info("表结构和数据分布持久化成功");
         }
 
         AbstractAnalyzer queryAnalyzer = new TidbAnalyzer(systemConfig.getDatabaseVersion(), dbConnector, systemConfig.getTidbSelectArgs(), schemas);
@@ -191,7 +191,7 @@ public class Main {
                         }
                         ExecutionNode root = queryAnalyzer.getExecutionTree(queryPlan);
                         queryInfos.addAll(queryAnalyzer.extractQueryInfos(root));
-                        String outputMessage = String.format("%-15s Status:\033[32m获取成功\033[0m", queryCanonicalName);
+                        logger.info(String.format("%-15s Status:\033[32m获取成功\033[0m", queryCanonicalName));
                         queryAnalyzer.outputSuccess(true);
 
                         ArrayList<String> cannotFindArgs = new ArrayList<>();
@@ -231,7 +231,7 @@ public class Main {
                         cannotFindArgs.removeAll(reProductArgs);
                         if (cannotFindArgs.size() > 0) {
 
-                            outputMessage += String.format("\033[31m  请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;\033[0m", queryCanonicalName);
+                            logger.warn(String.format("\033[31m  请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;\033[0m", queryCanonicalName));
                             sqlWriter.write("-- cannotFindArgs:");
                             for (String cannotFindArg : cannotFindArgs) {
                                 sqlWriter.write(cannotFindArg + ":" + queryAnalyzer.getArgsAndIndex().get(cannotFindArg) + ",");
@@ -239,19 +239,19 @@ public class Main {
                             sqlWriter.write("\n");
                         }
                         if (conflictArgs.size() > 0) {
-                            outputMessage += String.format("\033[31m  请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;\033[0m", queryCanonicalName);
+                            logger.warn(String.format("\033[31m  请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;\033[0m", queryCanonicalName));
                             sqlWriter.write("-- conflictArgs:");
                             for (String conflictArg : conflictArgs) {
                                 sqlWriter.write(conflictArg + ":" + queryAnalyzer.getArgsAndIndex().get(conflictArg) + ",");
                             }
                             sqlWriter.write("\n");
                         }
-                        LOGGER.warn(outputMessage);
+
                         sqlWriter.write(SQLUtils.format(sql, queryAnalyzer.getDbType(), SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + "\n");
                         sqlWriter.close();
                     } catch (TouchstoneToolChainException e) {
                         queryAnalyzer.outputSuccess(false);
-                        LOGGER.error(String.format("%-15s Status:\033[31m获取失败\033[0m", queryCanonicalName));
+                        logger.error(String.format("%-15s Status:\033[31m获取失败\033[0m", queryCanonicalName));
                         e.printStackTrace();
                         if (queryPlan != null && !queryPlan.isEmpty() && dumpDir != null) {
                             String queryPlanFileName = String.format("%s_query_plan.txt", queryCanonicalName);
@@ -262,7 +262,7 @@ public class Main {
                 }
             }
         }
-        LOGGER.info("获取查询计划完成");
+        logger.info("获取查询计划完成");
 
         if (dumpDir != null && dumpDir.isDirectory()) {
             dumpMultiCol(dumpDir, dbConnector);
@@ -352,18 +352,18 @@ public class Main {
                 throw new TouchstoneToolChainException(String.format("找不到%s", schemaFile.getAbsolutePath()));
             }
             schemas = JSON.parseObject(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<>(){});
-            LOGGER.info("加载表结构和表数据分布成功");
+            logger.info("加载表结构和表数据分布成功");
         } else {
             for (String tableName : tableNames) {
-                LOGGER.info("开始获取" + tableName + "的信息");
-                LOGGER.info("获取表结构...");
+                logger.info("开始获取" + tableName + "的信息");
+                logger.info("获取表结构...");
                 Schema schema = dbSchemaGenerator.generateSchemaNoKeys(tableName, ((AbstractDbConnector) dbConnector).getTableDdl(tableName));
-                LOGGER.info("成功");
-                LOGGER.info("获取表数据分布...");
+                logger.info("成功");
+                logger.info("获取表数据分布...");
                 dbSchemaGenerator.setDataRangeBySqlResult(schema.getColumns().values(), ((AbstractDbConnector) dbConnector).getDataRange(tableName,
                         dbSchemaGenerator.getColumnDistributionSql(schema.getTableName(), schema.getColumns().values())));
                 dbSchemaGenerator.setDataRangeUnique(schema, ((AbstractDbConnector) dbConnector));
-                LOGGER.info("成功");
+                logger.info("成功");
                 schemas.put(tableName, schema);
             }
             Schema.initFks(((AbstractDbConnector) dbConnector).databaseMetaData, schemas);

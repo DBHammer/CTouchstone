@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class ConfigConvert {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigConvert.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConfigConvert.class);
 
     private static HashMap<HashSet<String>, ColumnType> typeConvert;
 
