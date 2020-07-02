@@ -4,9 +4,6 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
 import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
-import ecnu.db.analyzer.online.AbstractAnalyzer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,8 +14,6 @@ import java.util.Map;
  * 使用阿里巴巴druid库 获取table信息
  */
 public class QueryAliasParser {
-
-    private static final Logger logger = LoggerFactory.getLogger(QueryAliasParser.class);
 
     private final ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor();
 

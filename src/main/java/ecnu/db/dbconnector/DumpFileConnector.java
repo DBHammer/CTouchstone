@@ -1,16 +1,11 @@
 package ecnu.db.dbconnector;
 
-import ecnu.db.analyzer.statical.QueryAliasParser;
 import ecnu.db.utils.TouchstoneToolChainException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
 public class DumpFileConnector implements DatabaseConnectorInterface {
-
-    private static final Logger logger = LoggerFactory.getLogger(DumpFileConnector.class);
 
     private final List<String> tableNames;
 

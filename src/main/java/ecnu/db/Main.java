@@ -191,7 +191,7 @@ public class Main {
                         }
                         ExecutionNode root = queryAnalyzer.getExecutionTree(queryPlan);
                         queryInfos.addAll(queryAnalyzer.extractQueryInfos(root));
-                        logger.info(String.format("%-15s Status:\033[32m获取成功\033[0m", queryCanonicalName));
+                        logger.info(String.format("%-15s Status:获取成功", queryCanonicalName));
                         queryAnalyzer.outputSuccess(true);
 
                         ArrayList<String> cannotFindArgs = new ArrayList<>();
@@ -231,7 +231,7 @@ public class Main {
                         cannotFindArgs.removeAll(reProductArgs);
                         if (cannotFindArgs.size() > 0) {
 
-                            logger.warn(String.format("\033[31m  请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;\033[0m", queryCanonicalName));
+                            logger.warn(String.format("请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName));
                             sqlWriter.write("-- cannotFindArgs:");
                             for (String cannotFindArg : cannotFindArgs) {
                                 sqlWriter.write(cannotFindArg + ":" + queryAnalyzer.getArgsAndIndex().get(cannotFindArg) + ",");
@@ -239,7 +239,7 @@ public class Main {
                             sqlWriter.write("\n");
                         }
                         if (conflictArgs.size() > 0) {
-                            logger.warn(String.format("\033[31m  请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;\033[0m", queryCanonicalName));
+                            logger.warn(String.format("请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName));
                             sqlWriter.write("-- conflictArgs:");
                             for (String conflictArg : conflictArgs) {
                                 sqlWriter.write(conflictArg + ":" + queryAnalyzer.getArgsAndIndex().get(conflictArg) + ",");
@@ -251,7 +251,7 @@ public class Main {
                         sqlWriter.close();
                     } catch (TouchstoneToolChainException e) {
                         queryAnalyzer.outputSuccess(false);
-                        logger.error(String.format("%-15s Status:\033[31m获取失败\033[0m", queryCanonicalName));
+                        logger.error(String.format("%-15s Status:获取失败", queryCanonicalName));
                         e.printStackTrace();
                         if (queryPlan != null && !queryPlan.isEmpty() && dumpDir != null) {
                             String queryPlanFileName = String.format("%s_query_plan.txt", queryCanonicalName);

@@ -1,17 +1,12 @@
 package ecnu.db.utils;
 
-import ecnu.db.dbconnector.DumpFileConnector;
 import ecnu.db.schema.column.ColumnType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
 public class ConfigConvert {
-
-    private static final Logger logger = LoggerFactory.getLogger(ConfigConvert.class);
 
     private static HashMap<HashSet<String>, ColumnType> typeConvert;
 
