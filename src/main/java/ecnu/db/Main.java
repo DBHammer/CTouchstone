@@ -158,7 +158,7 @@ public class Main {
         logger.info("开始获取表名");
         List<String> tableNames;
         tableNames = getTableNames(systemConfig, files, dbConnector);
-        logger.debug("获取表名成功，表名为:" + tableNames);
+        logger.info("获取表名成功，表名为:" + tableNames);
         if (dumpDir != null && dumpDir.isDirectory()) {
             dumpTableNames(dumpDir, tableNames);
             logger.info("表名持久化成功");

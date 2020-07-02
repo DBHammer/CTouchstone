@@ -24,6 +24,7 @@ hs_err_pid*
 
 # jetbrain tools
 .idea
+.DS_Store
 TouchstoneToolchain.iml
 target
 result
