@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 
+/**
+ * @author qingshuai.wang
+ */
 public class SystemConfig {
 
     private String databaseIp;
@@ -26,6 +29,7 @@ public class SystemConfig {
     private String dumpDirectory;
     private HashMap<ColumnType, HashSet<String>> typeConvert;
     private HashMap<String, String> tidbSelectArgs;
+    private Integer skipNodeThreshold;
 
     public SystemConfig() {
         databaseIp = "127.0.0.1";
@@ -169,5 +173,13 @@ public class SystemConfig {
 
     public void setDatabaseVersion(String databaseVersion) {
         this.databaseVersion = databaseVersion;
+    }
+
+    public Integer getSkipNodeThreshold() {
+        return skipNodeThreshold;
+    }
+
+    public void setSkipNodeThreshold(Integer skipNodeThreshold) {
+        this.skipNodeThreshold = skipNodeThreshold;
     }
 }

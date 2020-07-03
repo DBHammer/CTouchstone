@@ -1,5 +1,8 @@
 package ecnu.db.schema.column;
 
+/**
+ * @author qingshuai.wang
+ */
 public class IntColumn extends AbstractColumn {
     private int min;
     private int max;
@@ -9,23 +12,22 @@ public class IntColumn extends AbstractColumn {
         super(columnName, ColumnType.INTEGER);
     }
 
-    public void setMin(int min) {
-        this.min = min;
-    }
-
-    public void setMax(int max) {
-        this.max = max;
-    }
-
     public int getMin() {
         return min;
+    }
+
+    public void setMin(int min) {
+        this.min = min;
     }
 
     public int getMax() {
         return max;
     }
 
-    // TODO
+    public void setMax(int max) {
+        this.max = max;
+    }
+
     @Override
     public int getNdv() {
         return this.ndv;

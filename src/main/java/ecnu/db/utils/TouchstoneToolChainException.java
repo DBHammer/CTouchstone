@@ -1,5 +1,8 @@
 package ecnu.db.utils;
 
+/**
+ * @author qingshuai.wang
+ */
 public class TouchstoneToolChainException extends Exception {
     TouchstoneToolChainException() {
         super();

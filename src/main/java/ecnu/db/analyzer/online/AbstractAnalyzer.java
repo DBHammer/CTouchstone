@@ -3,20 +3,19 @@ package ecnu.db.analyzer.online;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import ecnu.db.analyzer.online.node.ExecutionNode;
-import ecnu.db.analyzer.online.node.NodeTypeTool;
 import ecnu.db.analyzer.online.node.NodeTypeRefFactory;
+import ecnu.db.analyzer.online.node.NodeTypeTool;
 import ecnu.db.analyzer.statical.QueryAliasParser;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.schema.Schema;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -24,6 +23,9 @@ import java.util.stream.IntStream;
  * @author wangqingshuai
  */
 public abstract class AbstractAnalyzer {
+
+    private static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
+
     protected DatabaseConnectorInterface dbConnector;
     protected Map<String, String> aliasDic;
     protected QueryAliasParser queryAliasParser = new QueryAliasParser();
@@ -33,24 +35,35 @@ public abstract class AbstractAnalyzer {
     protected HashMap<String, List<String>> argsAndIndex = new HashMap<>();
     protected NodeTypeTool nodeTypeRef;
     protected String databaseVersion;
+    protected Integer skipNodeThreshold;
 
-    AbstractAnalyzer(String databaseVersion, DatabaseConnectorInterface dbConnector, HashMap<String, Schema> schemas) {
+    AbstractAnalyzer(String databaseVersion, Integer skipNodeThreshold, DatabaseConnectorInterface dbConnector, HashMap<String, Schema> schemas) {
         this.nodeTypeRef = NodeTypeRefFactory.getNodeTypeRef(databaseVersion);
         this.databaseVersion = databaseVersion;
         this.dbConnector = dbConnector;
         this.schemas = schemas;
+        this.skipNodeThreshold = skipNodeThreshold;
     }
 
+    /**
+     * sql的查询计划中，需要使用查询计划的列名
+     *
+     * @param databaseVersion 数据库类型
+     * @return
+     * @throws TouchstoneToolChainException
+     */
     abstract String[] getSqlInfoColumns(String databaseVersion) throws TouchstoneToolChainException;
 
     /**
      * 获取数据库使用的静态解析器的数据类型
+     *
      * @return 静态解析器使用的数据库类型
      */
     public abstract String getDbType();
 
     /**
      * 从operator_info里提取tableName
+     *
      * @param operatorInfo 需要处理的operator_info
      * @return 提取的表名
      */
@@ -76,8 +89,9 @@ public abstract class AbstractAnalyzer {
 
     /**
      * 创建colName到对应的oprator的multimap，并返回关于where_condition的信息
+     *
      * @param operatorInfo 需要处理的operator_info
-     * @param conditions 用于创建的multimap
+     * @param conditions   用于创建的multimap
      * @return 关于whereExpr的信息
      * @throws TouchstoneToolChainException 无法分析的部分
      */
@@ -85,7 +99,6 @@ public abstract class AbstractAnalyzer {
 
     /**
      * 分析传入的select 过滤条件，传出表名和格式化后的condition
-     * todo 增加对or的支持
      *
      * @param operatorInfo 传入的select的operatorInfo
      * @return 表名和格式化后的condition
@@ -160,138 +173,180 @@ public abstract class AbstractAnalyzer {
     public List<String> extractQueryInfos(ExecutionNode root) throws SQLException {
 
         List<String> queryInfos = new ArrayList<>();
-        do {
-
+        List<List<ExecutionNode>> paths = getPaths(root);
+        for (List<ExecutionNode> path : paths) {
             QueryInfo queryInfo = null;
             try {
-                queryInfo = extractConstraintChain(root);
+                queryInfo = extractConstraintChain(path);
             } catch (TouchstoneToolChainException e) {
-                e.printStackTrace();
+                logger.error("提取约束链失败", e);
             }
             if (queryInfo == null) {
                 break;
             }
             if (!queryInfo.getData().isBlank()) {
-                queryInfos.add("[" + queryInfo.getTableName() + "];" + queryInfo.getData());
+                queryInfos.add(String.format("[%s];%s", queryInfo.getTableName(), queryInfo.getData()));
             }
-        } while (true);
-
+        }
         return queryInfos;
     }
 
     /**
-     * 获取一条没有输出过的query约束链
+     * 获取查询树的所有路径
      *
-     * @param node 输入查询语法树的根节点
-     * @return 没有输出过的query约束链
+     * @param root 需要处理的查询树
+     * @return 按照从底部节点到顶部节点形式的所有路径
      */
-    private QueryInfo extractConstraintChain(ExecutionNode node) throws TouchstoneToolChainException, SQLException {
+    private List<List<ExecutionNode>> getPaths(ExecutionNode root) {
+        List<List<ExecutionNode>> paths = new ArrayList<>();
+        getPathsIterate(root, paths);
+        return paths;
+    }
 
-        // 如果节点为空则直接返回
-        if (node == null) {
-            return null;
-        }
-        // 如果节点为filter节点，且节点的子节点也已经被访问过则返回
-        if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
-            if (node.isVisited()) {
-                if (node.getLeftNode() == null || node.getLeftNode().isVisited()) {
-                    return null;
-                }
+    /**
+     * getPaths 的内部迭代方法
+     *
+     * @param root  需要处理的查询树
+     * @param paths 需要返回的路径
+     */
+    private void getPathsIterate(ExecutionNode root, List<List<ExecutionNode>> paths) {
+        if (root.leftNode != null) {
+            getPathsIterate(root.leftNode, paths);
+            for (List<ExecutionNode> path : paths) {
+                path.add(root);
             }
         }
-        //如果节点为join节点，且已经被访问过，则直接返回
-        else {
-            if (node.isVisited()) {
-                return null;
+        if (root.rightNode != null) {
+            getPathsIterate(root.rightNode, paths);
+            for (List<ExecutionNode> path : paths) {
+                path.add(root);
             }
         }
-
-        //获取来自子节点的constraintChain
-        QueryInfo constraintChain = extractConstraintChain(node.getLeftNode());
-        if (constraintChain == null) {
-            constraintChain = extractConstraintChain(node.getRightNode());
-        }
-
-        // 如果没有获取到constraintChain，则本身为filter节点或者scan节点
-        if (constraintChain == null) {
-            node.setVisited();
-            if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
-                Pair<String, String> tableNameAndSelectCondition = analyzeSelectCondition(node.getInfo());
-                String selectInfo = "[0," + tableNameAndSelectCondition.getRight() + "," +
-                        (double) node.getOutputRows() / schemas.get(tableNameAndSelectCondition.getLeft()).getTableSize() + "];";
-                return new QueryInfo(selectInfo, tableNameAndSelectCondition.getLeft(), node.getOutputRows());
-            } else if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
-                String tableName = extractTableName(node.getInfo());
-                Schema schema = schemas.get(tableName);
-                return new QueryInfo("", tableName, schema.getTableSize());
-            } else {
-                throw new TouchstoneToolChainException("join节点的左右节点已经被访问过");
-            }
-        } else {
-            if (node.getType() == ExecutionNode.ExecutionNodeType.join && node.getLeftNode().isVisited() && node.getRightNode().isVisited()) {
-                node.setVisited();
-            }
-            // 如果遍历结束，则不需要继续遍历
-            if (!constraintChain.isStop()) {
-                if (node.getType() == ExecutionNode.ExecutionNodeType.join) {
-                    String[] joinColumnInfos = analyzeJoinInfo(node.getInfo());
-                    String pkTable = joinColumnInfos[0], pkCol = joinColumnInfos[1],
-                            fkTable = joinColumnInfos[2], fkCol = joinColumnInfos[3];
-                    //如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
-                    if (!pkTable.equals(constraintChain.getTableName())
-                            && !fkTable.equals(constraintChain.getTableName())) {
-                        constraintChain.setStop();
-                    } else {
-                        //将本表的信息放在前面，交换位置
-                        if (constraintChain.getTableName().equals(fkTable)) {
-                            pkTable = joinColumnInfos[2];
-                            pkCol = joinColumnInfos[3];
-                            fkTable = joinColumnInfos[0];
-                            fkCol = joinColumnInfos[1];
-                        }
-                        //根据主外键分别设置约束链输出信息
-                        if (isPrimaryKey(pkTable, pkCol, fkTable, fkCol)) {
-                            constraintChain.setStop();
-                            if (node.getJoinTag() < 0) {
-                                node.setJoinTag(schemas.get(pkTable).getJoinTag());
-                            }
-                            constraintChain.addConstraint("[1," + pkCol.replace(',', '#') + "," +
-                                    node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
-                            //设置主键
-                            schemas.get(pkTable).setPrimaryKeys(pkCol);
-                            constraintChain.setLastNodeLineCount(node.getOutputRows());
-                        } else {
-                            if (node.getJoinTag() < 0) {
-                                node.setJoinTag(schemas.get(pkTable).getJoinTag());
-                            }
-                            String primaryKey = fkTable + "." + fkCol;
-                            constraintChain.addConstraint("[2," + fkCol.replace(',', '#') + "," +
-                                    (double) node.getOutputRows() / constraintChain.getLastNodeLineCount() + "," +
-                                    primaryKey.replace(',', '#') + "," +
-                                    node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
-                            //设置外键
-                            System.out.println("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
-                                    fkCol + ".column:" + fkTable);
-                            schemas.get(pkTable).addForeignKey(pkCol, fkTable, fkCol);
-                            constraintChain.setLastNodeLineCount(node.getOutputRows());
-                        }
-                    }
-                } else if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
-                    Pair<String, String> tableNameAndSelectCondition = analyzeSelectCondition(node.getInfo());
-                    if (constraintChain.getTableName().equals(tableNameAndSelectCondition.getKey())) {
-                        node.setVisited();
-                        constraintChain.addConstraint("[0," + tableNameAndSelectCondition.getRight() + "," +
-                                (double) node.getOutputRows() / constraintChain.getLastNodeLineCount() + "];");
-                        constraintChain.setLastNodeLineCount(node.getOutputRows());
-                    }
-                }
-            }
-            return constraintChain;
+        if (root.leftNode == null && root.rightNode == null) {
+            List<ExecutionNode> newPath = new ArrayList<>(Collections.singletonList(root));
+            paths.add(newPath);
         }
     }
 
     /**
+     * 获取一条路径上的约束链
+     *
+     * @param path 需要处理的路径
+     * @return 获取的约束链
+     * @throws TouchstoneToolChainException 无法处理路径
+     * @throws SQLException                 无法处理路径
+     */
+    private QueryInfo extractConstraintChain(List<ExecutionNode> path) throws TouchstoneToolChainException, SQLException {
+        if (path == null || path.size() == 0) {
+            throw new TouchstoneToolChainException(String.format("非法的path输入 '%s'", path));
+        }
+        ExecutionNode node = path.get(0);
+        QueryInfo constraintChain;
+        String tableName;
+        if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
+            Pair<String, String> tableNameAndSelectCondition = analyzeSelectCondition(node.getInfo());
+            tableName = tableNameAndSelectCondition.getLeft();
+            String selectInfo = "[0," + tableNameAndSelectCondition.getRight() + "," +
+                    (double) node.getOutputRows() / schemas.get(tableName).getTableSize() + "];";
+            constraintChain = new QueryInfo(selectInfo, tableName, node.getOutputRows());
+        } else if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
+            tableName = extractTableName(node.getInfo());
+            Schema schema = schemas.get(tableName);
+            constraintChain = new QueryInfo("", tableName, schema.getTableSize());
+        } else {
+            throw new TouchstoneToolChainException(String.format("底层节点'%s'不应该为join", node.getId()));
+        }
+        for (int i = 1; i < path.size(); i++) {
+            node = path.get(i);
+            boolean isStop;
+            try {
+                isStop = analyzeNode(node, constraintChain, tableName);
+            } catch (TouchstoneToolChainException | SQLException e) {
+                // 小于设置的阈值以后略去后续的节点
+                if (node.getOutputRows() < skipNodeThreshold) {
+                    logger.error("提取约束链失败", e);
+                    logger.info(String.format("%s, 但节点行数小于阈值，跳过节点%s", e.getMessage(), node));
+                    break;
+                }
+                throw e;
+            }
+            if (isStop) {
+                break;
+            }
+        }
+        return constraintChain;
+    }
+
+    /**
+     * 分析一个节点，提取约束链信息
+     *
+     * @param node            需要分析的节点
+     * @param constraintChain 约束链
+     * @param tableName       表名
+     * @return 是否停止继续向上分析
+     * @throws TouchstoneToolChainException 节点分析出错
+     * @throws SQLException                 节点分析出错
+     */
+    private boolean analyzeNode(ExecutionNode node, QueryInfo constraintChain, String tableName) throws TouchstoneToolChainException, SQLException {
+        if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
+            throw new TouchstoneToolChainException(String.format("中间节点'%s'不为scan", node.getId()));
+        }
+        if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
+            Pair<String, String> tableNameAndSelectCondition = analyzeSelectCondition(node.getInfo());
+            if (tableName.equals(tableNameAndSelectCondition.getKey())) {
+                constraintChain.addConstraint("[0," + tableNameAndSelectCondition.getRight() + "," +
+                        (double) node.getOutputRows() / constraintChain.getLastNodeLineCount() + "];");
+                constraintChain.setLastNodeLineCount(node.getOutputRows());
+            }
+        } else if (node.getType() == ExecutionNode.ExecutionNodeType.join) {
+            String[] joinColumnInfos = analyzeJoinInfo(node.getInfo());
+            String pkTable = joinColumnInfos[0], pkCol = joinColumnInfos[1],
+                    fkTable = joinColumnInfos[2], fkCol = joinColumnInfos[3];
+            // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
+            if (!pkTable.equals(constraintChain.getTableName())
+                    && !fkTable.equals(constraintChain.getTableName())) {
+                return true;
+            }
+            //将本表的信息放在前面，交换位置
+            if (constraintChain.getTableName().equals(fkTable)) {
+                pkTable = joinColumnInfos[2];
+                pkCol = joinColumnInfos[3];
+                fkTable = joinColumnInfos[0];
+                fkCol = joinColumnInfos[1];
+            }
+            //根据主外键分别设置约束链输出信息
+            if (isPrimaryKey(pkTable, pkCol, fkTable, fkCol)) {
+                if (node.getJoinTag() < 0) {
+                    node.setJoinTag(schemas.get(pkTable).getJoinTag());
+                }
+                constraintChain.addConstraint("[1," + pkCol.replace(',', '#') + "," +
+                        node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
+                //设置主键
+                schemas.get(pkTable).setPrimaryKeys(pkCol);
+                constraintChain.setLastNodeLineCount(node.getOutputRows());
+                return true;
+            } else {
+                if (node.getJoinTag() < 0) {
+                    node.setJoinTag(schemas.get(pkTable).getJoinTag());
+                }
+                String primaryKey = fkTable + "." + fkCol;
+                constraintChain.addConstraint("[2," + fkCol.replace(',', '#') + "," +
+                        (double) node.getOutputRows() / constraintChain.getLastNodeLineCount() + "," +
+                        primaryKey.replace(',', '#') + "," +
+                        node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
+                //设置外键
+                logger.info("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
+                        fkCol + ".column:" + fkTable);
+                schemas.get(pkTable).addForeignKey(pkCol, fkTable, fkCol);
+                constraintChain.setLastNodeLineCount(node.getOutputRows());
+            }
+        }
+        return false;
+    }
+
+    /**
      * 根据输入的列名统计非重复值的个数，进而给出该列是否为主键
+     *
      * @param pkTable
      * @param pkCol
      * @param fkTable

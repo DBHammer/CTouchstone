@@ -13,11 +13,6 @@ public class ExecutionNode {
      * 节点额外信息
      */
     private final String info;
-
-    /**
-     * 对应explain analyze的query plan树的节点名称
-     */
-    private String id;
     /**
      * 指向右节点
      */
@@ -26,6 +21,10 @@ public class ExecutionNode {
      * 指向左节点
      */
     public ExecutionNode leftNode;
+    /**
+     * 对应explain analyze的query plan树的节点名称
+     */
+    private String id;
     /**
      * 节点输出的数据量
      */
@@ -82,14 +81,6 @@ public class ExecutionNode {
         this.joinTag = joinTag;
     }
 
-    public boolean isVisited() {
-        return visited;
-    }
-
-    public void setVisited() {
-        this.visited = true;
-    }
-
     public String getInfo() {
         return info;
     }
@@ -118,6 +109,12 @@ public class ExecutionNode {
         return type;
     }
 
+    @Override
+    public String toString() {
+        return "ExecutionNode{" +
+                "id='" + id + '}';
+    }
+
     public enum ExecutionNodeType {
         /**
          * scan 节点，全表遍历，没有任何的过滤条件，只能作为叶子节点
@@ -131,13 +128,5 @@ public class ExecutionNode {
          * join 节点，同时具有左右子节点，只能作为非叶子节点
          */
         join
-    }
-
-    @Override
-    public String toString() {
-        return "ExecutionNode{" +
-                "id='" + id + '\'' +
-                ", visited=" + visited +
-                '}';
     }
 }

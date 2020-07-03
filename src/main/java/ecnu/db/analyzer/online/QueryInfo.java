@@ -7,14 +7,11 @@ public class QueryInfo {
     String data;
     String tableName;
     int lastNodeLineCount;
-    boolean stop;
 
     public QueryInfo(String data, String tableName, int lastNodeLineCount) {
         this.data = data;
         this.lastNodeLineCount = lastNodeLineCount;
         this.tableName = tableName;
-        stop = false;
-
     }
 
     public String getTableName() {
@@ -37,20 +34,11 @@ public class QueryInfo {
         this.lastNodeLineCount = lastNodeLineCount;
     }
 
-    public boolean isStop() {
-        return stop;
-    }
-
-    public void setStop() {
-        this.stop = true;
-    }
-
     @Override
     public String toString() {
         return "QueryInfo{" +
                 "data='" + data + '\'' +
                 ", tableName='" + tableName + '\'' +
-                ", stop=" + stop +
                 '}';
     }
 }

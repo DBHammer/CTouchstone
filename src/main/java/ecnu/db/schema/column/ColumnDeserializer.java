@@ -6,6 +6,9 @@ import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
 
 import java.lang.reflect.Type;
 
+/**
+ * @author xuechao.lian
+ */
 public class ColumnDeserializer implements ObjectDeserializer {
 
     @Override
@@ -46,6 +49,7 @@ public class ColumnDeserializer implements ObjectDeserializer {
                 dateColumn.setBegin(col.getString("begin"));
                 dateColumn.setEnd(col.getString("end"));
                 return (T) dateColumn;
+            default:
         }
 
         return (T) col;

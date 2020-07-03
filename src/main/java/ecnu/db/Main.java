@@ -19,6 +19,8 @@ import ecnu.db.utils.ReadQuery;
 import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,14 +38,21 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class Main {
 
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
+    private static final String DUMP_FILE_POSTFIX = "dump";
+
+    private static final int INIT_HASHMAP_SIZE = 16;
+
     /**
      * 模板化SQL语句
-     * @param sql 需要处理的sql语句
-     * @param argsAndIndex 需要替换的arguments
+     *
+     * @param sql            需要处理的SQL语句
+     * @param argsAndIndex   需要替换的arguments
      * @param cannotFindArgs 找不到的arguments
-     * @param conflictArgs 矛盾的arguments
-     * @return
-     * @throws TouchstoneToolChainException
+     * @param conflictArgs   矛盾的arguments
+     * @return 模板化的SQL语句
+     * @throws TouchstoneToolChainException 检测不到停止的语法词
      */
     public static String templatizeSql(String sql, HashMap<String, List<String>> argsAndIndex, ArrayList<String> cannotFindArgs,
                                        ArrayList<String> conflictArgs) throws TouchstoneToolChainException {
@@ -110,7 +119,7 @@ public class Main {
                         if (argAndIndexes.getKey().contains(" bet")) {
                             sql = sql.substring(0, front) + argAndIndexes.getValue().get(0) + backString.toString();
                         } else {
-                            sql = sql.substring(0, front + 1) + "'" + argAndIndexes.getValue().get(0) + "'" + backString.toString();
+                            sql = String.format("%s'%s'%s", sql.substring(0, front + 1), argAndIndexes.getValue().get(0), backString.toString());
                         }
 
                     } else {
@@ -134,13 +143,20 @@ public class Main {
 
         File resultDirectory = new File(systemConfig.getResultDirectory()),
                 retDir = new File(systemConfig.getResultDirectory()),
-                retSqlDir = new File(systemConfig.getResultDirectory(),"sql"),
+                retSqlDir = new File(systemConfig.getResultDirectory(), "sql"),
                 dumpDir = Optional.ofNullable(systemConfig.getDumpDirectory()).map(File::new).orElse(null),
-                loadDir = Optional.ofNullable(systemConfig.getLoadDirectory()).map(File::new).orElse(null);
-        if (retSqlDir.isDirectory()) FileUtils.deleteDirectory(retSqlDir);
-        if (dumpDir != null && dumpDir.isDirectory()) FileUtils.deleteDirectory(dumpDir);
-        if (retDir.isDirectory()) FileUtils.deleteDirectory(retDir);
-        if (!retSqlDir.mkdirs()){
+                loadDir = Optional.ofNullable(systemConfig.getLoadDirectory()).map(File::new).orElse(null),
+                logDir = new File(systemConfig.getResultDirectory(), "log");
+        if (retSqlDir.isDirectory()) {
+            FileUtils.deleteDirectory(retSqlDir);
+        }
+        if (dumpDir != null && dumpDir.isDirectory()) {
+            FileUtils.deleteDirectory(dumpDir);
+        }
+        if (retDir.isDirectory()) {
+            FileUtils.deleteDirectory(retDir);
+        }
+        if (!retSqlDir.mkdirs()) {
             throw new TouchstoneToolChainException("无法创建输出文件夹");
         }
         if (dumpDir != null && !dumpDir.mkdirs()) {
@@ -150,27 +166,29 @@ public class Main {
         DatabaseConnectorInterface dbConnector = getDatabaseConnector(systemConfig, loadDir);
         AbstractSchemaGenerator dbSchemaGenerator = new TidbSchemaGenerator();
 
-        System.out.println("开始获取表名");
+        logger.info("开始获取表名");
         List<String> tableNames;
         tableNames = getTableNames(systemConfig, files, dbConnector);
-        System.out.println("获取表名成功，表名为:" + tableNames);
+        logger.info("获取表名成功，表名为:" + tableNames);
         if (dumpDir != null && dumpDir.isDirectory()) {
             dumpTableNames(dumpDir, tableNames);
-            System.out.println("表名持久化成功");
+            logger.info("表名持久化成功");
         }
-        System.out.println("开始获取表结构和数据分布");
+        logger.info("开始获取表结构和数据分布");
         HashMap<String, Schema> schemas = getSchemas(loadDir, dbConnector, dbSchemaGenerator, tableNames);
-        System.out.println("获取表结构和数据分布成功，开始获取query查询计划");
+        logger.info("获取表结构和数据分布成功，开始获取query查询计划");
         if (dumpDir != null && dumpDir.isDirectory()) {
             dumpSchemas(dumpDir, schemas);
-            System.out.println("表结构和数据分布持久化成功");
+            logger.info("表结构和数据分布持久化成功");
         }
 
-        AbstractAnalyzer queryAnalyzer = new TidbAnalyzer(systemConfig.getDatabaseVersion(), dbConnector, systemConfig.getTidbSelectArgs(), schemas);
+        AbstractAnalyzer queryAnalyzer = new TidbAnalyzer(systemConfig.getDatabaseVersion(), systemConfig.getSkipNodeThreshold(),
+                dbConnector, systemConfig.getTidbSelectArgs(), schemas);
         List<String> queryInfos = new LinkedList<>();
+        boolean needLog = false;
         for (File sqlFile : files) {
             if (sqlFile.isFile() && sqlFile.getName().endsWith(".sql")) {
-                List<String> queries = ReadQuery.getSQLsFromFile(sqlFile.getPath(), queryAnalyzer.getDbType());
+                List<String> queries = ReadQuery.getQueriesFromFile(sqlFile.getPath(), queryAnalyzer.getDbType());
                 int index = 0;
                 BufferedWriter sqlWriter = new BufferedWriter(new FileWriter(
                         new File(retSqlDir.getPath(), sqlFile.getName())));
@@ -186,7 +204,7 @@ public class Main {
                         }
                         ExecutionNode root = queryAnalyzer.getExecutionTree(queryPlan);
                         queryInfos.addAll(queryAnalyzer.extractQueryInfos(root));
-                        String outputMessage = String.format("%-15s Status:\033[32m获取成功\033[0m", queryCanonicalName);
+                        logger.info(String.format("%-15s Status:获取成功", queryCanonicalName));
                         queryAnalyzer.outputSuccess(true);
 
                         ArrayList<String> cannotFindArgs = new ArrayList<>();
@@ -200,7 +218,7 @@ public class Main {
                                         get(cannotFindArg).get(0).split(" ");
                                 indexInfos[1] = indexInfos[1].replace("'", "");
                                 indexInfos[3] = indexInfos[3].replace("'", "");
-                                HashMap<String, List<String>> tempInfo = new HashMap<>();
+                                HashMap<String, List<String>> tempInfo = new HashMap<>(INIT_HASHMAP_SIZE);
                                 tempInfo.put(cannotFindArg.split(" ")[0] + " >=", Collections.singletonList(indexInfos[1]));
                                 ArrayList<String> tempList = new ArrayList<>();
                                 sql = templatizeSql(sql, tempInfo, tempList, new ArrayList<>());
@@ -226,7 +244,7 @@ public class Main {
                         cannotFindArgs.removeAll(reProductArgs);
                         if (cannotFindArgs.size() > 0) {
 
-                            outputMessage += String.format("\033[31m  请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;\033[0m", queryCanonicalName);
+                            logger.warn(String.format("请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName));
                             sqlWriter.write("-- cannotFindArgs:");
                             for (String cannotFindArg : cannotFindArgs) {
                                 sqlWriter.write(cannotFindArg + ":" + queryAnalyzer.getArgsAndIndex().get(cannotFindArg) + ",");
@@ -234,30 +252,35 @@ public class Main {
                             sqlWriter.write("\n");
                         }
                         if (conflictArgs.size() > 0) {
-                            outputMessage += String.format("\033[31m  请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;\033[0m", queryCanonicalName);
+                            logger.warn(String.format("请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName));
                             sqlWriter.write("-- conflictArgs:");
                             for (String conflictArg : conflictArgs) {
                                 sqlWriter.write(conflictArg + ":" + queryAnalyzer.getArgsAndIndex().get(conflictArg) + ",");
                             }
                             sqlWriter.write("\n");
                         }
-                        System.out.println(outputMessage);
+
                         sqlWriter.write(SQLUtils.format(sql, queryAnalyzer.getDbType(), SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + "\n");
                         sqlWriter.close();
                     } catch (TouchstoneToolChainException e) {
                         queryAnalyzer.outputSuccess(false);
-                        System.out.println(String.format("%-15s Status:\033[31m获取失败\033[0m", queryCanonicalName));
-                        e.printStackTrace();
-                        if (queryPlan != null && !queryPlan.isEmpty() && dumpDir != null) {
-                            String queryPlanFileName = String.format("%s_query_plan.txt", queryCanonicalName);
-                            File file = new File(dumpDir.getPath(), queryPlanFileName);
-                            FileUtils.writeStringToFile(file, JSON.toJSONString(queryPlan), UTF_8);
+                        logger.error(String.format("%-15s Status:获取失败", queryCanonicalName), e);
+                        needLog = true;
+                        if (queryPlan != null && !queryPlan.isEmpty()) {
+                            dumpQueryPlan(logDir, queryPlan, queryCanonicalName);
+                            logger.info(String.format("失败的query %s的查询计划已经存盘到'%s'", queryCanonicalName, logDir.getAbsolutePath()));
                         }
                     }
                 }
             }
         }
-        System.out.println("获取查询计划完成");
+        logger.info("获取查询计划完成");
+        if (needLog) {
+            dumpMultiCol(logDir, dbConnector);
+            dumpSchemas(logDir, schemas);
+            dumpTableNames(logDir, tableNames);
+            logger.info(String.format("关于表的日志信息已经存盘到'%s'", logDir.getAbsolutePath()));
+        }
 
         if (dumpDir != null && dumpDir.isDirectory()) {
             dumpMultiCol(dumpDir, dbConnector);
@@ -325,13 +348,14 @@ public class Main {
         if (!multiColNdvFile.isFile()) {
             throw new TouchstoneToolChainException(String.format("找不到%s", multiColNdvFile.getAbsolutePath()));
         }
-        multiColNdvMap = JSON.parseObject(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<>(){});
+        multiColNdvMap = JSON.parseObject(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<>() {
+        });
         return multiColNdvMap;
     }
 
     private static Map<String, List<String[]>> loadQueryPlans(File loadDir) throws IOException {
-        Map<String, List<String[]>> queryPlanMap = new HashMap<>();
-        for (File queryPlanFile: Optional.ofNullable(loadDir.listFiles((dir, name) -> name.endsWith("dump"))).orElse(new File[]{})) {
+        Map<String, List<String[]>> queryPlanMap = new HashMap<>(INIT_HASHMAP_SIZE);
+        for (File queryPlanFile : Optional.ofNullable(loadDir.listFiles((dir, name) -> name.endsWith(DUMP_FILE_POSTFIX))).orElse(new File[]{})) {
             String content = FileUtils.readFileToString(queryPlanFile, UTF_8);
             queryPlanMap.put(queryPlanFile.getName(), Arrays.stream(content.split("\n"))
                     .map((str) -> str.split(";", -1)).collect(Collectors.toList()));
@@ -346,19 +370,20 @@ public class Main {
             if (!schemaFile.isFile()) {
                 throw new TouchstoneToolChainException(String.format("找不到%s", schemaFile.getAbsolutePath()));
             }
-            schemas = JSON.parseObject(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<>(){});
-            System.out.println("加载表结构和表数据分布成功");
+            schemas = JSON.parseObject(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<>() {
+            });
+            logger.info("加载表结构和表数据分布成功");
         } else {
             for (String tableName : tableNames) {
-                System.out.println("开始获取" + tableName + "的信息");
-                System.out.print("获取表结构...");
+                logger.info("开始获取" + tableName + "的信息");
+                logger.info("获取表结构...");
                 Schema schema = dbSchemaGenerator.generateSchemaNoKeys(tableName, ((AbstractDbConnector) dbConnector).getTableDdl(tableName));
-                System.out.println("成功");
-                System.out.print("获取表数据分布...");
+                logger.info("成功");
+                logger.info("获取表数据分布...");
                 dbSchemaGenerator.setDataRangeBySqlResult(schema.getColumns().values(), ((AbstractDbConnector) dbConnector).getDataRange(tableName,
                         dbSchemaGenerator.getColumnDistributionSql(schema.getTableName(), schema.getColumns().values())));
                 dbSchemaGenerator.setDataRangeUnique(schema, ((AbstractDbConnector) dbConnector));
-                System.out.println("成功");
+                logger.info("成功");
                 schemas.put(tableName, schema);
             }
             Schema.initFks(((AbstractDbConnector) dbConnector).databaseMetaData, schemas);
@@ -380,7 +405,7 @@ public class Main {
             HashSet<String> tableNameSet = new HashSet<>();
             for (File sqlFile : files) {
                 if (sqlFile.isFile() && sqlFile.getName().endsWith(".sql")) {
-                    List<String> queries = ReadQuery.getSQLsFromFile(sqlFile.getPath(), "mysql");
+                    List<String> queries = ReadQuery.getQueriesFromFile(sqlFile.getPath(), "mysql");
                     for (String sql : queries) {
                         tableNameSet.addAll(QueryTableName.getTableName(sql, "mysql"));
                     }

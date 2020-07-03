@@ -14,16 +14,21 @@ import java.util.*;
  * @author wangqingshuai
  */
 public class Schema {
+    private final static int INIT_HASHMAP_SIZE = 16;
     private String tableName;
     private HashMap<String, AbstractColumn> columns;
     private int tableSize;
     private String primaryKeys;
     private HashMap<String, String> foreignKeys;
-    private HashMap<String, String> metaDataFks; // 根据Database的metadata获取的外键信息
+    /**
+     * 根据Database的metadata获取的外键信息
+     */
+    private HashMap<String, String> metaDataFks;
     private int joinTag;
     private int lastJoinTag;
 
-    public Schema() {}
+    public Schema() {
+    }
 
     public Schema(String tableName, HashMap<String, AbstractColumn> columns) {
         this.tableName = tableName;
@@ -75,7 +80,7 @@ public class Schema {
 
         for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
             Schema schema = entry.getValue();
-            HashMap<String, String> fks = Optional.ofNullable(schema.getForeignKeys()).orElse(new HashMap<>());
+            HashMap<String, String> fks = Optional.ofNullable(schema.getForeignKeys()).orElse(new HashMap<>(INIT_HASHMAP_SIZE));
             schema.setMetaDataFks(fks);
         }
     }
@@ -103,6 +108,10 @@ public class Schema {
         return temp;
     }
 
+    public void setJoinTag(int joinTag) {
+        this.joinTag = joinTag;
+    }
+
     public void keepJoinTag(boolean keep) {
         if (keep) {
             lastJoinTag = joinTag;
@@ -112,11 +121,11 @@ public class Schema {
     }
 
     public void addForeignKey(String localColumnName, String referencingTable, String referencingInfo) throws TouchstoneToolChainException {
-        if (foreignKeys == null) {
-            foreignKeys = new HashMap<>();
-        }
         String[] columnNames = localColumnName.split(",");
         String[] refColumnNames = referencingInfo.split(",");
+        if (foreignKeys == null) {
+            foreignKeys = new HashMap<>(columnNames.length);
+        }
         for (int i = 0; i < columnNames.length; i++) {
             if (foreignKeys.containsKey(columnNames[i])) {
                 if (!(referencingTable + "." + refColumnNames[i]).equals(foreignKeys.get(columnNames[i]))) {
@@ -128,23 +137,6 @@ public class Schema {
             foreignKeys.put(columnNames[i], referencingTable + "." + refColumnNames[i]);
         }
 
-    }
-
-    public void setPrimaryKeys(String primaryKeys) throws TouchstoneToolChainException {
-        if (this.primaryKeys == null) {
-            this.primaryKeys = primaryKeys;
-        } else {
-            HashSet<String> newKeys = new HashSet<>(Arrays.asList(primaryKeys.split(",")));
-            HashSet<String> keys = new HashSet<>(Arrays.asList(this.primaryKeys.split(",")));
-            if (keys.size() == newKeys.size()) {
-                keys.removeAll(newKeys);
-                if (keys.size() > 0) {
-                    throw new TouchstoneToolChainException("query中使用了多列主键的部分主键");
-                }
-            } else {
-                throw new TouchstoneToolChainException("query中使用了多列主键的部分主键");
-            }
-        }
     }
 
     public int getNdv(String columnName) throws TouchstoneToolChainException {
@@ -165,6 +157,7 @@ public class Schema {
             return null;
         }
         int k = 1;
+        //todo 最小表大小重置应该废弃
         if (tableSize < 100) {
             k = 100;
         }
@@ -281,8 +274,21 @@ public class Schema {
         return primaryKeys;
     }
 
-    public void setJoinTag(int joinTag) {
-        this.joinTag = joinTag;
+    public void setPrimaryKeys(String primaryKeys) throws TouchstoneToolChainException {
+        if (this.primaryKeys == null) {
+            this.primaryKeys = primaryKeys;
+        } else {
+            HashSet<String> newKeys = new HashSet<>(Arrays.asList(primaryKeys.split(",")));
+            HashSet<String> keys = new HashSet<>(Arrays.asList(this.primaryKeys.split(",")));
+            if (keys.size() == newKeys.size()) {
+                keys.removeAll(newKeys);
+                if (keys.size() > 0) {
+                    throw new TouchstoneToolChainException("query中使用了多列主键的部分主键");
+                }
+            } else {
+                throw new TouchstoneToolChainException("query中使用了多列主键的部分主键");
+            }
+        }
     }
 
     public int getLastJoinTag() {
@@ -293,12 +299,12 @@ public class Schema {
         this.lastJoinTag = lastJoinTag;
     }
 
-    public void setColumns(HashMap<String, AbstractColumn> columns) {
-        this.columns = columns;
-    }
-
     public HashMap<String, AbstractColumn> getColumns() {
         return columns;
+    }
+
+    public void setColumns(HashMap<String, AbstractColumn> columns) {
+        this.columns = columns;
     }
 
     @Override

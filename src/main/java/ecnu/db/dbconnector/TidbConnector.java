@@ -2,6 +2,8 @@ package ecnu.db.dbconnector;
 
 import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +16,8 @@ import java.nio.charset.StandardCharsets;
  * @author wangqingshuai
  */
 public class TidbConnector extends AbstractDbConnector {
+
+    private static final Logger logger = LoggerFactory.getLogger(TidbConnector.class);
     String statsUrl;
 
     public TidbConnector(SystemConfig config) throws TouchstoneToolChainException {
@@ -52,7 +56,7 @@ public class TidbConnector extends AbstractDbConnector {
 
     public String tableInfoJson(String tableName) throws IOException {
         String tableStatsUrl = statsUrl + tableName.replace(".", "/");
-        System.out.println(tableStatsUrl);
+        logger.info(String.format("表%s的统计数据url %s", tableName, tableStatsUrl));
         InputStream is = new URL(tableStatsUrl).openStream();
         BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
         String line;

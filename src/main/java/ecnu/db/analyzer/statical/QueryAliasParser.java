@@ -14,6 +14,7 @@ import java.util.Map;
  * 使用阿里巴巴druid库 获取table信息
  */
 public class QueryAliasParser {
+
     private final ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor();
 
     public Map<String, String> getTableAlias(String sql, String dbType) {

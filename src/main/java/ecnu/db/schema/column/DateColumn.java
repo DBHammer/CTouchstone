@@ -7,12 +7,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.regex.Pattern;
 
-
+/**
+ * @author qingshuai.wang
+ */
 public class DateColumn extends AbstractColumn {
-    private static final SimpleDateFormat touchstoneFmt = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
-    private static final String[] dataTimePattern = new String[]{"yyyy-MM", "yyyyMM", "yyyy/MM", "yyyyMMdd", "yyyy-MM-dd", "yyyy/MM/dd",
+    private static final SimpleDateFormat TOUCHSTONE_FMT = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
+    private static final String[] DATA_TIME_PATTERN = new String[]{"yyyy-MM", "yyyyMM", "yyyy/MM", "yyyyMMdd", "yyyy-MM-dd", "yyyy/MM/dd",
             "yyyyMMddHHmmss", "yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss"};
-    private static final Pattern pattern = Pattern.compile("-?\\d+(\\.\\d+)?");
+    private static final Pattern DATE_FORMAT_PATTERN = Pattern.compile("-?\\d+(\\.\\d+)?");
     private String begin;
     private String end;
 
@@ -20,20 +22,20 @@ public class DateColumn extends AbstractColumn {
         super(columnName, ColumnType.DATETIME);
     }
 
-    public void setBegin(String begin) {
-        this.begin = begin;
-    }
-
     public String getBegin() {
         return begin;
     }
 
-    public void setEnd(String end) {
-        this.end = end;
+    public void setBegin(String begin) {
+        this.begin = begin;
     }
 
     public String getEnd() {
         return end;
+    }
+
+    public void setEnd(String end) {
+        this.end = end;
     }
 
     @Override
@@ -45,12 +47,12 @@ public class DateColumn extends AbstractColumn {
     public String formatDataDistribution() throws ParseException {
 
         if (isNumeric(begin)) {
-            return columnName + ";" + nullPercentage + ';' + touchstoneFmt.format(Long.parseLong(begin)) + ";" +
-                    touchstoneFmt.format(Long.parseLong(end));
+            return columnName + ";" + nullPercentage + ';' + TOUCHSTONE_FMT.format(Long.parseLong(begin)) + ";" +
+                    TOUCHSTONE_FMT.format(Long.parseLong(end));
         } else {
             return columnName + ";" + nullPercentage + ';' +
-                    touchstoneFmt.format(DateUtils.parseDate(begin, dataTimePattern)) + ";" +
-                    touchstoneFmt.format(DateUtils.parseDate(end, dataTimePattern).getTime());
+                    TOUCHSTONE_FMT.format(DateUtils.parseDate(begin, DATA_TIME_PATTERN)) + ";" +
+                    TOUCHSTONE_FMT.format(DateUtils.parseDate(end, DATA_TIME_PATTERN).getTime());
         }
     }
 
@@ -58,6 +60,6 @@ public class DateColumn extends AbstractColumn {
         if (strNum == null) {
             return false;
         }
-        return pattern.matcher(strNum).matches();
+        return DATE_FORMAT_PATTERN.matcher(strNum).matches();
     }
 }

@@ -1,28 +1,28 @@
 {
-  "databaseIp": "10.11.6.20",
-  "crossMultiDatabase": false,
+  "databaseIp": "localhost",
+  "databaseName": "tpch",
   "databasePort": "4000",
   "databasePwd": "",
   "databaseUser": "root",
-  "databaseVersion": "tidb",
+  "dataSource": "tidb",
+  "databaseVersion": "3.1.0",
   "sqlsDirectory": "conf/sqls",
-  "resultDirectory": "result",
+  "resultDirectory": "touchstoneconf",
+  "loadDirectory": "load",
+  "dumpDirectory": "dump",
   "typeConvert": {
     "INTEGER": [
       "int"
     ],
     "DATETIME": [
-      "date",
-      "datetime"
+      "date"
     ],
     "DECIMAL": [
-      "decimal",
-      "float"
+      "decimal"
     ],
     "VARCHAR": [
       "varchar",
-      "char",
-      "text"
+      "char"
     ],
     "BOOL": [
       "bool"
@@ -38,6 +38,7 @@
     "NE": "<>",
     "LIKE": "like",
     "IN": "in",
-    "ISNULL": "isnull"
+    "ISNULL": "isnull",
+    "OR": "or"
   }
 }

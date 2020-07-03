@@ -5,39 +5,40 @@ import java.util.Collections;
 import java.util.HashSet;
 
 class TidbNodeTypeTool implements NodeTypeTool {
-    private static final HashSet<String> readerNodeTypes = new HashSet<>(Arrays.asList("TableReader", "IndexReader", "IndexLookUp"));
-    private static final HashSet<String> passNodeTypes = new HashSet<>(Arrays.asList("Projection", "TopN", "Sort", "HashAgg", "StreamAgg", "IndexScan", "IndexRangeScan", "IndexFullScan"));
-    private static final HashSet<String> joinNodeTypes = new HashSet<>(Arrays.asList("HashRightJoin", "HashLeftJoin", "IndexMergeJoin", "IndexHashJoin", "IndexJoin", "MergeJoin","HashJoin"));
-    private static final HashSet<String> filterNodeTypes = new HashSet<>(Collections.singletonList("Selection"));
-    private static final HashSet<String> tableScanNodeTypes = new HashSet<>(Arrays.asList("TableScan", "TableFullScan", "TableRowIDScan", "TableRangeScan"));
-    private static final HashSet<String> indexScanNodeTypes = new HashSet<>(Arrays.asList("IndexScan", "IndexRangeScan", "IndexFullScan"));
+    private static final HashSet<String> READER_NODE_TYPES = new HashSet<>(Arrays.asList("TableReader", "IndexReader", "IndexLookUp"));
+    private static final HashSet<String> PASS_NODE_TYPES = new HashSet<>(Arrays.asList("Projection", "TopN", "Sort", "HashAgg", "StreamAgg", "IndexScan", "IndexRangeScan", "IndexFullScan"));
+    private static final HashSet<String> JOIN_NODE_TYPES = new HashSet<>(Arrays.asList("HashRightJoin", "HashLeftJoin", "IndexMergeJoin", "IndexHashJoin", "IndexJoin", "MergeJoin", "HashJoin"));
+    private static final HashSet<String> FILTER_NODE_TYPES = new HashSet<>(Collections.singletonList("Selection"));
+    private static final HashSet<String> TABLE_SCAN_NODE_TYPES = new HashSet<>(Arrays.asList("TableScan", "TableFullScan", "TableRowIDScan", "TableRangeScan"));
+    private static final HashSet<String> INDEX_SCAN_NODE_TYPES = new HashSet<>(Arrays.asList("IndexScan", "IndexRangeScan", "IndexFullScan"));
+
     @Override
     public boolean isReaderNode(String nodeType) {
-        return readerNodeTypes.contains(nodeType);
+        return READER_NODE_TYPES.contains(nodeType);
     }
 
     @Override
     public boolean isPassNode(String nodeType) {
-        return passNodeTypes.contains(nodeType);
+        return PASS_NODE_TYPES.contains(nodeType);
     }
 
     @Override
     public boolean isJoinNode(String nodeType) {
-        return joinNodeTypes.contains(nodeType);
+        return JOIN_NODE_TYPES.contains(nodeType);
     }
 
     @Override
     public boolean isFilterNode(String nodeType) {
-        return filterNodeTypes.contains(nodeType);
+        return FILTER_NODE_TYPES.contains(nodeType);
     }
 
     @Override
     public boolean isTableScanNode(String nodeType) {
-        return tableScanNodeTypes.contains(nodeType);
+        return TABLE_SCAN_NODE_TYPES.contains(nodeType);
     }
 
     @Override
     public boolean isIndexScanNode(String nodeType) {
-        return indexScanNodeTypes.contains(nodeType);
+        return INDEX_SCAN_NODE_TYPES.contains(nodeType);
     }
 }

@@ -11,7 +11,7 @@ public class RawNode {
     public int rowCount;
     public String id;
 
-    public RawNode( String id, RawNode left, RawNode right, String nodeType, String operatorInfo, int rowCount) {
+    public RawNode(String id, RawNode left, RawNode right, String nodeType, String operatorInfo, int rowCount) {
         this.id = id;
         this.left = left;
         this.right = right;
