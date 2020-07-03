@@ -19,7 +19,7 @@ public class Preprocessor {
      * @param schemas 输入的乱序的表结构
      * @return 按照拓扑序排序的表结构
      */
-    public static List<Schema> getTableOrder(Map<String, Schema> schemas) {
+    public static List<Schema> getTableOrder(Map<String, Schema> schemas) throws TouchstoneToolChainException {
 
         List<Schema> tableOrder = new ArrayList<Schema>();
 
@@ -40,6 +40,8 @@ public class Preprocessor {
             }
         }
 
+        List<Schema> lastTableOrder = new ArrayList<Schema>();//记录经过上一次循环后的拓扑序
+
         Iterator<HashMap.Entry<Schema, ArrayList<String>>> iterator = tableDependencyInfo.entrySet().iterator();
         while (true) {
             while (iterator.hasNext()) {
@@ -49,14 +51,15 @@ public class Preprocessor {
                     iterator.remove();//将已经加入排序的schema从tableDependencyInfo里移除
                 }
             }
+
             if (tableOrder.size() == schemas.size()) {
                 break;
             }
-            if(!iterator.hasNext() && tableOrder.size()<schemas.size()){
-                logger.error("该数据库表中外键约束不完整");
-                break;
+            if(tableOrder.size() == lastTableOrder.size()){ //如果本轮循环中没有加入新的表
+                throw new TouchstoneToolChainException("该数据库表中外键约束不完整");
             }
             iterator = tableDependencyInfo.entrySet().iterator();
+            lastTableOrder = tableOrder;
         }
 
         logger.info("\nThe order of tables: \n\t" + tableOrder);
