@@ -14,50 +14,54 @@ public class Preprocessor {
 
     private static final Logger logger = LoggerFactory.getLogger(Preprocessor.class);
 
-    public static List<String> getTableOrder(List<Schema> schemas) {
+    /**
+     * Map<String, Schema>中，String是表名，Schema是表结构
+     * @param schemas 输入的乱序的表结构
+     * @return 按照拓扑序排序的表结构
+     */
+    public static List<Schema> getTableOrder(Map<String, Schema> schemas) {
 
-        Set<String> allSchemas = new HashSet<String>();
-
-        //含有外键的schemas
-        Set<String> schemasWithFK = new HashSet<String>();
+        List<Schema> tableOrder = new ArrayList<Schema>();
 
         // map: tables -> referenced tables
-        Map<String, ArrayList<String>> tableDependencyInfo = new HashMap<String, ArrayList<String>>();
+        HashMap<Schema, ArrayList<String>> tableDependencyInfo = new HashMap<Schema, ArrayList<String>>();
 
-        for (int i = 0; i < schemas.size(); i++) {
-            Schema schema = schemas.get(i);
-            allSchemas.add(schema.getTableName());
+        for(Schema schema : schemas.values()) {
             if (schema.getForeignKeys().size() != 0) {
-                schemasWithFK.add(schema.getTableName());
                 HashMap<String, String> foreignKeys = schema.getForeignKeys();
                 ArrayList<String> referencedTables = new ArrayList<String>();
                 for (int j = 0; j < foreignKeys.size(); j++) {
                     referencedTables.add(foreignKeys.get(j).split("\\.")[0]);
                 }
-                tableDependencyInfo.put(schema.getTableName(), referencedTables);
+                tableDependencyInfo.put(schema, referencedTables);
+            }
+            else {
+                tableOrder.add(schema);
             }
         }
 
-        //先剩下只被依赖的schema
-        allSchemas.removeAll(schemasWithFK);
-        Set<String> tableOrder = new LinkedHashSet<String>();
-        tableOrder.addAll(allSchemas);
-        Iterator<Map.Entry<String, ArrayList<String>>> iterator = tableDependencyInfo.entrySet().iterator();
+        Iterator<HashMap.Entry<Schema, ArrayList<String>>> iterator = tableDependencyInfo.entrySet().iterator();
         while (true) {
             while (iterator.hasNext()) {
-                Map.Entry<String, ArrayList<String>> entry = iterator.next();
+                HashMap.Entry<Schema, ArrayList<String>> entry = iterator.next();
                 if (tableOrder.containsAll(entry.getValue())) {
                     tableOrder.add(entry.getKey());
+                    iterator.remove();//将已经加入排序的schema从tableDependencyInfo里移除
                 }
             }
             if (tableOrder.size() == schemas.size()) {
+                break;
+            }
+            if(!iterator.hasNext() && tableOrder.size()<schemas.size()){
+                logger.error("该数据库表中外键约束不完整");
                 break;
             }
             iterator = tableDependencyInfo.entrySet().iterator();
         }
 
         logger.info("\nThe order of tables: \n\t" + tableOrder);
-        return tableOrder.stream().collect(Collectors.toList());
+
+        return tableOrder;
     }
 
 }
