@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  */
 public class Preprocessor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Preprocessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(Preprocessor.class);
 
     public static List<String> getTableOrder(List<Schema> schemas) {
 
@@ -56,7 +56,7 @@ public class Preprocessor {
             iterator = tableDependencyInfo.entrySet().iterator();
         }
 
-        LOGGER.info("\nThe order of tables: \n\t" + tableOrder);
+        logger.info("\nThe order of tables: \n\t" + tableOrder);
         return tableOrder.stream().collect(Collectors.toList());
     }
 
