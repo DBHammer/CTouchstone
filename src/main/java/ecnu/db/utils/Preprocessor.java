@@ -40,7 +40,7 @@ public class Preprocessor {
             }
         }
 
-        List<Schema> lastTableOrder = new ArrayList<Schema>();//记录经过上一次循环后的拓扑序
+        int lastTableOrderSize = tableOrder.size();//记录经过上一次循环后的拓扑序中table的数量
 
         Iterator<HashMap.Entry<Schema, ArrayList<String>>> iterator = tableDependencyInfo.entrySet().iterator();
         while (true) {
@@ -55,11 +55,11 @@ public class Preprocessor {
             if (tableOrder.size() == schemas.size()) {
                 break;
             }
-            if(tableOrder.size() == lastTableOrder.size()){ //如果本轮循环中没有加入新的表
+            if(tableOrder.size() == lastTableOrderSize){ //如果本轮循环中没有加入新的表
                 throw new TouchstoneToolChainException("该数据库表中外键约束不完整");
             }
             iterator = tableDependencyInfo.entrySet().iterator();
-            lastTableOrder = tableOrder;
+            lastTableOrderSize = tableOrder.size();
         }
 
         logger.info("\nThe order of tables: \n\t" + tableOrder);
