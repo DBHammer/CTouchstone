@@ -7,14 +7,14 @@ import java.util.LinkedList;
  * @author wangqingshuai
  */
 public class AndLogicalNode implements LogicalNode {
-    LinkedList<LogicalNode> logicalNodes;
+    LinkedList<LogicalNode> children;
 
     public AndLogicalNode() {
-        this.logicalNodes = new LinkedList<LogicalNode>();
+        this.children = new LinkedList<LogicalNode>();
     }
 
-    public void addLogicalNode(LogicalNode logicalNode) {
-        logicalNodes.add(logicalNode);
+    public void addChild(LogicalNode logicalNode) {
+        children.add(logicalNode);
     }
 
     /**
