@@ -8,16 +8,16 @@ import java.util.Arrays;
 /**
  * @author wangqingshuai
  */
-public class DeterminedValueVector implements ArithmeticNode {
+public class ConstantValueVector implements ArithmeticNode {
     private final float determinedValue;
     private final int size;
 
-    public DeterminedValueVector(float determinedValue, int size) {
+    public ConstantValueVector(float determinedValue, int size) {
         this.determinedValue = determinedValue;
         this.size = size;
     }
 
-    public DeterminedValueVector(int determinedValue, int size) {
+    public ConstantValueVector(int determinedValue, int size) {
         this.determinedValue = determinedValue;
         this.size = size;
     }
