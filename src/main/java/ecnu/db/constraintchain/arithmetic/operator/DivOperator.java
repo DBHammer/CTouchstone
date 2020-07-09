@@ -5,15 +5,15 @@ import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 /**
  * @author wangqingshuai
  */
-public class SubOperator extends AbstractArithmeticOperator {
-    public SubOperator(ArithmeticNode leftNode, ArithmeticNode rightNode) {
+public class DivOperator extends AbstractArithmeticOperator {
+    public DivOperator(ArithmeticNode leftNode, ArithmeticNode rightNode) {
         super(leftNode, rightNode);
     }
 
     @Override
     float[] getValue(float[] leftValue, float[] rightValue) {
         for (int i = 0; i < leftValue.length; i++) {
-            leftValue[i] -= rightValue[i];
+            leftValue[i] /= rightValue[i];
         }
         return leftValue;
     }
