@@ -31,5 +31,6 @@ result
 conf
 dependency-reduced-pom.xml
 
-# ignore jflex generated files
-src/main/java/ecnu/db/analyzer/online/select/SelectOperatorInfoLexer.java
+# ignore jflex generated files and idea backups
+SelectOperatorInfoLexer.java
+SelectOperatorInfoLexer.java~
