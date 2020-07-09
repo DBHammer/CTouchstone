@@ -6,10 +6,16 @@ import java.math.BigDecimal;
  * @author wangqingshuai
  */
 public class OrLogicalNode implements LogicalNode {
-    LogicalNode leftNode;
-    LogicalNode rightNode;
+    private LogicalNode leftNode;
+    private LogicalNode rightNode;
+
+    public OrLogicalNode() {}
 
     public OrLogicalNode(LogicalNode leftNode) {
+        this.leftNode = leftNode;
+    }
+
+    public void setLeftNode(LogicalNode leftNode) {
         this.leftNode = leftNode;
     }
 
