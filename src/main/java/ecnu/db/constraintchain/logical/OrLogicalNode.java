@@ -9,12 +9,6 @@ public class OrLogicalNode implements LogicalNode {
     private LogicalNode leftNode;
     private LogicalNode rightNode;
 
-    public OrLogicalNode() {}
-
-    public OrLogicalNode(LogicalNode leftNode) {
-        this.leftNode = leftNode;
-    }
-
     public void setLeftNode(LogicalNode leftNode) {
         this.leftNode = leftNode;
     }
