@@ -1,5 +1,8 @@
 package ecnu.db.analyzer.online.select;
 
+/**
+ * @author alan
+ */
 class Yytoken {
     public TokenType type;
     public String data;

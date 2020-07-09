@@ -1,9 +1,14 @@
 package ecnu.db.analyzer.online.select;
 
-/** The tokens returned by the scanner. */
-
+/**
+ * @author alan
+ */
 enum TokenType {
-    /*
+    /**
+     * logical_oprator: and, or, not
+     * arithmetic_operator: mul, plus, minus, div
+     * isnull_operator: isnull
+     * compare_operator: le, ge, lt, gt, eq, ne, like, in
      */
     LOGIC_OPERATOR,
     ARITHMETIC_OPERATOR,
