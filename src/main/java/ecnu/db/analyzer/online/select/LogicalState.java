@@ -5,6 +5,7 @@ import ecnu.db.utils.exception.IllegalTokenException;
 
 /**
  * @author alan
+ * 只能接受逻辑节点,单变量比较节点(lt,gt,etc.),多变量比较节点(in,like),ISNULL节点,NOT节点作为root子节点
  */
 public class LogicalState extends BaseState {
     public LogicalState(BaseState preState, SelectNode root) {

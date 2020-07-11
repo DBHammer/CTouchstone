@@ -5,6 +5,7 @@ import ecnu.db.utils.exception.IllegalTokenException;
 
 /**
  * @author alan
+ * 只能接受列名节点作为root子节点
  */
 public class IsNullState extends BaseState {
     public IsNullState(BaseState preState, SelectNode root) {

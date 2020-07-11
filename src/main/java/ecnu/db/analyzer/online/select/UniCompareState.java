@@ -5,6 +5,7 @@ import ecnu.db.utils.exception.IllegalTokenException;
 
 /**
  * @author alan
+ * 只能接受常量节点,计算节点,列名节点作为root子节点
  */
 public class UniCompareState extends BaseState {
     public UniCompareState(BaseState preState, SelectNode root) {

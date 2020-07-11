@@ -12,20 +12,20 @@ public class NotState extends BaseState {
     }
 
     @Override
-    public BaseState handle(Token yytoken) throws TouchstoneToolChainException {
+    public BaseState handle(Token token) throws TouchstoneToolChainException {
         SelectNode newRoot;
-        switch (yytoken.type) {
+        switch (token.type) {
             case ISNULL_OPERATOR:
-                newRoot = new SelectNode(yytoken);
+                newRoot = new SelectNode(token);
                 return new IsNullState(this, newRoot);
             case MULTI_COMPARE_OPERATOR:
-                newRoot = new SelectNode(yytoken);
+                newRoot = new SelectNode(token);
                 return new MultiCompareState(this, newRoot);
             case RIGHT_PARENTHESIS:
                 preState.addArgument(root);
                 return preState;
             default:
-                throw new IllegalTokenException(yytoken);
+                throw new IllegalTokenException(token);
         }
     }
 
