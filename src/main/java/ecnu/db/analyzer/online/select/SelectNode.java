@@ -38,9 +38,6 @@ public class SelectNode {
     @Override
     public String toString() {
         if (token.type == TokenType.CONSTANT || token.type == TokenType.CANONICAL_COL_NAME) {
-            if ("STRING".equals(token.constantType)) {
-                return String.format("\"%s\"", token.data);
-            }
             return token.data;
         }
         String arguments = children.stream().map(SelectNode::toString).collect(Collectors.joining(", "));

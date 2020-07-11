@@ -89,7 +89,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
 <STRING> {
   \" {
     yybegin(YYINITIAL);
-    return (new Token(TokenType.CONSTANT, str_buff.toString(), "STRING", yyline, yychar));
+    return (new Token(TokenType.CONSTANT, "\"" + str_buff.toString() + "\"", "STRING", yyline, yychar));
   }
   [^\n\r\"\\]+                   { str_buff.append( yytext() ); }
   \\t                            { str_buff.append('\t'); }
