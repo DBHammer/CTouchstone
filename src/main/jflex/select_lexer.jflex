@@ -1,7 +1,9 @@
 package ecnu.db.analyzer.online.select.tidb;
 
 import ecnu.db.utils.TouchstoneToolChainException;
+import ecnu.db.utils.exception.IllegalCharacterException;
 import ecnu.db.analyzer.online.select.Token;
+import ecnu.db.analyzer.online.select.TokenType;
 %%
 
 %public
@@ -41,39 +43,39 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
 <YYINITIAL> {
   {ARITHMETIC_OPERATOR}\( {
     String str = yytext();
-    return (new Yytoken(TokenType.ARITHMETIC_OPERATOR, str.substring(0, str.length() - 1)));
+    return (new Token(TokenType.ARITHMETIC_OPERATOR, str.substring(0, str.length() - 1), yyline, yychar));
   }
   {LOGICAL_OPERATOR}\( {
     String str = yytext();
-    return (new Yytoken(TokenType.LOGICAL_OPERATOR, str.substring(0, str.length() -1)));
+    return (new Token(TokenType.LOGICAL_OPERATOR, str.substring(0, str.length() -1), yyline, yychar));
   }
   {ISNULL_OPERATOR}\( {
     String str = yytext();
-    return (new Yytoken(TokenType.ISNULL_OPERATOR, str.substring(0, str.length() -1)));
+    return (new Token(TokenType.ISNULL_OPERATOR, str.substring(0, str.length() -1), yyline, yychar));
   }
   {NOT_OPERATOR}\( {
     String str = yytext();
-    return (new Yytoken(TokenType.NOT_OPERATOR, str.substring(0, str.length() -1)));
+    return (new Token(TokenType.NOT_OPERATOR, str.substring(0, str.length() -1), yyline, yychar));
   }
   {UNI_COMPARE_OPERATOR}\( {
     String str = yytext();
-    return (new Yytoken(TokenType.UNI_COMPARE_OPERATOR, str.substring(0, str.length() -1)));
+    return (new Token(TokenType.UNI_COMPARE_OPERATOR, str.substring(0, str.length() -1), yyline, yychar));
   }
   {MULTI_COMPARE_OPERATOR}\( {
     String str = yytext();
-    return (new Yytoken(TokenType.MULTI_COMPARE_OPERATOR, str.substring(0, str.length() -1)));
+    return (new Token(TokenType.MULTI_COMPARE_OPERATOR, str.substring(0, str.length() -1), yyline, yychar));
   }
   {CANONICAL_COL_NAME} {
-    return (new Yytoken(TokenType.CANONICAL_COL_NAME, yytext()));
+    return (new Token(TokenType.CANONICAL_COL_NAME, yytext(), yyline, yychar));
   }
   {DATE} {
-    return (new Yytoken(TokenType.CONSTANT, yytext(), "DATE"));
+    return (new Token(TokenType.CONSTANT, yytext(), "DATE", yyline, yychar));
   }
   {FLOAT} {
-    return (new Yytoken(TokenType.CONSTANT, yytext(), "FLOAT"));
+    return (new Token(TokenType.CONSTANT, yytext(), "FLOAT", yyline, yychar));
   }
   {INTEGER} {
-    return (new Yytoken(TokenType.CONSTANT, yytext(), "INTEGER"));
+    return (new Token(TokenType.CONSTANT, yytext(), "INTEGER", yyline, yychar));
   }
   \" {
     str_buff.setLength(0); yybegin(STRING);
@@ -81,13 +83,13 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   ", " {}
   {WHITE_SPACE_CHAR}+ {}
   \) {
-     return (new Yytoken(TokenType.RIGHT_PARENTHESIS, yytext()));
+     return (new Token(TokenType.RIGHT_PARENTHESIS, yytext(), yyline, yychar));
   }
 }
 <STRING> {
   \" {
     yybegin(YYINITIAL);
-    return (new Yytoken(TokenType.CONSTANT, str_buff.toString(), "STRING"));
+    return (new Token(TokenType.CONSTANT, str_buff.toString(), "STRING", yyline, yychar));
   }
   [^\n\r\"\\]+                   { str_buff.append( yytext() ); }
   \\t                            { str_buff.append('\t'); }
@@ -98,6 +100,6 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
 }
 
 . {
-   throw new TouchstoneToolChainException(String.format("非法字符 %s", yytext()));
+   throw new IllegalCharacterException(yytext(), yyline, yychar);
 }
 

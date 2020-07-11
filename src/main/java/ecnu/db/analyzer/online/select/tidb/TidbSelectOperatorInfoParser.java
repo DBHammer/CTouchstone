@@ -13,16 +13,16 @@ import java.io.StringReader;
 public class TidbSelectOperatorInfoParser {
     public static SelectNode parse(@NonNull String operatorInfo) throws TouchstoneToolChainException, IOException {
         StringReader stringReader = new StringReader(operatorInfo);
-        Token andToken = new Token(TokenType.LOGICAL_OPERATOR, "and");
+        Token andToken = new Token(TokenType.LOGICAL_OPERATOR, "and", -1, -1);
         SelectNode root = new SelectNode(andToken);
         TidbSelectOperatorInfoLexer lexer = new TidbSelectOperatorInfoLexer(stringReader);
         BaseState state = new LogicalState(null, root);
         do {
-            Token yytoken = lexer.yylex();
-            if (yytoken == null) {
+            Token token = lexer.yylex();
+            if (token == null) {
                 break;
             }
-            state = state.handle(yytoken);
+            state = state.handle(token);
         } while(!lexer.yyatEOF());
 
         return root;
