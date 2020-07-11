@@ -5,13 +5,13 @@ import ecnu.db.utils.TouchstoneToolChainException;
 /**
  * @author alan
  */
-public class NotState extends State {
-    public NotState(State preState, SelectNode root) {
+public class NotState extends BaseState {
+    public NotState(BaseState preState, SelectNode root) {
         super(preState, root);
     }
 
     @Override
-    public State handle(Yytoken yytoken) throws TouchstoneToolChainException {
+    public BaseState handle(Token yytoken) throws TouchstoneToolChainException {
         SelectNode newRoot;
         switch (yytoken.type) {
             case ISNULL_OPERATOR:

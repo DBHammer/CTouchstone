@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 /**
  * @author alan
  */
-class SelectNode {
-    private final Yytoken token;
-    public SelectNode(Yytoken token) {
+public class SelectNode {
+    private final Token token;
+    public SelectNode(Token token) {
         this.token = token;
     }
     private final List<SelectNode> children = new ArrayList<>();
@@ -17,7 +17,7 @@ class SelectNode {
         this.children.add(node);
     }
 
-    public Yytoken getToken() {
+    public Token getToken() {
         return token;
     }
 

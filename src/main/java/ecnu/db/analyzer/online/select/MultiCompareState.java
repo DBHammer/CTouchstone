@@ -5,13 +5,13 @@ import ecnu.db.utils.TouchstoneToolChainException;
 /**
  * @author alan
  */
-public class MultiCompareState extends State {
-    public MultiCompareState(State preState, SelectNode root) {
+public class MultiCompareState extends BaseState {
+    public MultiCompareState(BaseState preState, SelectNode root) {
         super(preState, root);
     }
 
     @Override
-    public State handle(Yytoken yytoken) throws TouchstoneToolChainException {
+    public BaseState handle(Token yytoken) throws TouchstoneToolChainException {
         SelectNode newRoot;
         switch (yytoken.type) {
             case CANONICAL_COL_NAME:

@@ -1,10 +1,11 @@
-package ecnu.db.analyzer.online.select;
+package ecnu.db.analyzer.online.select.tidb;
 
 import ecnu.db.utils.TouchstoneToolChainException;
+import ecnu.db.analyzer.online.select.Token;
 %%
 
 %public
-%class SelectOperatorInfoLexer
+%class TidbSelectOperatorInfoLexer
 /* throws TouchstoneToolChainException */
 %yylexthrow{
 ecnu.db.utils.TouchstoneToolChainException
@@ -19,6 +20,7 @@ ecnu.db.utils.TouchstoneToolChainException
 %char
 %state STRING
 %unicode
+%type Token
 
 /* tokens */
 DIGIT=[0-9]

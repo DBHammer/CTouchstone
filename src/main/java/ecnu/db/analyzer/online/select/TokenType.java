@@ -3,7 +3,7 @@ package ecnu.db.analyzer.online.select;
 /**
  * @author alan
  */
-enum TokenType {
+public enum TokenType {
     /**
      * logical_operator: and, or
      * arithmetic_operator: mul, plus, minus, div

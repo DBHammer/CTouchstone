@@ -5,12 +5,12 @@ import ecnu.db.utils.TouchstoneToolChainException;
 /**
  * @author alan
  */
-abstract class State {
-    protected State preState;
+public abstract class BaseState {
+    protected BaseState preState;
     protected SelectNode root;
-    public abstract State handle(Yytoken yytoken) throws TouchstoneToolChainException;
+    public abstract BaseState handle(Token yytoken) throws TouchstoneToolChainException;
     public abstract void addArgument(SelectNode node) throws TouchstoneToolChainException;
-    public State(State preState, SelectNode root) {
+    public BaseState(BaseState preState, SelectNode root) {
         this.preState = preState;
         this.root = root;
     }
