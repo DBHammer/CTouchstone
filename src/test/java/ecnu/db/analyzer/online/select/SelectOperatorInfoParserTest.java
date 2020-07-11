@@ -34,4 +34,16 @@ public class SelectOperatorInfoParserTest {
             TidbSelectOperatorInfoParser.parse("or(ge(db.table.col1, 2), mul(db.table.col2, 3))");
         });
     }
+    @DisplayName("test SelectOperatorInfoParser.parse method with not")
+    @Test()
+    void testParseWithNot() throws Exception {
+        SelectNode node = TidbSelectOperatorInfoParser.parse("or(ge(db.table.col1, 2), not(in(db.table.col2, \"3\", \"2\")))");
+        assertEquals(node.toString(), "and(or(ge(db.table.col1, 2), not(in(db.table.col2, \"3\", \"2\"))))");
+    }
+    @DisplayName("test SelectOperatorInfoParser.parse method with isnull")
+    @Test()
+    void testParseWithIsnull() throws Exception {
+        SelectNode node = TidbSelectOperatorInfoParser.parse("or(ge(db.table.col1, 2), not(isnull(db.table.col2)))");
+        assertEquals(node.toString(), "and(or(ge(db.table.col1, 2), not(isnull(db.table.col2))))");
+    }
 }
