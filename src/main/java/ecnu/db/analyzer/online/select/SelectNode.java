@@ -8,11 +8,11 @@ import java.util.stream.Collectors;
  * @author alan
  */
 public class SelectNode {
-    private final Token token;
+    private Token token;
+    private List<SelectNode> children = new ArrayList<>();
     public SelectNode(Token token) {
         this.token = token;
     }
-    private final List<SelectNode> children = new ArrayList<>();
     public void addChild(SelectNode node) {
         this.children.add(node);
     }
@@ -25,6 +25,10 @@ public class SelectNode {
         return children;
     }
 
+    public void setChildren(List<SelectNode> children) {
+        this.children = children;
+    }
+
     @Override
     public String toString() {
         if (token.type == TokenType.CONSTANT || token.type == TokenType.CANONICAL_COL_NAME) {
@@ -33,5 +37,9 @@ public class SelectNode {
         String arguments = children.stream().map(SelectNode::toString).collect(Collectors.joining(", "));
         String str = String.format("%s(%s)", token.data, arguments);
         return str;
+    }
+
+    public void setToken(Token token) {
+        this.token = token;
     }
 }
