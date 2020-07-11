@@ -1,6 +1,7 @@
 package ecnu.db.analyzer.online.select;
 
 import ecnu.db.utils.TouchstoneToolChainException;
+import ecnu.db.utils.exception.IllegalTokenException;
 
 /**
  * @author alan
@@ -24,7 +25,7 @@ public class NotState extends BaseState {
                 preState.addArgument(root);
                 return preState;
             default:
-                throw new TouchstoneToolChainException(String.format("非法的token %s", yytoken));
+                throw new IllegalTokenException(yytoken);
         }
     }
 

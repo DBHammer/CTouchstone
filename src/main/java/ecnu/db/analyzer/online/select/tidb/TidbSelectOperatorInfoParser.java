@@ -11,6 +11,13 @@ import java.io.StringReader;
  * @author alan
  */
 public class TidbSelectOperatorInfoParser {
+    /**
+     * 解析operatorInfo为AST
+     * @param operatorInfo 需要解析的AST
+     * @return 解析好的AST
+     * @throws TouchstoneToolChainException 解析失败
+     * @throws IOException 解析失败
+     */
     public static SelectNode parse(@NonNull String operatorInfo) throws TouchstoneToolChainException, IOException {
         StringReader stringReader = new StringReader(operatorInfo);
         Token andToken = new Token(TokenType.LOGICAL_OPERATOR, "and", -1, -1);

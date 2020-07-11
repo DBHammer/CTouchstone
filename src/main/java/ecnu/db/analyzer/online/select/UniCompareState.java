@@ -1,6 +1,7 @@
 package ecnu.db.analyzer.online.select;
 
 import ecnu.db.utils.TouchstoneToolChainException;
+import ecnu.db.utils.exception.IllegalTokenException;
 
 /**
  * @author alan
@@ -11,22 +12,22 @@ public class UniCompareState extends BaseState {
     }
 
     @Override
-    public BaseState handle(Token yytoken) throws TouchstoneToolChainException {
+    public BaseState handle(Token token) throws TouchstoneToolChainException {
         SelectNode newRoot;
-        switch (yytoken.type) {
+        switch (token.type) {
             case ARITHMETIC_OPERATOR:
-                newRoot = new SelectNode(yytoken);
+                newRoot = new SelectNode(token);
                 return new ArithmeticState(this, newRoot);
             case CANONICAL_COL_NAME:
             case CONSTANT:
-                newRoot = new SelectNode(yytoken);
+                newRoot = new SelectNode(token);
                 this.addArgument(newRoot);
                 return this;
             case RIGHT_PARENTHESIS:
                 preState.addArgument(this.root);
                 return preState;
             default:
-                throw new TouchstoneToolChainException(String.format("非法的token %s", yytoken));
+                throw new IllegalTokenException(token);
         }
     }
 
