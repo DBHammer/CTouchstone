@@ -9,6 +9,11 @@ public abstract class BaseState {
     protected BaseState preState;
     protected SelectNode root;
 
+    public BaseState(BaseState preState, SelectNode root) {
+        this.preState = preState;
+        this.root = root;
+    }
+
     /**
      * 状态转移
      *
@@ -25,9 +30,4 @@ public abstract class BaseState {
      * @throws TouchstoneToolChainException 添加失败
      */
     public abstract void addArgument(SelectNode node) throws TouchstoneToolChainException;
-
-    public BaseState(BaseState preState, SelectNode root) {
-        this.preState = preState;
-        this.root = root;
-    }
 }

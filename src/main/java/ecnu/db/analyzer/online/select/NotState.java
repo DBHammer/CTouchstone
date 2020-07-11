@@ -5,6 +5,7 @@ import ecnu.db.utils.exception.IllegalTokenException;
 
 /**
  * @author alan
+ * 只能接受ISNULL节点,多变量比较节点(in,like)节点作为root子节点
  */
 public class NotState extends BaseState {
     public NotState(BaseState preState, SelectNode root) {

@@ -10,15 +10,21 @@ import java.util.stream.Collectors;
 public class SelectNode {
     private Token token;
     private List<SelectNode> children = new ArrayList<>();
+
     public SelectNode(Token token) {
         this.token = token;
     }
+
     public void addChild(SelectNode node) {
         this.children.add(node);
     }
 
     public Token getToken() {
         return token;
+    }
+
+    public void setToken(Token token) {
+        this.token = token;
     }
 
     public List<SelectNode> getChildren() {
@@ -40,9 +46,5 @@ public class SelectNode {
         String arguments = children.stream().map(SelectNode::toString).collect(Collectors.joining(", "));
         String str = String.format("%s(%s)", token.data, arguments);
         return str;
-    }
-
-    public void setToken(Token token) {
-        this.token = token;
     }
 }

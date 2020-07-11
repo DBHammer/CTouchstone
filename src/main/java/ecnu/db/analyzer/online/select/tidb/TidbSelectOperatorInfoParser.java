@@ -13,10 +13,11 @@ import java.io.StringReader;
 public class TidbSelectOperatorInfoParser {
     /**
      * 解析operatorInfo为AST
+     *
      * @param operatorInfo 需要解析的AST
      * @return 解析好的AST
      * @throws TouchstoneToolChainException 解析失败
-     * @throws IOException 解析失败
+     * @throws IOException                  解析失败
      */
     public static SelectNode parse(@NonNull String operatorInfo) throws TouchstoneToolChainException, IOException {
         StringReader stringReader = new StringReader(operatorInfo);
@@ -30,7 +31,7 @@ public class TidbSelectOperatorInfoParser {
                 break;
             }
             state = state.handle(token);
-        } while(!lexer.yyatEOF());
+        } while (!lexer.yyatEOF());
 
         return root;
     }
