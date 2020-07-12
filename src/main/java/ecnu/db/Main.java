@@ -331,8 +331,7 @@ public class Main {
 
     private static void dumpMultiCol(File dumpDir, DatabaseConnectorInterface dbConnector) throws IOException {
         File multiColMapFile = new File(dumpDir.getPath(), "multiColNdv");
-        ObjectMapper mapper = new ObjectMapper();
-        String content = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(dbConnector.getMultiColNdvMap());
+        String content = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(dbConnector.getMultiColNdvMap());
         FileUtils.writeStringToFile(multiColMapFile, content, UTF_8);
     }
 
@@ -348,8 +347,7 @@ public class Main {
             schema.setJoinTag(1);
             schema.setLastJoinTag(1);
         }
-        ObjectMapper mapper = new ObjectMapper();
-        String content = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
+        String content = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
         FileUtils.writeStringToFile(schemaFile, content, UTF_8);
     }
 
@@ -365,8 +363,7 @@ public class Main {
         if (!multiColNdvFile.isFile()) {
             throw new TouchstoneToolChainException(String.format("找不到%s", multiColNdvFile.getAbsolutePath()));
         }
-        ObjectMapper mapper = new ObjectMapper();
-        multiColNdvMap = mapper.readValue(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<HashMap<String, Integer>>(){});
+        multiColNdvMap = new ObjectMapper().readValue(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<HashMap<String, Integer>>(){});
         return multiColNdvMap;
     }
 
