@@ -103,8 +103,7 @@ public class TidbSchemaGenerator extends AbstractSchemaGenerator {
 
     @Override
     public void setDataRangeUnique(Schema schema, AbstractDbConnector dbConnector) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        TidbStatsJsonObject tidbStatsJsonObject = mapper.readValue(((TidbConnector) dbConnector).
+        TidbStatsJsonObject tidbStatsJsonObject = new ObjectMapper().readValue(((TidbConnector) dbConnector).
                 tableInfoJson(schema.getTableName()).replace(" ", ""), TidbStatsJsonObject.class);
         schema.setTableSize(tidbStatsJsonObject.getCount());
         for (AbstractColumn column : schema.getColumns().values()) {

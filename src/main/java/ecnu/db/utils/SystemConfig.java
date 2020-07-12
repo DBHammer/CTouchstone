@@ -46,8 +46,7 @@ public class SystemConfig {
         while ((line = reader.readLine()) != null) {
             configJson.append(line);
         }
-        ObjectMapper mapper = new ObjectMapper();
-        SystemConfig systemConfig = mapper.readValue(configJson.toString(), SystemConfig.class);
+        SystemConfig systemConfig = new ObjectMapper().readValue(configJson.toString(), SystemConfig.class);
         ConfigConvert.setTypeConvert(systemConfig.getTypeConvert());
         return systemConfig;
     }
