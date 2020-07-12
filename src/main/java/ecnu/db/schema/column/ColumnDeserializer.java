@@ -1,62 +1,62 @@
 package ecnu.db.schema.column;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.parser.DefaultJSONParser;
-import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
-import java.lang.reflect.Type;
+import java.io.IOException;
 
 /**
  * @author xuechao.lian
  */
-public class ColumnDeserializer implements ObjectDeserializer {
+public class ColumnDeserializer extends StdDeserializer<AbstractColumn> {
 
-    @Override
-    public <T> T deserialze(DefaultJSONParser parser, Type type, Object filedName) {
-        Integer value = null;
-        JSONObject col = parser.parseObject();
-        if (col == null) {
-            return null;
-        }
-        switch (col.getObject("columnType", ColumnType.class)) {
-            case INTEGER:
-                IntColumn intColumn = new IntColumn(col.getString("columnName"));
-                intColumn.setNullPercentage(col.getFloatValue("nullPercentage"));
-                intColumn.setNdv(col.getIntValue("ndv"));
-                intColumn.setMin(col.getIntValue("min"));
-                intColumn.setMax(col.getIntValue("max"));
-                return (T) intColumn;
-            case BOOL:
-                BoolColumn boolColumn = new BoolColumn(col.getString("columnName"));
-                boolColumn.setNullPercentage(col.getFloatValue("nullPercentage"));
-                return (T) boolColumn;
-            case DECIMAL:
-                DecimalColumn decimalColumn = new DecimalColumn(col.getString("columnName"));
-                decimalColumn.setNullPercentage(col.getFloatValue("nullPercentage"));
-                decimalColumn.setMin(col.getDoubleValue("min"));
-                decimalColumn.setMax(col.getDoubleValue("max"));
-                return (T) decimalColumn;
-            case VARCHAR:
-                StringColumn stringColumn = new StringColumn(col.getString("columnName"));
-                stringColumn.setNullPercentage(col.getFloatValue("nullPercentage"));
-                stringColumn.setNdv(col.getIntValue("ndv"));
-                stringColumn.setMaxLength(col.getIntValue("maxLength"));
-                stringColumn.setAvgLength(col.getBigDecimal("avgLength"));
-                return (T) stringColumn;
-            case DATETIME:
-                DateColumn dateColumn = new DateColumn(col.getString("columnName"));
-                dateColumn.setNullPercentage(col.getFloatValue("nullPercentage"));
-                dateColumn.setBegin(col.getString("begin"));
-                dateColumn.setEnd(col.getString("end"));
-                return (T) dateColumn;
-            default:
-        }
+    public ColumnDeserializer() {
+        this(null);
+    }
 
-        return (T) col;
+    public ColumnDeserializer(Class<?> vc) {
+        super(vc);
     }
 
     @Override
-    public int getFastMatchToken() {
-        return 0;
+    public AbstractColumn deserialize(JsonParser parser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+        JsonNode node = parser.getCodec().readTree(parser);
+        switch (ColumnType.valueOf(node.get("columnType").asText())) {
+            case INTEGER:
+                IntColumn intColumn = new IntColumn(node.get("columnName").asText());
+                intColumn.setNullPercentage(node.get("nullPercentage").floatValue());
+                intColumn.setNdv(node.get("ndv").asInt());
+                intColumn.setMin(node.get("min").asInt());
+                intColumn.setMax(node.get("max").asInt());
+                return intColumn;
+            case BOOL:
+                BoolColumn boolColumn = new BoolColumn(node.get("columnName").asText());
+                boolColumn.setNullPercentage(node.get("nullPercentage").floatValue());
+                return boolColumn;
+            case DECIMAL:
+                DecimalColumn decimalColumn = new DecimalColumn(node.get("columnName").asText());
+                decimalColumn.setNullPercentage(node.get("nullPercentage").floatValue());
+                decimalColumn.setMin(node.get("min").asInt());
+                decimalColumn.setMax(node.get("max").asInt());
+                return decimalColumn;
+            case VARCHAR:
+                StringColumn stringColumn = new StringColumn(node.get("columnName").asText());
+                stringColumn.setNullPercentage(node.get("nullPercentage").floatValue());
+                stringColumn.setNdv(node.get("ndv").asInt());
+                stringColumn.setMaxLength(node.get("maxLength").asInt());
+                stringColumn.setAvgLength(node.get("avgLength").decimalValue());
+                return stringColumn;
+            case DATETIME:
+                DateColumn dateColumn = new DateColumn(node.get("columnName").asText());
+                dateColumn.setNullPercentage(node.get("nullPercentage").floatValue());
+                dateColumn.setBegin(node.get("begin").asText());
+                dateColumn.setEnd(node.get("end").asText());
+                return dateColumn;
+            default:
+                throw new IOException(String.format("无法识别的Column数据 %s", node));
+        }
     }
 }

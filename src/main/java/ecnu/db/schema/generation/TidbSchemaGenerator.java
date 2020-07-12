@@ -1,6 +1,6 @@
 package ecnu.db.schema.generation;
 
-import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ecnu.db.dbconnector.AbstractDbConnector;
 import ecnu.db.dbconnector.TidbConnector;
 import ecnu.db.schema.Schema;
@@ -103,7 +103,8 @@ public class TidbSchemaGenerator extends AbstractSchemaGenerator {
 
     @Override
     public void setDataRangeUnique(Schema schema, AbstractDbConnector dbConnector) throws IOException {
-        TidbStatsJsonObject tidbStatsJsonObject = JSON.parseObject(((TidbConnector) dbConnector).
+        ObjectMapper mapper = new ObjectMapper();
+        TidbStatsJsonObject tidbStatsJsonObject = mapper.readValue(((TidbConnector) dbConnector).
                 tableInfoJson(schema.getTableName()).replace(" ", ""), TidbStatsJsonObject.class);
         schema.setTableSize(tidbStatsJsonObject.getCount());
         for (AbstractColumn column : schema.getColumns().values()) {

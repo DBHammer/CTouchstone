@@ -1,14 +1,11 @@
 package ecnu.db.schema.column;
 
 
-import com.alibaba.fastjson.annotation.JSONType;
-
 import java.text.ParseException;
 
 /**
  * @author qingshuai.wang
  */
-@JSONType(deserializer = ColumnDeserializer.class)
 public abstract class AbstractColumn {
     private final ColumnType columnType;
     protected float nullPercentage;
