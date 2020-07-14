@@ -1,6 +1,6 @@
 package ecnu.db.utils;
 
-import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ecnu.db.schema.column.ColumnType;
 
 import java.io.BufferedReader;
@@ -46,7 +46,7 @@ public class SystemConfig {
         while ((line = reader.readLine()) != null) {
             configJson.append(line);
         }
-        SystemConfig systemConfig = JSON.parseObject(configJson.toString(), SystemConfig.class);
+        SystemConfig systemConfig = new ObjectMapper().readValue(configJson.toString(), SystemConfig.class);
         ConfigConvert.setTypeConvert(systemConfig.getTypeConvert());
         return systemConfig;
     }

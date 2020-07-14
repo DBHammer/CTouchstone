@@ -2,8 +2,9 @@ package ecnu.db;
 
 
 import com.alibaba.druid.sql.SQLUtils;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.TidbAnalyzer;
 import ecnu.db.analyzer.online.node.ExecutionNode;
@@ -13,6 +14,8 @@ import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.dbconnector.DumpFileConnector;
 import ecnu.db.dbconnector.TidbConnector;
 import ecnu.db.schema.Schema;
+import ecnu.db.schema.column.AbstractColumn;
+import ecnu.db.schema.column.ColumnDeserializer;
 import ecnu.db.schema.generation.AbstractSchemaGenerator;
 import ecnu.db.schema.generation.TidbSchemaGenerator;
 import ecnu.db.utils.ReadQuery;
@@ -320,8 +323,8 @@ public class Main {
     }
 
     private static void dumpMultiCol(File dumpDir, DatabaseConnectorInterface dbConnector) throws IOException {
-        String content = JSON.toJSONString(dbConnector.getMultiColNdvMap(), true);
         File multiColMapFile = new File(dumpDir.getPath(), "multiColNdv");
+        String content = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(dbConnector.getMultiColNdvMap());
         FileUtils.writeStringToFile(multiColMapFile, content, UTF_8);
     }
 
@@ -333,7 +336,8 @@ public class Main {
 
     private static void dumpSchemas(File dumpDir, HashMap<String, Schema> schemas) throws IOException {
         File schemaFile = new File(dumpDir, "schemas");
-        FileUtils.writeStringToFile(schemaFile, JSON.toJSONString(schemas, true), UTF_8);
+        String content = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
+        FileUtils.writeStringToFile(schemaFile, content, UTF_8);
     }
 
     private static void dumpTableNames(File dumpDir, List<String> tableNames) throws IOException {
@@ -348,8 +352,7 @@ public class Main {
         if (!multiColNdvFile.isFile()) {
             throw new TouchstoneToolChainException(String.format("找不到%s", multiColNdvFile.getAbsolutePath()));
         }
-        multiColNdvMap = JSON.parseObject(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<>() {
-        });
+        multiColNdvMap = new ObjectMapper().readValue(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<>(){});
         return multiColNdvMap;
     }
 
@@ -370,7 +373,11 @@ public class Main {
             if (!schemaFile.isFile()) {
                 throw new TouchstoneToolChainException(String.format("找不到%s", schemaFile.getAbsolutePath()));
             }
-            schemas = JSON.parseObject(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<>() {
+            ObjectMapper mapper = new ObjectMapper();
+            SimpleModule module = new SimpleModule();
+            module.addDeserializer(AbstractColumn.class, new ColumnDeserializer());
+            mapper.registerModule(module);
+            schemas = mapper.readValue(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<HashMap<String, Schema>>() {
             });
             logger.info("加载表结构和表数据分布成功");
         } else {
