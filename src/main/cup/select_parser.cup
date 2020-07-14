@@ -1,0 +1,211 @@
+import java_cup.runtime.*;
+import ecnu.db.analyzer.online.select.SelectNode;
+import ecnu.db.analyzer.online.select.Token;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+/* define how to connect to the scanner! */
+parser code {:
+  private SelectNode root = new SelectNode(TidbSelectSymbol.AND, new Token(TidbSelectSymbol.AND, -1, -1));
+  public TidbSelectOperatorInfoParser (java.io.Reader input) {
+    super(new TidbSelectOperatorInfoLexer(input));
+  }
+  public SelectNode getRoot() {
+    return this.root;
+  }
+:};
+
+/* Terminals (tokens returned by the scanner. */
+terminal   Token    PLUS, MINUS, DIV, MUL;
+terminal   Token    LPAREN, RPAREN;
+terminal   Token    ISNULL;
+terminal   Token    NOT;
+terminal   Token    AND, OR;
+terminal   Token    LT, GT, LE, GE, NE, EQ, LIKE, IN;
+terminal   Token    INTEGER;
+terminal   Token    STRING;
+terminal   Token    DATE;
+terminal   Token    CANONICAL_COLUMN_NAME;
+terminal   Token    FLOAT;
+
+/* Non terminals */
+non terminal                                expr;
+non terminal          List<SelectNode>      where_expr;
+non terminal          SelectNode            bool_expr;
+non terminal          SelectNode            logical_expr;
+non terminal          List<SelectNode>      logical_arguments;
+non terminal          SelectNode            compare_expr;
+non terminal          SelectNode            uni_compare_expr;
+non terminal          Token                 uni_compare_operator;
+non terminal          Token                 uni_compare_constant;
+non terminal          SelectNode            multi_compare_expr;
+non terminal          SelectNode            in_compare_expr;
+non terminal          List<SelectNode>      in_arguments;
+non terminal          SelectNode            like_compare_expr;
+non terminal          SelectNode            arithmetic_expr;
+non terminal          Token                 arithmetic_operator;
+non terminal          SelectNode            isnull_expr;
+non terminal          SelectNode            not_expr;
+
+/* start with */
+start with expr;
+
+/* ================= */
+/* The grammar rules */
+/* ================= */
+expr ::= where_expr:children                     {:
+                                                     for (SelectNode child: children) {
+                                                         root.addChild(child);
+                                                     }
+                                                 :}
+        ;
+where_expr ::=
+        where_expr:e2 bool_expr:e1                {:  e2.add(e1); RESULT = e2;  :}
+        | bool_expr:e                             {:
+                                                     List<SelectNode> children = new ArrayList<>();
+                                                     children.add(e);
+                                                     RESULT = children;
+                                                 :}
+        ;
+bool_expr ::=
+        logical_expr:e                           {:  RESULT = e;  :}
+        | compare_expr:e                         {:  RESULT = e;  :}
+        | isnull_expr:e                          {:  RESULT = e;  :}
+        | not_expr:e                             {:  RESULT = e;  :}
+        ;
+
+/* logical expressions */
+
+logical_expr ::=
+        OR:or LPAREN bool_expr:e1 bool_expr:e2 RPAREN      {:
+                                                                SelectNode newNode = new SelectNode(or.sym,  or);
+                                                                newNode.addChild(e1); 
+                                                                newNode.addChild(e2);
+                                                                RESULT = newNode; 
+                                                            :}
+        | AND:and LPAREN logical_arguments:children RPAREN  {:  
+                                                                SelectNode newNode = new SelectNode(and.sym,  and);
+                                                                for (SelectNode child: children) {
+                                                                    newNode.addChild(child);
+                                                                }
+                                                                RESULT = newNode; 
+                                                            :}
+        ;
+logical_arguments ::=
+        bool_expr:e1 bool_expr:e2                            {:  RESULT = new ArrayList<>(Arrays.asList(e1, e2));  :}
+        | bool_expr:e1 logical_arguments:e2                  {:  e2.add(e1);  RESULT=e2;  :}      
+        ;
+
+/* compare expressions */
+
+compare_expr ::=
+        uni_compare_expr:e                                   {:  RESULT=e;  :}  
+        | multi_compare_expr:e                               {:  RESULT=e;  :} 
+        ;
+uni_compare_expr ::=
+        uni_compare_operator:op LPAREN arithmetic_expr:e1 uni_compare_constant:constant RPAREN  {:
+                                                                                                    SelectNode newNode = new SelectNode(op.sym, op),
+                                                                                                               subNode = new SelectNode(constant.sym, constant);
+                                                                                                    newNode.addChild(e1);
+                                                                                                    newNode.addChild(subNode);
+                                                                                                    RESULT = newNode;
+                                                                                                :}
+        ;
+uni_compare_operator ::=
+        LT:lt                                                    {:  RESULT = lt;  :}
+        | GT:gt                                                  {:  RESULT = gt;  :}
+        | LE:le                                                  {:  RESULT = le;  :}
+        | GE:ge                                                  {:  RESULT = ge;  :}
+        | EQ:eq                                                  {:  RESULT = eq;  :}
+        | NE:ne                                                  {:  RESULT = ne;  :}
+        ;
+uni_compare_constant ::=
+        INTEGER:num                                              {:  RESULT = num;  :}
+        | FLOAT:num                                              {:  RESULT = num;  :}
+        | DATE:date                                              {:  RESULT = date;  :}
+        ;
+multi_compare_expr ::=                       
+        in_compare_expr:e                                        {:  RESULT=e;  :}
+        | like_compare_expr:e                                    {:  RESULT=e;  :}
+        ;
+in_compare_expr ::=
+        IN:in LPAREN CANONICAL_COLUMN_NAME:col in_arguments:arguments RPAREN      {:
+                                                                                      SelectNode newNode = new SelectNode(in.sym,  in), leftNode = new SelectNode(col.sym,  col);
+                                                                                      newNode.addChild(leftNode);
+                                                                                      for (SelectNode argument: arguments) {
+                                                                                        newNode.addChild(argument);
+                                                                                      }
+                                                                                      RESULT = newNode;
+                                                                                  :}
+        ;
+in_arguments ::=
+        STRING:str                                                                {:
+                                                                                      List<SelectNode> children = new ArrayList<>();
+                                                                                      children.add(new SelectNode(str.sym, str));
+                                                                                      RESULT = children;
+                                                                                  :}
+        | in_arguments:e1 STRING:str                                              {:
+                                                                                      SelectNode newNode = new SelectNode(str.sym, str);
+                                                                                      e1.add(newNode);
+                                                                                      RESULT = e1;
+                                                                                  :}
+        ;
+like_compare_expr ::=
+        LIKE:like LPAREN CANONICAL_COLUMN_NAME:col STRING:str INTEGER RPAREN      {:
+                                                                                      SelectNode newNode = new SelectNode(like.sym,  like),
+                                                                                                 leftNode = new SelectNode(col.sym,  col),
+                                                                                                 rightNode = new SelectNode(str.sym,  str);
+                                                                                      newNode.addChild(leftNode);
+                                                                                      newNode.addChild(rightNode);
+                                                                                      RESULT = newNode;
+                                                                                  :}
+        ;
+
+/* arithmetic expressions */
+arithmetic_expr ::=
+        arithmetic_operator:op LPAREN arithmetic_expr:e1 arithmetic_expr:e2 RPAREN            {:
+                                                                                                  SelectNode newNode = new SelectNode(op.sym, op);
+                                                                                                  newNode.addChild(e1);
+                                                                                                  newNode.addChild(e2);
+                                                                                                  RESULT = newNode;
+                                                                                              :}
+        | CANONICAL_COLUMN_NAME:col                                               {:  RESULT = new SelectNode(col.sym,  col);  :}
+        | INTEGER:num                                                             {:  RESULT = new SelectNode(num.sym,  num);  :}
+        | FLOAT:num                                                               {:  RESULT = new SelectNode(num.sym,  num);  :}
+        ;
+arithmetic_operator ::=
+        PLUS:plus                                                                 {:  RESULT = plus;  :}
+        | MINUS:minus                                                             {:  RESULT = minus;  :}
+        | MUL:mul                                                                 {:  RESULT = mul;  :}
+        | DIV:div                                                                 {:  RESULT = div;  :}
+        ;
+
+/* isnull expressions */
+isnull_expr ::=
+        ISNULL:isnull LPAREN CANONICAL_COLUMN_NAME:col RPAREN                      {:
+                                                                                      SelectNode newNode = new SelectNode(isnull.sym,  isnull),
+                                                                                      subNode = new SelectNode(col.sym,  col);
+                                                                                      newNode.addChild(subNode);
+                                                                                      RESULT = newNode;
+                                                                                  :}
+        ;
+
+/* not expressions */
+not_expr ::=
+        NOT:not LPAREN like_compare_expr:e RPAREN                                 {:
+                                                                                      SelectNode newNode = new SelectNode(not.sym,  not);
+                                                                                      newNode.addChild(e);
+                                                                                      RESULT = newNode;
+                                                                                  :}
+        | NOT:not LPAREN in_compare_expr:e RPAREN                                 {:
+                                                                                      SelectNode newNode = new SelectNode(not.sym,  not);
+                                                                                      newNode.addChild(e);
+                                                                                      RESULT = newNode;
+                                                                                  :}
+        | NOT:not LPAREN isnull_expr:e RPAREN                                     {:
+                                                                                      SelectNode newNode = new SelectNode(not.sym,  not);
+                                                                                      newNode.addChild(e);
+                                                                                      RESULT = newNode;
+                                                                                  :}
+        ;

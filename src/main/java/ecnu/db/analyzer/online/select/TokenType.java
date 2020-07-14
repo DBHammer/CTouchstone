@@ -3,22 +3,21 @@ package ecnu.db.analyzer.online.select;
 /**
  * @author alan
  */
-enum TokenType {
+public enum TokenType {
     /**
-     * logical_oprator: and, or, not
+     * logical_operator: and, or
      * arithmetic_operator: mul, plus, minus, div
      * isnull_operator: isnull
-     * compare_operator: le, ge, lt, gt, eq, ne, like, in
+     * uni_compare_operator: eq, ne, lt, gt, le, ge
+     * multi_compare_operator: like, in
      */
-    LOGIC_OPERATOR,
+    LOGICAL_OPERATOR,
+    NOT_OPERATOR,
     ARITHMETIC_OPERATOR,
     ISNULL_OPERATOR,
-    COMPARE_OPERATOR,
+    UNI_COMPARE_OPERATOR,
+    MULTI_COMPARE_OPERATOR,
     CANONICAL_COL_NAME,
-    DATE,
-    FLOAT,
-    INTEGER,
-    STRING,
-    LEFT_PARANTHESIS,
-    RIGHT_PARANTHESIS
+    CONSTANT,
+    RIGHT_PARENTHESIS
 }
