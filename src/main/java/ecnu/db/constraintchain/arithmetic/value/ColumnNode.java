@@ -27,7 +27,6 @@ public class ColumnNode extends ArithmeticNode {
         if (min > max) {
             throw new TouchstoneToolChainException("非法的随机生成定义");
         }
-        this.columnName = columnName;
         this.min = min;
         this.max = max;
     }
