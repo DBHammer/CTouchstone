@@ -15,13 +15,13 @@ public enum CompareOperator {
      */
     GT,
     /**
-     * 比较运算符，区间
-     */
-    BET,
-    /**
      * 比较运算符，等于
      */
     EQ,
+    /**
+     * 比较运算符，不等于
+     */
+    NE,
     /**
      * 比较运算符，相似
      */
@@ -29,5 +29,17 @@ public enum CompareOperator {
     /**
      * 比较运算符，包含
      */
-    IN
+    IN,
+    /**
+     * ISNULL运算符
+     */
+    ISNULL,
+    /**
+     * 小于或等于
+     */
+    LE,
+    /**
+     * 大于或等于
+     */
+    GE
 }

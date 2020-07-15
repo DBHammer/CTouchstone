@@ -115,18 +115,19 @@
                 <version>11b-20160615</version>
                 <executions>
                     <execution>
+                        <id>TidbSelectOperatorInfoParser</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
+                        <configuration>
+                            <className>TidbSelectOperatorInfoParser</className>
+                            <symbolsName>TidbSelectSymbol</symbolsName>
+                            <packageName>ecnu.db.analyzer.online.select.tidb</packageName>
+                            <cupDefinition>src/main/cup/select_parser.cup</cupDefinition>
+                            <outputDirectory>src/main/java</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <className>TidbSelectOperatorInfoParser</className>
-                    <symbolsName>TidbSelectSymbol</symbolsName>
-                    <packageName>ecnu.db.analyzer.online.select.tidb</packageName>
-                    <cupDefinition>src/main/cup/select_parser.cup</cupDefinition>
-                    <outputDirectory>src/main/java</outputDirectory>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -4,6 +4,8 @@ import ecnu.db.utils.TouchstoneToolChainException;
 import ecnu.db.utils.exception.IllegalCharacterException;
 import ecnu.db.analyzer.online.select.Token;
 import java_cup.runtime.*;
+import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
+import ecnu.db.constraintchain.filter.operation.CompareOperator;
 %%
 
 %public
@@ -16,11 +18,11 @@ ecnu.db.utils.TouchstoneToolChainException
 %{
   private StringBuilder str_buff = new StringBuilder();
   private Symbol symbol(int type) {
-    return new Token(type, yyline+1, yycolumn+1);
+    return new Token(type, yycolumn+1);
   }
 
   private Symbol symbol(int type, Object value) {
-    return new Token(type, yyline+1, yycolumn+1, value);
+    return new Token(type, yycolumn+1, value);
   }
 
   public void init() {
@@ -49,76 +51,76 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
 <YYINITIAL> {
   /* logical operators */
   "and" {
-    return symbol(AND, symbol(AND));
+    return symbol(AND);
   }
   "or" {
-    return symbol(OR, symbol(OR));
+    return symbol(OR);
   }
 
   /* compare operators */
   "in" {
-    return symbol(IN, symbol(IN));
+    return symbol(IN, CompareOperator.IN);
   }
   "like" {
-    return symbol(LIKE, symbol(LIKE));
+    return symbol(LIKE, CompareOperator.LIKE);
   }
   "lt" {
-    return symbol(LT, symbol(LT));
+    return symbol(LT, CompareOperator.LT);
   }
   "gt" {
-    return symbol(GT, symbol(GT));
+    return symbol(GT, CompareOperator.GT);
   }
   "le" {
-    return symbol(LE, symbol(LE));
+    return symbol(LE, CompareOperator.LE);
   }
   "ge" {
-    return symbol(GE, symbol(GE));
+    return symbol(GE, CompareOperator.GE);
   }
   "eq" {
-    return symbol(EQ, symbol(EQ));
+    return symbol(EQ, CompareOperator.EQ);
   }
   "ne" {
-    return symbol(NE, symbol(NE));
+    return symbol(NE, CompareOperator.NE);
   }
 
   /* isnull operators */
   "isnull" {
-    return symbol(ISNULL, symbol(ISNULL));
+    return symbol(ISNULL, CompareOperator.ISNULL);
   }
 
   /* arithmetic operators */
   "plus" {
-    return symbol(PLUS, symbol(PLUS));
+    return symbol(PLUS, ArithmeticNodeType.PLUS);
   }
   "minus" {
-    return symbol(MINUS, symbol(MINUS));
+    return symbol(MINUS, ArithmeticNodeType.MINUS);
   }
   "div" {
-    return symbol(DIV, symbol(DIV));
+    return symbol(DIV, ArithmeticNodeType.DIV);
   }
   "mul" {
-    return symbol(MUL, symbol(MUL));
+    return symbol(MUL, ArithmeticNodeType.MUL);
   }
 
   /* not operators */
   "not" {
-    return symbol(NOT, symbol(NOT));
+    return symbol(NOT);
   }
 
   /* canonical column names */
   {CANONICAL_COL_NAME} {
-    return symbol(CANONICAL_COLUMN_NAME, symbol(CANONICAL_COLUMN_NAME, yytext()));
+    return symbol(CANONICAL_COLUMN_NAME, yytext());
   }
 
   /* constants */
   {DATE} {
-    return symbol(DATE, symbol(DATE, yytext()));
+    return symbol(DATE, yytext());
   }
   {FLOAT} {
-    return symbol(FLOAT, symbol(FLOAT, Float.valueOf(yytext())));
+    return symbol(FLOAT, Float.valueOf(yytext()));
   }
   {INTEGER} {
-    return symbol(INTEGER, symbol(INTEGER, Integer.valueOf(yytext())));
+    return symbol(INTEGER, Integer.valueOf(yytext()));
   }
 
   /* delimiters */
@@ -144,7 +146,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
 <STRING_LITERAL> {
   \" {
     yybegin(YYINITIAL);
-    return symbol(STRING, symbol(STRING, str_buff.toString()));
+    return symbol(STRING, str_buff.toString());
   }
   [^\n\r\"\\]+                   { str_buff.append( yytext() ); }
   \\t                            { str_buff.append('\t'); }
