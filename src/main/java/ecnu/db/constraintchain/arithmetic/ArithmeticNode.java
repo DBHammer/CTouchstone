@@ -7,7 +7,18 @@ public abstract class ArithmeticNode {
     protected ArithmeticNode leftNode;
     protected ArithmeticNode rightNode;
     protected ArithmeticNodeType type;
-    private static Integer size;
+    private static int size;
+
+    private static class SingleExecution {
+        private SingleExecution() {}
+        private static SingleExecution singleExecution = null;
+        static void execute(int size) {
+            if (singleExecution == null) {
+                ArithmeticNode.size = size;
+                singleExecution = new SingleExecution();
+            }
+        }
+    }
 
     /**
      * 获取当前节点的计算结果
@@ -36,11 +47,11 @@ public abstract class ArithmeticNode {
         this.rightNode = rightNode;
     }
 
-    public static void setSize(Integer size) {
-        ArithmeticNode.size = size;
+    public static void setSize(int size) {
+        SingleExecution.execute(size);
     }
 
-    public static Integer getSize() {
+    public static int getSize() {
         return size;
     }
 }
