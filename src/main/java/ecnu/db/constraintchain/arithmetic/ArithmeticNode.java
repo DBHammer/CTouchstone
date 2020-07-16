@@ -11,17 +11,6 @@ public abstract class ArithmeticNode {
     protected ArithmeticNodeType type;
     protected static int size = -1;
 
-    private static class SingleExecution {
-        private SingleExecution() {}
-        private static SingleExecution singleExecution = null;
-        static void execute(int size) {
-            if (singleExecution == null) {
-                ArithmeticNode.size = size;
-                singleExecution = new SingleExecution();
-            }
-        }
-    }
-
     /**
      * 获取当前节点的计算结果
      *
@@ -51,7 +40,7 @@ public abstract class ArithmeticNode {
 
     public static void setSize(int size) throws TouchstoneToolChainException {
         if (ArithmeticNode.size == -1){
-            ArithmeticNode.size=size;
+            ArithmeticNode.size = size;
         }else{
              throw new TouchstoneToolChainException("不应该重复设置size");
         }
