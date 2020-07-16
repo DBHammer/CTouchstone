@@ -7,13 +7,12 @@ import ecnu.db.constraintchain.arithmetic.operator.PlusNode;
 import ecnu.db.constraintchain.arithmetic.value.ColumnNode;
 import ecnu.db.constraintchain.arithmetic.value.NumericNode;
 import ecnu.db.utils.TouchstoneToolChainException;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * @author alan
  */
 public class ArithmeticNodeFactory {
-    public static ArithmeticNode create(@NonNull ArithmeticNodeType type) throws TouchstoneToolChainException {
+    public static ArithmeticNode create(ArithmeticNodeType type) throws TouchstoneToolChainException {
         ArithmeticNode node = null;
         switch (type) {
             case DIV:
@@ -35,7 +34,7 @@ public class ArithmeticNodeFactory {
                 node = new ColumnNode();
                 break;
             default:
-                throw new TouchstoneToolChainException("未识别的ArithmeticNodeType");
+                throw new TouchstoneToolChainException(String.format("未识别的ArithmeticNodeType %s", type));
         }
 
         return node;

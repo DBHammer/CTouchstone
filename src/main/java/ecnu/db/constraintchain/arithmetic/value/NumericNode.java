@@ -1,7 +1,6 @@
 package ecnu.db.constraintchain.arithmetic.value;
 
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
-import ecnu.db.utils.TouchstoneToolChainException;
 
 import java.util.Arrays;
 
@@ -10,10 +9,6 @@ import java.util.Arrays;
  */
 public class NumericNode extends ArithmeticNode {
     private Float constant;
-
-    public NumericNode() {
-        super(null, null);
-    }
 
     public void setConstant(float constant) {
         this.constant = constant;
@@ -24,7 +19,7 @@ public class NumericNode extends ArithmeticNode {
     }
 
     @Override
-    public float[] getVector() throws TouchstoneToolChainException {
+    public float[] getVector() {
         int size = ArithmeticNode.getSize();
         float[] value = new float[size];
         Arrays.fill(value, constant);
