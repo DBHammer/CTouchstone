@@ -1,5 +1,7 @@
 package ecnu.db.constraintchain.arithmetic;
 
+import ecnu.db.utils.TouchstoneToolChainException;
+
 /**
  * @author wangqingshuai
  */
@@ -7,7 +9,7 @@ public abstract class ArithmeticNode {
     protected ArithmeticNode leftNode;
     protected ArithmeticNode rightNode;
     protected ArithmeticNodeType type;
-    private static int size;
+    protected static int size = -1;
 
     private static class SingleExecution {
         private SingleExecution() {}
@@ -47,11 +49,11 @@ public abstract class ArithmeticNode {
         this.rightNode = rightNode;
     }
 
-    public static void setSize(int size) {
-        SingleExecution.execute(size);
-    }
-
-    public static int getSize() {
-        return size;
+    public static void setSize(int size) throws TouchstoneToolChainException {
+        if (ArithmeticNode.size == -1){
+            ArithmeticNode.size=size;
+        }else{
+             throw new TouchstoneToolChainException("不应该重复设置size");
+        }
     }
 }

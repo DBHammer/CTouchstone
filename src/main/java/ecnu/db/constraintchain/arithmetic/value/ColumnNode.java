@@ -37,7 +37,7 @@ public class ColumnNode extends ArithmeticNode {
 
     @Override
     public float[] getVector() {
-        int size = ArithmeticNode.getSize();
+        int size = ArithmeticNode.size;
         float[] value = new float[size];
         float bound = max - min;
         ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
