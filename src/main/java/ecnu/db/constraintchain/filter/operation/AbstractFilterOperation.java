@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author wangqingshuai
  */
-public abstract class AbstractFilterOperation extends BoolExprNode {
+public abstract class AbstractFilterOperation implements BoolExprNode {
     /**
      * 此filter包含的参数
      */
@@ -22,7 +22,7 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
     /**
      * 此filter operation的过滤比
      */
-    protected double probability;
+    protected BigDecimal probability;
 
     /**
      * 计算Filter Operation实例化的参数
@@ -31,7 +31,7 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
 
     @Override
     public void calculateProbability(BigDecimal probability) {
-        this.probability = probability.doubleValue();
+        this.probability = probability;
     }
 
     public AbstractFilterOperation(CompareOperator operator) {

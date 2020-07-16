@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 /**
  * @author wangqingshuai
  */
-public class AndNode extends BoolExprNode {
+public class AndNode implements BoolExprNode {
     private final BoolExprType type = BoolExprType.AND;
     private final LinkedList<BoolExprNode> children;
 

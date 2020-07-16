@@ -4,14 +4,15 @@ import ecnu.db.constraintchain.arithmetic.operator.DivNode;
 import ecnu.db.constraintchain.arithmetic.operator.MinusNode;
 import ecnu.db.constraintchain.arithmetic.operator.MulNode;
 import ecnu.db.constraintchain.arithmetic.operator.PlusNode;
-import ecnu.db.constraintchain.arithmetic.value.NumericNode;
 import ecnu.db.constraintchain.arithmetic.value.ColumnNode;
+import ecnu.db.constraintchain.arithmetic.value.NumericNode;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * @author alan
  */
 public class ArithmeticNodeFactory {
-    public static ArithmeticNode create(ArithmeticNodeType type) {
+    public static ArithmeticNode create(@NonNull ArithmeticNodeType type) {
         ArithmeticNode node = null;
         switch (type) {
             case DIV:

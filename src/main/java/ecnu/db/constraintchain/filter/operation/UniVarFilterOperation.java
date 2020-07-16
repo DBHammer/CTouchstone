@@ -45,7 +45,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         return hasNot;
     }
 
-    public void setHasNot(Boolean not) {
-        hasNot = not;
+    public void setHasNot(Boolean hasNot) {
+        this.hasNot = hasNot;
     }
 }

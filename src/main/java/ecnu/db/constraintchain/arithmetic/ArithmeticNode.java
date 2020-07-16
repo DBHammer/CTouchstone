@@ -46,9 +46,6 @@ public abstract class ArithmeticNode {
         this.rightNode = rightNode;
     }
 
-    @Override
-    public abstract String toString();
-
     public static void setSize(Integer size) {
         ArithmeticNode.size = size;
     }

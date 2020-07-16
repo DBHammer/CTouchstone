@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 /**
  * @author wangqingshuai
  */
-public class OrNode extends BoolExprNode {
+public class OrNode implements BoolExprNode {
     private BoolExprNode leftNode;
     private BoolExprNode rightNode;
     private final BoolExprType type = BoolExprType.OR;
