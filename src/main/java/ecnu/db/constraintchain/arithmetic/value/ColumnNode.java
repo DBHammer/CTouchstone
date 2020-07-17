@@ -8,22 +8,36 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * @author wangqingshuai
  */
-public class RandomFloatValueVector implements ArithmeticNode {
-    private final float min;
-    private final float max;
-    private final int size;
+public class ColumnNode extends ArithmeticNode {
+    private String columnName;
+    private float min;
+    private float max;
 
-    public RandomFloatValueVector(float min, float max, int size) throws TouchstoneToolChainException {
+    public ColumnNode() {}
+
+    public ColumnNode(String columnName) {
+        this.columnName = columnName;
+    }
+
+    public void setMinMax(float min, float max) throws TouchstoneToolChainException {
         if (min > max) {
             throw new TouchstoneToolChainException("非法的随机生成定义");
         }
         this.min = min;
         this.max = max;
-        this.size = size;
+    }
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
     }
 
     @Override
-    public float[] getValue() {
+    public float[] getVector() {
+        int size = ArithmeticNode.size;
         float[] value = new float[size];
         float bound = max - min;
         ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
@@ -31,5 +45,10 @@ public class RandomFloatValueVector implements ArithmeticNode {
             value[i] = threadLocalRandom.nextFloat() * bound + min;
         }
         return value;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("column(%s)", columnName);
     }
 }

@@ -1,17 +1,20 @@
 package ecnu.db.constraintchain.filter.operation;
 
-import ecnu.db.constraintchain.logical.LogicalNode;
+import ecnu.db.constraintchain.filter.BoolExprNode;
+import ecnu.db.constraintchain.filter.Parameter;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author wangqingshuai
  */
-public abstract class AbstractFilterOperation implements LogicalNode {
+public abstract class AbstractFilterOperation implements BoolExprNode {
     /**
-     * 此filter operation在约束链中的位置，用于自动化填充query模版
+     * 此filter包含的参数
      */
-    protected final int id;
+    protected List<Parameter> parameters = new ArrayList<>();
     /**
      * 此filter operation的操作符
      */
@@ -19,20 +22,27 @@ public abstract class AbstractFilterOperation implements LogicalNode {
     /**
      * 此filter operation的过滤比
      */
-    protected double probability;
-
-    public AbstractFilterOperation(int id, CompareOperator operator) {
-        this.id = id;
-        this.operator = operator;
-    }
+    protected BigDecimal probability;
 
     /**
      * 计算Filter Operation实例化的参数
      */
-    public abstract void calculateParameter();
+    public abstract void instantiateParameter();
 
     @Override
     public void calculateProbability(BigDecimal probability) {
-        this.probability = probability.doubleValue();
+        this.probability = probability;
+    }
+
+    public AbstractFilterOperation(CompareOperator operator) {
+        this.operator = operator;
+    }
+
+    public void addParameter(Parameter parameter) {
+        parameters.add(parameter);
+    }
+
+    public List<Parameter> getParameters() {
+        return this.parameters;
     }
 }

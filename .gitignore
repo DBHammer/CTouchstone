@@ -32,5 +32,9 @@ conf
 dependency-reduced-pom.xml
 
 # ignore jflex generated files and idea backups
-SelectOperatorInfoLexer.java
-SelectOperatorInfoLexer.java~
+TidbSelectOperatorInfoLexer.java
+TidbSelectOperatorInfoLexer.java~
+TidbSelectOperatorInfoParser.java
+TidbSelectOperatorInfoParser.java~
+TidbSelectSymbol.java
+TidbSelectSymbol.java~
