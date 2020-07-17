@@ -67,7 +67,7 @@ public class Schema {
      * @throws SQLException
      * @throws TouchstoneToolChainException
      */
-    public static void initFks(DatabaseMetaData metaData, HashMap<String, Schema> schemas) throws SQLException, TouchstoneToolChainException {
+    public static void initFks(DatabaseMetaData metaData, Map<String, Schema> schemas) throws SQLException, TouchstoneToolChainException {
         for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
             String tableName = entry.getKey();
             ResultSet rs = metaData.getImportedKeys(null, null, tableName);
@@ -94,7 +94,7 @@ public class Schema {
     public boolean onlyReferencingTables(HashSet<String> tableNames) {
         if (foreignKeys != null) {
             for (String referencingTableInfo : foreignKeys.values()) {
-                if (!tableNames.contains(referencingTableInfo.split("\\.")[0])) {
+                if (!tableNames.contains(referencingTableInfo.split("\\.")[1])) {
                     return false;
                 }
             }

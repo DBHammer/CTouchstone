@@ -23,9 +23,6 @@ public class TidbConnector extends AbstractDbConnector {
     public TidbConnector(SystemConfig config) throws TouchstoneToolChainException {
         super(config);
         statsUrl = "http://" + config.getDatabaseIp() + ':' + config.getTidbHttpPort() + "/stats/dump/";
-        if (!config.isCrossMultiDatabase()) {
-            statsUrl += config.getDatabaseName() + "/";
-        }
     }
 
     @Override

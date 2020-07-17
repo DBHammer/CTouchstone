@@ -7,6 +7,8 @@ import ecnu.db.analyzer.online.node.ExecutionNode.ExecutionNodeType;
 import ecnu.db.analyzer.online.node.RawNode;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.schema.Schema;
+import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -23,27 +25,27 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 public class TidbAnalyzer extends AbstractAnalyzer {
 
 
-    private static final Pattern ROW_COUNTS = Pattern.compile("rows:[0-9]*");
-    private static final Pattern INNER_JOIN_OUTER_KEY = Pattern.compile("outer key:.*,");
-    private static final Pattern INNER_JOIN_INNER_KEY = Pattern.compile("inner key:.*");
+    private static final Pattern ROW_COUNTS = Pattern.compile("rows:[0-9]+");
+    private static final Pattern INNER_JOIN_OUTER_KEY = Pattern.compile("outer key:.+,");
+    private static final Pattern INNER_JOIN_INNER_KEY = Pattern.compile("inner key:.+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("equal:\\[.*]");
     private static final Pattern PLAN_ID = Pattern.compile("([a-zA-Z]+_[0-9]+)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("eq\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+), ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private static final Pattern SELECT_CONDITION_EXPR = Pattern.compile("([a-z_0-9]+)\\((.+)\\)");
     private static final Pattern INNER_JOIN = Pattern.compile("inner join");
-    private static final Pattern COL_ARGUMENT = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
+    private static final Pattern CANONICAL_COLUMN_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
     private static final Set<String> COMPARE_OP_SET = new HashSet<>(Arrays.asList(">", "<", ">=", "<=", "<>", "="));
     private static final Set<String> LIKE_OP_SET = new HashSet<>(Arrays.asList("like", "not like"));
     private static final Set<String> IN_OP_SET = new HashSet<>(Arrays.asList("in", "not in"));
     private static final Set<String> ISNULL_OP_SET = new HashSet<>(Arrays.asList("isnull", "not isnull"));
     private static final String TIDB_VERSION3 = "3.1.0";
     private static final String TIDB_VERSION4 = "4.0.0";
-    HashMap<String, String> tidbSelectArgs;
+    Map<String, String> tidbSelectArgs;
 
 
-    public TidbAnalyzer(String databaseVersion, Double skipNodeThreshold, DatabaseConnectorInterface dbConnector, HashMap<String, String> tidbSelectArgs,
-                        HashMap<String, Schema> schemas) {
-        super(databaseVersion, skipNodeThreshold, dbConnector, schemas);
+    public TidbAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector, Map<String, String> tidbSelectArgs,
+                        Map<String, Schema> schemas, Multimap<String, String> tblName2CanonicalTblName) {
+        super(config, dbConnector, schemas, tblName2CanonicalTblName);
         this.tidbSelectArgs = tidbSelectArgs;
     }
 
@@ -77,24 +79,24 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      *                IndexJoin                                         Filter
      *                /       \                                          /
      *         leftNode      IndexLookup              ===>>>          Join
-     *            /              \                                    /   \
-     *    IndexRangeScan     Selection                          leftNode  Scan
-     *     /
-     * Scan
+     *                      /         \                              /   \
+     *             IndexRangeScan     Selection                leftNode  Scan
+     *                                 /
+     *                              Scan
      * <p>
      * 2. 没有selection的下推(leftNode中有Selection节点)
      *                IndexJoin                                         Join
      *               /       \                                         /    \
-     *         leftNode      IndexLookup              ===>>>     leftNode   Scan
-     *        /        \
-     * IndexRangeScan   Scan
+     *         leftNode    IndexLookup               ===>>>     leftNode   Scan
+     *                      /        \
+     *              IndexRangeScan  Scan
      * <p>
      * 3. 没有selection的下推(leftNode中没有Selection节点，但右边扫描节点上有索引)
      *               IndexJoin                                         Join
      *              /       \                                         /    \
      *        leftNode      IndexReader              ===>>>     leftNode   Scan
-     *        /
-     * IndexRangeScan
+     *                      /
+     *               IndexRangeScan
      *
      * @param rawNode 需要处理的query plan树
      * @return 处理好的树
@@ -113,7 +115,9 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         ExecutionNode node;
         // 处理底层的TableScan
         if (nodeTypeRef.isTableScanNode(nodeType)) {
-            return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rawNode.rowCount, rawNode.operatorInfo);
+            String tableName = extractTableName(rawNode.operatorInfo);
+            String canonicalTableName = getCanonicalTblName(tableName);
+            return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rawNode.rowCount, "table:" + canonicalTableName);
         } else if (nodeTypeRef.isFilterNode(nodeType)) {
             node = new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount, rawNode.operatorInfo);
             // 跳过底部的TableScan
@@ -131,7 +135,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 node = new ExecutionNode(rawNode.right.right.id, ExecutionNodeType.filter, rawNode.rowCount, rawNode.right.right.operatorInfo);
                 node.leftNode = new ExecutionNode(rawNode.right.left.id, ExecutionNodeType.join, rawNode.right.left.rowCount, rawNode.operatorInfo);
                 String tableName = extractTableName(rawNode.right.right.left.operatorInfo);
-                node.leftNode.rightNode = new ExecutionNode(null, ExecutionNodeType.scan, schemas.get(tableName).getTableSize(), "table:" + tableName);
+                String canonicalTblName = getCanonicalTblName(tableName);
+                node.leftNode.rightNode = new ExecutionNode(rawNode.right.right.left.id, ExecutionNodeType.scan, schemas.get(canonicalTblName).getTableSize(), "table:" + canonicalTblName);
                 node.leftNode.leftNode = buildExecutionTree(rawNode.left);
                 return node;
             }
@@ -144,7 +149,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (!matches.isEmpty() && nodeTypeRef.isTableScanNode(rawNode.right.nodeType)) {
                     String tableName = extractTableName(rawNode.right.operatorInfo);
-                    node = new ExecutionNode(rawNode.id, ExecutionNodeType.scan, schemas.get(tableName).getTableSize(), rawNode.right.operatorInfo);
+                    String canonicalTblName = getCanonicalTblName(tableName);
+                    node = new ExecutionNode(rawNode.id, ExecutionNodeType.scan, schemas.get(canonicalTblName).getTableSize(), "table:" + canonicalTblName);
                     // 其他情况跳过左侧节点
                 } else {
                     node = buildExecutionTree(rawNode.right);
@@ -153,13 +159,14 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             // 处理IndexReader后接一个IndexScan的情况
             else if (nodeTypeRef.isIndexScanNode(rawNode.left.nodeType)) {
                 String tableName = extractTableName(rawNode.left.operatorInfo);
-                int tableSize = schemas.get(tableName).getTableSize();
+                String canonicalTblName = getCanonicalTblName(tableName);
+                int tableSize = schemas.get(canonicalTblName).getTableSize();
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (rawNode.left.rowCount != tableSize) {
-                    node = new ExecutionNode(rawNode.left.id, ExecutionNodeType.scan, tableSize, rawNode.left.operatorInfo);
+                    node = new ExecutionNode(rawNode.left.id, ExecutionNodeType.scan, tableSize, "table:" + canonicalTblName);
                     // 正常情况
                 } else {
-                    node = new ExecutionNode(rawNode.left.id, ExecutionNodeType.scan, rawNode.left.rowCount, rawNode.left.operatorInfo);
+                    node = new ExecutionNode(rawNode.left.id, ExecutionNodeType.scan, rawNode.left.rowCount, "table:" + canonicalTblName);
                 }
             } else {
                 node = buildExecutionTree(rawNode.left);
@@ -168,6 +175,21 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             throw new TouchstoneToolChainException("未支持的查询树Node，类型为" + nodeType);
         }
         return node;
+    }
+
+    private String getCanonicalTblName(String tableName) throws TouchstoneToolChainException {
+        if (CommonUtils.isCanonicalTableName(tableName)) {
+            return tableName;
+        }
+        List<String> canonicalTblNames = new ArrayList<>(tblName2CanonicalTblName.get(tableName));
+        if (canonicalTblNames.size() > 1) {
+            throw new TouchstoneToolChainException(String.format("'%s'的表名有冲突，请使用别名",
+                    canonicalTblNames
+                    .stream()
+                    .map((name) -> String.format("%s", name))
+                    .collect(Collectors.joining(","))));
+        }
+        return canonicalTblNames.get(0);
     }
 
     /**
@@ -180,7 +202,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         Deque<Pair<Integer, RawNode>> pStack = new ArrayDeque<>();
         List<List<String>> matches = matchPattern(PLAN_ID, queryPlan.get(0)[0]);
         String nodeType = matches.get(0).get(0).split("_")[0];
-        String[] subQueryPlanInfo = extractSubQueryPlanInfo(databaseVersion, queryPlan.get(0));
+        String[] subQueryPlanInfo = extractSubQueryPlanInfo(config.getDatabaseVersion(), queryPlan.get(0));
         String planId = matches.get(0).get(0), operatorInfo = subQueryPlanInfo[1], executionInfo = subQueryPlanInfo[2];
         Matcher matcher;
         int rowCount = (matcher = ROW_COUNTS.matcher(executionInfo)).find() ?
@@ -188,14 +210,18 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         RawNode rawNodeRoot = new RawNode(planId, null, null, nodeType, operatorInfo, rowCount), rawNode;
         pStack.push(Pair.of(0, rawNodeRoot));
         for (String[] subQueryPlan : queryPlan.subList(1, queryPlan.size())) {
-            subQueryPlanInfo = extractSubQueryPlanInfo(databaseVersion, subQueryPlan);
+            subQueryPlanInfo = extractSubQueryPlanInfo(config.getDatabaseVersion(), subQueryPlan);
             matches = matchPattern(PLAN_ID, subQueryPlanInfo[0]);
             planId = matches.get(0).get(0);
             operatorInfo = subQueryPlanInfo[1];
             executionInfo = subQueryPlanInfo[2];
             nodeType = matches.get(0).get(0).split("_")[0];
-            rowCount = (matcher = ROW_COUNTS.matcher(executionInfo)).find() ?
-                    Integer.parseInt(matcher.group(0).split(":")[1]) : 0;
+            try {
+                rowCount = (matcher = ROW_COUNTS.matcher(executionInfo)).find() ?
+                        Integer.parseInt(matcher.group(0).split(":")[1]) : 0;
+            } catch (ArrayIndexOutOfBoundsException e) {
+                System.out.println("hello");
+            }
             rawNode = new RawNode(planId, null, null, nodeType, operatorInfo, rowCount);
             int level = (subQueryPlan[0].split("─")[0].length() + 1) / 2;
             while (!pStack.isEmpty() && pStack.peek().getKey() > level) {
@@ -265,13 +291,16 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             }
             List<List<String>> matches = matchPattern(EQ_OPERATOR, joinInfo);
             String[] leftJoinInfos = matches.get(0).get(1).split("\\."), rightJoinInfos = matches.get(0).get(2).split("\\.");
-            leftTable = leftJoinInfos[1];
-            rightTable = rightJoinInfos[1];
+            leftTable = String.join(".", Arrays.asList(leftJoinInfos[0], leftJoinInfos[1]));
+            rightTable = String.join(".", Arrays.asList(rightJoinInfos[0], rightJoinInfos[1]));
             List<String> leftCols = new ArrayList<>(), rightCols = new ArrayList<>();
             for (List<String> match : matches) {
                 leftJoinInfos = match.get(1).split("\\.");
                 rightJoinInfos = match.get(2).split("\\.");
-                String currLeftTable = leftJoinInfos[1], currLeftCol = leftJoinInfos[2], currRightTable = rightJoinInfos[1], currRightCol = rightJoinInfos[2];
+                String currLeftTable = String.join(".", Arrays.asList(leftJoinInfos[0], leftJoinInfos[1])),
+                        currLeftCol = leftJoinInfos[2],
+                        currRightTable = String.join(".", Arrays.asList(rightJoinInfos[0], rightJoinInfos[1])),
+                        currRightCol = rightJoinInfos[2];
                 if (!leftTable.equals(currLeftTable) || !rightTable.equals(currRightTable)) {
                     throw new TouchstoneToolChainException("join中包含多个表的约束,暂不支持");
                 }
@@ -288,7 +317,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             Matcher innerInfo = INNER_JOIN_INNER_KEY.matcher(joinInfo);
             if (innerInfo.find()) {
                 String[] innerInfos = innerInfo.group(0).split("\\.");
-                result[0] = innerInfos[1];
+                result[0] = String.join(".", Arrays.asList(innerInfos[0], innerInfos[1]));
                 result[1] = innerInfos[2];
             } else {
                 throw new TouchstoneToolChainException("无法匹配的join格式" + joinInfo);
@@ -296,7 +325,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             Matcher outerInfo = INNER_JOIN_OUTER_KEY.matcher(joinInfo);
             if (outerInfo.find()) {
                 String[] outerInfos = outerInfo.group(0).split("\\.");
-                result[2] = outerInfos[1];
+                result[2] = String.join(".", Arrays.asList(outerInfos[0], outerInfos[1]));
                 result[3] = outerInfos[2].substring(0, outerInfos[2].length() - 1);
             } else {
                 throw new TouchstoneToolChainException("无法匹配的join格式" + joinInfo);
@@ -312,10 +341,10 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     }
 
     private String[] convertToDbTableName(String[] result) {
-        if (aliasDic != null && aliasDic.containsKey(result[0])) {
+        if (aliasDic.containsKey(result[0])) {
             result[0] = aliasDic.get(result[0]);
         }
-        if (aliasDic != null && aliasDic.containsKey(result[2])) {
+        if (aliasDic.containsKey(result[2])) {
             result[2] = aliasDic.get(result[2]);
         }
         return result;
@@ -339,7 +368,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             String currTableName = buildConditionMapIter(groups.get(0), isOr, conditions);
             if (tableName == null) {
                 tableName = currTableName;
-                if (aliasDic != null && aliasDic.containsKey(tableName)) {
+                if (aliasDic.containsKey(tableName)) {
                     useAlias = true;
                 }
             }
@@ -407,47 +436,47 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         // isnull, not isnull
         else if (ISNULL_OP_SET.contains(operator)) {
             String firstArgument = matches.get(0).get(2).split(", ")[0];
-            List<List<String>> colArgument = matchPattern(COL_ARGUMENT, matches.get(0).get(2));
+            List<List<String>> colArgument = matchPattern(CANONICAL_COLUMN_NAME, matches.get(0).get(2));
             if (matches.get(0).get(2).split(", ").length != 1 || colArgument.size() != 1 || !colArgument.get(0).get(0).equals(firstArgument)) {
                 throw new TouchstoneToolChainException(String.format("不支持 '%s' 形式的filter", matches.get(0).get(0)));
             }
             String[] canonicalColName = colArgument.get(0).get(0).split("\\.");
-            tableName = canonicalColName[1];
+            tableName = String.join(".", canonicalColName[0], canonicalColName[1]);
             colName = canonicalColName[2];
         }
         // in, not in
         else if (IN_OP_SET.contains(operator)) {
             int inSize = matches.get(0).get(2).split(", ").length - 1;
             String firstArgument = matches.get(0).get(2).split(", ")[0];
-            List<List<String>> colArgument = matchPattern(COL_ARGUMENT, matches.get(0).get(2));
+            List<List<String>> colArgument = matchPattern(CANONICAL_COLUMN_NAME, matches.get(0).get(2));
             if (colArgument.isEmpty() || !colArgument.get(0).get(0).equals(firstArgument)) {
                 throw new TouchstoneToolChainException(String.format("不支持 '%s' 形式的filter", matches.get(0).get(0)));
             }
             String[] canonicalColName = colArgument.get(0).get(0).split("\\.");
-            tableName = canonicalColName[1];
+            tableName = String.join(".", canonicalColName[0], canonicalColName[1]);
             colName = canonicalColName[2];
             operator = String.format("%s(%d)", operator, inSize);
         }
         // >, <, >=, <=, <>, =
         else if (COMPARE_OP_SET.contains(operator)) {
             String firstArgument = matches.get(0).get(2).split(", ")[0];
-            List<List<String>> colArgument = matchPattern(COL_ARGUMENT, matches.get(0).get(2));
+            List<List<String>> colArgument = matchPattern(CANONICAL_COLUMN_NAME, matches.get(0).get(2));
             if (matches.get(0).get(2).split(", ").length != 2 || colArgument.size() != 1 || !colArgument.get(0).get(0).equals(firstArgument)) {
                 throw new TouchstoneToolChainException(String.format("不支持 '%s' 形式的filter", matches.get(0).get(0)));
             }
             String[] canonicalColName = colArgument.get(0).get(0).split("\\.");
-            tableName = canonicalColName[1];
+            tableName = String.join(".", canonicalColName[0], canonicalColName[1]);
             colName = canonicalColName[2];
         }
         // like, not like
         else if (LIKE_OP_SET.contains(operator)) {
             String firstArgument = matches.get(0).get(2).split(", ")[0];
-            List<List<String>> colArgument = matchPattern(COL_ARGUMENT, matches.get(0).get(2));
+            List<List<String>> colArgument = matchPattern(CANONICAL_COLUMN_NAME, matches.get(0).get(2));
             if (matches.get(0).get(2).split(", ").length != 3 || colArgument.size() != 1 || !colArgument.get(0).get(0).equals(firstArgument)) {
                 throw new TouchstoneToolChainException(String.format("不支持 '%s' 形式的filter", matches.get(0).get(0)));
             }
             String[] canonicalColName = colArgument.get(0).get(0).split("\\.");
-            tableName = canonicalColName[1];
+            tableName = String.join(".", canonicalColName[0], canonicalColName[1]);
             colName = canonicalColName[2];
         } else {
             throw new TouchstoneToolChainException(String.format("不支持的filter操作符%s", operator));
@@ -506,8 +535,9 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     @Override
     String extractTableName(String operatorInfo) {
         String tableName = operatorInfo.split(",")[0].substring(6).toLowerCase();
-        if (aliasDic != null && aliasDic.containsKey(tableName)) {
+        if (aliasDic.containsKey(tableName)) {
             tableName = aliasDic.get(tableName);
+            return tableName;
         }
         return tableName;
     }

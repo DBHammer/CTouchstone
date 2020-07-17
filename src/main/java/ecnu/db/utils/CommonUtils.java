@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
  */
 public class CommonUtils {
     private static final HashSet<String> WHERE_DELIMITERS = new HashSet<>(Arrays.asList("and", "limit", "group", ")", "or", "order", "||", "&&", "left", "right", "outer", "inner", "natural", "join", "straight_join", "cross"));
+    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
 
     /**
      * 获取正则表达式的匹配
@@ -42,5 +43,28 @@ public class CommonUtils {
      */
     public static boolean isEndOfConditionExpr(String token) {
         return WHERE_DELIMITERS.contains(token);
+    }
+
+    /**
+     * 单个数据库时把表转换为<database>.<table>的形式
+     * @param systemConfig 系统配置
+     * @param name 表名
+     * @return 转换后的表名
+     */
+    public static String addDBNamePredix(SystemConfig systemConfig, String name) {
+        if (!systemConfig.isCrossMultiDatabase() && !isCanonicalTableName(name)) {
+            name = String.format("%s.%s", systemConfig.getDatabaseName(), name);
+        }
+        return name;
+    }
+
+    /**
+     * 是否为<database>.<table>的形式的表名
+     * @param tableName 表名
+     * @return true or false
+     */
+    public static boolean isCanonicalTableName(String tableName) {
+        List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
+        return matches.size() == 1 && matches.get(0).get(0).length() == tableName.length();
     }
 }

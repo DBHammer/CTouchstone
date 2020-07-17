@@ -4,6 +4,8 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
 import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
+import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.SystemConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,41 +17,32 @@ import java.util.Map;
  */
 public class QueryAliasParser {
 
-    private final ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor();
-
-    public Map<String, String> getTableAlias(String sql, String dbType) {
-        statVisitor.clear();
+    public Map<String, String> getTableAlias(SystemConfig config, String sql, String dbType) {
+        ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor(config);
         SQLSelectStatement statement = (SQLSelectStatement) SQLUtils.parseStatements(sql, dbType).get(0);
         statement.accept(statVisitor);
         return statVisitor.getAliasMap();
     }
 
     private static class ExportTableAliasVisitor extends MySqlASTVisitorAdapter {
-        private final Map<String, String> aliasMap = new HashMap<>();
-
-        public void clear() {
-            aliasMap.clear();
+        private final SystemConfig config;
+        ExportTableAliasVisitor(SystemConfig config) {
+            this.config = config;
         }
+
+        private final Map<String, String> aliasMap = new HashMap<>();
 
         @Override
         public boolean visit(SQLExprTableSource x) {
             if (x.getAlias() != null) {
                 String tableName = x.getName().toString().toLowerCase();
-                if (tableName.contains(".")) {
-                    String[] splits = tableName.split("\\.");
-                    tableName = splits[splits.length - 1];
-                }
-                aliasMap.put(x.getAlias().toLowerCase(), tableName);
+                aliasMap.put(x.getAlias().toLowerCase(), CommonUtils.addDBNamePredix(config, tableName));
             }
             return true;
         }
 
         public Map<String, String> getAliasMap() {
-            if (aliasMap.size() == 0) {
-                return null;
-            } else {
-                return aliasMap;
-            }
+            return aliasMap;
         }
     }
 }

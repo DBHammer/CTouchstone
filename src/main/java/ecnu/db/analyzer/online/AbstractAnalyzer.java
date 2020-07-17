@@ -1,6 +1,7 @@
 package ecnu.db.analyzer.online;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import ecnu.db.analyzer.online.node.ExecutionNode;
 import ecnu.db.analyzer.online.node.NodeTypeRefFactory;
@@ -8,6 +9,7 @@ import ecnu.db.analyzer.online.node.NodeTypeTool;
 import ecnu.db.analyzer.statical.QueryAliasParser;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.schema.Schema;
+import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -27,22 +29,25 @@ public abstract class AbstractAnalyzer {
     private static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
 
     protected DatabaseConnectorInterface dbConnector;
-    protected Map<String, String> aliasDic;
+    protected Map<String, String> aliasDic = new HashMap<>();
     protected QueryAliasParser queryAliasParser = new QueryAliasParser();
-    protected HashMap<String, Schema> schemas;
+    protected Map<String, Schema> schemas;
     protected int sqlArgIndex = 0;
     protected int lastArgIndex = 0;
-    protected HashMap<String, List<String>> argsAndIndex = new HashMap<>();
+    protected Map<String, List<String>> argsAndIndex = new HashMap<>();
     protected NodeTypeTool nodeTypeRef;
-    protected String databaseVersion;
-    protected Double skipNodeThreshold;
+    protected SystemConfig config;
+    protected Multimap<String, String> tblName2CanonicalTblName;
 
-    AbstractAnalyzer(String databaseVersion, Double skipNodeThreshold, DatabaseConnectorInterface dbConnector, HashMap<String, Schema> schemas) {
-        this.nodeTypeRef = NodeTypeRefFactory.getNodeTypeRef(databaseVersion);
-        this.databaseVersion = databaseVersion;
+    AbstractAnalyzer(SystemConfig config, 
+                     DatabaseConnectorInterface dbConnector, 
+                     Map<String, Schema> schemas, 
+                     Multimap<String, String> tblName2CanonicalTblName) {
+        this.nodeTypeRef = NodeTypeRefFactory.getNodeTypeRef(config.getDatabaseVersion());
         this.dbConnector = dbConnector;
         this.schemas = schemas;
-        this.skipNodeThreshold = skipNodeThreshold;
+        this.config = config;
+        this.tblName2CanonicalTblName = tblName2CanonicalTblName;
     }
 
     /**
@@ -108,7 +113,7 @@ public abstract class AbstractAnalyzer {
         WhereConditionInfo ret = buildConditionMap(operatorInfo, conditionMap);
         boolean useAlias = ret.useAlias, isOr = ret.isOr;
         String tableName = ret.tableName;
-        if (aliasDic != null && aliasDic.containsKey(tableName)) {
+        if (aliasDic.containsKey(tableName)) {
             tableName = aliasDic.get(tableName);
         }
         StringBuilder conditionStr = new StringBuilder();
@@ -160,17 +165,18 @@ public abstract class AbstractAnalyzer {
     }
 
     public List<String[]> getQueryPlan(String queryCanonicalName, String sql) throws SQLException, TouchstoneToolChainException {
-        aliasDic = queryAliasParser.getTableAlias(sql, getDbType());
-        return dbConnector.explainQuery(queryCanonicalName, sql, getSqlInfoColumns(databaseVersion));
+        aliasDic = queryAliasParser.getTableAlias(config, sql, getDbType());
+        return dbConnector.explainQuery(queryCanonicalName, sql, getSqlInfoColumns(config.getDatabaseVersion()));
     }
 
     /**
      * 获取查询树的约束链信息和表信息
      *
+     * @param queryCanonicalName query的标准名称
      * @param root 查询树
      * @return 该查询树结构出的约束链信息和表信息
      */
-    public List<String> extractQueryInfos(ExecutionNode root) throws SQLException {
+    public List<String> extractQueryInfos(String queryCanonicalName, ExecutionNode root) throws SQLException {
 
         List<String> queryInfos = new ArrayList<>();
         List<List<ExecutionNode>> paths = getPaths(root);
@@ -179,7 +185,7 @@ public abstract class AbstractAnalyzer {
             try {
                 queryInfo = extractConstraintChain(path);
             } catch (TouchstoneToolChainException e) {
-                logger.error("提取约束链失败", e);
+                logger.error(String.format("提取'%s'的一个约束链失败", queryCanonicalName), e);
             }
             if (queryInfo == null) {
                 break;
@@ -263,7 +269,7 @@ public abstract class AbstractAnalyzer {
                 isStop = analyzeNode(node, constraintChain, tableName);
             } catch (TouchstoneToolChainException | SQLException e) {
                 // 小于设置的阈值以后略去后续的节点
-                if (node.getOutputRows() * 1.0 / schemas.get(tableName).getTableSize() < skipNodeThreshold) {
+                if (node.getOutputRows() * 1.0 / schemas.get(tableName).getTableSize() < config.getSkipNodeThreshold()) {
                     logger.error("提取约束链失败", e);
                     logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), node));
                     break;
@@ -379,7 +385,7 @@ public abstract class AbstractAnalyzer {
         }
     }
 
-    public HashMap<String, List<String>> getArgsAndIndex() {
+    public Map<String, List<String>> getArgsAndIndex() {
         return argsAndIndex;
     }
 

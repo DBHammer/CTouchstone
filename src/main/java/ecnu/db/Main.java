@@ -4,6 +4,8 @@ package ecnu.db;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
@@ -19,10 +21,12 @@ import ecnu.db.dbconnector.TidbConnector;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.generation.AbstractSchemaGenerator;
 import ecnu.db.schema.generation.TidbSchemaGenerator;
+import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.ReadQuery;
 import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +59,7 @@ public class Main {
      * @return 模板化的SQL语句
      * @throws TouchstoneToolChainException 检测不到停止的语法词
      */
-    public static String templatizeSql(String sql, HashMap<String, List<String>> argsAndIndex, ArrayList<String> cannotFindArgs,
+    public static String templatizeSql(String sql, Map<String, List<String>> argsAndIndex, ArrayList<String> cannotFindArgs,
                                        ArrayList<String> conflictArgs) throws TouchstoneToolChainException {
         for (Map.Entry<String, List<String>> argAndIndexes : argsAndIndex.entrySet()) {
             int lastIndex = 0;
@@ -176,11 +180,14 @@ public class Main {
             logger.info("表名持久化成功");
         }
         logger.info("开始获取表结构和数据分布");
-        HashMap<String, Schema> schemas = getSchemas(loadDir, dbConnector, dbSchemaGenerator, tableNames);
+
+        Pair<Map<String, Schema>, Multimap<String, String>> pair = getSchemas(loadDir, dbConnector, dbSchemaGenerator, tableNames);
+        Map<String, Schema> schemas = pair.getKey();
+        Multimap<String, String> tblName2CanonicalTblName = pair.getValue();
         logger.info("获取表结构和数据分布成功，开始获取query查询计划");
 
-        AbstractAnalyzer queryAnalyzer = new TidbAnalyzer(systemConfig.getDatabaseVersion(), systemConfig.getSkipNodeThreshold(),
-                dbConnector, systemConfig.getTidbSelectArgs(), schemas);
+        AbstractAnalyzer queryAnalyzer = new TidbAnalyzer(systemConfig,
+                dbConnector, systemConfig.getTidbSelectArgs(), schemas, tblName2CanonicalTblName);
         List<String> queryInfos = new LinkedList<>();
         boolean needLog = false;
         for (File sqlFile : files) {
@@ -200,7 +207,7 @@ public class Main {
                             dumpQueryPlan(dumpDir, queryPlan, queryCanonicalName);
                         }
                         ExecutionNode root = queryAnalyzer.getExecutionTree(queryPlan);
-                        queryInfos.addAll(queryAnalyzer.extractQueryInfos(root));
+                        queryInfos.addAll(queryAnalyzer.extractQueryInfos(queryCanonicalName, root));
                         logger.info(String.format("%-15s Status:获取成功", queryCanonicalName));
                         queryAnalyzer.outputSuccess(true);
 
@@ -332,7 +339,7 @@ public class Main {
         FileUtils.writeStringToFile(queryPlanFile, content, UTF_8);
     }
 
-    private static void dumpSchemas(File dumpDir, HashMap<String, Schema> schemas) throws IOException {
+    private static void dumpSchemas(File dumpDir, Map<String, Schema> schemas) throws IOException {
         File schemaFile = new File(dumpDir, "schemas");
         for (Schema schema: schemas.values()) {
             schema.setJoinTag(1);
@@ -371,8 +378,8 @@ public class Main {
         return queryPlanMap;
     }
 
-    private static HashMap<String, Schema> getSchemas(File loadDir, DatabaseConnectorInterface dbConnector, AbstractSchemaGenerator dbSchemaGenerator, List<String> tableNames) throws TouchstoneToolChainException, IOException, SQLException {
-        HashMap<String, Schema> schemas = new HashMap<>(tableNames.size());
+    private static Pair<Map<String, Schema>, Multimap<String, String>> getSchemas(File loadDir, DatabaseConnectorInterface dbConnector, AbstractSchemaGenerator dbSchemaGenerator, List<String> tableNames) throws TouchstoneToolChainException, IOException, SQLException {
+        Map<String, Schema> schemas = new HashMap<>(tableNames.size());
         if (loadDir != null && loadDir.isDirectory()) {
             File schemaFile = new File(loadDir.getPath(), "schemas");
             if (!schemaFile.isFile()) {
@@ -382,21 +389,26 @@ public class Main {
             });
             logger.info("加载表结构和表数据分布成功");
         } else {
-            for (String tableName : tableNames) {
-                logger.info("开始获取" + tableName + "的信息");
+            for (String canonicalTableName : tableNames) {
+                logger.info("开始获取" + canonicalTableName + "的信息");
                 logger.info("获取表结构...");
-                Schema schema = dbSchemaGenerator.generateSchemaNoKeys(tableName, ((AbstractDbConnector) dbConnector).getTableDdl(tableName));
+                Schema schema = dbSchemaGenerator.generateSchemaNoKeys(canonicalTableName, ((AbstractDbConnector) dbConnector).getTableDdl(canonicalTableName));
                 logger.info("成功");
                 logger.info("获取表数据分布...");
-                dbSchemaGenerator.setDataRangeBySqlResult(schema.getColumns().values(), ((AbstractDbConnector) dbConnector).getDataRange(tableName,
+                dbSchemaGenerator.setDataRangeBySqlResult(schema.getColumns().values(), ((AbstractDbConnector) dbConnector).getDataRange(canonicalTableName,
                         dbSchemaGenerator.getColumnDistributionSql(schema.getTableName(), schema.getColumns().values())));
                 dbSchemaGenerator.setDataRangeUnique(schema, ((AbstractDbConnector) dbConnector));
                 logger.info("成功");
-                schemas.put(tableName, schema);
+                schemas.put(canonicalTableName, schema);
             }
             Schema.initFks(((AbstractDbConnector) dbConnector).databaseMetaData, schemas);
         }
-        return schemas;
+        Multimap<String, String> tbName2CanonicalTbName = ArrayListMultimap.create();
+        for (String canonicalTableName: schemas.keySet()) {
+            tbName2CanonicalTbName.put(canonicalTableName.split("\\.")[1], canonicalTableName);
+        }
+
+        return Pair.of(schemas, tbName2CanonicalTbName);
     }
 
     private static List<String> loadTableNames(File loadDir) throws TouchstoneToolChainException, IOException {
@@ -407,7 +419,7 @@ public class Main {
         return Arrays.asList(FileUtils.readFileToString(tableNameFile, UTF_8).split(System.lineSeparator()));
     }
 
-    private static List<String> getTableNames(SystemConfig systemConfig, File[] files, DatabaseConnectorInterface dbConnector) throws IOException, SQLException {
+    private static List<String> getTableNames(SystemConfig systemConfig, File[] files, DatabaseConnectorInterface dbConnector) throws IOException, SQLException, TouchstoneToolChainException {
         List<String> tableNames;
         if (systemConfig.isCrossMultiDatabase()) {
             HashSet<String> tableNameSet = new HashSet<>();
@@ -415,13 +427,14 @@ public class Main {
                 if (sqlFile.isFile() && sqlFile.getName().endsWith(".sql")) {
                     List<String> queries = ReadQuery.getQueriesFromFile(sqlFile.getPath(), "mysql");
                     for (String sql : queries) {
-                        tableNameSet.addAll(QueryTableName.getTableName(sql, "mysql"));
+                        Set<String> tableNameRefs = QueryTableName.getTableName(sqlFile.getAbsolutePath(), sql, "mysql", true);
+                        tableNameSet.addAll(tableNameRefs);
                     }
                 }
             }
             tableNames = new ArrayList<>(tableNameSet);
         } else {
-            tableNames = dbConnector.getTableNames();
+            tableNames = dbConnector.getTableNames().stream().map((name) -> CommonUtils.addDBNamePredix(systemConfig, name)).collect(Collectors.toList());
         }
         return tableNames;
     }
