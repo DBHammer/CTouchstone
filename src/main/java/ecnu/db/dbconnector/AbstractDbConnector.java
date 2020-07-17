@@ -35,7 +35,7 @@ public abstract class AbstractDbConnector implements DatabaseConnectorInterface 
             stmt = DriverManager.getConnection(dbUrl(config), user, pass).createStatement();
             databaseMetaData = DriverManager.getConnection(dbUrl(config), user, pass).getMetaData();
         } catch (SQLException e) {
-            throw new TouchstoneToolChainException("无法建立数据库连接,连接信息为\n" + dbUrl(config));
+            throw new TouchstoneToolChainException(String.format("无法建立数据库连接,连接信息为: '%s'", dbUrl(config)));
         }
     }
 
