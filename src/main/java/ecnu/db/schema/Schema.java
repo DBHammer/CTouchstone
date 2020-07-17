@@ -228,7 +228,7 @@ public class Schema {
             }
             if (!skip) {
                 dataDistributionInfo.append("D[").append(tableName).append(".").
-                        append(column.formatDataDistribution()).append("]\n");
+                        append(column.formatDataDistribution()).append("]" + System.lineSeparator());
             }
         }
         return dataDistributionInfo.toString();

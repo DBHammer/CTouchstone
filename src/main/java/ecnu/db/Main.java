@@ -246,7 +246,7 @@ public class Main {
                             for (String cannotFindArg : cannotFindArgs) {
                                 sqlWriter.write(cannotFindArg + ":" + queryAnalyzer.getArgsAndIndex().get(cannotFindArg) + ",");
                             }
-                            sqlWriter.write("\n");
+                            sqlWriter.write(System.lineSeparator());
                         }
                         if (conflictArgs.size() > 0) {
                             logger.warn(String.format("请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName));
@@ -254,10 +254,10 @@ public class Main {
                             for (String conflictArg : conflictArgs) {
                                 sqlWriter.write(conflictArg + ":" + queryAnalyzer.getArgsAndIndex().get(conflictArg) + ",");
                             }
-                            sqlWriter.write("\n");
+                            sqlWriter.write(System.lineSeparator());
                         }
 
-                        sqlWriter.write(SQLUtils.format(sql, queryAnalyzer.getDbType(), SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + "\n");
+                        sqlWriter.write(SQLUtils.format(sql, queryAnalyzer.getDbType(), SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator());
                         sqlWriter.close();
                     } catch (TouchstoneToolChainException e) {
                         queryAnalyzer.outputSuccess(false);
@@ -292,17 +292,17 @@ public class Main {
         for (Schema schema : schemas.values()) {
             String schemaInfo = schema.formatSchemaInfo(), dataDistributionInfo = schema.formatDataDistributionInfo();
             if (schemaInfo != null) {
-                schemaWriter.write(schemaInfo + "\n");
+                schemaWriter.write(schemaInfo + System.lineSeparator());
             }
             if (dataDistributionInfo != null) {
-                schemaWriter.write(dataDistributionInfo + "\n");
+                schemaWriter.write(dataDistributionInfo + System.lineSeparator());
             }
         }
         schemaWriter.close();
         BufferedWriter ccWriter = new BufferedWriter(new FileWriter(
                 new File(resultDirectory.getPath(), "constraintsChain.conf")));
         for (String queryInfo : queryInfos) {
-            ccWriter.write(queryInfo + "\n");
+            ccWriter.write(queryInfo + System.lineSeparator());
         }
         ccWriter.close();
     }
@@ -327,7 +327,7 @@ public class Main {
     }
 
     private static void dumpQueryPlan(File dumpDir, List<String[]> queryPlan, String queryCanonicalName) throws IOException {
-        String content = queryPlan.stream().map((strs) -> String.join(";", strs)).collect(Collectors.joining("\n"));
+        String content = queryPlan.stream().map((strs) -> String.join(";", strs)).collect(Collectors.joining(System.lineSeparator()));
         File queryPlanFile = new File(dumpDir.getPath(), String.format("%s_dump", queryCanonicalName));
         FileUtils.writeStringToFile(queryPlanFile, content, UTF_8);
     }
@@ -342,7 +342,7 @@ public class Main {
     }
 
     private static void dumpTableNames(File dumpDir, List<String> tableNames) throws IOException {
-        String str = String.join("\n", tableNames);
+        String str = String.join(System.lineSeparator(), tableNames);
         File tableNameFile = new File(dumpDir.getPath(), "tableNames");
         FileUtils.writeStringToFile(tableNameFile, str, UTF_8);
     }
@@ -404,7 +404,7 @@ public class Main {
         if (!tableNameFile.isFile()) {
             throw new TouchstoneToolChainException(String.format("找不到%s", tableNameFile.getAbsolutePath()));
         }
-        return Arrays.asList(FileUtils.readFileToString(tableNameFile, UTF_8).split("\n"));
+        return Arrays.asList(FileUtils.readFileToString(tableNameFile, UTF_8).split(System.lineSeparator()));
     }
 
     private static List<String> getTableNames(SystemConfig systemConfig, File[] files, DatabaseConnectorInterface dbConnector) throws IOException, SQLException {

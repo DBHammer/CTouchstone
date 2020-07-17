@@ -21,7 +21,7 @@ public class ReadQuery {
             line = line.trim();
             if (line.length() > 0) {
                 if (!line.startsWith("--")) {
-                    fileContents.append(line).append('\n');
+                    fileContents.append(line).append(System.lineSeparator());
                 }
             }
         }
@@ -29,7 +29,7 @@ public class ReadQuery {
         List<String> sqls = new ArrayList<>();
         for (SQLStatement sqlStatement : statementList) {
             String sql = SQLUtils.format(sqlStatement.toString(), dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION);
-            sql = sql.replace('\n', ' ');
+            sql = sql.replace(System.lineSeparator(), " ");
             sql = sql.replace('\t', ' ');
             sql = sql.replaceAll(" +", " ");
             sqls.add(sql);
