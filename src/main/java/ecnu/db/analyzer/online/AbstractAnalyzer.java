@@ -165,7 +165,7 @@ public abstract class AbstractAnalyzer {
     }
 
     public List<String[]> getQueryPlan(String queryCanonicalName, String sql) throws SQLException, TouchstoneToolChainException {
-        aliasDic = queryAliasParser.getTableAlias(config, sql, getDbType());
+        aliasDic = queryAliasParser.getTableAlias(config.isCrossMultiDatabase(), config.getDatabaseName(), sql, getDbType());
         return dbConnector.explainQuery(queryCanonicalName, sql, getSqlInfoColumns(config.getDatabaseVersion()));
     }
 

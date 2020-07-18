@@ -173,7 +173,7 @@ public class Main {
 
         logger.info("开始获取表名");
         List<String> tableNames;
-        tableNames = getTableNames(systemConfig, files, dbConnector);
+        tableNames = getTableNames(systemConfig.isCrossMultiDatabase(), systemConfig.getDatabaseName(), files, dbConnector);
         logger.info("获取表名成功，表名为:" + tableNames);
         if (dumpDir != null && dumpDir.isDirectory()) {
             dumpTableNames(dumpDir, tableNames);
@@ -186,8 +186,7 @@ public class Main {
         Multimap<String, String> tblName2CanonicalTblName = pair.getValue();
         logger.info("获取表结构和数据分布成功，开始获取query查询计划");
 
-        AbstractAnalyzer queryAnalyzer = new TidbAnalyzer(systemConfig,
-                dbConnector, systemConfig.getTidbSelectArgs(), schemas, tblName2CanonicalTblName);
+        AbstractAnalyzer queryAnalyzer = new TidbAnalyzer(systemConfig, dbConnector, schemas, tblName2CanonicalTblName);
         List<String> queryInfos = new LinkedList<>();
         boolean needLog = false;
         for (File sqlFile : files) {
@@ -419,9 +418,12 @@ public class Main {
         return Arrays.asList(FileUtils.readFileToString(tableNameFile, UTF_8).split(System.lineSeparator()));
     }
 
-    private static List<String> getTableNames(SystemConfig systemConfig, File[] files, DatabaseConnectorInterface dbConnector) throws IOException, SQLException, TouchstoneToolChainException {
+    private static List<String> getTableNames(boolean isCrossMultiDatabase,
+                                              String databaseName,
+                                              File[] files,
+                                              DatabaseConnectorInterface dbConnector) throws IOException, SQLException, TouchstoneToolChainException {
         List<String> tableNames;
-        if (systemConfig.isCrossMultiDatabase()) {
+        if (isCrossMultiDatabase) {
             HashSet<String> tableNameSet = new HashSet<>();
             for (File sqlFile : files) {
                 if (sqlFile.isFile() && sqlFile.getName().endsWith(".sql")) {
@@ -434,7 +436,7 @@ public class Main {
             }
             tableNames = new ArrayList<>(tableNameSet);
         } else {
-            tableNames = dbConnector.getTableNames().stream().map((name) -> CommonUtils.addDBNamePredix(systemConfig, name)).collect(Collectors.toList());
+            tableNames = dbConnector.getTableNames().stream().map((name) -> CommonUtils.addDBNamePrefix(databaseName, name)).collect(Collectors.toList());
         }
         return tableNames;
     }

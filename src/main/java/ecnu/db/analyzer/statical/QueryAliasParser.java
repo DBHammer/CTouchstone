@@ -17,17 +17,19 @@ import java.util.Map;
  */
 public class QueryAliasParser {
 
-    public Map<String, String> getTableAlias(SystemConfig config, String sql, String dbType) {
-        ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor(config);
+    public Map<String, String> getTableAlias(boolean isCrossMultiDatabase, String databaseName, String sql, String dbType) {
+        ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor(isCrossMultiDatabase, databaseName);
         SQLSelectStatement statement = (SQLSelectStatement) SQLUtils.parseStatements(sql, dbType).get(0);
         statement.accept(statVisitor);
         return statVisitor.getAliasMap();
     }
 
     private static class ExportTableAliasVisitor extends MySqlASTVisitorAdapter {
-        private final SystemConfig config;
-        ExportTableAliasVisitor(SystemConfig config) {
-            this.config = config;
+        private final boolean isCrossMultiDatabase;
+        private final String databaseName;
+        ExportTableAliasVisitor(boolean isCrossMultiDatabase, String databaseName) {
+            this.isCrossMultiDatabase = isCrossMultiDatabase;
+            this.databaseName = databaseName;
         }
 
         private final Map<String, String> aliasMap = new HashMap<>();
@@ -36,7 +38,11 @@ public class QueryAliasParser {
         public boolean visit(SQLExprTableSource x) {
             if (x.getAlias() != null) {
                 String tableName = x.getName().toString().toLowerCase();
-                aliasMap.put(x.getAlias().toLowerCase(), CommonUtils.addDBNamePredix(config, tableName));
+                if (!isCrossMultiDatabase) {
+                    aliasMap.put(x.getAlias().toLowerCase(), CommonUtils.addDBNamePrefix(databaseName, tableName));
+                } else {
+                    aliasMap.put(x.getAlias().toLowerCase(), tableName);
+                }
             }
             return true;
         }

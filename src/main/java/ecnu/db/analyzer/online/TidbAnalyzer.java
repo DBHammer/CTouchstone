@@ -43,10 +43,10 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     Map<String, String> tidbSelectArgs;
 
 
-    public TidbAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector, Map<String, String> tidbSelectArgs,
+    public TidbAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector,
                         Map<String, Schema> schemas, Multimap<String, String> tblName2CanonicalTblName) {
         super(config, dbConnector, schemas, tblName2CanonicalTblName);
-        this.tidbSelectArgs = tidbSelectArgs;
+        this.tidbSelectArgs = config.getTidbSelectArgs();
     }
 
     @Override
@@ -291,15 +291,15 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             }
             List<List<String>> matches = matchPattern(EQ_OPERATOR, joinInfo);
             String[] leftJoinInfos = matches.get(0).get(1).split("\\."), rightJoinInfos = matches.get(0).get(2).split("\\.");
-            leftTable = String.join(".", Arrays.asList(leftJoinInfos[0], leftJoinInfos[1]));
-            rightTable = String.join(".", Arrays.asList(rightJoinInfos[0], rightJoinInfos[1]));
+            leftTable = String.format("%s.%s", leftJoinInfos[0], leftJoinInfos[1]);
+            rightTable = String.format("%s.%s", rightJoinInfos[0], rightJoinInfos[1]);
             List<String> leftCols = new ArrayList<>(), rightCols = new ArrayList<>();
             for (List<String> match : matches) {
                 leftJoinInfos = match.get(1).split("\\.");
                 rightJoinInfos = match.get(2).split("\\.");
-                String currLeftTable = String.join(".", Arrays.asList(leftJoinInfos[0], leftJoinInfos[1])),
+                String currLeftTable = String.format("%s.%s", leftJoinInfos[0], leftJoinInfos[1]),
                         currLeftCol = leftJoinInfos[2],
-                        currRightTable = String.join(".", Arrays.asList(rightJoinInfos[0], rightJoinInfos[1])),
+                        currRightTable = String.format("%s.%s", rightJoinInfos[0], rightJoinInfos[1]),
                         currRightCol = rightJoinInfos[2];
                 if (!leftTable.equals(currLeftTable) || !rightTable.equals(currRightTable)) {
                     throw new TouchstoneToolChainException("join中包含多个表的约束,暂不支持");
@@ -537,7 +537,6 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         String tableName = operatorInfo.split(",")[0].substring(6).toLowerCase();
         if (aliasDic.containsKey(tableName)) {
             tableName = aliasDic.get(tableName);
-            return tableName;
         }
         return tableName;
     }

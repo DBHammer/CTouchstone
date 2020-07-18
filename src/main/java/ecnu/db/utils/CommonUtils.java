@@ -47,13 +47,13 @@ public class CommonUtils {
 
     /**
      * 单个数据库时把表转换为<database>.<table>的形式
-     * @param systemConfig 系统配置
+     * @param databaseName 未跨数据库情况下数据库名称
      * @param name 表名
      * @return 转换后的表名
      */
-    public static String addDBNamePredix(SystemConfig systemConfig, String name) {
-        if (!systemConfig.isCrossMultiDatabase() && !isCanonicalTableName(name)) {
-            name = String.format("%s.%s", systemConfig.getDatabaseName(), name);
+    public static String addDBNamePrefix(String databaseName, String name) {
+        if (!isCanonicalTableName(name)) {
+            name = String.format("%s.%s", databaseName, name);
         }
         return name;
     }
