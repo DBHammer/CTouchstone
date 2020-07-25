@@ -359,7 +359,7 @@ public class Main {
         if (!multiColNdvFile.isFile()) {
             throw new TouchstoneToolChainException(String.format("找不到%s", multiColNdvFile.getAbsolutePath()));
         }
-        multiColNdvMap = JSON.parseObject(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<>() {
+        multiColNdvMap = JSON.parseObject(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<Map<String, Integer>>() {
         });
         return multiColNdvMap;
     }
@@ -384,7 +384,7 @@ public class Main {
             if (!schemaFile.isFile()) {
                 throw new TouchstoneToolChainException(String.format("找不到%s", schemaFile.getAbsolutePath()));
             }
-            schemas = JSON.parseObject(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<>() {
+            schemas = JSON.parseObject(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<Map<String, Schema>>() {
             });
             logger.info("加载表结构和表数据分布成功");
         } else {

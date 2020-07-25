@@ -11,6 +11,7 @@ import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.schema.Schema;
 import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -190,7 +191,7 @@ public abstract class AbstractAnalyzer {
             if (queryInfo == null) {
                 break;
             }
-            if (!queryInfo.getData().isBlank()) {
+            if (StringUtils.isNotBlank(queryInfo.getData())) {
                 queryInfos.add(String.format("[%s];%s", queryInfo.getTableName(), queryInfo.getData()));
             }
         }
