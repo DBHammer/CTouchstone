@@ -136,7 +136,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 node.leftNode = new ExecutionNode(rawNode.right.left.id, ExecutionNodeType.join, rawNode.right.left.rowCount, rawNode.operatorInfo);
                 String tableName = extractTableName(rawNode.right.right.left.operatorInfo);
                 String canonicalTblName = getCanonicalTblName(tableName);
-                node.leftNode.rightNode = new ExecutionNode(rawNode.right.right.left.id, ExecutionNodeType.scan, schemas.get(canonicalTblName).getTableSize(), "table:" + canonicalTblName);
+                node.leftNode.rightNode = new ExecutionNode(rawNode.right.right.left.id, ExecutionNodeType.scan, getSchema(canonicalTblName).getTableSize(), "table:" + canonicalTblName);
                 node.leftNode.leftNode = buildExecutionTree(rawNode.left);
                 return node;
             }
@@ -150,7 +150,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 if (!matches.isEmpty() && nodeTypeRef.isTableScanNode(rawNode.right.nodeType)) {
                     String tableName = extractTableName(rawNode.right.operatorInfo);
                     String canonicalTblName = getCanonicalTblName(tableName);
-                    node = new ExecutionNode(rawNode.id, ExecutionNodeType.scan, schemas.get(canonicalTblName).getTableSize(), "table:" + canonicalTblName);
+                    node = new ExecutionNode(rawNode.id, ExecutionNodeType.scan, getSchema(canonicalTblName).getTableSize(), "table:" + canonicalTblName);
                     // 其他情况跳过左侧节点
                 } else {
                     node = buildExecutionTree(rawNode.right);
@@ -160,7 +160,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             else if (nodeTypeRef.isIndexScanNode(rawNode.left.nodeType)) {
                 String tableName = extractTableName(rawNode.left.operatorInfo);
                 String canonicalTblName = getCanonicalTblName(tableName);
-                int tableSize = schemas.get(canonicalTblName).getTableSize();
+                int tableSize = getSchema(canonicalTblName).getTableSize();
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (rawNode.left.rowCount != tableSize) {
                     node = new ExecutionNode(rawNode.left.id, ExecutionNodeType.scan, tableSize, "table:" + canonicalTblName);

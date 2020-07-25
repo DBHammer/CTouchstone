@@ -5,6 +5,8 @@ import ecnu.db.utils.TouchstoneToolChainException;
 import java.util.List;
 import java.util.Map;
 
+import static ecnu.db.utils.CommonUtils.DUMP_FILE_POSTFIX;
+
 public class DumpFileConnector implements DatabaseConnectorInterface {
 
     private final List<String> tableNames;
@@ -26,7 +28,7 @@ public class DumpFileConnector implements DatabaseConnectorInterface {
 
     @Override
     public List<String[]> explainQuery(String queryCanonicalName, String sql, String[] sqlInfoColumns) throws TouchstoneToolChainException {
-        List<String[]> queryPlan = this.queryPlanMap.get(String.format("%s_dump", queryCanonicalName));
+        List<String[]> queryPlan = this.queryPlanMap.get(String.format("%s.%s", queryCanonicalName, DUMP_FILE_POSTFIX));
         if (queryPlan == null) {
             throw new TouchstoneToolChainException(String.format("cannot find query plan for %s", queryCanonicalName));
         }

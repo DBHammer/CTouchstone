@@ -3,6 +3,7 @@ package ecnu.db.schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnType;
 import ecnu.db.utils.TouchstoneToolChainException;
+import ecnu.db.utils.exception.CannotFindSchemaException;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -74,6 +75,9 @@ public class Schema {
             while (rs.next()) {
                 String pkTable = rs.getString("PKTABLE_NAME"), pkCol = rs.getString("PKCOLUMN_NAME"),
                         fkTable = rs.getString("FKTABLE_NAME"), fkCol = rs.getString("FKCOLUMN_NAME");
+                if (!schemas.containsKey(fkTable)) {
+                    throw new CannotFindSchemaException(fkTable);
+                }
                 schemas.get(fkTable).addForeignKey(fkCol, pkTable, pkCol);
             }
         }

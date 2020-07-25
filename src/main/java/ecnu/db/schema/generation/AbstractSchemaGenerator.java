@@ -17,14 +17,13 @@ import java.util.Map;
  * @author wangqingshuai
  */
 public abstract class AbstractSchemaGenerator {
+
     /**
      * format sql and return two sqls
      *
      * @param tableDDL 表的DDL
      * @return 1.column info sqls 2. keys info sql, including primary key and foreign keys
      */
-
-
     abstract Pair<String[], String> getColumnSqlAndKeySql(String tableDDL);
 
     /**

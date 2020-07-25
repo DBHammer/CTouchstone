@@ -1,7 +1,6 @@
 package ecnu.db.analyzer.online;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import ecnu.db.analyzer.online.node.ExecutionNode;
 import ecnu.db.analyzer.online.node.NodeTypeRefFactory;
@@ -11,6 +10,7 @@ import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.schema.Schema;
 import ecnu.db.utils.SystemConfig;
 import ecnu.db.utils.TouchstoneToolChainException;
+import ecnu.db.utils.exception.CannotFindSchemaException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -129,7 +129,7 @@ public abstract class AbstractAnalyzer {
             StringBuilder selectArgs = new StringBuilder();
 
             if (operator.contains("in")) {
-                int dateOrNot = schemas.get(tableName).isDate(columnName) ? 1 : 0;
+                int dateOrNot = getSchema(tableName).isDate(columnName) ? 1 : 0;
                 int inCount = Integer.parseInt(operator.split("[()]")[1]);
                 selectArgs = new StringBuilder(String.format("(%s)",
                         IntStream.range(0, inCount)
@@ -140,11 +140,11 @@ public abstract class AbstractAnalyzer {
                 if ("bet".equals(operator)) {
                     selectArgs.append(String.format("ween '#%d,0,%d#' and '#%d,1,%d#'",
                             sqlArgIndex,
-                            schemas.get(tableName).isDate(columnName) ? 1 : 0,
+                            getSchema(tableName).isDate(columnName) ? 1 : 0,
                             sqlArgIndex++,
-                            schemas.get(tableName).isDate(columnName) ? 1 : 0));
+                            getSchema(tableName).isDate(columnName) ? 1 : 0));
                 } else {
-                    selectArgs.append(String.format("#%d,0,%d#", sqlArgIndex++, schemas.get(tableName).isDate(columnName) ? 1 : 0));
+                    selectArgs.append(String.format("#%d,0,%d#", sqlArgIndex++, getSchema(tableName).isDate(columnName) ? 1 : 0));
                 }
             }
             if (argsAndIndex.containsKey(selectArgName)) {
@@ -254,11 +254,11 @@ public abstract class AbstractAnalyzer {
             Pair<String, String> tableNameAndSelectCondition = analyzeSelectCondition(node.getInfo());
             tableName = tableNameAndSelectCondition.getLeft();
             String selectInfo = "[0," + tableNameAndSelectCondition.getRight() + "," +
-                    (double) node.getOutputRows() / schemas.get(tableName).getTableSize() + "];";
+                    (double) node.getOutputRows() / getSchema(tableName).getTableSize() + "];";
             constraintChain = new QueryInfo(selectInfo, tableName, node.getOutputRows());
         } else if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
             tableName = extractTableName(node.getInfo());
-            Schema schema = schemas.get(tableName);
+            Schema schema = getSchema(tableName);
             constraintChain = new QueryInfo("", tableName, schema.getTableSize());
         } else {
             throw new TouchstoneToolChainException(String.format("底层节点'%s'不应该为join", node.getId()));
@@ -268,9 +268,9 @@ public abstract class AbstractAnalyzer {
             boolean isStop;
             try {
                 isStop = analyzeNode(node, constraintChain, tableName);
-            } catch (TouchstoneToolChainException | SQLException e) {
+            } catch (TouchstoneToolChainException e) {
                 // 小于设置的阈值以后略去后续的节点
-                if (node.getOutputRows() * 1.0 / schemas.get(tableName).getTableSize() < config.getSkipNodeThreshold()) {
+                if (node.getOutputRows() * 1.0 / getSchema(tableName).getTableSize() < config.getSkipNodeThreshold()) {
                     logger.error("提取约束链失败", e);
                     logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), node));
                     break;
@@ -324,17 +324,17 @@ public abstract class AbstractAnalyzer {
             //根据主外键分别设置约束链输出信息
             if (isPrimaryKey(pkTable, pkCol, fkTable, fkCol)) {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(schemas.get(pkTable).getJoinTag());
+                    node.setJoinTag(getSchema(pkTable).getJoinTag());
                 }
                 constraintChain.addConstraint("[1," + pkCol.replace(',', '#') + "," +
                         node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
                 //设置主键
-                schemas.get(pkTable).setPrimaryKeys(pkCol);
+                getSchema(pkTable).setPrimaryKeys(pkCol);
                 constraintChain.setLastNodeLineCount(node.getOutputRows());
                 return true;
             } else {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(schemas.get(pkTable).getJoinTag());
+                    node.setJoinTag(getSchema(pkTable).getJoinTag());
                 }
                 String primaryKey = fkTable + "." + fkCol;
                 constraintChain.addConstraint("[2," + fkCol.replace(',', '#') + "," +
@@ -344,7 +344,7 @@ public abstract class AbstractAnalyzer {
                 //设置外键
                 logger.info("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
                         fkCol + ".column:" + fkTable);
-                schemas.get(pkTable).addForeignKey(pkCol, fkTable, fkCol);
+                getSchema(pkTable).addForeignKey(pkCol, fkTable, fkCol);
                 constraintChain.setLastNodeLineCount(node.getOutputRows());
             }
         }
@@ -363,23 +363,23 @@ public abstract class AbstractAnalyzer {
      * @throws SQLException
      */
     private boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneToolChainException, SQLException {
-        if (String.format("%s.%s", pkTable, pkCol).equals(schemas.get(fkTable).getMetaDataFks().get(fkCol))) {
+        if (String.format("%s.%s", pkTable, pkCol).equals(getSchema(fkTable).getMetaDataFks().get(fkCol))) {
             return true;
         }
-        if (String.format("%s.%s", fkTable, fkCol).equals(schemas.get(pkTable).getMetaDataFks().get(pkCol))) {
+        if (String.format("%s.%s", fkTable, fkCol).equals(getSchema(pkTable).getMetaDataFks().get(pkCol))) {
             return false;
         }
         if (!pkCol.contains(",")) {
-            if (schemas.get(pkTable).getNdv(pkCol) == schemas.get(fkTable).getNdv(fkCol)) {
-                return schemas.get(pkTable).getTableSize() < schemas.get(fkTable).getTableSize();
+            if (getSchema(pkTable).getNdv(pkCol) == getSchema(fkTable).getNdv(fkCol)) {
+                return getSchema(pkTable).getTableSize() < getSchema(fkTable).getTableSize();
             } else {
-                return schemas.get(pkTable).getNdv(pkCol) > schemas.get(fkTable).getNdv(fkCol);
+                return getSchema(pkTable).getNdv(pkCol) > getSchema(fkTable).getNdv(fkCol);
             }
         } else {
             int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
             int rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
             if (leftTableNdv == rightTableNdv) {
-                return schemas.get(pkTable).getTableSize() < schemas.get(fkTable).getTableSize();
+                return getSchema(pkTable).getTableSize() < getSchema(fkTable).getTableSize();
             } else {
                 return leftTableNdv > rightTableNdv;
             }
@@ -403,6 +403,14 @@ public abstract class AbstractAnalyzer {
 
     public int getParameterId() {
         return sqlArgIndex++;
+    }
+
+    public Schema getSchema(String tableName) throws CannotFindSchemaException {
+        Schema schema = schemas.get(tableName);
+        if (schema == null) {
+            throw new CannotFindSchemaException(tableName);
+        }
+        return schema;
     }
 
 }

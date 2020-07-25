@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
 public class CommonUtils {
     private static final HashSet<String> WHERE_DELIMITERS = new HashSet<>(Arrays.asList("and", "limit", "group", ")", "or", "order", "||", "&&", "left", "right", "outer", "inner", "natural", "join", "straight_join", "cross"));
     private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
+    public static final int INIT_HASHMAP_SIZE = 16;
+    public static final String DUMP_FILE_POSTFIX = "dump";
 
     /**
      * 获取正则表达式的匹配

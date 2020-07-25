@@ -27,6 +27,8 @@ public class SystemConfig {
     private String sqlsDirectory;
     private String loadDirectory;
     private String dumpDirectory;
+    private String logDirectory;
+
     private HashMap<ColumnType, HashSet<String>> typeConvert;
     private HashMap<String, String> tidbSelectArgs;
     private Double skipNodeThreshold;
@@ -182,4 +184,13 @@ public class SystemConfig {
     public void setSkipNodeThreshold(Double skipNodeThreshold) {
         this.skipNodeThreshold = skipNodeThreshold;
     }
+
+    public String getLogDirectory() {
+        return logDirectory;
+    }
+
+    public void setLogDirectory(String logDirectory) {
+        this.logDirectory = logDirectory;
+    }
+
 }
