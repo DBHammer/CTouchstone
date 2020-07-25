@@ -401,4 +401,8 @@ public abstract class AbstractAnalyzer {
         }
     }
 
+    public int getParameterId() {
+        return sqlArgIndex++;
+    }
+
 }

@@ -1,6 +1,7 @@
 package ecnu.db.utils;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 /**
  * @author qingshuai.wang
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TidbStatsJsonObject {
     int count;
     HashMap<String, Distribution> columns;
@@ -48,17 +50,17 @@ public class TidbStatsJsonObject {
     }
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 class Distribution {
-    @JSONField(name = "null_count")
     int nullCount;
     Histogram histogram;
-    @JSONField(name = "tot_col_size")
     int totalColSize;
 
     public int getTotalColSize() {
         return totalColSize;
     }
 
+    @JsonSetter("tot_col_size")
     public void setTotalColSize(int totalColSize) {
         this.totalColSize = totalColSize;
     }
@@ -71,6 +73,7 @@ class Distribution {
         this.histogram = histogram;
     }
 
+    @JsonSetter("null_count")
     public int getNullCount() {
         return nullCount;
     }
@@ -80,6 +83,7 @@ class Distribution {
     }
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 class Histogram {
     int ndv;
 
