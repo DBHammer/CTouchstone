@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
  * @author wangqingshuai
  */
 public class MultiVarFilterOperation extends AbstractFilterOperation {
-    ArithmeticNode arithmeticTree;
+    private final ArithmeticNode arithmeticTree;
 
     public MultiVarFilterOperation(CompareOperator operator, ArithmeticNode arithmeticTree) {
         super(operator);
