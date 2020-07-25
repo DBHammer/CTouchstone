@@ -2,6 +2,7 @@ package ecnu.db.analyzer.online.select.tidb;
 
 import ecnu.db.analyzer.online.TidbAnalyzer;
 import ecnu.db.constraintchain.filter.logical.AndNode;
+import ecnu.db.utils.SystemConfig;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.*;
 
@@ -17,7 +18,8 @@ public class TidbSelectOperatorInfoParserTest {
 
     @BeforeEach
     void setUp() {
-        parser.setAnalyzer(new TidbAnalyzer(null, null, null, null, null));
+        SystemConfig config = new SystemConfig();
+        parser.setAnalyzer(new TidbAnalyzer(config, null, null, null));
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method")
