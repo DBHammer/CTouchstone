@@ -20,7 +20,7 @@ public class NumericNode extends ArithmeticNode {
 
     @Override
     public float[] getVector() {
-        int size = ArithmeticNode.getSize();
+        int size = ArithmeticNode.size;
         float[] value = new float[size];
         Arrays.fill(value, constant);
         return value;
