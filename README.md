@@ -126,6 +126,7 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
     "resultDirectory": "touchstoneconf",
     "loadDirectory": "load",
     "dumpDirectory": "dump",
+    "logDirectory": "log",
     "skipNodeThreshold": 0.01,
     "typeConvert": {
         "INTEGER": [
@@ -172,6 +173,7 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
   1. 需要分析查询计划的sql文件夹路径，文件夹内待分析的文件必须以sql结尾，程序会尝试分析每个sql文件内的所有sql语句，单个sql文件内允许包含多组语句，但必须是select语句，其他类型语句未测试。
   2. 结果输出文件夹路径，程序会向指定路径输出touchstone的配置文件和模版化的sql。
   3. 持久化和加载文件夹路径，若没有dumpDirectory选项，就不会持久化；若没有loadDirectory选项，就不会加载
+  4. 日志文件夹，用于存放分析无法处理的query的文件
 
 + 容忍分析阈值。行数与tableSize比值低于该阈值的节点在出错的情况下，会跳过该节点及其上的节点
 
