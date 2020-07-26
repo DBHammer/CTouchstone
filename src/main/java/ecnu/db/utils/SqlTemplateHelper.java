@@ -157,14 +157,7 @@ public class SqlTemplateHelper {
      * @return 添加的参数部分
      */
     public static String appendArgs(Map<String, List<String>> argsMap, String title, List<String> args) {
-        String argStr;
-        argStr = String.format("-- %s:%s%s",
-                title,
-                args
-                .stream()
-                .map((arg) -> String.format("%s:%s", arg, argsMap.get(arg)))
-                .collect(Collectors.joining(",")),
-                System.lineSeparator());
-        return argStr;
+        String argsString = args.stream().map((arg) -> String.format("%s:%s", arg, argsMap.get(arg))).collect(Collectors.joining(","));
+        return String.format("-- %s:%s%s", title, argsString, System.lineSeparator());
     }
 }
