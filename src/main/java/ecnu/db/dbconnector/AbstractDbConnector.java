@@ -129,9 +129,9 @@ public abstract class AbstractDbConnector implements DatabaseConnectorInterface 
      * @param databaseName         数据库名称，若isCrossMultiDatabase为false，则可以填写null
      * @param files                SQL文件
      * @return 表名
-     * @throws IOException
-     * @throws TouchstoneToolChainException
-     * @throws SQLException
+     * @throws IOException                  从SQL文件中获取Query失败
+     * @throws TouchstoneToolChainException 从Query中获取tableNames失败
+     * @throws SQLException                 从数据库中获取tableNames失败
      */
     public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files) throws IOException, TouchstoneToolChainException, SQLException {
         List<String> tableNames;
@@ -139,8 +139,8 @@ public abstract class AbstractDbConnector implements DatabaseConnectorInterface 
             tableNames = new ArrayList<>();
             for (File sqlFile : files) {
                 List<String> queries = ReadQuery.getQueriesFromFile(sqlFile.getPath(), "mysql");
-                for (String sql : queries) {
-                    Set<String> tableNameRefs = QueryTableName.getTableName(sqlFile.getAbsolutePath(), sql, "mysql", true);
+                for (String query : queries) {
+                    Set<String> tableNameRefs = QueryTableName.getTableName(sqlFile.getAbsolutePath(), query, "mysql", true);
                     tableNames.addAll(tableNameRefs);
                 }
             }
@@ -157,9 +157,9 @@ public abstract class AbstractDbConnector implements DatabaseConnectorInterface 
      * @param dbSchemaGenerator  Schema生成器
      * @param canonicalTableName 标准表名
      * @return Schema
-     * @throws TouchstoneToolChainException
-     * @throws SQLException
-     * @throws IOException
+     * @throws TouchstoneToolChainException 生成Schema失败，设置col分布失败或者设置col的cardinality和average length等信息失败
+     * @throws SQLException                 获取表的DDL失败或者获取col分布失败
+     * @throws IOException                  获取col的cardinality和average length等信息失败
      */
     public Schema fetchSchema(AbstractSchemaGenerator dbSchemaGenerator, String canonicalTableName) throws TouchstoneToolChainException, SQLException, IOException {
         Schema schema = dbSchemaGenerator.generateSchemaNoKeys(canonicalTableName, getTableDdl(canonicalTableName));
@@ -169,6 +169,4 @@ public abstract class AbstractDbConnector implements DatabaseConnectorInterface 
         logger.info(String.format("获取'%s'表结构和表数据分布成功", canonicalTableName));
         return schema;
     }
-
-
 }
