@@ -36,12 +36,12 @@ public class StorageManager {
     private final File logDir;
     private final File logQueryDir;
 
-    public StorageManager(String resultDirpath, String dumpDirpath, String loadDirpath, String logPath) {
-        retDir = new File(resultDirpath);
-        retSqlDir = new File(resultDirpath, "sql");
-        dumpDir = Optional.ofNullable(dumpDirpath).map(File::new).orElse(null);
-        dumpQueryDir = Optional.ofNullable(dumpDirpath).map((dir) -> (new File(dir, "query"))).orElse(null);
-        loadDir = Optional.ofNullable(loadDirpath).map(File::new).orElse(null);
+    public StorageManager(String resultDirPath, String dumpDirPath, String loadDirPath, String logPath) {
+        retDir = new File(resultDirPath);
+        retSqlDir = new File(resultDirPath, "sql");
+        dumpDir = Optional.ofNullable(dumpDirPath).map(File::new).orElse(null);
+        dumpQueryDir = Optional.ofNullable(dumpDirPath).map((dir) -> (new File(dir, "query"))).orElse(null);
+        loadDir = Optional.ofNullable(loadDirPath).map(File::new).orElse(null);
         logDir = new File(logPath);
         logQueryDir = Optional.of(logPath).map((dir) -> (new File(dir, "query"))).orElse(null);
     }
