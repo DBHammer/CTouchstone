@@ -189,8 +189,4 @@ public class SystemConfig {
         return logDirectory;
     }
 
-    public void setLogDirectory(String logDirectory) {
-        this.logDirectory = logDirectory;
-    }
-
 }

@@ -134,19 +134,17 @@ public abstract class AbstractDbConnector implements DatabaseConnectorInterface 
      * @throws SQLException                 从数据库中获取tableNames失败
      */
     public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files) throws IOException, TouchstoneToolChainException, SQLException {
-        List<String> tableNames;
-        if (isCrossMultiDatabase) {
-            tableNames = new ArrayList<>();
-            for (File sqlFile : files) {
-                List<String> queries = ReadQuery.getQueriesFromFile(sqlFile.getPath(), "mysql");
-                for (String query : queries) {
-                    Set<String> tableNameRefs = QueryTableName.getTableName(sqlFile.getAbsolutePath(), query, "mysql", true);
-                    tableNames.addAll(tableNameRefs);
-                }
+        List<String> tableNames = new ArrayList<>();
+        for (File sqlFile : files) {
+            List<String> queries = ReadQuery.getQueriesFromFile(sqlFile.getPath(), "mysql");
+            for (String query : queries) {
+                Set<String> tableNameRefs = QueryTableName.getTableName(sqlFile.getAbsolutePath(), query, "mysql", isCrossMultiDatabase);
+                tableNames.addAll(tableNameRefs);
             }
-            tableNames = tableNames.stream().distinct().collect(Collectors.toList());
-        } else {
-            tableNames = getTableNames().stream().map((name) -> CommonUtils.addDBNamePrefix(databaseName, name)).collect(Collectors.toList());
+        }
+        tableNames = tableNames.stream().distinct().collect(Collectors.toList());
+        if (!isCrossMultiDatabase) {
+            tableNames = tableNames.stream().map((name) -> CommonUtils.addDBNamePrefix(databaseName, name)).collect(Collectors.toList());
         }
         return tableNames;
     }
