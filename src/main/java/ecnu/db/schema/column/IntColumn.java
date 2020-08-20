@@ -1,6 +1,18 @@
 package ecnu.db.schema.column;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.schema.column.bucket.EqBucket;
+import ecnu.db.utils.CommonUtils;
+
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+
+import static ecnu.db.constraintchain.filter.operation.CompareOperator.*;
 
 /**
  * @author qingshuai.wang
@@ -9,6 +21,8 @@ public class IntColumn extends AbstractColumn {
     private int min;
     private int max;
     private int ndv;
+    private int[] tupleData;
+    private double[] doubleCopyOfTupleData;
 
     public IntColumn() {
         super(null, ColumnType.INTEGER);
@@ -44,20 +58,116 @@ public class IntColumn extends AbstractColumn {
     }
 
     @Override
-    protected String generateEqData(BigDecimal minProbability, BigDecimal maxProbability) {
+    protected String generateEqParamData(BigDecimal minProbability, BigDecimal maxProbability) {
         String data;
         double minP = minProbability.doubleValue(), maxP = maxProbability.doubleValue();
         do {
-            data = Integer.toString((int) (Math.random() * (maxP - minP) * (max - min) + minP * (max - min) + min));
+            data = Integer.toString((int) (Math.random() * (maxP - minP) * (max - min + 1) + minP * (max - min + 1) + min));
         } while (eqCandidates.contains(data));
         eqCandidates.add(data);
         return data;
     }
 
     @Override
-    public String generateNonEqData(BigDecimal probability) {
+    public String generateNonEqParamData(BigDecimal probability) {
         int value = BigDecimal.valueOf(getMax() - getMin()).multiply(probability).intValue() + getMin();
         return Integer.toString(value);
     }
 
+    @Override
+    public void prepareTupleData(int size) {
+        eqBuckets.sort(Comparator.comparing(o -> o.leftBorder));
+        BigDecimal cumBorder = BigDecimal.ZERO, sizeVal = BigDecimal.valueOf(size);
+        if (tupleData == null || this.tupleData.length != size) {
+            tupleData = new int[size];
+        }
+        for (EqBucket eqBucket : eqBuckets) {
+            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
+                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(sizeVal);
+                int eqValue = Integer.parseInt(entry.getValue().getData());
+                for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
+                    tupleData[j] = eqValue;
+                }
+                cumBorder = newCum;
+            }
+        }
+        int bound = max - min + 1;
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        for (int i = cumBorder.intValue(); i < size; i++) {
+            tupleData[i] = (int) ((1 - rand.nextDouble()) * bound + min);
+        }
+        if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
+            CommonUtils.shuffle(size, rand, tupleData);
+        }
+        if (doubleCopyOfTupleData == null || this.doubleCopyOfTupleData.length != size) {
+            doubleCopyOfTupleData = new double[size];
+        }
+        for (int i = 0; i < size; i++) {
+            doubleCopyOfTupleData[i] = tupleData[i];
+        }
+    }
+
+    /**
+     * for columnNode
+     * @return 返回用于multi-var计算的一个double数组
+     */
+    public double[] calculate() {
+        return doubleCopyOfTupleData;
+    }
+
+    @Override
+    public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters, boolean hasNot) {
+        boolean[] ret = new boolean[tupleData.length];
+        if (operator == EQ) {
+            for (int i = 0; i < tupleData.length; i++) {
+                ret[i] = (!hasNot & (tupleData[i] == Integer.parseInt(parameters.get(0).getData())));
+            }
+        }
+        else if (operator == NE) {
+            for (int i = 0; i < tupleData.length; i++) {
+                ret[i] = (!hasNot & (tupleData[i] != Integer.parseInt(parameters.get(0).getData())));
+            }
+        }
+        else if (operator == LT) {
+            for (int i = 0; i < tupleData.length; i++) {
+                ret[i] = (!hasNot & (tupleData[i] < Integer.parseInt(parameters.get(0).getData())));
+            }
+        }
+        else if (operator == LE) {
+            for (int i = 0; i < tupleData.length; i++) {
+                ret[i] = (!hasNot & (tupleData[i] <= Integer.parseInt(parameters.get(0).getData())));
+            }
+        }
+        else if (operator == GT) {
+            for (int i = 0; i < tupleData.length; i++) {
+                ret[i] = (!hasNot & (tupleData[i] > Integer.parseInt(parameters.get(0).getData())));
+            }
+        }
+        else if (operator == GE) {
+            for (int i = 0; i < tupleData.length; i++) {
+                ret[i] = (!hasNot & (tupleData[i] >= Integer.parseInt(parameters.get(0).getData())));
+            }
+        }
+        else if (operator == IN) {
+            int[] paramData = new int[parameters.size()];
+            for (int i = 0; i < parameters.size(); i++) {
+                paramData[i] = Integer.parseInt(parameters.get(0).getData());
+            }
+            for (int i = 0; i < tupleData.length; i++) {
+                ret[i] = false;
+                for (int paramDatum : paramData) {
+                    ret[i] = (ret[i] | (!hasNot & (tupleData[i] == paramDatum)));
+                }
+            }
+        }
+        else {
+            throw new UnsupportedOperationException();
+        }
+        return ret;
+    }
+
+    @JsonIgnore
+    public int[] getTupleData() {
+        return tupleData;
+    }
 }

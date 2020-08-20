@@ -6,16 +6,18 @@ import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.arithmetic.value.ColumnNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.exception.CannotFindColumnException;
 import ecnu.db.exception.InstantiateParameterException;
 import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
+import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static ecnu.db.constraintchain.filter.operation.CompareOperator.*;
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.GREATER;
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.LESS;
 
@@ -63,6 +65,54 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
+    public boolean[] evaluate(Schema schema, int size) throws CannotFindColumnException {
+        double[] data = arithmeticTree.calculate(schema, size);
+        boolean[] ret = new boolean[data.length];
+        if (operator == LE) {
+            double param = Double.parseDouble(parameters.get(0).getData());
+            for (int i = 0; i < data.length; i++) {
+                ret[i] = (data[i] <= param);
+            }
+        }
+        else if (operator == LT) {
+            double param = Double.parseDouble(parameters.get(0).getData());
+            for (int i = 0; i < data.length; i++) {
+                ret[i] = (data[i] < param);
+            }
+        }
+        else if (operator == GE) {
+            double param = Double.parseDouble(parameters.get(0).getData());
+            for (int i = 0; i < data.length; i++) {
+                ret[i] = (data[i] >= param);
+            }
+        }
+        else if (operator == GT) {
+            double param = Double.parseDouble(parameters.get(0).getData());
+            for (int i = 0; i < data.length; i++) {
+                ret[i] = (data[i] > param);
+            }
+        }
+        else {
+            throw new UnsupportedOperationException();
+        }
+        List<String> columnNames = new ArrayList<>(getColNames());
+        boolean[] nullEvaluations = new boolean[columnNames.size()];
+        for (String columnName : columnNames) {
+            AbstractColumn column = schema.getColumn(columnName);
+            boolean[] columnNullEvaluations = column.getIsnullEvaluations();
+            for (int i = 0; i < nullEvaluations.length; i++) {
+                nullEvaluations[i] = false;
+                nullEvaluations[i] = (nullEvaluations[i] | columnNullEvaluations[i]);
+            }
+        }
+        for (int i = 0; i < size; i++) {
+            ret[i] = (ret[i] & !nullEvaluations[i]);
+        }
+
+        return ret;
+    }
+
+    @Override
     public String toString() {
         return String.format("%s(%s, %s)", operator.toString().toLowerCase(),
                 arithmeticTree.toString(),
@@ -107,4 +157,6 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             }
         });
     }
+
+
 }

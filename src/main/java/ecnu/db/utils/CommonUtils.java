@@ -3,6 +3,7 @@ package ecnu.db.utils;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -82,4 +83,35 @@ public class CommonUtils {
     public static String extractSimpleColumnName(String canonicalColumnName) {
         return canonicalColumnName.split("\\.")[2];
     }
+
+    public static void shuffle(int size, ThreadLocalRandom rand, int[] tupleData) {
+        int tmp;
+        for (int i = size; i > 1; i--) {
+            int idx = rand.nextInt(i);
+            tmp = tupleData[i - 1];
+            tupleData[i - 1] = tupleData[idx];
+            tupleData[idx] = tmp;
+        }
+    }
+
+    public static void shuffle(int size, ThreadLocalRandom rand, double[] tupleData) {
+        double tmp;
+        for (int i = size; i > 1; i--) {
+            int idx = rand.nextInt(i);
+            tmp = tupleData[i - 1];
+            tupleData[i - 1] = tupleData[idx];
+            tupleData[idx] = tmp;
+        }
+    }
+
+    public static void shuffle(int size, ThreadLocalRandom rand, long[] tupleData) {
+        long tmp;
+        for (int i = size; i > 1; i--) {
+            int idx = rand.nextInt(i);
+            tmp = tupleData[i - 1];
+            tupleData[i - 1] = tupleData[idx];
+            tupleData[idx] = tmp;
+        }
+    }
+
 }

@@ -17,6 +17,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.EQ;
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.LT;
@@ -33,6 +34,7 @@ public abstract class AbstractColumn {
     private final ColumnType columnType;
     protected float nullPercentage;
     protected String columnName;
+    BitSet bitmap;
     // 非等值约束
     protected NonEqBucket bucket;
     // 已经处理过的约束
@@ -44,6 +46,7 @@ public abstract class AbstractColumn {
     protected List<EqBucket> eqBuckets = new ArrayList<>();
     // 生成的等于约束参数数据
     protected Set<String> eqCandidates = new HashSet<>();
+    protected boolean[] isnullEvaluations;
 
     public AbstractColumn(String columnName, ColumnType columnType) {
         this.columnName = columnName;
@@ -212,7 +215,7 @@ public abstract class AbstractColumn {
         eqBuckets.sort(Comparator.comparing(b -> b.leftBorder));
         for (EqBucket eqBucket : eqBuckets) {
             eqBucket.eqConditions.forEach((b, param) -> {
-                String data = generateEqData(eqBucket.leftBorder, eqBucket.rightBorder);
+                String data = generateEqParamData(eqBucket.leftBorder, eqBucket.rightBorder);
                 metConditions.get(EQ + param.getData()).forEach((p) -> p.setData(data));
             });
         }
@@ -240,7 +243,7 @@ public abstract class AbstractColumn {
      * @param maxProbability 等值参数可以出现的概率区间的右边界
      * @return 生成的数据
      */
-    protected abstract String generateEqData(BigDecimal minProbability, BigDecimal maxProbability);
+    protected abstract String generateEqParamData(BigDecimal minProbability, BigDecimal maxProbability);
 
     public boolean hasNotMetCondition(String condition) {
         return !metConditions.containsKey(condition);
@@ -304,7 +307,7 @@ public abstract class AbstractColumn {
             leftProbability = leftBucket.leftBorder;
             rightProbability = rightBucket.leftBorder.add(rightBucket.capacity);
         }
-        String leftData = generateNonEqData(leftProbability), rightData = generateNonEqData(rightProbability);
+        String leftData = generateNonEqParamData(leftProbability), rightData = generateNonEqParamData(rightProbability);
         lessParameters.forEach((p) -> p.setData(leftData));
         greaterParameters.forEach((p) -> p.setData(rightData));
         // todo 当前仅使用LT
@@ -318,5 +321,33 @@ public abstract class AbstractColumn {
      * @param probability 分割概率
      * @return 生成的数据
      */
-    public abstract String generateNonEqData(BigDecimal probability);
+    public abstract String generateNonEqParamData(BigDecimal probability);
+
+    /**
+     * 在一次数据生成的过程里准备好column的数据, 不处理isnull
+     * @param size 需要生成的size
+     */
+    abstract void prepareTupleData(int size);
+
+    /**
+     * prepareTupleData的对外方法，处理isnull
+     * @param size 需要生成的size
+     */
+    public void prepareGeneration(int size) {
+        if (isnullEvaluations == null || isnullEvaluations.length != size) {
+            isnullEvaluations = new boolean[size];
+        }
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        for (int i = 0; i < size; i++) {
+            isnullEvaluations[i] = (rand.nextDouble() <= nullPercentage);
+        }
+        prepareTupleData(size);
+    }
+
+    abstract public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters, boolean hasNot);
+
+    @JsonIgnore
+    public boolean[] getIsnullEvaluations() {
+        return isnullEvaluations;
+    }
 }

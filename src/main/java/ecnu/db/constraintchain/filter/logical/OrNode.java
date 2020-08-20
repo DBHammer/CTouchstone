@@ -10,6 +10,8 @@ import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.exception.PushDownProbabilityException;
+import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.schema.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,6 +119,15 @@ public class OrNode implements BoolExprNode {
     @Override
     public BoolExprType getType() {
         return type;
+    }
+
+    @Override
+    public boolean[] evaluate(Schema schema, int size) throws TouchstoneToolChainException {
+        boolean[] leftValue = leftNode.evaluate(schema, size), rightValue = rightNode.evaluate(schema, size);
+        for (int i = 0; i < size; i++) {
+            leftValue[i] = (leftValue[i] | rightValue[i]);
+        }
+        return leftValue;
     }
 
     @Override

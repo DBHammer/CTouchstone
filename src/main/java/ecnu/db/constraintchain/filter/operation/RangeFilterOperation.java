@@ -2,6 +2,7 @@ package ecnu.db.constraintchain.filter.operation;
 
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 
 import java.util.ArrayList;
@@ -88,5 +89,10 @@ public class RangeFilterOperation extends UniVarFilterOperation {
         if (lessParameters.size() > 0 && greaterParameters.size() > 0) {
             absColumn.insertBetweenProbability(probability, lessOperator, lessParameters, greaterOperator, greaterParameters);
         }
+    }
+
+    @Override
+    public boolean[] evaluate(Schema schema, int size) {
+        throw new UnsupportedOperationException();
     }
 }

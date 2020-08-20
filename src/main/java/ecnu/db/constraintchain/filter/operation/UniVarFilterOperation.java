@@ -6,7 +6,9 @@ import com.google.common.collect.Multimaps;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.exception.CannotFindColumnException;
 import ecnu.db.exception.InstantiateParameterException;
+import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.StringColumn;
 import org.apache.commons.collections.CollectionUtils;
@@ -150,7 +152,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         probability = operator.getType() == LESS ? probability : BigDecimal.ONE.subtract(probability);
         // todo currently we are regarding (lt, le) as the lt, same goes for (gt, ge), see <a href="https://youtrack.biui.me/issue/TOUCHSTONE-18">TOUCHSTONE-18</a>
         operator = LT;
-        String data = column.generateNonEqData(probability);
+        String data = column.generateNonEqParamData(probability);
         parameters.forEach((param) -> param.setData(data));
         if (column.hasNotMetCondition(operator + data)) { // for uni compare we use operator and generated value as identifier
             column.insertNonEqProbability(probability, operator, parameters.get(0));
@@ -173,10 +175,16 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         } else if (operator == IN) {
             column.insertInProbability(probability, parameters);
         } else if (operator == LIKE) {
-            String value = ((StringColumn) column).generateLikeData(parameters.get(0).getData());
+            String value = ((StringColumn) column).generateLikeParamData(probability, parameters.get(0).getData());
             parameters.get(0).setData(value);
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    @Override
+    public boolean[] evaluate(Schema schema, int size) throws CannotFindColumnException {
+        AbstractColumn column = schema.getColumn(columnName);
+        return column.evaluate(operator, parameters, hasNot);
     }
 }

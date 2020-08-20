@@ -43,6 +43,13 @@ public class NumericNode extends ArithmeticNode {
     }
 
     @Override
+    public double[] calculate(Schema schema, int size) {
+        double[] value = new double[size];
+        Arrays.fill(value, constant);
+        return value;
+    }
+
+    @Override
     public String toString() {
         return constant.toString();
     }

@@ -2,13 +2,22 @@ package ecnu.db.schema.column;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.schema.column.bucket.EqBucket;
+import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+
+import static ecnu.db.constraintchain.filter.operation.CompareOperator.*;
 
 /**
  * @author qingshuai.wang
@@ -30,6 +39,8 @@ public class DateTimeColumn extends AbstractColumn {
     private LocalDateTime begin;
     private LocalDateTime end;
     private int precision; // fraction precision for datetime
+    private long[] longCopyOfTupleData;
+    private LocalDateTime[] tupleData;
 
     public DateTimeColumn() {
         super(null, ColumnType.DATETIME);
@@ -63,7 +74,7 @@ public class DateTimeColumn extends AbstractColumn {
     }
 
     @Override
-    protected String generateEqData(BigDecimal minProbability, BigDecimal maxProbability) {
+    protected String generateEqParamData(BigDecimal minProbability, BigDecimal maxProbability) {
         String data;
         double minP = minProbability.doubleValue(), maxP = maxProbability.doubleValue();
         do {
@@ -87,7 +98,7 @@ public class DateTimeColumn extends AbstractColumn {
     }
 
     @Override
-    public String generateNonEqData(BigDecimal probability) {
+    public String generateNonEqParamData(BigDecimal probability) {
         Duration duration = Duration.between(getBegin(), getEnd());
         BigDecimal seconds = BigDecimal.valueOf(duration.getSeconds());
         BigDecimal nano = BigDecimal.valueOf(duration.getNano());
@@ -101,4 +112,77 @@ public class DateTimeColumn extends AbstractColumn {
 
         return formatter.format(newDateTime);
     }
+
+    // todo 暂时不考虑超过毫秒精度的情况
+    @Override
+    public void prepareTupleData(int size) {
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        eqBuckets.sort(Comparator.comparing(o -> o.leftBorder));
+        BigDecimal cumBorder = BigDecimal.ZERO, sizeVal = BigDecimal.valueOf(size);
+        if (longCopyOfTupleData == null || longCopyOfTupleData.length != size) {
+            longCopyOfTupleData = new long[size];
+        }
+        for (EqBucket eqBucket : eqBuckets) {
+            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
+                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(sizeVal);
+                LocalDateTime time = LocalDateTime.parse(entry.getValue().getData(), FMT);
+                for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
+                    longCopyOfTupleData[j] = time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                }
+                cumBorder = newCum;
+            }
+        }
+        long endTimeStamp = end.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), beginTimeStamp = begin.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), bound = endTimeStamp - beginTimeStamp + 1;
+        for (int i = cumBorder.intValue(); i < size; i++) {
+            longCopyOfTupleData[i] = (long) ((1 - rand.nextDouble()) * bound + beginTimeStamp);
+        }
+        if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
+            CommonUtils.shuffle(size, rand, longCopyOfTupleData);
+        }
+        if (tupleData == null || tupleData.length != size) {
+            tupleData = new LocalDateTime[size];
+        }
+        for (int i = 0; i < size; i++) {
+            tupleData[i] = Instant.ofEpochMilli(longCopyOfTupleData[i]).atZone(ZoneId.systemDefault()).toLocalDateTime();
+        }
+    }
+
+    @Override
+    public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters, boolean hasNot) {
+        boolean[] ret = new boolean[longCopyOfTupleData.length];
+        if (operator == EQ) {
+            long value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                ret[i] = (!hasNot & (longCopyOfTupleData[i] == value));
+            }
+        }
+        else if (operator == NE) {
+            long value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                ret[i] = (!hasNot & (longCopyOfTupleData[i] != value));
+            }
+        }
+        else if (operator == IN) {
+            long[] parameterData = new long[parameters.size()];
+            for (int i = 0; i < parameterData.length; i++) {
+                parameterData[i] = LocalDateTime.parse(parameters.get(i).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            }
+            for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                ret[i] = false;
+                for (double paramDatum : parameterData) {
+                    ret[i] = (ret[i] | (!hasNot & (longCopyOfTupleData[i] == paramDatum)));
+                }
+            }
+        }
+        else {
+            throw new UnsupportedOperationException();
+        }
+        return ret;
+    }
+
+    public LocalDateTime[] getTupleData() {
+        return tupleData;
+    }
+
+
 }

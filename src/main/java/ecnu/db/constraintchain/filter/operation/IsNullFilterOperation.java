@@ -2,6 +2,9 @@ package ecnu.db.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ecnu.db.constraintchain.filter.BoolExprType;
+import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.schema.Schema;
+import ecnu.db.schema.column.AbstractColumn;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -59,4 +62,13 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         this.columnName = columnName;
     }
 
+    @Override
+    public boolean[] evaluate(Schema schema, int size) throws TouchstoneToolChainException {
+        AbstractColumn column = schema.getColumn(columnName);
+        boolean[] value = new boolean[size], columnIsnullEvaluations = column.getIsnullEvaluations();
+        for (int i = 0; i < size; i++) {
+            value[i] = (!hasNot & columnIsnullEvaluations[i]);
+        }
+        return value;
+    }
 }
