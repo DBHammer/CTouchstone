@@ -7,6 +7,7 @@ import ecnu.db.schema.column.bucket.EqBucket;
 import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class IntColumn extends AbstractColumn {
         String data;
         double minP = minProbability.doubleValue(), maxP = maxProbability.doubleValue();
         do {
-            data = Integer.toString((int) (Math.random() * (maxP - minP) * (max - min + 1) + minP * (max - min + 1) + min));
+            data = Integer.toString((int) Math.floor(Math.random() * (maxP - minP) * (max - min + 1) + minP * (max - min + 1) + min));
         } while (eqCandidates.contains(data));
         eqCandidates.add(data);
         return data;
@@ -81,7 +82,7 @@ public class IntColumn extends AbstractColumn {
         }
         for (EqBucket eqBucket : eqBuckets) {
             for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(sizeVal);
+                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
                 int eqValue = Integer.parseInt(entry.getValue().getData());
                 for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
                     tupleData[j] = eqValue;
@@ -92,7 +93,7 @@ public class IntColumn extends AbstractColumn {
         int bound = max - min + 1;
         ThreadLocalRandom rand = ThreadLocalRandom.current();
         for (int i = cumBorder.intValue(); i < size; i++) {
-            tupleData[i] = (int) ((1 - rand.nextDouble()) * bound + min);
+            tupleData[i] = (int) Math.floor((1 - rand.nextDouble()) * bound + min);
         }
         if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
             CommonUtils.shuffle(size, rand, tupleData);
@@ -110,7 +111,7 @@ public class IntColumn extends AbstractColumn {
      * @return 返回用于multi-var计算的一个double数组
      */
     public double[] calculate() {
-        return doubleCopyOfTupleData;
+        return Arrays.copyOf(doubleCopyOfTupleData, doubleCopyOfTupleData.length);
     }
 
     @Override

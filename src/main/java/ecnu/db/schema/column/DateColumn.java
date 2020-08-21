@@ -94,7 +94,7 @@ public class DateColumn extends AbstractColumn {
         }
         for (EqBucket eqBucket : eqBuckets) {
             for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(sizeVal);
+                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
                 LocalDate date = LocalDate.parse(entry.getValue().getData(), FMT);
                 for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
                     longCopyOfTupleData[j] = date.atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
@@ -144,6 +144,30 @@ public class DateColumn extends AbstractColumn {
                     for (double paramDatum : parameterData) {
                         ret[i] = (ret[i] | (!hasNot & (longCopyOfTupleData[i] == paramDatum)));
                     }
+                }
+                break;
+            case LT:
+                value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] < value));
+                }
+                break;
+            case LE:
+                value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] <= value));
+                }
+                break;
+            case GT:
+                value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] > value));
+                }
+                break;
+            case GE:
+                value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] >= value));
                 }
                 break;
             default:

@@ -184,7 +184,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
 
     @Override
     public boolean[] evaluate(Schema schema, int size) throws CannotFindColumnException {
-        AbstractColumn column = schema.getColumn(columnName);
+        AbstractColumn column = schema.getColumn(columnName.split("\\.")[2]);
         return column.evaluate(operator, parameters, hasNot);
     }
 }

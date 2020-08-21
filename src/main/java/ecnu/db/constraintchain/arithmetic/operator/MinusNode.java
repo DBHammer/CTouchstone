@@ -27,7 +27,7 @@ public class MinusNode extends ArithmeticNode {
     public double[] calculate(Schema schema, int size) throws CannotFindColumnException {
         double[] leftValue = leftNode.calculate(schema, size), rightValue = rightNode.calculate(schema, size);
         for (int i = 0; i < leftValue.length; i++) {
-            leftValue[i] += rightValue[i];
+            leftValue[i] -= rightValue[i];
         }
         return leftValue;
     }

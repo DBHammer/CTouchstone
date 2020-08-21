@@ -96,9 +96,9 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             throw new UnsupportedOperationException();
         }
         List<String> columnNames = new ArrayList<>(getColNames());
-        boolean[] nullEvaluations = new boolean[columnNames.size()];
+        boolean[] nullEvaluations = new boolean[size];
         for (String columnName : columnNames) {
-            AbstractColumn column = schema.getColumn(columnName);
+            AbstractColumn column = schema.getColumn(columnName.split("\\.")[2]);
             boolean[] columnNullEvaluations = column.getIsnullEvaluations();
             for (int i = 0; i < nullEvaluations.length; i++) {
                 nullEvaluations[i] = false;

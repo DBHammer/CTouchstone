@@ -14,6 +14,7 @@ import ecnu.db.constraintchain.chain.ConstraintChainReader;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
+import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnDeserializer;
@@ -29,6 +30,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -101,6 +103,9 @@ class QueryInstantiationTest {
                 FileUtils.readFileToString(new File("src/test/resources/data/query-instantiation/schema.json"), UTF_8),
                 new TypeReference<HashMap<String, Schema>>() {
                 });
+        // **********************************
+        // *    test query instantiation    *
+        // **********************************
         QueryInstantiation.compute(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), schemas);
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
@@ -124,6 +129,28 @@ class QueryInstantiationTest {
                         LocalDateTime.parse("1998-12-01 00:00:00", DateTimeColumn.FMT));
         double rate = duration.getSeconds() * 1.0 / wholeDuration.getSeconds();
         assertEquals(rate, 0.267, 0.001);
+
+        // ******************************
+        // *    test data generation    *
+        // ******************************
+        int generateSize = 10_000;
+        for (Schema schema : schemas.values()) {
+            for (AbstractColumn column : schema.getColumns().values()) {
+                column.prepareGeneration(generateSize);
+            }
+        }
+
+        List<ConstraintChain> chains;
+        Map<String, Double> map;
+        chains = query2chains.get("2.sql_1");
+        map = getRate(schemas, generateSize, chains);
+        // todo 精度有待提高
+        assertEquals(0.00416, map.get("tpch.part"), 0.002);
+        assertEquals(0.2, map.get("tpch.region"), 0.002);
+
+        chains = query2chains.get("6.sql_1");
+        map = getRate(schemas, generateSize, chains);
+        // assertEquals(0.01904131080, map.get("tpch.lineitem"), 0.002);
     }
 
     @Test
@@ -141,6 +168,9 @@ class QueryInstantiationTest {
                 FileUtils.readFileToString(new File("src/test/resources/data/query-instantiation/multi-var-test/schema.json"), UTF_8),
                 new TypeReference<HashMap<String, Schema>>() {
                 });
+        // *********************************
+        // *    test query instantiation   *
+        // *********************************
         QueryInstantiation.compute(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), schemas);
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
@@ -162,14 +192,50 @@ class QueryInstantiationTest {
         }
         Arrays.sort(v);
         int target = (int) v[(int) ((1 - 0.3270440252) * samplingSize)].floatValue();
-        assertEquals(target, Integer.parseInt(id2Parameter.get(0).getData()));
+        assertEquals(target, Integer.parseInt(id2Parameter.get(0).getData()), 2);
         // ====================== t1.sql_2: c2 + 2 * c3 + c4 > p1 (ratio = 0.8364779874)
         for (int i = 0; i < samplingSize; i++) {
             v[i] = c2[i] + 2 * c3[i] + c4[i];
         }
         Arrays.sort(v);
         target = (int) v[(int) ((1 - 0.8364779874) * samplingSize)].floatValue();
-        assertEquals(target, Integer.parseInt(id2Parameter.get(1).getData()));
+        assertEquals(target, Integer.parseInt(id2Parameter.get(1).getData()), 2);
+
+        // ******************************
+        // *    test data generation    *
+        // ******************************
+        int generateSize = 10_000;
+        for (Schema schema : schemas.values()) {
+            for (AbstractColumn column : schema.getColumns().values()) {
+                column.prepareGeneration(generateSize);
+            }
+        }
+        List<ConstraintChain> chains;
+        double rate;
+        chains = query2chains.get("t1.sql_1");
+        rate = getRate(schemas, generateSize, chains).get("test.test");
+        assertEquals(0.3270440252, rate, 0.02);
+
+        chains = query2chains.get("t1.sql_2");
+        rate = getRate(schemas, generateSize, chains).get("test.test");
+        assertEquals(0.8364779874, rate, 0.02);
+
+    }
+
+    private Map<String, Double> getRate(Map<String, Schema> schemas, int generateSize, List<ConstraintChain> chains) throws TouchstoneToolChainException {
+        Map<String, Double> ret = new HashMap<>();
+        for (ConstraintChain chain : chains) {
+            String tableName = chain.getTableName();
+            Schema schema = schemas.get(tableName);
+            for (ConstraintChainNode node : chain.getNodes()) {
+                if (node instanceof ConstraintChainFilterNode) {
+                    boolean[] evaluation = ((ConstraintChainFilterNode) node).getRoot().evaluate(schema, generateSize);
+                    double rate = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count() * 1.0 / evaluation.length;
+                    ret.put(schema.getTableName(), rate);
+                }
+            }
+        }
+        return ret;
     }
 
     public void initVectorData(int test_size, Float[] c2, int c2_min, int c2_max, Random random) {

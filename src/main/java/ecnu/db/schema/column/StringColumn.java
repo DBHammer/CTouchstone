@@ -9,7 +9,10 @@ import ecnu.db.schema.column.bucket.EqBucket;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static ecnu.db.utils.CommonUtils.shuffle;
@@ -75,7 +78,7 @@ public class StringColumn extends AbstractColumn {
     }
 
     private String randomString(ThreadLocalRandom rand) {
-        byte[] array = new byte[(maxLength > minLength ? new Random().nextInt(maxLength - minLength + 1) : 0) + minLength];
+        byte[] array = new byte[rand.nextInt( 0, maxLength - minLength + 1) + minLength];
         rand.nextBytes(array);
         return new String(array, UTF_8);
     }
@@ -94,9 +97,10 @@ public class StringColumn extends AbstractColumn {
             postfix = "%";
         }
         String likeCandidate;
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
         do {
-            byte[] array = new byte[new Random().nextInt(maxLength - minLength + 1) + minLength];
-            new Random().nextBytes(array);
+            byte[] array = new byte[rand.nextInt(maxLength - minLength + 1) + minLength];
+            rand.nextBytes(array);
             likeCandidate = String.format("%s%s%s", prefix, new String(array, UTF_8), postfix);
         } while (likeCandidates.containsKey(likeCandidate));
         likeCandidates.put(likeCandidate, probability);
@@ -117,7 +121,7 @@ public class StringColumn extends AbstractColumn {
         }
         for (EqBucket eqBucket : eqBuckets) {
             for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(sizeVal);
+                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
                 int eqValue = convertString2Tag(entry.getValue().getData());
                 for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
                     intCopyOfTupleData[j] = eqValue;
@@ -128,7 +132,7 @@ public class StringColumn extends AbstractColumn {
         int likeSize = 0;
         for (String likeCandidate : likeCandidates.keySet()) {
             BigDecimal probability = likeCandidates.get(likeCandidate);
-            BigDecimal newCum = cumBorder.add(probability).multiply(sizeVal);
+            BigDecimal newCum = cumBorder.add(probability.multiply(sizeVal));
             Pair<Integer, Integer> pair = likeCandidateMap.get(likeCandidate);
             int likeMinIdx = pair.getLeft(), likeMaxIdx = pair.getRight(), start = cumBorder.intValue(), end = newCum.intValue();
             int likeNdv = likeMaxIdx - likeMinIdx + 1;
@@ -142,8 +146,10 @@ public class StringColumn extends AbstractColumn {
         if (bound < 0) {
             throw new UnsupportedOperationException();
         }
-        for (int i = cumBorder.intValue(); i < size; i++) {
-            intCopyOfTupleData[i] = ((int) ((1 - rand.nextDouble()) * bound)) + eqCandidates.size() + likeSize - 1;
+        if (bound > 0) {
+            for (int i = cumBorder.intValue(); i < size; i++) {
+                intCopyOfTupleData[i] = rand.nextInt(bound) + eqCandidates.size() + likeSize;
+            }
         }
         if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
             shuffle(size, rand, intCopyOfTupleData);
@@ -153,7 +159,11 @@ public class StringColumn extends AbstractColumn {
         }
         for (int i = 0; i < size; i++) {
             int tag = intCopyOfTupleData[i];
-            tupleData[i] = strings.get(tag);
+            if (strings.containsKey(tag)) {
+                tupleData[i] = strings.get(tag);
+            } else {
+                tupleData[i] = randomString(rand);
+            }
         }
     }
 
@@ -180,13 +190,6 @@ public class StringColumn extends AbstractColumn {
             }
             idx = newIdx;
         }
-        for (; idx < size; idx++) {
-            String generatedStr;
-            do {
-                generatedStr = randomString(rand);
-            } while (strings.inverse().containsKey(generatedStr));
-            strings.put(idx, generatedStr);
-        }
     }
 
     private String generateLikeTupleData(ThreadLocalRandom rand, String candidate) {
@@ -202,14 +205,14 @@ public class StringColumn extends AbstractColumn {
             generatedStr = candidate;
         }
         else if (!startTag) {
-            int postLen = rand.nextInt(0, maxLength - candidate.length());
+            int postLen = rand.nextInt(0, maxLength - (candidate.length() - 1) + 1);
             byte[] array = new byte[postLen];
             rand.nextBytes(array);
             String postStr = new String(array, UTF_8);
             generatedStr = candidate.substring(0, candidate.length() - 1) + postStr;
         }
         else if (!endTag) {
-            int preLen = rand.nextInt(0, maxLength - candidate.length());
+            int preLen =  rand.nextInt(0, maxLength - (candidate.length() - 1) + 1);
             byte[] array = new byte[preLen];
             rand.nextBytes(array);
             String preStr = new String(array, UTF_8);
@@ -244,18 +247,18 @@ public class StringColumn extends AbstractColumn {
         switch (operator) {
             case EQ:
                 for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (intCopyOfTupleData[i] == Integer.parseInt(parameters.get(0).getData())));
+                    ret[i] = (!hasNot & (intCopyOfTupleData[i] == eqCandidateMap.get(parameters.get(0).getData())));
                 }
                 break;
             case NE:
                 for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (intCopyOfTupleData[i] != Integer.parseInt(parameters.get(0).getData())));
+                    ret[i] = (!hasNot & (intCopyOfTupleData[i] != eqCandidateMap.get(parameters.get(0).getData())));
                 }
                 break;
             case IN:
                 int[] parameterData = new int[parameters.size()];
                 for (int i = 0; i < parameterData.length; i++) {
-                    parameterData[i] = Integer.parseInt(parameters.get(i).getData());
+                    parameterData[i] = eqCandidateMap.get(parameters.get(i).getData());
                 }
                 for (int i = 0; i < intCopyOfTupleData.length; i++) {
                     ret[i] = false;

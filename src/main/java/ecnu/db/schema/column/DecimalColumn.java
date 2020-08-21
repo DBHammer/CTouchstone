@@ -7,6 +7,7 @@ import ecnu.db.schema.column.bucket.EqBucket;
 import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,7 @@ public class DecimalColumn extends AbstractColumn {
         }
         for (EqBucket eqBucket : eqBuckets) {
             for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(sizeVal);
+                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
                 double eqValue = Double.parseDouble(entry.getValue().getData());
                 for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
                     tupleData[j] = eqValue;
@@ -99,7 +100,7 @@ public class DecimalColumn extends AbstractColumn {
      * @return 返回用于multi-var计算的一个double数组
      */
     public double[] calculate() {
-        return tupleData;
+        return Arrays.copyOf(tupleData, tupleData.length);
     }
 
     @Override

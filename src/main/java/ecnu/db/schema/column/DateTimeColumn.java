@@ -125,7 +125,7 @@ public class DateTimeColumn extends AbstractColumn {
         }
         for (EqBucket eqBucket : eqBuckets) {
             for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(sizeVal);
+                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
                 LocalDateTime time = LocalDateTime.parse(entry.getValue().getData(), FMT);
                 for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
                     longCopyOfTupleData[j] = time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
@@ -175,6 +175,30 @@ public class DateTimeColumn extends AbstractColumn {
                     for (double paramDatum : parameterData) {
                         ret[i] = (ret[i] | (!hasNot & (longCopyOfTupleData[i] == paramDatum)));
                     }
+                }
+                break;
+            case LT:
+                value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] < value));
+                }
+                break;
+            case LE:
+                value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] <= value));
+                }
+                break;
+            case GT:
+                value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] > value));
+                }
+                break;
+            case GE:
+                value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] >= value));
                 }
                 break;
             default:

@@ -74,7 +74,7 @@ public class ColumnNode extends ArithmeticNode {
         float[] value = new float[ArithmeticNode.size];
         for (EqBucket eqBucket : eqBuckets) {
             for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(size);
+                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(size));
                 float eqValue = Float.parseFloat(entry.getValue().getData());
                 for (int j = cumBorder.intValue(); j < newCum.intValue() && j < ArithmeticNode.size; j++) {
                     value[j] = eqValue;

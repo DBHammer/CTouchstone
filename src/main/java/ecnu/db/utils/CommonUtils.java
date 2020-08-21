@@ -114,4 +114,40 @@ public class CommonUtils {
         }
     }
 
+    public static double calcuate(double[] ret) {
+        double sum = 0;
+        for (int i = 0; i < ret.length; i++) {
+            sum += ret[i];
+        }
+        double ratio = sum * 1.0 / ret.length;
+        return ratio;
+    }
+
+    public static double calcuate(int[] ret) {
+        double sum = 0;
+        for (int i = 0; i < ret.length; i++) {
+            sum += ret[i];
+        }
+        double ratio = sum * 1.0 / ret.length;
+        return ratio;
+    }
+
+    public static double calcuate(boolean[] ret) {
+        double sum = 0;
+        for (int i = 0; i < ret.length; i++) {
+            sum += (ret[i] ? 1 : 0);
+        }
+        double ratio = sum * 1.0 / ret.length;
+        return ratio;
+    }
+
+    public static double min(int[] ret) {
+        double min = ret[0];
+        for (int i = 0; i < ret.length; i++) {
+            if (min >= ret[i]) {
+                min = ret[i];
+            }
+        }
+        return min;
+    }
 }
