@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static ecnu.db.constraintchain.filter.operation.CompareOperator.*;
-
 /**
  * @author alan
  */
@@ -122,32 +120,34 @@ public class DateColumn extends AbstractColumn {
     @Override
     public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters, boolean hasNot) {
         boolean[] ret = new boolean[longCopyOfTupleData.length];
-        if (operator == EQ) {
-            long value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
-            for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                ret[i] = (!hasNot & (longCopyOfTupleData[i] == value));
-            }
-        }
-        else if (operator == NE) {
-            long value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
-            for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                ret[i] = (!hasNot & (longCopyOfTupleData[i] != value));
-            }
-        }
-        else if (operator == IN) {
-            long[] parameterData = new long[parameters.size()];
-            for (int i = 0; i < parameterData.length; i++) {
-                parameterData[i] = LocalDate.parse(parameters.get(i).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
-            }
-            for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                ret[i] = false;
-                for (double paramDatum : parameterData) {
-                    ret[i] = (ret[i] | (!hasNot & (longCopyOfTupleData[i] == paramDatum)));
+        long value;
+        switch (operator) {
+            case EQ:
+                value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] == value));
                 }
-            }
-        }
-        else {
-            throw new UnsupportedOperationException();
+                break;
+            case NE:
+                value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (longCopyOfTupleData[i] != value));
+                }
+                break;
+            case IN:
+                long[] parameterData = new long[parameters.size()];
+                for (int i = 0; i < parameterData.length; i++) {
+                    parameterData[i] = LocalDate.parse(parameters.get(i).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                }
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = false;
+                    for (double paramDatum : parameterData) {
+                        ret[i] = (ret[i] | (!hasNot & (longCopyOfTupleData[i] == paramDatum)));
+                    }
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException();
         }
         return ret;
     }

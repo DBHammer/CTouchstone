@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static ecnu.db.constraintchain.filter.operation.CompareOperator.*;
-
 /**
  * @author qingshuai.wang
  */
@@ -118,50 +116,51 @@ public class IntColumn extends AbstractColumn {
     @Override
     public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters, boolean hasNot) {
         boolean[] ret = new boolean[tupleData.length];
-        if (operator == EQ) {
-            for (int i = 0; i < tupleData.length; i++) {
-                ret[i] = (!hasNot & (tupleData[i] == Integer.parseInt(parameters.get(0).getData())));
-            }
-        }
-        else if (operator == NE) {
-            for (int i = 0; i < tupleData.length; i++) {
-                ret[i] = (!hasNot & (tupleData[i] != Integer.parseInt(parameters.get(0).getData())));
-            }
-        }
-        else if (operator == LT) {
-            for (int i = 0; i < tupleData.length; i++) {
-                ret[i] = (!hasNot & (tupleData[i] < Integer.parseInt(parameters.get(0).getData())));
-            }
-        }
-        else if (operator == LE) {
-            for (int i = 0; i < tupleData.length; i++) {
-                ret[i] = (!hasNot & (tupleData[i] <= Integer.parseInt(parameters.get(0).getData())));
-            }
-        }
-        else if (operator == GT) {
-            for (int i = 0; i < tupleData.length; i++) {
-                ret[i] = (!hasNot & (tupleData[i] > Integer.parseInt(parameters.get(0).getData())));
-            }
-        }
-        else if (operator == GE) {
-            for (int i = 0; i < tupleData.length; i++) {
-                ret[i] = (!hasNot & (tupleData[i] >= Integer.parseInt(parameters.get(0).getData())));
-            }
-        }
-        else if (operator == IN) {
-            int[] paramData = new int[parameters.size()];
-            for (int i = 0; i < parameters.size(); i++) {
-                paramData[i] = Integer.parseInt(parameters.get(0).getData());
-            }
-            for (int i = 0; i < tupleData.length; i++) {
-                ret[i] = false;
-                for (int paramDatum : paramData) {
-                    ret[i] = (ret[i] | (!hasNot & (tupleData[i] == paramDatum)));
+        switch (operator) {
+            case EQ:
+                for (int i = 0; i < tupleData.length; i++) {
+                    ret[i] = (!hasNot & (tupleData[i] == Integer.parseInt(parameters.get(0).getData())));
                 }
-            }
-        }
-        else {
-            throw new UnsupportedOperationException();
+                break;
+            case NE:
+                for (int i = 0; i < tupleData.length; i++) {
+                    ret[i] = (!hasNot & (tupleData[i] != Integer.parseInt(parameters.get(0).getData())));
+                }
+                break;
+            case LT:
+                for (int i = 0; i < tupleData.length; i++) {
+                    ret[i] = (!hasNot & (tupleData[i] < Integer.parseInt(parameters.get(0).getData())));
+                }
+                break;
+            case LE:
+                for (int i = 0; i < tupleData.length; i++) {
+                    ret[i] = (!hasNot & (tupleData[i] <= Integer.parseInt(parameters.get(0).getData())));
+                }
+                break;
+            case GT:
+                for (int i = 0; i < tupleData.length; i++) {
+                    ret[i] = (!hasNot & (tupleData[i] > Integer.parseInt(parameters.get(0).getData())));
+                }
+                break;
+            case GE:
+                for (int i = 0; i < tupleData.length; i++) {
+                    ret[i] = (!hasNot & (tupleData[i] >= Integer.parseInt(parameters.get(0).getData())));
+                }
+                break;
+            case IN:
+                int[] paramData = new int[parameters.size()];
+                for (int i = 0; i < parameters.size(); i++) {
+                    paramData[i] = Integer.parseInt(parameters.get(0).getData());
+                }
+                for (int i = 0; i < tupleData.length; i++) {
+                    ret[i] = false;
+                    for (int paramDatum : paramData) {
+                        ret[i] = (ret[i] | (!hasNot & (tupleData[i] == paramDatum)));
+                    }
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException();
         }
         return ret;
     }

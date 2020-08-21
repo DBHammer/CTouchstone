@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static ecnu.db.constraintchain.filter.operation.CompareOperator.*;
 import static ecnu.db.utils.CommonUtils.shuffle;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -242,37 +241,38 @@ public class StringColumn extends AbstractColumn {
     @Override
     public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters, boolean hasNot) {
         boolean[] ret = new boolean[intCopyOfTupleData.length];
-        if (operator == EQ) {
-            for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                ret[i] = (!hasNot & (intCopyOfTupleData[i] == Integer.parseInt(parameters.get(0).getData())));
-            }
-        }
-        else if (operator == NE) {
-            for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                ret[i] = (!hasNot & (intCopyOfTupleData[i] != Integer.parseInt(parameters.get(0).getData())));
-            }
-        }
-        else if (operator == IN) {
-            int[] parameterData = new int[parameters.size()];
-            for (int i = 0; i < parameterData.length; i++) {
-                parameterData[i] = Integer.parseInt(parameters.get(i).getData());
-            }
-            for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                ret[i] = false;
-                for (double paramDatum : parameterData) {
-                    ret[i] = (ret[i] | (!hasNot & (intCopyOfTupleData[i] == paramDatum)));
+        switch (operator) {
+            case EQ:
+                for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (intCopyOfTupleData[i] == Integer.parseInt(parameters.get(0).getData())));
                 }
-            }
-        }
-        else if (operator == LIKE) {
-            Pair<Integer, Integer> pair = likeCandidateMap.get(parameters.get(0).getData());
-            int min = pair.getLeft(), max = pair.getRight();
-            for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                ret[i] = (!hasNot & (intCopyOfTupleData[i] >= min && intCopyOfTupleData[i] <= max));
-            }
-        }
-        else {
-            throw new UnsupportedOperationException();
+                break;
+            case NE:
+                for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (intCopyOfTupleData[i] != Integer.parseInt(parameters.get(0).getData())));
+                }
+                break;
+            case IN:
+                int[] parameterData = new int[parameters.size()];
+                for (int i = 0; i < parameterData.length; i++) {
+                    parameterData[i] = Integer.parseInt(parameters.get(i).getData());
+                }
+                for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                    ret[i] = false;
+                    for (double paramDatum : parameterData) {
+                        ret[i] = (ret[i] | (!hasNot & (intCopyOfTupleData[i] == paramDatum)));
+                    }
+                }
+                break;
+            case LIKE:
+                Pair<Integer, Integer> pair = likeCandidateMap.get(parameters.get(0).getData());
+                int min = pair.getLeft(), max = pair.getRight();
+                for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                    ret[i] = (!hasNot & (intCopyOfTupleData[i] >= min && intCopyOfTupleData[i] <= max));
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException();
         }
         return ret;
     }
