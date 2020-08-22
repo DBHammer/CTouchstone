@@ -53,7 +53,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             return;
         }
         if (node.getType() == ArithmeticNodeType.COLUMN) {
-            colNames.add(String.format("%s.%s", ((ColumnNode) node).getCanonicalTableName(), ((ColumnNode) node).getColumnName()));
+            colNames.add(((ColumnNode) node).getColumnName());
         }
         getColNames(node.getLeftNode(), colNames);
         getColNames(node.getRightNode(), colNames);
@@ -98,7 +98,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         List<String> columnNames = new ArrayList<>(getColNames());
         boolean[] nullEvaluations = new boolean[size];
         for (String columnName : columnNames) {
-            AbstractColumn column = schema.getColumn(columnName.split("\\.")[2]);
+            AbstractColumn column = schema.getColumn(columnName);
             boolean[] columnNullEvaluations = column.getIsnullEvaluations();
             for (int i = 0; i < nullEvaluations.length; i++) {
                 nullEvaluations[i] = false;
@@ -135,8 +135,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         BigDecimal nonNullProbability = BigDecimal.ONE;
         // 假定null都是均匀独立分布的
         for (String columnName : getColNames()) {
-            String simpleColumnName = CommonUtils.extractSimpleColumnName(columnName);
-            BigDecimal colNullProbability = BigDecimal.valueOf(schema.getColumn(simpleColumnName).getNullPercentage());
+            BigDecimal colNullProbability = BigDecimal.valueOf(schema.getColumn(columnName).getNullPercentage());
             nonNullProbability = nonNullProbability.multiply(BigDecimal.ONE.subtract(colNullProbability));
         }
         if (operator.getType() == GREATER) {
