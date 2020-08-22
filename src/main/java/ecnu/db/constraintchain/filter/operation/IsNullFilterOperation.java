@@ -71,7 +71,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
                 value[i] = !(columnIsnullEvaluations[i]);
             }
         } else {
-            if (size >= 0) System.arraycopy(columnIsnullEvaluations, 0, value, 0, size);
+            System.arraycopy(columnIsnullEvaluations, 0, value, 0, size);
         }
         return value;
     }

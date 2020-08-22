@@ -61,7 +61,11 @@ public class IntColumn extends AbstractColumn {
         String data;
         double minP = minProbability.doubleValue(), maxP = maxProbability.doubleValue();
         do {
-            data = Integer.toString((int) Math.floor(Math.random() * (maxP - minP) * (max - min + 1) + minP * (max - min + 1) + min));
+            // minPData = minP * (max - min) + min
+            // maxPData = maxP * (max - min) + min
+            // data = random() * (maxPData - minPData) + minPData = random() * (maxP - minP) * (max - min) + minP * (max - min) + min
+            // 加入double转为int的修正, data = floor(random() * (maxP - minP) * (max - min + 1) + minP * (max - min) + min)
+            data = Integer.toString((int) Math.floor(Math.random() * (maxP - minP) * (max - min + 1) + minP * (max - min) + min));
         } while (eqCandidates.contains(data));
         eqCandidates.add(data);
         return data;
