@@ -15,6 +15,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -123,21 +124,26 @@ public class DateTimeColumn extends AbstractColumn {
         if (longCopyOfTupleData == null || longCopyOfTupleData.length != size) {
             longCopyOfTupleData = new long[size];
         }
-        for (EqBucket eqBucket : eqBuckets) {
-            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
-                LocalDateTime time = LocalDateTime.parse(entry.getValue().getData(), FMT);
-                for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
-                    longCopyOfTupleData[j] = time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-                }
-                cumBorder = newCum;
-            }
-        }
         long endTimeStamp = end.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), beginTimeStamp = begin.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), bound = endTimeStamp - beginTimeStamp + 1;
         for (int i = cumBorder.intValue(); i < size; i++) {
             longCopyOfTupleData[i] = (long) ((1 - rand.nextDouble()) * bound + beginTimeStamp);
         }
-        if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
+        if (eqCandidates.size() > 0) {
+            Arrays.sort(longCopyOfTupleData);
+        }
+        for (EqBucket eqBucket : eqBuckets) {
+            int j = (int) (eqBucket.leftBorder.doubleValue() * size);
+            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
+                // new_start = ori_start + probability * size
+                int newJ = (int) (j + entry.getKey().doubleValue() * size);
+                LocalDateTime time = LocalDateTime.parse(entry.getValue().getData(), FMT);
+                for (; j < newJ && j < size; j++) {
+                    longCopyOfTupleData[j] = time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                }
+                j = newJ;
+            }
+        }
+        if (eqCandidates.size() > 0) {
             CommonUtils.shuffle(size, rand, longCopyOfTupleData);
         }
         if (tupleData == null || tupleData.length != size) {

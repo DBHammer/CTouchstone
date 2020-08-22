@@ -92,19 +92,21 @@ public class DateColumn extends AbstractColumn {
         if (longCopyOfTupleData == null || longCopyOfTupleData.length != size) {
             longCopyOfTupleData = new long[size];
         }
-        for (EqBucket eqBucket : eqBuckets) {
-            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
-                LocalDate date = LocalDate.parse(entry.getValue().getData(), FMT);
-                for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
-                    longCopyOfTupleData[j] = date.atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
-                }
-                cumBorder = newCum;
-            }
-        }
         long endTimeStamp = end.atStartOfDay(ZoneId.systemDefault()).toEpochSecond(), beginTimeStamp = begin.atStartOfDay(ZoneId.systemDefault()).toEpochSecond(), bound = endTimeStamp - beginTimeStamp + 1;
         for (int i = cumBorder.intValue(); i < size; i++) {
             longCopyOfTupleData[i] = (long) ((1 - rand.nextDouble()) * bound + beginTimeStamp);
+        }
+        for (EqBucket eqBucket : eqBuckets) {
+            int j = (int) (eqBucket.leftBorder.doubleValue() * size);
+            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
+                // new_start = ori_start + probability * size
+                int newJ = (int) (j + entry.getKey().doubleValue() * size);
+                LocalDate date = LocalDate.parse(entry.getValue().getData(), FMT);
+                for (; j < newJ && j < size; j++) {
+                    longCopyOfTupleData[j] = date.atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+                }
+                j = newJ;
+            }
         }
         if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
             CommonUtils.shuffle(size, rand, longCopyOfTupleData);

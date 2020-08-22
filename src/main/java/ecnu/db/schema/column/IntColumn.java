@@ -76,26 +76,30 @@ public class IntColumn extends AbstractColumn {
     @Override
     public void prepareTupleData(int size) {
         eqBuckets.sort(Comparator.comparing(o -> o.leftBorder));
-        BigDecimal cumBorder = BigDecimal.ZERO, sizeVal = BigDecimal.valueOf(size);
         if (tupleData == null || this.tupleData.length != size) {
             tupleData = new int[size];
         }
-        for (EqBucket eqBucket : eqBuckets) {
-            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
-                int eqValue = Integer.parseInt(entry.getValue().getData());
-                for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
-                    tupleData[j] = eqValue;
-                }
-                cumBorder = newCum;
-            }
-        }
         int bound = max - min + 1;
         ThreadLocalRandom rand = ThreadLocalRandom.current();
-        for (int i = cumBorder.intValue(); i < size; i++) {
+        for (int i = 0; i < size; i++) {
             tupleData[i] = (int) Math.floor((1 - rand.nextDouble()) * bound + min);
         }
-        if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
+        if (eqCandidates.size() > 0) {
+            Arrays.sort(tupleData);
+        }
+        for (EqBucket eqBucket : eqBuckets) {
+            int j = (int) (eqBucket.leftBorder.doubleValue() * size);
+            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
+                // new_start = ori_start + probability * size
+                int newJ = (int) (j + entry.getKey().doubleValue() * size);
+                int eqValue = Integer.parseInt(entry.getValue().getData());
+                for (; j < newJ && j < size; j++) {
+                    tupleData[j] = eqValue;
+                }
+                j = newJ;
+            }
+        }
+        if (eqCandidates.size() > 0) {
             CommonUtils.shuffle(size, rand, tupleData);
         }
         if (doubleCopyOfTupleData == null || this.doubleCopyOfTupleData.length != size) {

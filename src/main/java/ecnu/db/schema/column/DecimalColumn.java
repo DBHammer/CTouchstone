@@ -70,27 +70,30 @@ public class DecimalColumn extends AbstractColumn {
     @Override
     public void prepareTupleData(int size) {
         eqBuckets.sort(Comparator.comparing(o -> o.leftBorder));
-        BigDecimal cumBorder = BigDecimal.ZERO, sizeVal = BigDecimal.valueOf(size);
         if (tupleData == null || this.tupleData.length != size) {
             tupleData = new double[size];
         }
-        for (EqBucket eqBucket : eqBuckets) {
-            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(sizeVal));
-                double eqValue = Double.parseDouble(entry.getValue().getData());
-                for (int j = cumBorder.intValue(); j < newCum.intValue() && j < size; j++) {
-                    tupleData[j] = eqValue;
-                }
-                cumBorder = newCum;
-            }
-        }
         double bound = max - min;
         ThreadLocalRandom rand = ThreadLocalRandom.current();
-        for (int i = cumBorder.intValue(); i < size; i++) {
+        for (int i = 0; i < size; i++) {
             tupleData[i] = (1 - rand.nextFloat()) * bound + min;
         }
-        if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
-            // shuffle
+        if (eqCandidates.size() > 0) {
+            Arrays.sort(tupleData);
+        }
+        for (EqBucket eqBucket : eqBuckets) {
+            int j = (int) (eqBucket.leftBorder.doubleValue() * size);
+            for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
+                // new_start = ori_start + probability * size
+                int newJ = (int) (j + entry.getKey().doubleValue() * size);
+                double eqValue = Double.parseDouble(entry.getValue().getData());
+                for (; j < newJ && j < size; j++) {
+                    tupleData[j] = eqValue;
+                }
+                j = newJ;
+            }
+        }
+        if (eqCandidates.size() > 0) {
             CommonUtils.shuffle(size, rand, tupleData);
         }
     }
