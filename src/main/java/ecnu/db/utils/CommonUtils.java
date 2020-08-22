@@ -119,7 +119,7 @@ public class CommonUtils {
         for (double v : ret) {
             sum += v;
         }
-        return sum * 1.0 / ret.length;
+        return sum / ret.length;
     }
 
     public static double calcuate(int[] ret) {
@@ -127,7 +127,7 @@ public class CommonUtils {
         for (int value : ret) {
             sum += value;
         }
-        return sum * 1.0 / ret.length;
+        return sum / ret.length;
     }
 
     public static double calcuate(boolean[] ret) {
@@ -135,7 +135,7 @@ public class CommonUtils {
         for (boolean b : ret) {
             sum += (b ? 1 : 0);
         }
-        return sum * 1.0 / ret.length;
+        return sum / ret.length;
     }
 
     public static double min(int[] ret) {
