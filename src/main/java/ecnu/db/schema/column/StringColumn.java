@@ -247,12 +247,12 @@ public class StringColumn extends AbstractColumn {
         switch (operator) {
             case EQ:
                 for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (intCopyOfTupleData[i] == eqCandidateMap.get(parameters.get(0).getData())));
+                    ret[i] = (intCopyOfTupleData[i] == eqCandidateMap.get(parameters.get(0).getData()));
                 }
                 break;
             case NE:
                 for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (intCopyOfTupleData[i] != eqCandidateMap.get(parameters.get(0).getData())));
+                    ret[i] = (intCopyOfTupleData[i] != eqCandidateMap.get(parameters.get(0).getData()));
                 }
                 break;
             case IN:
@@ -260,18 +260,35 @@ public class StringColumn extends AbstractColumn {
                 for (int i = 0; i < parameterData.length; i++) {
                     parameterData[i] = eqCandidateMap.get(parameters.get(i).getData());
                 }
-                for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                    ret[i] = false;
-                    for (double paramDatum : parameterData) {
-                        ret[i] = (ret[i] | (!hasNot & (intCopyOfTupleData[i] == paramDatum)));
+                if (hasNot) {
+                    for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                        ret[i] = false;
+                        for (double paramDatum : parameterData) {
+                            ret[i] = (ret[i] | (intCopyOfTupleData[i] == paramDatum));
+                            ret[i] = !ret[i];
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                        ret[i] = false;
+                        for (double paramDatum : parameterData) {
+                            ret[i] = (ret[i] | (intCopyOfTupleData[i] == paramDatum));
+                        }
                     }
                 }
                 break;
             case LIKE:
                 Pair<Integer, Integer> pair = likeCandidateMap.get(parameters.get(0).getData());
                 int min = pair.getLeft(), max = pair.getRight();
-                for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (intCopyOfTupleData[i] >= min && intCopyOfTupleData[i] <= max));
+                if (hasNot) {
+                    for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                        ret[i] = (intCopyOfTupleData[i] >= min && intCopyOfTupleData[i] <= max);
+                        ret[i] = !ret[i];
+                    }
+                } else {
+                    for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                        ret[i] = (intCopyOfTupleData[i] >= min && intCopyOfTupleData[i] <= max);
+                    }
                 }
                 break;
             default:

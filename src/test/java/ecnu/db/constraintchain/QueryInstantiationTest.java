@@ -121,8 +121,8 @@ class QueryInstantiationTest {
         assertThat(id2Parameter.get(20).getData(), startsWith("%"));
         assertEquals(id2Parameter.get(21).getData(), id2Parameter.get(22).getData());
         // 6.sql_1 between
-        LocalDateTime left = LocalDateTime.parse(id2Parameter.get(29).getData(), DateTimeColumn.FMT),
-                right = LocalDateTime.parse(id2Parameter.get(26).getData(), DateTimeColumn.FMT);
+        LocalDateTime left = LocalDateTime.parse(id2Parameter.get(26).getData(), DateTimeColumn.FMT),
+                right = LocalDateTime.parse(id2Parameter.get(29).getData(), DateTimeColumn.FMT);
         Duration duration = Duration.between(left, right),
                 wholeDuration = Duration.between(
                         LocalDateTime.parse("1992-01-02 00:00:00", DateTimeColumn.FMT),
@@ -150,7 +150,7 @@ class QueryInstantiationTest {
 
         chains = query2chains.get("6.sql_1");
         map = getRate(schemas, generateSize, chains);
-        // assertEquals(0.01904131080, map.get("tpch.lineitem"), 0.002);
+        assertEquals(0.01904131080, map.get("tpch.lineitem"), 0.002);
     }
 
     @Test

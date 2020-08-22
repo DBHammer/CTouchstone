@@ -113,6 +113,20 @@ public class AndNode implements BoolExprNode {
     @Override
     public boolean[] evaluate(Schema schema, int size) throws TouchstoneToolChainException {
         boolean[] value = children.get(0).evaluate(schema, size);
+        if (children.size() == 5) {
+            boolean[] test = new boolean[value.length];
+            boolean[] child = children.get(2).evaluate(schema, size);
+            for (int i = 0; i < size; i++) {
+                test[i] = (value[i] & child[i]);
+            }
+            test = children.get(1).evaluate(schema, size);
+            child = children.get(4).evaluate(schema, size);
+            for (int i = 0; i < size; i++) {
+                test[i] = (test[i] & child[i]);
+            }
+            test = children.get(3).evaluate(schema, size);
+            test = test;
+        }
         for (int i = 1; i < children.size(); i++) {
             BoolExprNode child = children.get(i);
             boolean[] childValue = child.evaluate(schema, size);

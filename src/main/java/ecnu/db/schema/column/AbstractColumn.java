@@ -308,11 +308,11 @@ public abstract class AbstractColumn {
             rightProbability = rightBucket.leftBorder.add(rightBucket.capacity);
         }
         String leftData = generateNonEqParamData(leftProbability), rightData = generateNonEqParamData(rightProbability);
-        lessParameters.forEach((p) -> p.setData(leftData));
-        greaterParameters.forEach((p) -> p.setData(rightData));
+        lessParameters.forEach((p) -> p.setData(rightData));
+        greaterParameters.forEach((p) -> p.setData(leftData));
         // todo 当前仅使用LT
         insertNonEqProbability(leftProbability, LT, lessParameters.get(0));
-        insertNonEqProbability(rightProbability, LT, greaterParameters.get(0));
+        insertNonEqProbability(BigDecimal.ONE.subtract(BigDecimal.valueOf(nullPercentage)).subtract(rightProbability), LT, greaterParameters.get(0));
     }
 
     /**

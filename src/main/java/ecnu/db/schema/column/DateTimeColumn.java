@@ -156,13 +156,13 @@ public class DateTimeColumn extends AbstractColumn {
             case EQ:
                 value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                 for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (longCopyOfTupleData[i] == value));
+                    ret[i] = (longCopyOfTupleData[i] == value);
                 }
                 break;
             case NE:
                 value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                 for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (longCopyOfTupleData[i] != value));
+                    ret[i] = (longCopyOfTupleData[i] != value);
                 }
                 break;
             case IN:
@@ -170,35 +170,45 @@ public class DateTimeColumn extends AbstractColumn {
                 for (int i = 0; i < parameterData.length; i++) {
                     parameterData[i] = LocalDateTime.parse(parameters.get(i).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                 }
-                for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                    ret[i] = false;
-                    for (double paramDatum : parameterData) {
-                        ret[i] = (ret[i] | (!hasNot & (longCopyOfTupleData[i] == paramDatum)));
+                if (hasNot) {
+                    for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                        ret[i] = false;
+                        for (double paramDatum : parameterData) {
+                            ret[i] = (ret[i] | (longCopyOfTupleData[i] == paramDatum));
+                            ret[i] = !ret[i];
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                        ret[i] = false;
+                        for (double paramDatum : parameterData) {
+                            ret[i] = (ret[i] | (longCopyOfTupleData[i] == paramDatum));
+                        }
                     }
                 }
                 break;
             case LT:
                 value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                 for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (longCopyOfTupleData[i] < value));
+                    ret[i] = (longCopyOfTupleData[i] < value);
                 }
                 break;
             case LE:
                 value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                 for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (longCopyOfTupleData[i] <= value));
+                    ret[i] = (longCopyOfTupleData[i] <= value);
                 }
                 break;
             case GT:
                 value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                 for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (longCopyOfTupleData[i] > value));
+                    ret[i] = (longCopyOfTupleData[i] > value);
                 }
                 break;
             case GE:
                 value = LocalDateTime.parse(parameters.get(0).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                 for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                    ret[i] = (!hasNot & (longCopyOfTupleData[i] >= value));
+                    ret[i] = (longCopyOfTupleData[i] >= value);
                 }
                 break;
             default:

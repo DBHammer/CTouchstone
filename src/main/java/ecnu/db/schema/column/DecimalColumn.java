@@ -109,32 +109,32 @@ public class DecimalColumn extends AbstractColumn {
         switch (operator) {
             case EQ:
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (!hasNot & (tupleData[i] == Double.parseDouble(parameters.get(0).getData())));
+                    ret[i] = (tupleData[i] == Double.parseDouble(parameters.get(0).getData()));
                 }
                 break;
             case NE:
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (!hasNot & (tupleData[i] != Double.parseDouble(parameters.get(0).getData())));
+                    ret[i] = (tupleData[i] != Double.parseDouble(parameters.get(0).getData()));
                 }
                 break;
             case LT:
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (!hasNot & (tupleData[i] < Double.parseDouble(parameters.get(0).getData())));
+                    ret[i] = (tupleData[i] < Double.parseDouble(parameters.get(0).getData()));
                 }
                 break;
             case LE:
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (!hasNot & (tupleData[i] <= Double.parseDouble(parameters.get(0).getData())));
+                    ret[i] = (tupleData[i] <= Double.parseDouble(parameters.get(0).getData()));
                 }
                 break;
             case GT:
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (!hasNot & (tupleData[i] > Double.parseDouble(parameters.get(0).getData())));
+                    ret[i] = (tupleData[i] > Double.parseDouble(parameters.get(0).getData()));
                 }
                 break;
             case GE:
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (!hasNot & (tupleData[i] >= Double.parseDouble(parameters.get(0).getData())));
+                    ret[i] = (tupleData[i] >= Double.parseDouble(parameters.get(0).getData()));
                 }
                 break;
             case IN:
@@ -144,8 +144,15 @@ public class DecimalColumn extends AbstractColumn {
                 }
                 for (int i = 0; i < tupleData.length; i++) {
                     ret[i] = false;
-                    for (double paramDatum : paramData) {
-                        ret[i] = (ret[i] | (!hasNot & (tupleData[i] == paramDatum)));
+                    if (hasNot) {
+                        for (double paramDatum : paramData) {
+                            ret[i] = (ret[i] | (tupleData[i] == paramDatum));
+                            ret[i] = !ret[i];
+                        }
+                    } else {
+                        for (double paramDatum : paramData) {
+                            ret[i] = (ret[i] | (tupleData[i] == paramDatum));
+                        }
                     }
                 }
                 break;
