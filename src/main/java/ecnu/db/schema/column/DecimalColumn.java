@@ -111,49 +111,55 @@ public class DecimalColumn extends AbstractColumn {
         boolean[] ret = new boolean[tupleData.length];
         switch (operator) {
             case EQ:
+                double param = Double.parseDouble(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] == Double.parseDouble(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] == param);
                 }
                 break;
             case NE:
+                param = Double.parseDouble(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] != Double.parseDouble(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] != param);
                 }
                 break;
             case LT:
+                param = Double.parseDouble(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] < Double.parseDouble(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] < param);
                 }
                 break;
             case LE:
+                param = Double.parseDouble(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] <= Double.parseDouble(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] <= param);
                 }
                 break;
             case GT:
+                param = Double.parseDouble(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] > Double.parseDouble(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] > param);
                 }
                 break;
             case GE:
+                param = Double.parseDouble(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] >= Double.parseDouble(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] >= param);
                 }
                 break;
             case IN:
-                double[] paramData = new double[parameters.size()];
+                double[] params = new double[parameters.size()];
                 for (int i = 0; i < parameters.size(); i++) {
-                    paramData[i] = Double.parseDouble(parameters.get(i).getData());
+                    params[i] = Double.parseDouble(parameters.get(i).getData());
                 }
                 for (int i = 0; i < tupleData.length; i++) {
                     ret[i] = false;
                     if (hasNot) {
-                        for (double paramDatum : paramData) {
+                        for (double paramDatum : params) {
                             ret[i] = (ret[i] | (tupleData[i] == paramDatum));
                             ret[i] = !ret[i];
                         }
                     } else {
-                        for (double paramDatum : paramData) {
+                        for (double paramDatum : params) {
                             ret[i] = (ret[i] | (tupleData[i] == paramDatum));
                         }
                     }

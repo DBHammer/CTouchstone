@@ -246,24 +246,26 @@ public class StringColumn extends AbstractColumn {
         boolean[] ret = new boolean[intCopyOfTupleData.length];
         switch (operator) {
             case EQ:
+                int param = eqCandidateMap.get(parameters.get(0).getData());
                 for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                    ret[i] = (intCopyOfTupleData[i] == eqCandidateMap.get(parameters.get(0).getData()));
+                    ret[i] = (intCopyOfTupleData[i] == param);
                 }
                 break;
             case NE:
+                param = eqCandidateMap.get(parameters.get(0).getData());
                 for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                    ret[i] = (intCopyOfTupleData[i] != eqCandidateMap.get(parameters.get(0).getData()));
+                    ret[i] = (intCopyOfTupleData[i] != param);
                 }
                 break;
             case IN:
-                int[] parameterData = new int[parameters.size()];
-                for (int i = 0; i < parameterData.length; i++) {
-                    parameterData[i] = eqCandidateMap.get(parameters.get(i).getData());
+                int[] params = new int[parameters.size()];
+                for (int i = 0; i < params.length; i++) {
+                    params[i] = eqCandidateMap.get(parameters.get(i).getData());
                 }
                 if (hasNot) {
                     for (int i = 0; i < intCopyOfTupleData.length; i++) {
                         ret[i] = false;
-                        for (double paramDatum : parameterData) {
+                        for (double paramDatum : params) {
                             ret[i] = (ret[i] | (intCopyOfTupleData[i] == paramDatum));
                             ret[i] = !ret[i];
                         }
@@ -271,7 +273,7 @@ public class StringColumn extends AbstractColumn {
                 } else {
                     for (int i = 0; i < intCopyOfTupleData.length; i++) {
                         ret[i] = false;
-                        for (double paramDatum : parameterData) {
+                        for (double paramDatum : params) {
                             ret[i] = (ret[i] | (intCopyOfTupleData[i] == paramDatum));
                         }
                     }

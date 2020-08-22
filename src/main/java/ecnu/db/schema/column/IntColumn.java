@@ -127,44 +127,50 @@ public class IntColumn extends AbstractColumn {
         boolean[] ret = new boolean[tupleData.length];
         switch (operator) {
             case EQ:
+                int param = Integer.parseInt(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] == Integer.parseInt(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] == param);
                 }
                 break;
             case NE:
+                param = Integer.parseInt(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] != Integer.parseInt(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] != param);
                 }
                 break;
             case LT:
+                param = Integer.parseInt(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] < Integer.parseInt(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] < param);
                 }
                 break;
             case LE:
+                param = Integer.parseInt(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] <= Integer.parseInt(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] <= param);
                 }
                 break;
             case GT:
+                param = Integer.parseInt(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] > Integer.parseInt(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] > param);
                 }
                 break;
             case GE:
+                param = Integer.parseInt(parameters.get(0).getData());
                 for (int i = 0; i < tupleData.length; i++) {
-                    ret[i] = (tupleData[i] >= Integer.parseInt(parameters.get(0).getData()));
+                    ret[i] = (tupleData[i] >= param);
                 }
                 break;
             case IN:
-                int[] paramData = new int[parameters.size()];
+                int[] params = new int[parameters.size()];
                 for (int i = 0; i < parameters.size(); i++) {
-                    paramData[i] = Integer.parseInt(parameters.get(0).getData());
+                    params[i] = Integer.parseInt(parameters.get(0).getData());
                 }
                 if (hasNot) {
                     for (int i = 0; i < tupleData.length; i++) {
                         ret[i] = false;
-                        for (int paramDatum : paramData) {
+                        for (int paramDatum : params) {
                             ret[i] = (ret[i] | (tupleData[i] == paramDatum));
                             ret[i] = !ret[i];
                         }
@@ -172,7 +178,7 @@ public class IntColumn extends AbstractColumn {
                 } else {
                     for (int i = 0; i < tupleData.length; i++) {
                         ret[i] = false;
-                        for (int paramDatum : paramData) {
+                        for (int paramDatum : params) {
                             ret[i] = (ret[i] | (tupleData[i] == paramDatum));
                         }
                     }
