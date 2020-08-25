@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: default
+data:
+  tool.json: |-
+    {
+      "databaseIp": "localhost",
+      "databaseName": "tpch",
+      "databasePort": "4000",
+      "databasePwd": "",
+      "databaseUser": "root",
+      "dataSource": "tidb",
+      "databaseVersion": "3.1.0",
+      "sqlsDirectory": "conf/sqls",
+      "resultDirectory": "touchstoneconf",
+      "loadDirectory": "load",
+      "dumpDirectory": "dump",
+      "typeConvert": {
+        "INTEGER": [
+          "int"
+        ],
+        "DATETIME": [
+          "date"
+        ],
+        "DECIMAL": [
+          "decimal"
+        ],
+        "VARCHAR": [
+          "varchar",
+          "char"
+        ],
+        "BOOL": [
+          "bool"
+        ]
+      },
+      "tidbHttpPort": "10080",
+      "tidbSelectArgs": {
+        "LT": "<",
+        "GT": ">",
+        "LE": "<=",
+        "GE": ">=",
+        "EQ": "=",
+        "NE": "<>",
+        "LIKE": "like",
+        "IN": "in",
+        "ISNULL": "isnull",
+        "OR": "or"
+      }
+    }
