@@ -8,7 +8,7 @@ spec:
   containers:
     - name: container-1
       image: dbhammer/touchstone:latest
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
       command: [ "/bin/bash", "-c", "--" ]
       args: [ "java -jar TouchstoneToolchain.jar /tmp/files/conf; while true; do sleep 30; done;" ]
       volumeMounts:
@@ -16,7 +16,7 @@ spec:
           mountPath: /tmp/files
     - name: container-2
       image: dbhammer/touchstone:latest
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
       command: [ "/bin/bash", "-c", "--" ]
       args: [ "while true; do sleep 30; done;" ]
       volumeMounts:
