@@ -39,17 +39,6 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class Container {
-    public List<Parameter> params;
-
-    public Container() {
-    }
-
-    public Container(List<Parameter> params) {
-        this.params = params;
-    }
-}
-
 class QueryInstantiationTest {
     @Test
     public void getOperationsTest() throws Exception {
