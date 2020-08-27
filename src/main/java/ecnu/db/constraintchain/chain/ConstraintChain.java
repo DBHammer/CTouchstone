@@ -7,6 +7,7 @@ import ecnu.db.schema.Schema;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -58,7 +59,7 @@ public class ConstraintChain {
         return "{tableName:" + tableName + ",nodes:" + nodes + "}";
     }
 
-    public void evaluate(Schema schema, int size, List<boolean[]> pkBitMap, List<boolean[]> fkBitMap) throws TouchstoneToolChainException {
+    public void evaluate(Schema schema, int size, Map<Integer, boolean[]> pkBitMap, Map<Integer, boolean[]> fkBitMap) throws TouchstoneToolChainException {
         boolean[] flag = new boolean[size];
         Arrays.fill(flag, true);
         ThreadLocalRandom rand = ThreadLocalRandom.current();
@@ -66,7 +67,7 @@ public class ConstraintChain {
             if (node instanceof ConstraintChainPkJoinNode) {
                 boolean[] pkBit = new boolean[size];
                 System.arraycopy(flag, 0, pkBit, 0, size);
-                pkBitMap.add(pkBit);
+                pkBitMap.put(((ConstraintChainPkJoinNode) node).getPkTag(), pkBit);
             }
             else if (node instanceof ConstraintChainFilterNode) {
                 boolean[] filter  = ((ConstraintChainFilterNode) node).evaluate(schema, size);
@@ -81,7 +82,7 @@ public class ConstraintChain {
                     }
                     fkBit[i] = flag[i];
                 }
-                fkBitMap.add(fkBit);
+                fkBitMap.put(((ConstraintChainFkJoinNode) node).getPkTag(), fkBit);
             }
         }
     }
