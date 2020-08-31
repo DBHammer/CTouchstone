@@ -188,6 +188,12 @@ public class DateColumn extends AbstractColumn {
         return ret;
     }
 
+    @Override
+    public void setTupleByRefColumn(AbstractColumn column, int i, int j) {
+        DateColumn dateColumn = (DateColumn) column;
+        tupleData[i] = dateColumn.tupleData[j];
+    }
+
     public LocalDate[] getTupleData() {
         return tupleData;
     }

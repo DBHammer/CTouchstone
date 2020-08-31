@@ -299,6 +299,12 @@ public class StringColumn extends AbstractColumn {
         return ret;
     }
 
+    @Override
+    public void setTupleByRefColumn(AbstractColumn column, int i, int j) {
+        StringColumn stringColumn = (StringColumn) column;
+        tupleData[i] = stringColumn.tupleData[j];
+    }
+
     @JsonIgnore
     public String[] getTupleData() {
         return tupleData;

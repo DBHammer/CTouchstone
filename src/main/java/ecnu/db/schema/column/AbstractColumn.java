@@ -350,4 +350,6 @@ public abstract class AbstractColumn {
     public boolean[] getIsnullEvaluations() {
         return isnullEvaluations;
     }
+
+    abstract public void setTupleByRefColumn(AbstractColumn column, int i, int j);
 }

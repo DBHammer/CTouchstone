@@ -190,6 +190,12 @@ public class IntColumn extends AbstractColumn {
         return ret;
     }
 
+    @Override
+    public void setTupleByRefColumn(AbstractColumn column, int i, int j) {
+        IntColumn intColumn = (IntColumn) column;
+        tupleData[i] = intColumn.tupleData[j];
+    }
+
     @JsonIgnore
     public int[] getTupleData() {
         return tupleData;

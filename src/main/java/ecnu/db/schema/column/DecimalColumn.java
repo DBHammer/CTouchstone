@@ -171,6 +171,12 @@ public class DecimalColumn extends AbstractColumn {
         return ret;
     }
 
+    @Override
+    public void setTupleByRefColumn(AbstractColumn column, int i, int j) {
+        DecimalColumn decimalColumn = (DecimalColumn) column;
+        tupleData[i] = decimalColumn.tupleData[j];
+    }
+
     @JsonIgnore
     public double[] getTupleData() {
         return tupleData;

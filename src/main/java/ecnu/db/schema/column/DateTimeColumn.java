@@ -223,6 +223,12 @@ public class DateTimeColumn extends AbstractColumn {
         return ret;
     }
 
+    @Override
+    public void setTupleByRefColumn(AbstractColumn column, int i, int j) {
+        DateTimeColumn dateTimeColumn = (DateTimeColumn) column;
+        tupleData[i] = dateTimeColumn.tupleData[j];
+    }
+
     public LocalDateTime[] getTupleData() {
         return tupleData;
     }

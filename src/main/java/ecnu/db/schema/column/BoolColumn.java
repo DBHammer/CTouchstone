@@ -54,4 +54,9 @@ public class BoolColumn extends AbstractColumn {
     public boolean[] getTupleData() {
         throw new NotImplementedException();
     }
+
+    @Override
+    public void setTupleByRefColumn(AbstractColumn column, int i, int j) {
+        throw new NotImplementedException();
+    }
 }

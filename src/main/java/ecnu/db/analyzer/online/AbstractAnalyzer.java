@@ -248,40 +248,40 @@ public abstract class AbstractAnalyzer {
             constraintChain.addParameters(result.getParameters());
         } else if (node.getType() == ExecutionNode.ExecutionNodeType.join) {
             String[] joinColumnInfos = analyzeJoinInfo(node.getInfo());
-            String pkTable = joinColumnInfos[0], pkCol = joinColumnInfos[1],
-                    fkTable = joinColumnInfos[2], fkCol = joinColumnInfos[3];
+            String localTable = joinColumnInfos[0], localCol = joinColumnInfos[1],
+                    externalTable = joinColumnInfos[2], externalCol = joinColumnInfos[3];
             // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
-            if (!pkTable.equals(constraintChain.getTableName())
-                    && !fkTable.equals(constraintChain.getTableName())) {
+            if (!localTable.equals(constraintChain.getTableName())
+                    && !externalTable.equals(constraintChain.getTableName())) {
                 return -1;
             }
             //将本表的信息放在前面，交换位置
-            if (constraintChain.getTableName().equals(fkTable)) {
-                pkTable = joinColumnInfos[2];
-                pkCol = joinColumnInfos[3];
-                fkTable = joinColumnInfos[0];
-                fkCol = joinColumnInfos[1];
+            if (constraintChain.getTableName().equals(externalTable)) {
+                localTable = joinColumnInfos[2];
+                localCol = joinColumnInfos[3];
+                externalTable = joinColumnInfos[0];
+                externalCol = joinColumnInfos[1];
             }
             //根据主外键分别设置约束链输出信息
-            if (isPrimaryKey(pkTable, pkCol, fkTable, fkCol)) {
+            if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(getSchema(pkTable).getJoinTag());
+                    node.setJoinTag(getSchema(localTable).getJoinTag());
                 }
-                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(pkTable, node.getJoinTag(), pkCol.split(","));
+                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(localTable, node.getJoinTag(), localCol.split(","));
                 constraintChain.addNode(pkJoinNode);
                 //设置主键
-                getSchema(pkTable).setPrimaryKeys(pkCol);
+                getSchema(localTable).setPrimaryKeys(localCol);
                 return node.getOutputRows();
             } else {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(getSchema(pkTable).getJoinTag());
+                    node.setJoinTag(getSchema(localTable).getJoinTag());
                 }
                 BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
                 //设置外键
-                logger.info("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
-                        fkCol + ".column:" + fkTable);
-                getSchema(pkTable).addForeignKey(pkCol, fkTable, fkCol);
-                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(pkTable, fkTable, node.getJoinTag(), getSchema(pkTable).getForeignKeys(), probability);
+                logger.info("table:" + localTable + ".column:" + localCol + " -ref- table:" +
+                        externalCol + ".column:" + externalTable);
+                getSchema(localTable).addForeignKey(localCol, externalTable, externalCol);
+                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable, externalTable, node.getJoinTag(), externalCol, localCol, probability);
                 constraintChain.addNode(fkJoinNode);
             }
         }

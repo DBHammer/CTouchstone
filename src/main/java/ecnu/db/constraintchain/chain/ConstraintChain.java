@@ -1,5 +1,6 @@
 package ecnu.db.constraintchain.chain;
 
+import com.google.common.collect.Table;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
@@ -59,7 +60,15 @@ public class ConstraintChain {
         return "{tableName:" + tableName + ",nodes:" + nodes + "}";
     }
 
-    public void evaluate(Schema schema, int size, Map<Integer, boolean[]> pkBitMap, Map<Integer, boolean[]> fkBitMap) throws TouchstoneToolChainException {
+    /**
+     * 计算pk和fk的bitmap
+     * @param schema 需要的schema参数
+     * @param size 需要的size
+     * @param pkBitMap pkTag -> bitmaps
+     * @param fkBitMap ref_col+local_col -> bitmaps
+     * @throws TouchstoneToolChainException 计算失败
+     */
+    public void evaluate(Schema schema, int size, Map<Integer, boolean[]> pkBitMap, Table<String, ConstraintChainFkJoinNode, boolean[]> fkBitMap) throws TouchstoneToolChainException {
         boolean[] flag = new boolean[size];
         Arrays.fill(flag, true);
         ThreadLocalRandom rand = ThreadLocalRandom.current();
@@ -82,7 +91,7 @@ public class ConstraintChain {
                     }
                     fkBit[i] = flag[i];
                 }
-                fkBitMap.put(((ConstraintChainFkJoinNode) node).getPkTag(), fkBit);
+                fkBitMap.put(((ConstraintChainFkJoinNode) node).getRefTable() + ((ConstraintChainFkJoinNode) node).getRefCol() + ((ConstraintChainFkJoinNode) node).getFkCol(), (ConstraintChainFkJoinNode) node, fkBit);
             }
         }
     }

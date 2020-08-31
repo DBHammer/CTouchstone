@@ -2,15 +2,22 @@ package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
+import ecnu.db.analyzer.online.AbstractAnalyzer;
+import ecnu.db.constraintchain.chain.ConstraintChain;
+import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.exception.CannotFindColumnException;
 import ecnu.db.exception.CannotFindSchemaException;
 import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.generation.JoinInfoTable;
 import ecnu.db.schema.column.AbstractColumn;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author wangqingshuai
@@ -22,6 +29,7 @@ public class Schema {
     private int tableSize;
     private String primaryKeys;
     private Map<String, String> foreignKeys;
+    private JoinInfoTable joinInfoTable;
     /**
      * 根据Database的metadata获取的外键信息
      */
@@ -184,5 +192,44 @@ public class Schema {
                 "tableName='" + tableName + '\'' +
                 ", tableSize=" + tableSize +
                 '}';
+    }
+
+    /**
+     * 准备好生成tuple
+     * @param size 需要生成的tuple的大小
+     * @param chains 约束链条
+     * @param analyzer 分析器
+     * @throws TouchstoneToolChainException 生成失败
+     */
+    public void prepareTuples(int size, List<ConstraintChain> chains, AbstractAnalyzer analyzer) throws TouchstoneToolChainException {
+        joinInfoTable = new JoinInfoTable();
+        Map<Integer, boolean[]> pkBitMap = new HashMap<>();
+        Table<String, ConstraintChainFkJoinNode, boolean[]> fkBitMap = HashBasedTable.create();
+        for (ConstraintChain chain : chains) {
+            chain.evaluate(this, size, pkBitMap, fkBitMap);
+        }
+        List<Integer> pks = new ArrayList<>(pkBitMap.keySet());
+        pks.sort(Integer::compareTo);
+        for (int i = 0; i < size; i++) {
+            long bitMap = 1L;
+            for (int pk : pks) {
+                bitMap = ((pkBitMap.get(pk)[i] ? 1L : 0L) & (bitMap << 1));
+            }
+            joinInfoTable.addJoinInfo(bitMap, new int[]{i});
+        }
+        for (Map.Entry<String, Map<ConstraintChainFkJoinNode, boolean[]>> entry : fkBitMap.rowMap().entrySet()) {
+            Map<ConstraintChainFkJoinNode, boolean[]> fkBitMap4Join = entry.getValue();
+            List<ConstraintChainFkJoinNode> nodes = new ArrayList<>(fkBitMap4Join.keySet()).stream()
+                    .sorted(Comparator.comparingInt(ConstraintChainFkJoinNode::getPkTag)).collect(Collectors.toList());
+            for (int i = 0; i < size; i++) {
+                long bitMap = 1L;
+                for (ConstraintChainFkJoinNode node : nodes) {
+                    bitMap = ((fkBitMap4Join.get(node)[i] ? 1L : 0L) & (bitMap << 1));
+                }
+                AbstractColumn refColumn =  analyzer.getSchema(nodes.get(0).getRefTable()).getColumn(nodes.get(0).getRefCol()), localColumn = getColumn(nodes.get(0).getFkCol());
+                int pk = joinInfoTable.getPrimaryKey(bitMap)[0];
+                localColumn.setTupleByRefColumn(refColumn, i, pk);
+            }
+        }
     }
 }

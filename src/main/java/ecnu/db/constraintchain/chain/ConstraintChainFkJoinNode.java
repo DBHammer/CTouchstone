@@ -1,30 +1,27 @@
 package ecnu.db.constraintchain.chain;
 
 import java.math.BigDecimal;
-import java.util.Map;
 
 /**
  * @author wangqingshuai
  */
 public class ConstraintChainFkJoinNode extends ConstraintChainNode {
-    /**
-     * 本地表和参照表的映射关系，用点来分割映射关系
-     * localColumnName -> refColumnName
-     */
-    private Map<String, String> foreignKeys;
     private String refTable;
+    private String refCol;
     private int pkTag;
     private BigDecimal probability;
+    private String fkCol;
 
     public ConstraintChainFkJoinNode() {
         super(null, ConstraintChainNodeType.FK_JOIN);
     }
 
-    public ConstraintChainFkJoinNode(String tableName, String refTable, int pkTag, Map<String, String> foreignKeys, BigDecimal probability) {
+    public ConstraintChainFkJoinNode(String tableName, String refTable, int pkTag, String refCol, String fkCol, BigDecimal probability) {
         super(tableName, ConstraintChainNodeType.FK_JOIN);
         this.refTable = refTable;
+        this.refCol = refCol;
         this.pkTag = pkTag;
-        this.foreignKeys = foreignKeys;
+        this.fkCol = fkCol;
         this.probability = probability;
     }
 
@@ -48,5 +45,13 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     public BigDecimal getProbability() {
         return probability;
+    }
+
+    public String getFkCol() {
+        return fkCol;
+    }
+
+    public String getRefCol() {
+        return refCol;
     }
 }
