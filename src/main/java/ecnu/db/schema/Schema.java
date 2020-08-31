@@ -13,11 +13,15 @@ import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.generation.JoinInfoTable;
 import ecnu.db.schema.column.AbstractColumn;
 
+import java.io.*;
+import java.nio.file.Files;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 /**
  * @author wangqingshuai
@@ -199,9 +203,11 @@ public class Schema {
      * @param size 需要生成的tuple的大小
      * @param chains 约束链条
      * @param analyzer 分析器
+     * @param directory joinInfoTable文件存放路径
+     * @param neededThreads 每个joinInfoTable至少需要的thread数量
      * @throws TouchstoneToolChainException 生成失败
      */
-    public void prepareTuples(int size, List<ConstraintChain> chains, AbstractAnalyzer analyzer) throws TouchstoneToolChainException {
+    public void prepareTuples(int size, List<ConstraintChain> chains, AbstractAnalyzer analyzer, String directory, int neededThreads) throws TouchstoneToolChainException, IOException {
         joinInfoTable = new JoinInfoTable();
         Map<Integer, boolean[]> pkBitMap = new HashMap<>();
         Table<String, ConstraintChainFkJoinNode, boolean[]> fkBitMap = HashBasedTable.create();
@@ -226,10 +232,29 @@ public class Schema {
                 for (ConstraintChainFkJoinNode node : nodes) {
                     bitMap = ((fkBitMap4Join.get(node)[i] ? 1L : 0L) & (bitMap << 1));
                 }
-                AbstractColumn refColumn =  analyzer.getSchema(nodes.get(0).getRefTable()).getColumn(nodes.get(0).getRefCol()), localColumn = getColumn(nodes.get(0).getFkCol());
+                AbstractColumn refColumn =  analyzer.getSchema(nodes.get(i).getRefTable()).getColumn(nodes.get(i).getRefCol()), localColumn = getColumn(nodes.get(i).getFkCol());
+                int cnt;
+                do {
+                    File file = new File(directory, nodes.get(i).getRefTable());
+                    if (file.isDirectory()) {
+                        cnt = Objects.requireNonNull(file.listFiles()).length;
+                    } else {
+                        cnt = 0;
+                    }
+                } while (cnt < neededThreads);
+                File[] files = Objects.requireNonNull(new File(directory, nodes.get(i).getRefTable()).listFiles());
+                JoinInfoTable joinInfoTable = new JoinInfoTable();
+                for (File file : files) {
+                    JoinInfoTable joinInfoTableTmp = new JoinInfoTable();
+                    joinInfoTableTmp.readExternal(new ObjectInputStream(new FileInputStream(file)));
+                    joinInfoTable.mergeJoinInfo(joinInfoTableTmp);
+                }
                 int pk = joinInfoTable.getPrimaryKey(bitMap)[0];
                 localColumn.setTupleByRefColumn(refColumn, i, pk);
             }
         }
+        File tmpFile = File.createTempFile(String.format("%s_%s_%d", directory, tableName, Thread.currentThread().getId()), "tmp");
+        joinInfoTable.writeExternal(new ObjectOutputStream(new FileOutputStream(tmpFile)));
+        Files.move(tmpFile.toPath(), new File(new File(directory, tableName), Long.toString(Thread.currentThread().getId())).toPath(), ATOMIC_MOVE);
     }
 }
