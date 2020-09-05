@@ -95,6 +95,7 @@ non terminal          CompareOperator           uni_compare_operator;
 non terminal          String                    uni_compare_constant;
 non terminal          AbstractFilterOperation   multi_compare_expr;
 non terminal          UniVarFilterOperation     in_compare_expr;
+non terminal          String                    in_argument;
 non terminal          List<String>              in_arguments;
 non terminal          UniVarFilterOperation     like_compare_expr;
 non terminal          ArithmeticNode            arithmetic_expr;
@@ -209,15 +210,28 @@ in_compare_expr ::=
                                                                                       RESULT = operation;
                                                                                   :}
         ;
-in_arguments ::=
+in_argument  ::=
         STRING:str                                                                {:
-                                                                                      List<String> children = new ArrayList<>();
-                                                                                      children.add(str);
-                                                                                      RESULT = children;
+                                                                                      RESULT = str;
                                                                                   :}
-        | in_arguments:e1 STRING:str                                              {:
-                                                                                      String string = str;
-                                                                                      e1.add(string);
+        | DATE:date                                                               {:
+                                                                                      RESULT = date;
+                                                                                  :}
+        | INTEGER:integer                                                         {:
+                                                                                      RESULT = integer.toString();
+                                                                                  :}
+        | FLOAT:float_                                                            {:
+                                                                                      RESULT = float_.toString();
+                                                                                  :}
+        ;
+in_arguments ::=
+        in_argument:argument                                                      {:
+                                                                                      List<String> arguments = new ArrayList<>();
+                                                                                      arguments.add(argument);
+                                                                                      RESULT = arguments;
+                                                                                  :}
+        | in_arguments:e1 in_argument:argument                                    {:
+                                                                                      e1.add(argument);
                                                                                       RESULT = e1;
                                                                                   :}
         ;

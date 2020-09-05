@@ -75,7 +75,7 @@ public class TidbSelectOperatorInfoParserTest {
     @Test()
     void testParseWithLogicalOpsFailed() {
         assertThrows(Exception.class, () -> {
-            String testCase = "or(ge((db.table.col1), 2), mul(db.table.col2, 3))";
+            String testCase = "or(ge(db.table.col1, 2), mul(db.table.col2, 3))";
             parser.parseSelectOperatorInfo(testCase);
         });
     }
