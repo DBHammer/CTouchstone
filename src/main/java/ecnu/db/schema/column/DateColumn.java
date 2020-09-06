@@ -141,21 +141,12 @@ public class DateColumn extends AbstractColumn {
                 for (int i = 0; i < parameterData.length; i++) {
                     parameterData[i] = LocalDate.parse(parameters.get(i).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
                 }
-                if (hasNot) {
-                    for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                        ret[i] = false;
-                        for (double paramDatum : parameterData) {
-                            ret[i] = (ret[i] | (longCopyOfTupleData[i] == paramDatum));
-                            ret[i] = !ret[i];
-                        }
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = false;
+                    for (double paramDatum : parameterData) {
+                        ret[i] = (ret[i] | (longCopyOfTupleData[i] == paramDatum));
                     }
-                } else {
-                    for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                        ret[i] = false;
-                        for (double paramDatum : parameterData) {
-                            ret[i] = (ret[i] | (longCopyOfTupleData[i] == paramDatum));
-                        }
-                    }
+                    ret[i] = (hasNot ^ ret[i]);
                 }
                 break;
             case LT:

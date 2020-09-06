@@ -139,7 +139,7 @@ class QueryInstantiationTest {
 
         chains = query2chains.get("6.sql_1");
         map = getRate(schemas, generateSize, chains);
-        assertEquals(0.01904131080, map.get("tpch.lineitem"), 0.002);
+        assertEquals(0.01904131080, map.get("tpch.lineitem"), 0.003);
     }
 
     @Test

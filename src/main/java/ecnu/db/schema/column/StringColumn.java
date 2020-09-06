@@ -262,35 +262,20 @@ public class StringColumn extends AbstractColumn {
                 for (int i = 0; i < params.length; i++) {
                     params[i] = eqCandidateMap.get(parameters.get(i).getData());
                 }
-                if (hasNot) {
-                    for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                        ret[i] = false;
-                        for (double paramDatum : params) {
-                            ret[i] = (ret[i] | (intCopyOfTupleData[i] == paramDatum));
-                            ret[i] = !ret[i];
-                        }
+                for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                    ret[i] = false;
+                    for (double paramDatum : params) {
+                        ret[i] = (ret[i] | (intCopyOfTupleData[i] == paramDatum));
                     }
-                } else {
-                    for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                        ret[i] = false;
-                        for (double paramDatum : params) {
-                            ret[i] = (ret[i] | (intCopyOfTupleData[i] == paramDatum));
-                        }
-                    }
+                    ret[i] = (hasNot ^ ret[i]);
                 }
                 break;
             case LIKE:
                 Pair<Integer, Integer> pair = likeCandidateMap.get(parameters.get(0).getData());
                 int min = pair.getLeft(), max = pair.getRight();
-                if (hasNot) {
-                    for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                        ret[i] = (intCopyOfTupleData[i] >= min && intCopyOfTupleData[i] <= max);
-                        ret[i] = !ret[i];
-                    }
-                } else {
-                    for (int i = 0; i < intCopyOfTupleData.length; i++) {
-                        ret[i] = (intCopyOfTupleData[i] >= min && intCopyOfTupleData[i] <= max);
-                    }
+                for (int i = 0; i < intCopyOfTupleData.length; i++) {
+                    ret[i] = (intCopyOfTupleData[i] >= min && intCopyOfTupleData[i] <= max);
+                    ret[i] = (hasNot ^ ret[i]);
                 }
                 break;
             default:

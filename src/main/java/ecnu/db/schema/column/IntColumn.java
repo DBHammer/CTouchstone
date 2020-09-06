@@ -167,21 +167,12 @@ public class IntColumn extends AbstractColumn {
                 for (int i = 0; i < parameters.size(); i++) {
                     params[i] = Integer.parseInt(parameters.get(0).getData());
                 }
-                if (hasNot) {
-                    for (int i = 0; i < tupleData.length; i++) {
-                        ret[i] = false;
-                        for (int paramDatum : params) {
-                            ret[i] = (ret[i] | (tupleData[i] == paramDatum));
-                            ret[i] = !ret[i];
-                        }
+                for (int i = 0; i < tupleData.length; i++) {
+                    ret[i] = false;
+                    for (int paramDatum : params) {
+                        ret[i] = (ret[i] | (tupleData[i] == paramDatum));
                     }
-                } else {
-                    for (int i = 0; i < tupleData.length; i++) {
-                        ret[i] = false;
-                        for (int paramDatum : params) {
-                            ret[i] = (ret[i] | (tupleData[i] == paramDatum));
-                        }
-                    }
+                    ret[i] = (hasNot ^ ret[i]);
                 }
                 break;
             default:

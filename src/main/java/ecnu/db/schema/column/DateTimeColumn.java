@@ -176,20 +176,11 @@ public class DateTimeColumn extends AbstractColumn {
                 for (int i = 0; i < parameterData.length; i++) {
                     parameterData[i] = LocalDateTime.parse(parameters.get(i).getData(), FMT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
                 }
-                if (hasNot) {
-                    for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                        ret[i] = false;
-                        for (double paramDatum : parameterData) {
-                            ret[i] = (ret[i] | (longCopyOfTupleData[i] == paramDatum));
-                            ret[i] = !ret[i];
-                        }
-                    }
-                } else {
-                    for (int i = 0; i < longCopyOfTupleData.length; i++) {
-                        ret[i] = false;
-                        for (double paramDatum : parameterData) {
-                            ret[i] = (ret[i] | (longCopyOfTupleData[i] == paramDatum));
-                        }
+                for (int i = 0; i < longCopyOfTupleData.length; i++) {
+                    ret[i] = false;
+                    for (double paramDatum : parameterData) {
+                        ret[i] = (ret[i] | (longCopyOfTupleData[i] == paramDatum));
+                        ret[i] = (hasNot ^ ret[i]);
                     }
                 }
                 break;

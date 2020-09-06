@@ -153,15 +153,9 @@ public class DecimalColumn extends AbstractColumn {
                 }
                 for (int i = 0; i < tupleData.length; i++) {
                     ret[i] = false;
-                    if (hasNot) {
-                        for (double paramDatum : params) {
-                            ret[i] = (ret[i] | (tupleData[i] == paramDatum));
-                            ret[i] = !ret[i];
-                        }
-                    } else {
-                        for (double paramDatum : params) {
-                            ret[i] = (ret[i] | (tupleData[i] == paramDatum));
-                        }
+                    for (double paramDatum : params) {
+                        ret[i] = (ret[i] | (tupleData[i] == paramDatum));
+                        ret[i] = (hasNot ^ ret[i]);
                     }
                 }
                 break;
