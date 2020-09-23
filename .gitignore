@@ -32,11 +32,4 @@ conf
 dependency-reduced-pom.xml
 
 # ignore jflex generated files and idea backups
-TidbSelectOperatorInfoLexer.java
-TidbSelectOperatorInfoParser.java
-TidbSelectSymbol.java
-
-# kubernetes config for testing
-k8s.config
-
-
+src/main/java/ecnu/db/tidb/parser

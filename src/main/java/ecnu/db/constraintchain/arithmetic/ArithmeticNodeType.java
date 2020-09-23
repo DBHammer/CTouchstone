@@ -9,9 +9,9 @@ public enum ArithmeticNodeType {
      */
     CONSTANT,
     /**
-     * 参数类型计算节点, 用于实例化
+     * COLUMN类型计算节点, 用于实例化
      */
-    PARAMETER,
+    COLUMN,
     /**
      * 加类型计算节点
      */

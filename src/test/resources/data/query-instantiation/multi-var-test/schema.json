@@ -1,0 +1,53 @@
+{
+  "test.test": {
+    "tableName": "test.test",
+    "columns": {
+      "c3": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "c3",
+        "min": -3,
+        "max": 9,
+        "ndv": 13
+      },
+      "c4": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "c4",
+        "min": 0,
+        "max": 10,
+        "ndv": 11
+      },
+      "new_column": {
+        "columnType": "DATETIME",
+        "nullPercentage": 0.0,
+        "columnName": "new_column",
+        "begin": "2010-05-04 02:11:21.000000",
+        "end": "2021-08-14 16:46:40.000000",
+        "precision": 3,
+        "ndv": -1
+      },
+      "c1": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "c1",
+        "min": 1,
+        "max": 30147,
+        "ndv": 159
+      },
+      "c2": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "c2",
+        "min": 2,
+        "max": 23,
+        "ndv": 14
+      }
+    },
+    "tableSize": 159,
+    "primaryKeys": null,
+    "foreignKeys": null,
+    "metaDataFks": {},
+    "joinTag": 2
+  }
+}

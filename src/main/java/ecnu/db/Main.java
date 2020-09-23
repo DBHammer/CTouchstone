@@ -1,23 +1,33 @@
 package ecnu.db;
 
 
+import com.alibaba.druid.util.JdbcConstants;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
-import ecnu.db.analyzer.online.TidbAnalyzer;
-import ecnu.db.analyzer.online.node.ExecutionNode;
-import ecnu.db.dbconnector.AbstractDbConnector;
+import ecnu.db.analyzer.online.ExecutionNode;
+import ecnu.db.analyzer.statical.QueryReader;
+import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
+import ecnu.db.constraintchain.chain.ConstraintChain;
+import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
+import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.dbconnector.DumpFileConnector;
-import ecnu.db.dbconnector.TidbConnector;
+import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
-import ecnu.db.schema.generation.AbstractSchemaGenerator;
-import ecnu.db.schema.generation.TidbSchemaGenerator;
-import ecnu.db.utils.*;
+import ecnu.db.schema.SchemaGenerator;
+import ecnu.db.tidb.TidbAnalyzer;
+import ecnu.db.tidb.TidbInfo;
+import ecnu.db.utils.AbstractDatabaseInfo;
+import ecnu.db.utils.SqlTemplateHelper;
+import ecnu.db.utils.StorageManager;
+import ecnu.db.utils.SystemConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,66 +52,72 @@ public class Main {
         StorageManager storageManager = new StorageManager(config.getResultDirectory(), config.getDumpDirectory(), config.getLoadDirectory(), config.getLogDirectory());
         storageManager.init();
 
-        DatabaseConnectorInterface dbConnector;
+        DatabaseConnectorInterface connector;
+        AbstractDatabaseInfo databaseInfo;
         Map<String, Schema> schemas = new HashMap<>(INIT_HASHMAP_SIZE);
         List<String> tableNames;
         if (storageManager.isLoad()) {
+            // todo 静态文件读取时，需要选择合适的数据库信息
+            databaseInfo = new TidbInfo(config.getDatabaseVersion());
             tableNames = storageManager.loadTableNames();
             logger.info("加载表名成功，表名为:" + tableNames);
             Map<String, List<String[]>> queryPlanMap = storageManager.loadQueryPlans();
             Map<String, Integer> multiColNdvMap = storageManager.loadMultiColMap();
             schemas = storageManager.loadSchemas();
-            dbConnector = new DumpFileConnector(tableNames, queryPlanMap, multiColNdvMap);
+            connector = new DumpFileConnector(queryPlanMap, multiColNdvMap);
             logger.info("数据加载完毕");
         } else {
-            dbConnector = new TidbConnector(config);
-            tableNames = ((AbstractDbConnector) dbConnector).fetchTableNames(config.isCrossMultiDatabase(), config.getDatabaseName(), files);
-            logger.info("获取表名成功，表名为:" + tableNames);
-            AbstractSchemaGenerator dbSchemaGenerator = new TidbSchemaGenerator();
-            for (String canonicalTableName : tableNames) {
-                Schema schema = ((AbstractDbConnector) dbConnector).fetchSchema(dbSchemaGenerator, canonicalTableName);
-                schemas.put(canonicalTableName, schema);
+            switch (config.getDatabaseVersion()) {
+                case TiDB3:
+                case TiDB4:
+                    databaseInfo = new TidbInfo(config.getDatabaseVersion());
+                    connector = new DbConnector(config, databaseInfo.getJdbcType(), databaseInfo.getJdbcProperties());
+                    DbConnector dbConnector = (DbConnector) connector;
+                    tableNames = dbConnector.fetchTableNames(config.isCrossMultiDatabase(),
+                            config.getDatabaseName(), files, JdbcConstants.MYSQL);
+                    logger.info("获取表名成功，表名为:" + tableNames);
+                    SchemaGenerator dbSchemaGenerator = new SchemaGenerator();
+                    for (String canonicalTableName : tableNames) {
+                        Schema schema = dbConnector.fetchSchema(dbSchemaGenerator, canonicalTableName);
+                        int tableSize = dbConnector.getTableSize(canonicalTableName);
+                        schema.setTableSize(tableSize);
+                        schemas.put(canonicalTableName, schema);
+                    }
+                    Schema.initFks(((DbConnector) connector).databaseMetaData, schemas);
+                    logger.info("获取表结构和数据分布成功");
+                    break;
+                default:
+                    throw new UnsupportedDBTypeException(config.getDatabaseVersion());
             }
-            Schema.initFks(((AbstractDbConnector) dbConnector).databaseMetaData, schemas);
-            logger.info("获取表结构和数据分布成功");
         }
-        AbstractAnalyzer queryAnalyzer = getAnalyzer(config, dbConnector, schemas);
-        List<String> queryInfos = new LinkedList<>();
+        AbstractAnalyzer queryAnalyzer = getAnalyzer(config, connector, databaseInfo, schemas);
+        Map<String, List<ConstraintChain>> queryInfos = new HashMap<>();
+        String staticalDbType = databaseInfo.getStaticalDbVersion();
         boolean needLog = false;
         logger.info("开始获取查询计划");
+        ArithmeticNode.setSize(config.getSampleSize());
         for (File sqlFile : files) {
             if (sqlFile.isFile() && sqlFile.getName().endsWith(".sql")) {
-                List<String> queries = ReadQuery.getQueriesFromFile(sqlFile.getPath(), queryAnalyzer.getDbType());
+                List<String> queries = QueryReader.getQueriesFromFile(sqlFile.getPath(), staticalDbType);
                 int index = 0;
                 List<String[]> queryPlan = new ArrayList<>();
                 for (String query : queries) {
                     index++;
                     String queryCanonicalName = String.format("%s_%d", sqlFile.getName(), index);
-                    List<String> cannotFindArgs = new ArrayList<>();
-                    List<String> conflictArgs = new ArrayList<>();
                     try {
                         logger.info(String.format("%-15s Status:开始获取", queryCanonicalName));
-                        queryInfos.add("## " + queryCanonicalName);
-                        queryPlan = queryAnalyzer.getQueryPlan(queryCanonicalName, query);
+                        queryPlan = queryAnalyzer.getQueryPlan(queryCanonicalName, query, databaseInfo);
                         if (storageManager.isDump()) {
                             storageManager.dumpQueryPlan(queryPlan, queryCanonicalName);
                         }
                         ExecutionNode root = queryAnalyzer.getExecutionTree(queryPlan);
-                        queryInfos.addAll(queryAnalyzer.extractQueryInfos(queryCanonicalName, root));
+                        List<ConstraintChain> constraintChains = queryAnalyzer.extractQueryInfos(queryCanonicalName, root);
+                        queryInfos.put(queryCanonicalName, constraintChains);
+                        List<Parameter> parameters = constraintChains.stream().flatMap((c -> c.getParameters().stream())).collect(Collectors.toList());
                         logger.info(String.format("%-15s Status:获取成功", queryCanonicalName));
-                        queryAnalyzer.outputSuccess(true);
-                        query = SqlTemplateHelper.templatizeSql(query, queryAnalyzer, cannotFindArgs, conflictArgs);
-                        if (cannotFindArgs.size() > 0) {
-                            logger.warn(String.format("请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName));
-                            query = SqlTemplateHelper.appendArgs(queryAnalyzer.getArgsAndIndex(), "cannotFindArgs", cannotFindArgs) + query;
-                        }
-                        if (conflictArgs.size() > 0) {
-                            logger.warn(String.format("请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName));
-                            query = SqlTemplateHelper.appendArgs(queryAnalyzer.getArgsAndIndex(), "conflictArgs", conflictArgs) + query;
-                        }
-                        storageManager.storeSqlResult(sqlFile, query, queryAnalyzer.getDbType());
+                        query = SqlTemplateHelper.templatizeSql(queryCanonicalName, query, staticalDbType, parameters);
+                        storageManager.storeSqlResult(sqlFile, query, staticalDbType);
                     } catch (TouchstoneToolChainException e) {
-                        queryAnalyzer.outputSuccess(false);
                         logger.error(String.format("%-15s Status:获取失败", queryCanonicalName), e);
                         needLog = true;
                         if (queryPlan != null && !queryPlan.isEmpty()) {
@@ -114,23 +130,25 @@ public class Main {
         }
         logger.info("获取查询计划完成");
         if (storageManager.isDump()) {
-            storageManager.dumpStaticInfo(dbConnector.getMultiColNdvMap(), schemas, tableNames);
+            storageManager.dumpStaticInfo(connector.getMultiColNdvMap(), schemas, tableNames);
             logger.info("表结构和数据分布持久化成功");
         }
         if (needLog) {
-            storageManager.logStaticInfo(dbConnector.getMultiColNdvMap(), schemas, tableNames);
+            storageManager.logStaticInfo(connector.getMultiColNdvMap(), schemas, tableNames);
             logger.info(String.format("关于表的日志信息已经存盘到'%s'", storageManager.getLogDir().getAbsolutePath()));
         }
         storageManager.storeSchemaResult(schemas);
         storageManager.storeConstrainChainResult(queryInfos);
     }
 
-    private static AbstractAnalyzer getAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector, Map<String, Schema> schemas) {
+    private static AbstractAnalyzer getAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector,
+                                                AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas)
+            throws TouchstoneToolChainException, IOException {
         Multimap<String, String> tblName2CanonicalTblName = ArrayListMultimap.create();
         for (String canonicalTableName : schemas.keySet()) {
             tblName2CanonicalTblName.put(canonicalTableName.split("\\.")[1], canonicalTableName);
         }
-        return new TidbAnalyzer(config, dbConnector, schemas, tblName2CanonicalTblName);
+        return new TidbAnalyzer(config, dbConnector, databaseInfo, schemas, tblName2CanonicalTblName).check();
     }
 
 

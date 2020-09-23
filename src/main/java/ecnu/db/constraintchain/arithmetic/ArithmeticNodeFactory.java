@@ -6,14 +6,14 @@ import ecnu.db.constraintchain.arithmetic.operator.MulNode;
 import ecnu.db.constraintchain.arithmetic.operator.PlusNode;
 import ecnu.db.constraintchain.arithmetic.value.ColumnNode;
 import ecnu.db.constraintchain.arithmetic.value.NumericNode;
-import ecnu.db.utils.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneToolChainException;
 
 /**
  * @author alan
  */
 public class ArithmeticNodeFactory {
     public static ArithmeticNode create(ArithmeticNodeType type) throws TouchstoneToolChainException {
-        ArithmeticNode node = null;
+        ArithmeticNode node;
         switch (type) {
             case DIV:
                 node = new DivNode();
@@ -30,7 +30,7 @@ public class ArithmeticNodeFactory {
             case CONSTANT:
                 node = new NumericNode();
                 break;
-            case PARAMETER:
+            case COLUMN:
                 node = new ColumnNode();
                 break;
             default:

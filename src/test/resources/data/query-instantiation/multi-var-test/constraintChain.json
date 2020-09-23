@@ -1,0 +1,158 @@
+{
+  "t1.sql_2": [
+    {
+      "tableName": "test.test",
+      "parameters": [
+        {
+          "id": 1,
+          "data": "10",
+          "isDate": false
+        }
+      ],
+      "nodes": [
+        {
+          "tableName": "test.test",
+          "constraintChainNodeType": "FILTER",
+          "root": {
+            "type": "AND",
+            "children": [
+              {
+                "parameters": [
+                  1
+                ],
+                "operator": "GT",
+                "probability": null,
+                "arithmeticTree": {
+                  "leftNode": {
+                    "leftNode": {
+                      "leftNode": null,
+                      "rightNode": null,
+                      "type": "COLUMN",
+                      "canonicalTableName": "test.test",
+                      "columnName": "c2"
+                    },
+                    "rightNode": {
+                      "leftNode": {
+                        "leftNode": null,
+                        "rightNode": null,
+                        "type": "CONSTANT",
+                        "constant": 2.0
+                      },
+                      "rightNode": {
+                        "leftNode": null,
+                        "rightNode": null,
+                        "type": "COLUMN",
+                        "canonicalTableName": "test.test",
+                        "columnName": "c3"
+                      },
+                      "type": "MUL"
+                    },
+                    "type": "PLUS"
+                  },
+                  "rightNode": {
+                    "leftNode": null,
+                    "rightNode": null,
+                    "type": "COLUMN",
+                    "canonicalTableName": "test.test",
+                    "columnName": "c4"
+                  },
+                  "type": "PLUS"
+                },
+                "colNames": [
+                  "test.test.c4",
+                  "test.test.c3",
+                  "test.test.c2"
+                ],
+                "type": "MULTI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability": 0.8364779874,
+          "columns": [
+            "test.test.c4",
+            "test.test.c3",
+            "test.test.c2"
+          ]
+        }
+      ]
+    }
+  ],
+  "t1.sql_1": [
+    {
+      "tableName": "test.test",
+      "parameters": [
+        {
+          "id": 0,
+          "data": "40",
+          "isDate": false
+        }
+      ],
+      "nodes": [
+        {
+          "tableName": "test.test",
+          "constraintChainNodeType": "FILTER",
+          "root": {
+            "type": "AND",
+            "children": [
+              {
+                "parameters": [
+                  0
+                ],
+                "operator": "GT",
+                "probability": null,
+                "arithmeticTree": {
+                  "leftNode": {
+                    "leftNode": null,
+                    "rightNode": null,
+                    "type": "COLUMN",
+                    "canonicalTableName": "test.test",
+                    "columnName": "c2"
+                  },
+                  "rightNode": {
+                    "leftNode": {
+                      "leftNode": {
+                        "leftNode": null,
+                        "rightNode": null,
+                        "type": "CONSTANT",
+                        "constant": 2.0
+                      },
+                      "rightNode": {
+                        "leftNode": null,
+                        "rightNode": null,
+                        "type": "COLUMN",
+                        "canonicalTableName": "test.test",
+                        "columnName": "c3"
+                      },
+                      "type": "MUL"
+                    },
+                    "rightNode": {
+                      "leftNode": null,
+                      "rightNode": null,
+                      "type": "COLUMN",
+                      "canonicalTableName": "test.test",
+                      "columnName": "c4"
+                    },
+                    "type": "MUL"
+                  },
+                  "type": "PLUS"
+                },
+                "colNames": [
+                  "test.test.c4",
+                  "test.test.c3",
+                  "test.test.c2"
+                ],
+                "type": "MULTI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability": 0.3270440252,
+          "columns": [
+            "test.test.c4",
+            "test.test.c3",
+            "test.test.c2"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -6,8 +6,6 @@ import ecnu.db.schema.column.ColumnType;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
 
 /**
  * @author qingshuai.wang
@@ -22,15 +20,13 @@ public class SystemConfig {
     private boolean crossMultiDatabase;
     private String resultDirectory;
     private String tidbHttpPort;
-    private String dataSource;
-    private String databaseVersion;
+    private TouchstoneSupportedDatabaseVersion databaseVersion;
     private String sqlsDirectory;
     private String loadDirectory;
     private String dumpDirectory;
     private String logDirectory;
+    private int sampleSize;
 
-    private HashMap<ColumnType, HashSet<String>> typeConvert;
-    private HashMap<String, String> tidbSelectArgs;
     private Double skipNodeThreshold;
 
     public SystemConfig() {
@@ -48,9 +44,7 @@ public class SystemConfig {
         while ((line = reader.readLine()) != null) {
             configJson.append(line);
         }
-        SystemConfig systemConfig = new ObjectMapper().readValue(configJson.toString(), SystemConfig.class);
-        ConfigConvert.setTypeConvert(systemConfig.getTypeConvert());
-        return systemConfig;
+        return new ObjectMapper().readValue(configJson.toString(), SystemConfig.class);
     }
 
     public boolean isCrossMultiDatabase() {
@@ -93,36 +87,12 @@ public class SystemConfig {
         this.dumpDirectory = dumpDirectory;
     }
 
-    public HashMap<String, String> getTidbSelectArgs() {
-        return tidbSelectArgs;
-    }
-
-    public void setTidbSelectArgs(HashMap<String, String> tidbSelectArgs) {
-        this.tidbSelectArgs = tidbSelectArgs;
-    }
-
-    public String getDataSource() {
-        return dataSource;
-    }
-
-    public void setDataSource(String dataSource) {
-        this.dataSource = dataSource;
-    }
-
     public String getTidbHttpPort() {
         return tidbHttpPort;
     }
 
     public void setTidbHttpPort(String tidbHttpPort) {
         this.tidbHttpPort = tidbHttpPort;
-    }
-
-    public HashMap<ColumnType, HashSet<String>> getTypeConvert() {
-        return typeConvert;
-    }
-
-    public void setTypeConvert(HashMap<ColumnType, HashSet<String>> typeConvert) {
-        this.typeConvert = typeConvert;
     }
 
     public ColumnType getColumnType(String readType) {
@@ -169,11 +139,11 @@ public class SystemConfig {
         this.databaseName = databaseName;
     }
 
-    public String getDatabaseVersion() {
+    public TouchstoneSupportedDatabaseVersion getDatabaseVersion() {
         return databaseVersion;
     }
 
-    public void setDatabaseVersion(String databaseVersion) {
+    public void setDatabaseVersion(TouchstoneSupportedDatabaseVersion databaseVersion) {
         this.databaseVersion = databaseVersion;
     }
 
@@ -191,5 +161,13 @@ public class SystemConfig {
 
     public void setLogDirectory(String logDirectory) {
         this.logDirectory = logDirectory;
+    }
+
+    public int getSampleSize() {
+        return sampleSize;
+    }
+
+    public void setSampleSize(int sampleSize) {
+        this.sampleSize = sampleSize;
     }
 }

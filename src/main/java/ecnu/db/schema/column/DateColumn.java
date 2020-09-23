@@ -1,40 +1,44 @@
 package ecnu.db.schema.column;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 
-import org.apache.commons.lang3.time.DateUtils;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.regex.Pattern;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 /**
- * @author qingshuai.wang
+ * @author alan
  */
 public class DateColumn extends AbstractColumn {
-    private static final SimpleDateFormat TOUCHSTONE_FMT = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
-    private static final String[] DATA_TIME_PATTERN = new String[]{"yyyy-MM", "yyyyMM", "yyyy/MM", "yyyyMMdd", "yyyy-MM-dd", "yyyy/MM/dd",
-            "yyyyMMddHHmmss", "yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss"};
-    private static final Pattern DATE_FORMAT_PATTERN = Pattern.compile("-?\\d+(\\.\\d+)?");
-    private String begin;
-    private String end;
+    public static final DateTimeFormatter FMT = new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd").toFormatter();
+    private LocalDate begin;
+    private LocalDate end;
+
+    public DateColumn() {
+        super(null, ColumnType.DATETIME);
+    }
 
     public DateColumn(String columnName) {
         super(columnName, ColumnType.DATETIME);
     }
 
-    public String getBegin() {
+    public LocalDate getBegin() {
         return begin;
     }
 
-    public void setBegin(String begin) {
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    public void setBegin(LocalDate begin) {
         this.begin = begin;
     }
 
-    public String getEnd() {
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    public LocalDate getEnd() {
         return end;
     }
 
-    public void setEnd(String end) {
+    public void setEnd(LocalDate end) {
         this.end = end;
     }
 
@@ -44,22 +48,24 @@ public class DateColumn extends AbstractColumn {
     }
 
     @Override
-    public String formatDataDistribution() throws ParseException {
-
-        if (isNumeric(begin)) {
-            return columnName + ";" + nullPercentage + ';' + TOUCHSTONE_FMT.format(Long.parseLong(begin)) + ";" +
-                    TOUCHSTONE_FMT.format(Long.parseLong(end));
-        } else {
-            return columnName + ";" + nullPercentage + ';' +
-                    TOUCHSTONE_FMT.format(DateUtils.parseDate(begin, DATA_TIME_PATTERN)) + ";" +
-                    TOUCHSTONE_FMT.format(DateUtils.parseDate(end, DATA_TIME_PATTERN).getTime());
-        }
+    protected String generateEqData(BigDecimal minProbability, BigDecimal maxProbability) {
+        String data;
+        double minP = minProbability.doubleValue(), maxP = maxProbability.doubleValue();
+        do {
+            Duration duration = Duration.between(begin, end);
+            BigDecimal seconds = BigDecimal.valueOf(duration.getSeconds());
+            BigDecimal probability = BigDecimal.valueOf(Math.random() * (maxP - minP) + minP);
+            duration = Duration.ofSeconds(seconds.multiply(probability).longValue());
+            data = FMT.format(begin.plus(duration));
+        } while (eqCandidates.contains(data));
+        eqCandidates.add(data);
+        return data;
     }
 
-    private boolean isNumeric(String strNum) {
-        if (strNum == null) {
-            return false;
-        }
-        return DATE_FORMAT_PATTERN.matcher(strNum).matches();
+    public LocalDate generateData(BigDecimal probability) {
+        Duration duration = Duration.between(begin, end);
+        BigDecimal seconds = BigDecimal.valueOf(duration.getSeconds());
+        duration = Duration.ofSeconds(seconds.multiply(probability).longValue());
+        return begin.plus(duration);
     }
 }

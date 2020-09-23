@@ -1,5 +1,6 @@
 package ecnu.db.utils;
 
+import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
 
 import java.util.*;
@@ -11,26 +12,26 @@ public class Preprocessor {
 
     /**
      * Map<String, Schema>中，String是表名，Schema是表结构
+     *
      * @param schemas 输入的乱序的表结构
      * @return 按照拓扑序排序的表结构
      */
     public static List<Schema> getTableOrder(Map<String, Schema> schemas) throws TouchstoneToolChainException {
 
-        List<Schema> tableOrder = new ArrayList<Schema>();
+        List<Schema> tableOrder = new ArrayList<>();
 
         // map: tables -> referenced tables
-        HashMap<Schema, ArrayList<String>> tableDependencyInfo = new HashMap<Schema, ArrayList<String>>();
+        HashMap<Schema, ArrayList<String>> tableDependencyInfo = new HashMap<>();
 
-        for(Schema schema : schemas.values()) {
+        for (Schema schema : schemas.values()) {
             if (schema.getForeignKeys().size() != 0) {
-                HashMap<String, String> foreignKeys = schema.getForeignKeys();
-                ArrayList<String> referencedTables = new ArrayList<String>();
+                Map<String, String> foreignKeys = schema.getForeignKeys();
+                ArrayList<String> referencedTables = new ArrayList<>();
                 for (int j = 0; j < foreignKeys.size(); j++) {
                     referencedTables.add(foreignKeys.get(j).split("\\.")[0]);
                 }
                 tableDependencyInfo.put(schema, referencedTables);
-            }
-            else {
+            } else {
                 tableOrder.add(schema);
             }
         }
@@ -50,7 +51,7 @@ public class Preprocessor {
             if (tableOrder.size() == schemas.size()) {
                 break;
             }
-            if(tableOrder.size() == lastTableOrderSize){ //如果本轮循环中没有加入新的表
+            if (tableOrder.size() == lastTableOrderSize) { //如果本轮循环中没有加入新的表
                 throw new TouchstoneToolChainException("该数据库表中外键约束不完整");
             }
             iterator = tableDependencyInfo.entrySet().iterator();

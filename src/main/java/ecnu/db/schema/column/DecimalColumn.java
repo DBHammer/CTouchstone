@@ -1,11 +1,17 @@
 package ecnu.db.schema.column;
 
+import java.math.BigDecimal;
+
 /**
  * @author qingshuai.wang
  */
 public class DecimalColumn extends AbstractColumn {
     double min;
     double max;
+
+    public DecimalColumn() {
+        super(null, ColumnType.DECIMAL);
+    }
 
     public DecimalColumn(String columnName) {
         super(columnName, ColumnType.DECIMAL);
@@ -33,7 +39,17 @@ public class DecimalColumn extends AbstractColumn {
     }
 
     @Override
-    public String formatDataDistribution() {
-        return columnName + ";" + nullPercentage + ';' + min + ';' + max;
+    protected String generateEqData(BigDecimal minProbability, BigDecimal maxProbability) {
+        String data;
+        double minP = minProbability.doubleValue(), maxP = maxProbability.doubleValue();
+        do {
+            data = Double.toString(BigDecimal.valueOf(Math.random() * (maxP - minP) + minP).doubleValue() * (max - min) + min);
+        } while (eqCandidates.contains(data));
+        eqCandidates.add(data);
+        return data;
+    }
+
+    public BigDecimal generateData(BigDecimal probability) {
+        return BigDecimal.valueOf(getMax() - getMin()).multiply(probability).add(BigDecimal.valueOf(getMin()));
     }
 }

@@ -9,13 +9,13 @@ public enum ConstraintChainNodeType {
     /**
      * 过滤节点
      */
-    Filter,
+    FILTER,
     /**
      * join操作中的主键节点
      */
-    PkJoin,
+    PK_JOIN,
     /**
      * join操作中的外键节点
      */
-    FkJoin
+    FK_JOIN
 }

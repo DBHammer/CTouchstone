@@ -1,0 +1,580 @@
+{
+  "tpch.nation": {
+    "tableName": "tpch.nation",
+    "columns": {
+      "n_nationkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "n_nationkey",
+        "min": 0,
+        "max": 24,
+        "ndv": 25
+      },
+      "n_comment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "n_comment",
+        "minLength": 31,
+        "maxLength": 114,
+        "ndv": 25
+      },
+      "n_regionkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "n_regionkey",
+        "min": 0,
+        "max": 4,
+        "ndv": 5
+      },
+      "n_name": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "n_name",
+        "minLength": 4,
+        "maxLength": 14,
+        "ndv": 25
+      }
+    },
+    "tableSize": 25,
+    "primaryKeys": "n_nationkey",
+    "foreignKeys": null,
+    "metaDataFks": {},
+    "joinTag": 2
+  },
+  "tpch.customer": {
+    "tableName": "tpch.customer",
+    "columns": {
+      "c_custkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "c_custkey",
+        "min": 1,
+        "max": 150000,
+        "ndv": 150000
+      },
+      "c_phone": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "c_phone",
+        "minLength": 15,
+        "maxLength": 15,
+        "ndv": 150000
+      },
+      "c_acctbal": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "c_acctbal",
+        "min": -999.99,
+        "max": 9999.99,
+        "ndv": -1
+      },
+      "c_mktsegment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "c_mktsegment",
+        "minLength": 8,
+        "maxLength": 10,
+        "ndv": 5
+      },
+      "c_address": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "c_address",
+        "minLength": 10,
+        "maxLength": 40,
+        "ndv": 150000
+      },
+      "c_nationkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "c_nationkey",
+        "min": 0,
+        "max": 24,
+        "ndv": 25
+      },
+      "c_name": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "c_name",
+        "minLength": 18,
+        "maxLength": 18,
+        "ndv": 150000
+      },
+      "c_comment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "c_comment",
+        "minLength": 29,
+        "maxLength": 116,
+        "ndv": 149968
+      }
+    },
+    "tableSize": 150000,
+    "primaryKeys": "c_custkey",
+    "foreignKeys": {
+      "c_nationkey": "tpch.nation.n_nationkey"
+    },
+    "metaDataFks": {},
+    "joinTag": 2
+  },
+  "tpch.orders": {
+    "tableName": "tpch.orders",
+    "columns": {
+      "o_orderstatus": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "o_orderstatus",
+        "minLength": 1,
+        "maxLength": 1,
+        "ndv": 3
+      },
+      "o_clerk": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "o_clerk",
+        "minLength": 15,
+        "maxLength": 15,
+        "ndv": 1000
+      },
+      "o_orderdate": {
+        "columnType": "DATETIME",
+        "nullPercentage": 0.0,
+        "columnName": "o_orderdate",
+        "begin": "1992-01-01 00:00:00.000000",
+        "end": "1998-08-02 00:00:00.000000",
+        "precision": 0,
+        "ndv": -1
+      },
+      "o_shippriority": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "o_shippriority",
+        "min": 0,
+        "max": 0,
+        "ndv": 1
+      },
+      "o_custkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "o_custkey",
+        "min": 1,
+        "max": 149999,
+        "ndv": 99996
+      },
+      "o_totalprice": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "o_totalprice",
+        "min": 857.71,
+        "max": 555285.16,
+        "ndv": -1
+      },
+      "o_orderkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "o_orderkey",
+        "min": 1,
+        "max": 6000000,
+        "ndv": 1500000
+      },
+      "o_comment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "o_comment",
+        "minLength": 19,
+        "maxLength": 78,
+        "ndv": 1482071
+      },
+      "o_orderpriority": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "o_orderpriority",
+        "minLength": 5,
+        "maxLength": 15,
+        "ndv": 5
+      }
+    },
+    "tableSize": 1500000,
+    "primaryKeys": null,
+    "foreignKeys": {
+      "o_custkey": "tpch.customer.c_custkey"
+    },
+    "metaDataFks": {},
+    "joinTag": 2
+  },
+  "tpch.part": {
+    "tableName": "tpch.part",
+    "columns": {
+      "p_partkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "p_partkey",
+        "min": 1,
+        "max": 200000,
+        "ndv": 200000
+      },
+      "p_container": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "p_container",
+        "minLength": 6,
+        "maxLength": 10,
+        "ndv": 40
+      },
+      "p_name": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "p_name",
+        "minLength": 21,
+        "maxLength": 50,
+        "ndv": 199997
+      },
+      "p_comment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "p_comment",
+        "minLength": 5,
+        "maxLength": 22,
+        "ndv": 131753
+      },
+      "p_brand": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "p_brand",
+        "minLength": 8,
+        "maxLength": 8,
+        "ndv": 25
+      },
+      "p_type": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "p_type",
+        "minLength": 16,
+        "maxLength": 25,
+        "ndv": 150
+      },
+      "p_retailprice": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "p_retailprice",
+        "min": 901.0,
+        "max": 2098.99,
+        "ndv": -1
+      },
+      "p_mfgr": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "p_mfgr",
+        "minLength": 14,
+        "maxLength": 14,
+        "ndv": 5
+      },
+      "p_size": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "p_size",
+        "min": 1,
+        "max": 50,
+        "ndv": 50
+      }
+    },
+    "tableSize": 200000,
+    "primaryKeys": "p_partkey",
+    "foreignKeys": null,
+    "metaDataFks": {},
+    "joinTag": 2
+  },
+  "tpch.lineitem": {
+    "tableName": "tpch.lineitem",
+    "columns": {
+      "l_returnflag": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "l_returnflag",
+        "minLength": 1,
+        "maxLength": 1,
+        "ndv": 3
+      },
+      "l_receiptdate": {
+        "columnType": "DATETIME",
+        "nullPercentage": 0.0,
+        "columnName": "l_receiptdate",
+        "begin": "1992-01-04 00:00:00.000000",
+        "end": "1998-12-31 00:00:00.000000",
+        "precision": 0,
+        "ndv": -1
+      },
+      "l_tax": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "l_tax",
+        "min": 0.0,
+        "max": 0.08,
+        "ndv": -1
+      },
+      "l_shipmode": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "l_shipmode",
+        "minLength": 3,
+        "maxLength": 7,
+        "ndv": 7
+      },
+      "l_suppkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "l_suppkey",
+        "min": 1,
+        "max": 10000,
+        "ndv": 10000
+      },
+      "l_shipdate": {
+        "columnType": "DATETIME",
+        "nullPercentage": 0.0,
+        "columnName": "l_shipdate",
+        "begin": "1992-01-02 00:00:00.000000",
+        "end": "1998-12-01 00:00:00.000000",
+        "precision": 0,
+        "ndv": -1
+      },
+      "l_commitdate": {
+        "columnType": "DATETIME",
+        "nullPercentage": 0.0,
+        "columnName": "l_commitdate",
+        "begin": "1992-01-31 00:00:00.000000",
+        "end": "1998-10-31 00:00:00.000000",
+        "precision": 0,
+        "ndv": -1
+      },
+      "l_partkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "l_partkey",
+        "min": 1,
+        "max": 200000,
+        "ndv": 200000
+      },
+      "l_orderkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "l_orderkey",
+        "min": 1,
+        "max": 6000000,
+        "ndv": 1500000
+      },
+      "l_quantity": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "l_quantity",
+        "min": 1.0,
+        "max": 50.0,
+        "ndv": -1
+      },
+      "l_linestatus": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "l_linestatus",
+        "minLength": 1,
+        "maxLength": 1,
+        "ndv": 2
+      },
+      "l_comment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "l_comment",
+        "minLength": 10,
+        "maxLength": 43,
+        "ndv": 4580667
+      },
+      "l_extendedprice": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "l_extendedprice",
+        "min": 901.0,
+        "max": 104949.5,
+        "ndv": -1
+      },
+      "l_linenumber": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "l_linenumber",
+        "min": 1,
+        "max": 7,
+        "ndv": 7
+      },
+      "l_discount": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "l_discount",
+        "min": 0.0,
+        "max": 0.1,
+        "ndv": -1
+      },
+      "l_shipinstruct": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "l_shipinstruct",
+        "minLength": 4,
+        "maxLength": 17,
+        "ndv": 4
+      }
+    },
+    "tableSize": 6001215,
+    "primaryKeys": null,
+    "foreignKeys": {
+      "l_orderkey": "tpch.orders.o_orderkey"
+    },
+    "metaDataFks": {},
+    "joinTag": 2
+  },
+  "tpch.partsupp": {
+    "tableName": "tpch.partsupp",
+    "columns": {
+      "ps_suppkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "ps_suppkey",
+        "min": 1,
+        "max": 10000,
+        "ndv": 10000
+      },
+      "ps_availqty": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "ps_availqty",
+        "min": 1,
+        "max": 9999,
+        "ndv": 9999
+      },
+      "ps_partkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "ps_partkey",
+        "min": 1,
+        "max": 200000,
+        "ndv": 200000
+      },
+      "ps_supplycost": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "ps_supplycost",
+        "min": 1.0,
+        "max": 1000.0,
+        "ndv": -1
+      },
+      "ps_comment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "ps_comment",
+        "minLength": 49,
+        "maxLength": 198,
+        "ndv": 799124
+      }
+    },
+    "tableSize": 800000,
+    "primaryKeys": null,
+    "foreignKeys": null,
+    "metaDataFks": {},
+    "joinTag": 2
+  },
+  "tpch.region": {
+    "tableName": "tpch.region",
+    "columns": {
+      "r_regionkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "r_regionkey",
+        "min": 0,
+        "max": 4,
+        "ndv": 5
+      },
+      "r_comment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "r_comment",
+        "minLength": 31,
+        "maxLength": 115,
+        "ndv": 5
+      },
+      "r_name": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "r_name",
+        "minLength": 4,
+        "maxLength": 11,
+        "ndv": 5
+      }
+    },
+    "tableSize": 5,
+    "primaryKeys": null,
+    "foreignKeys": null,
+    "metaDataFks": {},
+    "joinTag": 2
+  },
+  "tpch.supplier": {
+    "tableName": "tpch.supplier",
+    "columns": {
+      "s_comment": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "s_comment",
+        "minLength": 25,
+        "maxLength": 100,
+        "ndv": 10000
+      },
+      "s_phone": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "s_phone",
+        "minLength": 15,
+        "maxLength": 15,
+        "ndv": 10000
+      },
+      "s_nationkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "s_nationkey",
+        "min": 0,
+        "max": 24,
+        "ndv": 25
+      },
+      "s_name": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "s_name",
+        "minLength": 18,
+        "maxLength": 18,
+        "ndv": 10000
+      },
+      "s_address": {
+        "columnType": "VARCHAR",
+        "nullPercentage": 0.0,
+        "columnName": "s_address",
+        "minLength": 10,
+        "maxLength": 40,
+        "ndv": 10000
+      },
+      "s_acctbal": {
+        "columnType": "DECIMAL",
+        "nullPercentage": 0.0,
+        "columnName": "s_acctbal",
+        "min": -998.22,
+        "max": 9999.72,
+        "ndv": -1
+      },
+      "s_suppkey": {
+        "columnType": "INTEGER",
+        "nullPercentage": 0.0,
+        "columnName": "s_suppkey",
+        "min": 1,
+        "max": 10000,
+        "ndv": 10000
+      }
+    },
+    "tableSize": 10000,
+    "primaryKeys": null,
+    "foreignKeys": null,
+    "metaDataFks": {},
+    "joinTag": 2
+  }
+}

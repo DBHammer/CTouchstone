@@ -52,7 +52,7 @@ TouchstoneToolChain采集完成后，会生成3部分配置文件
 
 3. sqls/filename_index.sql
 
-   程序会在指定目录下创建sqls文件夹，输出模版化的查询语句，在[Touchstone](https://github.com/daseECNU/Touchstone)中提供了自动填充功能，可以将实例化后的新参数，填充到query模板中，query模版示例如下，[Touchstone](https://github.com/daseECNU/Touchstone)通过辨识`#num,num,num#`标志，用实例化后的参数进行替换。
+   程序会在指定目录下创建sqls文件夹，输出模版化的查询语句，在[Touchstone](https://github.com/daseECNU/Touchstone)中提供了自动填充功能，可以将实例化后的新参数，填充到query模板中，query模版示例如下，[Touchstone](https://github.com/daseECNU/Touchstone)通过辨识`id,isDate`标志，用实例化后的参数进行替换。
 
 ```sql
 select c_custkey, c_name
@@ -61,9 +61,9 @@ select c_custkey, c_name
 from customer, orders, lineitem, nation
 where c_custkey = o_custkey
 	and l_orderkey = o_orderkey
-	and o_orderdate >= '#25,0,1#'
-	and o_orderdate < '#25,1,1#'
-	and l_returnflag = '#26,0,0#'
+	and o_orderdate >= '0,1'
+	and o_orderdate < '1,1'
+	and l_returnflag = '2,0'
 	and c_nationkey = n_nationkey
 group by c_custkey, c_name, c_acctbal, c_phone, n_name, c_address, c_comment
 order by revenue desc
@@ -77,10 +77,11 @@ limit 20;
 请注意1.sql_0中有参数出现多次，无法智能替换，请查看该sql输出，手动替换
 ```
 
-​		示例如下，由于1.sql中存在两个n_name，而在查询计划中统一了这两个，因此分析时无法智能替换，手动替换这两个即可。
+​		示例如下，由于1.sql中存在两个n_name，而在查询计划中统一了这两个，因此分析时无法智能替换，手动替换这两个即可。id代表参数的id，data代表参数的数据，
+        operator代表参数参与运算的比较操作符，operand代表参数参与运算的操作数，isDate代表是否为Date类型。
 
 ```sql
--- conflictArgs:n_name =:[#2,0,0#],
+-- conflictArgs:{id:0,data:'MOZAMBIQUE',operator:eq,operand:tpch.nation.n_name,isDate:0}
 select ps_partkey, sum(ps_supplycost * ps_availqty) as value
 from partsupp, supplier, nation
 where ps_suppkey = s_suppkey
@@ -120,8 +121,7 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
     "databasePort": "4000",
     "databasePwd": "",
     "databaseUser": "root",
-    "dataSource": "tidb",
-    "databaseVersion": "3.1.0",
+    "databaseVersion": "TiDB3",
     "sqlsDirectory": "conf/sqls",
     "resultDirectory": "touchstoneconf",
     "loadDirectory": "load",
@@ -146,19 +146,7 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
             "bool"
         ]
     },
-    "tidbHttpPort": "10080",
-    "tidbSelectArgs": {
-        "LT": "<",
-        "GT": ">",
-        "LE": "<=",
-        "GE": ">=",
-        "EQ": "=",
-        "NE": "<>",
-        "LIKE": "like",
-        "IN": "in",
-        "ISNULL": "isnull",
-        "OR": "or"
-    }
+    "tidbHttpPort": "10080"
 }
 ```
 
@@ -166,7 +154,7 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
 
 + 数据库信息。按照配置文件顺序主要需要配置的字段有，待采集数据库的ip，数据库name，数据库端口，密码和用户名。
 
-+ 数据源与数据库版本。配置用于采集信息的数据库类型和版本，如上的tidb v3.1.0
++ 数据库版本。配置用于采集信息的数据库类型和版本，如上的TiDB3
 
 + 文件夹路径
 
@@ -185,10 +173,6 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
 
   用于从http端口采集tidb的schema统计信息
 
-+ select参数配置
-
-  由于在查询计划中，tidb会把condition条件做映射转换，而touchstone使用常见的参数作为输入，因此这个配置文件中定义了如何找到对应的select参数，一般不需更改
-
 ## 特殊情况下的行为
 
 1. 跨库信息采集
@@ -205,7 +189,7 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
 
 4. 数据库中未显式配置主外键
 
-   由于在一些生产环境中，并未在表上显式配置外键依赖，因此TouchstoneToolChain会尝试从query中推测主外键，推测依据基于基数和表大小。基数大的表会作为主键表，基数相同时，表小的表会作为主键表。
+   由于在一些生产环境中，并未在表上显式配置外键依赖，因此TouchstoneToolChain会尝试从query中推测主外键，推测依据基于基数和表大小。基数大的表会作为主键表，基数相同时，数据量小的表会作为主键表。
 
 ## 已知问题
 

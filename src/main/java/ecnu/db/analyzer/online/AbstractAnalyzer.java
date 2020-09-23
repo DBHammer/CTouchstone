@@ -1,71 +1,73 @@
 package ecnu.db.analyzer.online;
 
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import ecnu.db.analyzer.online.node.ExecutionNode;
-import ecnu.db.analyzer.online.node.NodeTypeRefFactory;
-import ecnu.db.analyzer.online.node.NodeTypeTool;
 import ecnu.db.analyzer.statical.QueryAliasParser;
+import ecnu.db.constraintchain.chain.ConstraintChain;
+import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
+import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
+import ecnu.db.constraintchain.chain.ConstraintChainPkJoinNode;
+import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
+import ecnu.db.exception.CannotFindSchemaException;
+import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
+import ecnu.db.utils.AbstractDatabaseInfo;
 import ecnu.db.utils.SystemConfig;
-import ecnu.db.utils.TouchstoneToolChainException;
-import ecnu.db.utils.exception.CannotFindSchemaException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 
 /**
  * @author wangqingshuai
  */
 public abstract class AbstractAnalyzer {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
-
+    protected static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
+    protected final QueryAliasParser queryAliasParser = new QueryAliasParser();
     protected DatabaseConnectorInterface dbConnector;
     protected Map<String, String> aliasDic = new HashMap<>();
-    protected QueryAliasParser queryAliasParser = new QueryAliasParser();
     protected Map<String, Schema> schemas;
-    protected int sqlArgIndex = 0;
-    protected int lastArgIndex = 0;
-    protected Map<String, List<String>> argsAndIndex = new HashMap<>();
+    protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
     protected SystemConfig config;
     protected Multimap<String, String> tblName2CanonicalTblName;
+    protected TouchstoneSupportedDatabaseVersion analyzerSupportedDatabaseVersion;
+    protected AbstractDatabaseInfo databaseInfo;
 
-    AbstractAnalyzer(SystemConfig config, 
-                     DatabaseConnectorInterface dbConnector, 
-                     Map<String, Schema> schemas, 
-                     Multimap<String, String> tblName2CanonicalTblName) {
-        this.nodeTypeRef = NodeTypeRefFactory.getNodeTypeRef(config.getDatabaseVersion());
+    protected AbstractAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector,
+                               AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas,
+                               Multimap<String, String> tblName2CanonicalTblName) {
+        analyzerSupportedDatabaseVersion = config.getDatabaseVersion();
         this.dbConnector = dbConnector;
         this.schemas = schemas;
         this.config = config;
         this.tblName2CanonicalTblName = tblName2CanonicalTblName;
+        this.databaseInfo = databaseInfo;
     }
 
-    /**
-     * sql的查询计划中，需要使用查询计划的列名
-     *
-     * @param databaseVersion 数据库类型
-     * @return
-     * @throws TouchstoneToolChainException
-     */
-    abstract String[] getSqlInfoColumns(String databaseVersion) throws TouchstoneToolChainException;
+    public AbstractAnalyzer check() throws TouchstoneToolChainException {
+        if (databaseInfo == null || databaseInfo.getSupportedDatabaseVersions() == null || databaseInfo.getSupportedDatabaseVersions().size() == 0) {
+            throw new TouchstoneToolChainException("未制定分析器配置信息");
+        } else if (!databaseInfo.getSupportedDatabaseVersions().contains(analyzerSupportedDatabaseVersion)) {
+            throw new UnsupportedDBTypeException(config.getDatabaseVersion());
+        } else if (nodeTypeRef == null) {
+            throw new TouchstoneToolChainException("未初始化node映射");
+        } else {
+            return this;
+        }
+    }
 
-    /**
-     * 获取数据库使用的静态解析器的数据类型
-     *
-     * @return 静态解析器使用的数据库类型
-     */
-    public abstract String getDbType();
 
     /**
      * 从operator_info里提取tableName
@@ -73,7 +75,7 @@ public abstract class AbstractAnalyzer {
      * @param operatorInfo 需要处理的operator_info
      * @return 提取的表名
      */
-    abstract String extractTableName(String operatorInfo);
+    protected abstract String extractTableName(String operatorInfo);
 
     /**
      * 查询树的解析
@@ -91,111 +93,45 @@ public abstract class AbstractAnalyzer {
      * @return 长度为4的字符串数组，0，1为join info左侧的表名和列名，2，3为join右侧的表明和列名
      * @throws TouchstoneToolChainException 无法分析的join条件
      */
-    abstract String[] analyzeJoinInfo(String joinInfo) throws TouchstoneToolChainException;
+    protected abstract String[] analyzeJoinInfo(String joinInfo) throws TouchstoneToolChainException;
 
     /**
-     * 创建colName到对应的oprator的multimap，并返回关于where_condition的信息
+     * 分析select信息
      *
-     * @param operatorInfo 需要处理的operator_info
-     * @param conditions   用于创建的multimap
-     * @return 关于whereExpr的信息
-     * @throws TouchstoneToolChainException 无法分析的部分
+     * @param operatorInfo 需要分析的operator_info
+     * @return SelectResult
+     * @throws TouchstoneToolChainException 分析失败
      */
-    abstract WhereConditionInfo buildConditionMap(String operatorInfo, Multimap<String, String> conditions) throws TouchstoneToolChainException;
+    protected abstract SelectResult analyzeSelectInfo(String operatorInfo) throws TouchstoneToolChainException;
 
-    /**
-     * 分析传入的select 过滤条件，传出表名和格式化后的condition
-     *
-     * @param operatorInfo 传入的select的operatorInfo
-     * @return 表名和格式化后的condition
-     */
-    Pair<String, String> analyzeSelectCondition(String operatorInfo) throws TouchstoneToolChainException {
-        Multimap<String, String> conditionMap = ArrayListMultimap.create();
-        WhereConditionInfo ret = buildConditionMap(operatorInfo, conditionMap);
-        boolean useAlias = ret.useAlias, isOr = ret.isOr;
-        String tableName = ret.tableName;
-        if (aliasDic.containsKey(tableName)) {
-            tableName = aliasDic.get(tableName);
-        }
-        StringBuilder conditionStr = new StringBuilder();
-        for (Map.Entry<String, String> entry : conditionMap.entries()) {
-            String columnName = entry.getKey();
-            String operator = entry.getValue();
-            conditionStr.append(String.format("%s@%s#", columnName, operator));
-            String selectArgName = columnName + " " + operator;
-            if (useAlias) {
-                selectArgName = tableName + "." + selectArgName;
-            }
-            StringBuilder selectArgs = new StringBuilder();
-
-            if (operator.contains("in")) {
-                int dateOrNot = getSchema(tableName).isDate(columnName) ? 1 : 0;
-                int inCount = Integer.parseInt(operator.split("[()]")[1]);
-                selectArgs = new StringBuilder(String.format("(%s)",
-                        IntStream.range(0, inCount)
-                                .mapToObj((i) -> String.format("'#%d,%d,%d#'", sqlArgIndex, i, dateOrNot))
-                                .collect(Collectors.joining(", "))));
-                sqlArgIndex++;
-            } else {
-                if ("bet".equals(operator)) {
-                    selectArgs.append(String.format("ween '#%d,0,%d#' and '#%d,1,%d#'",
-                            sqlArgIndex,
-                            getSchema(tableName).isDate(columnName) ? 1 : 0,
-                            sqlArgIndex++,
-                            getSchema(tableName).isDate(columnName) ? 1 : 0));
-                } else {
-                    selectArgs.append(String.format("#%d,0,%d#", sqlArgIndex++, getSchema(tableName).isDate(columnName) ? 1 : 0));
-                }
-            }
-            if (argsAndIndex.containsKey(selectArgName)) {
-                argsAndIndex.get(selectArgName).add(selectArgs.toString());
-            } else {
-                List<String> value = new ArrayList<>();
-                value.add(selectArgs.toString());
-                argsAndIndex.put(selectArgName, value);
-            }
-        }
-        if (!isOr && conditionMap.size() > 1) {
-            conditionStr.append("and");
-        } else if (isOr && conditionMap.size() > 1) {
-            conditionStr.append("or");
-        }
-
-
-        return new MutablePair<>(tableName, conditionStr.toString());
-    }
-
-    public List<String[]> getQueryPlan(String queryCanonicalName, String sql) throws SQLException, TouchstoneToolChainException {
-        aliasDic = queryAliasParser.getTableAlias(config.isCrossMultiDatabase(), config.getDatabaseName(), sql, getDbType());
-        return dbConnector.explainQuery(queryCanonicalName, sql, getSqlInfoColumns(config.getDatabaseVersion()));
+    public List<String[]> getQueryPlan(String queryCanonicalName, String sql, AbstractDatabaseInfo databaseInfo) throws SQLException, TouchstoneToolChainException {
+        aliasDic = queryAliasParser.getTableAlias(config.isCrossMultiDatabase(), config.getDatabaseName(), sql, databaseInfo.getStaticalDbVersion());
+        return dbConnector.explainQuery(queryCanonicalName, sql, databaseInfo.getSqlInfoColumns());
     }
 
     /**
      * 获取查询树的约束链信息和表信息
      *
      * @param queryCanonicalName query的标准名称
-     * @param root 查询树
+     * @param root               查询树
      * @return 该查询树结构出的约束链信息和表信息
      */
-    public List<String> extractQueryInfos(String queryCanonicalName, ExecutionNode root) throws SQLException {
-
-        List<String> queryInfos = new ArrayList<>();
+    public List<ConstraintChain> extractQueryInfos(String queryCanonicalName, ExecutionNode root) throws SQLException {
+        List<ConstraintChain> constraintChains = new ArrayList<>();
         List<List<ExecutionNode>> paths = getPaths(root);
         for (List<ExecutionNode> path : paths) {
-            QueryInfo queryInfo = null;
+            ConstraintChain constraintChain = null;
             try {
-                queryInfo = extractConstraintChain(path);
+                constraintChain = extractConstraintChain(path);
             } catch (TouchstoneToolChainException e) {
                 logger.error(String.format("提取'%s'的一个约束链失败", queryCanonicalName), e);
             }
-            if (queryInfo == null) {
+            if (constraintChain == null) {
                 break;
             }
-            if (StringUtils.isNotBlank(queryInfo.getData())) {
-                queryInfos.add(String.format("[%s];%s", queryInfo.getTableName(), queryInfo.getData()));
-            }
+            constraintChains.add(constraintChain);
         }
-        return queryInfos;
+        return constraintChains;
     }
 
     /**
@@ -230,7 +166,7 @@ public abstract class AbstractAnalyzer {
             }
         }
         if (root.leftNode == null && root.rightNode == null) {
-            List<ExecutionNode> newPath = new ArrayList<>(Collections.singletonList(root));
+            List<ExecutionNode> newPath = Lists.newArrayList(root);
             paths.add(newPath);
         }
     }
@@ -243,31 +179,34 @@ public abstract class AbstractAnalyzer {
      * @throws TouchstoneToolChainException 无法处理路径
      * @throws SQLException                 无法处理路径
      */
-    private QueryInfo extractConstraintChain(List<ExecutionNode> path) throws TouchstoneToolChainException, SQLException {
+    private ConstraintChain extractConstraintChain(List<ExecutionNode> path) throws TouchstoneToolChainException, SQLException {
         if (path == null || path.size() == 0) {
             throw new TouchstoneToolChainException(String.format("非法的path输入 '%s'", path));
         }
         ExecutionNode node = path.get(0);
-        QueryInfo constraintChain;
+        ConstraintChain constraintChain;
         String tableName;
+        int lastNodeLineCount;
         if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
-            Pair<String, String> tableNameAndSelectCondition = analyzeSelectCondition(node.getInfo());
-            tableName = tableNameAndSelectCondition.getLeft();
-            String selectInfo = "[0," + tableNameAndSelectCondition.getRight() + "," +
-                    (double) node.getOutputRows() / getSchema(tableName).getTableSize() + "];";
-            constraintChain = new QueryInfo(selectInfo, tableName, node.getOutputRows());
+            SelectResult result = analyzeSelectInfo(node.getInfo());
+            tableName = result.getTableName();
+            constraintChain = new ConstraintChain(tableName);
+            BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(getSchema(tableName).getTableSize()), BIG_DECIMAL_DEFAULT_PRECISION);
+            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(tableName, ratio, result.getCondition(), result.getColumns());
+            constraintChain.addNode(filterNode);
+            constraintChain.addParameters(result.getParameters());
+            lastNodeLineCount = node.getOutputRows();
         } else if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
             tableName = extractTableName(node.getInfo());
-            Schema schema = getSchema(tableName);
-            constraintChain = new QueryInfo("", tableName, schema.getTableSize());
+            constraintChain = new ConstraintChain(tableName);
+            lastNodeLineCount = node.getOutputRows();
         } else {
             throw new TouchstoneToolChainException(String.format("底层节点'%s'不应该为join", node.getId()));
         }
         for (int i = 1; i < path.size(); i++) {
             node = path.get(i);
-            boolean isStop;
             try {
-                isStop = analyzeNode(node, constraintChain, tableName);
+                lastNodeLineCount = analyzeNode(node, constraintChain, tableName, lastNodeLineCount);
             } catch (TouchstoneToolChainException e) {
                 // 小于设置的阈值以后略去后续的节点
                 if (node.getOutputRows() * 1.0 / getSchema(tableName).getTableSize() < config.getSkipNodeThreshold()) {
@@ -277,7 +216,7 @@ public abstract class AbstractAnalyzer {
                 }
                 throw e;
             }
-            if (isStop) {
+            if (lastNodeLineCount < 0) {
                 break;
             }
         }
@@ -290,21 +229,23 @@ public abstract class AbstractAnalyzer {
      * @param node            需要分析的节点
      * @param constraintChain 约束链
      * @param tableName       表名
-     * @return 是否停止继续向上分析
+     * @return 节点行数，小于0代表停止继续向上分析
      * @throws TouchstoneToolChainException 节点分析出错
      * @throws SQLException                 节点分析出错
      */
-    private boolean analyzeNode(ExecutionNode node, QueryInfo constraintChain, String tableName) throws TouchstoneToolChainException, SQLException {
+    private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, String tableName, int lastNodeLineCount) throws TouchstoneToolChainException, SQLException {
         if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
             throw new TouchstoneToolChainException(String.format("中间节点'%s'不为scan", node.getId()));
         }
         if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
-            Pair<String, String> tableNameAndSelectCondition = analyzeSelectCondition(node.getInfo());
-            if (tableName.equals(tableNameAndSelectCondition.getKey())) {
-                constraintChain.addConstraint("[0," + tableNameAndSelectCondition.getRight() + "," +
-                        (double) node.getOutputRows() / constraintChain.getLastNodeLineCount() + "];");
-                constraintChain.setLastNodeLineCount(node.getOutputRows());
+            SelectResult result = analyzeSelectInfo(node.getInfo());
+            if (!tableName.equals(result.getTableName())) {
+                throw new TouchstoneToolChainException("select表名不匹配");
             }
+            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(tableName, BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount), result.getCondition(), result.getColumns());
+            lastNodeLineCount = node.getOutputRows();
+            constraintChain.addNode(filterNode);
+            constraintChain.addParameters(result.getParameters());
         } else if (node.getType() == ExecutionNode.ExecutionNodeType.join) {
             String[] joinColumnInfos = analyzeJoinInfo(node.getInfo());
             String pkTable = joinColumnInfos[0], pkCol = joinColumnInfos[1],
@@ -312,7 +253,7 @@ public abstract class AbstractAnalyzer {
             // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
             if (!pkTable.equals(constraintChain.getTableName())
                     && !fkTable.equals(constraintChain.getTableName())) {
-                return true;
+                return -1;
             }
             //将本表的信息放在前面，交换位置
             if (constraintChain.getTableName().equals(fkTable)) {
@@ -326,41 +267,37 @@ public abstract class AbstractAnalyzer {
                 if (node.getJoinTag() < 0) {
                     node.setJoinTag(getSchema(pkTable).getJoinTag());
                 }
-                constraintChain.addConstraint("[1," + pkCol.replace(',', '#') + "," +
-                        node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
+                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(pkTable, node.getJoinTag(), pkCol.split(","));
+                constraintChain.addNode(pkJoinNode);
                 //设置主键
                 getSchema(pkTable).setPrimaryKeys(pkCol);
-                constraintChain.setLastNodeLineCount(node.getOutputRows());
-                return true;
+                return node.getOutputRows();
             } else {
                 if (node.getJoinTag() < 0) {
                     node.setJoinTag(getSchema(pkTable).getJoinTag());
                 }
-                String primaryKey = fkTable + "." + fkCol;
-                constraintChain.addConstraint("[2," + fkCol.replace(',', '#') + "," +
-                        (double) node.getOutputRows() / constraintChain.getLastNodeLineCount() + "," +
-                        primaryKey.replace(',', '#') + "," +
-                        node.getJoinTag() + "," + 2 * node.getJoinTag() + "];");
+                BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
                 //设置外键
                 logger.info("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
                         fkCol + ".column:" + fkTable);
                 getSchema(pkTable).addForeignKey(pkCol, fkTable, fkCol);
-                constraintChain.setLastNodeLineCount(node.getOutputRows());
+                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(pkTable, fkTable, node.getJoinTag(), getSchema(pkTable).getForeignKeys(), probability);
+                constraintChain.addNode(fkJoinNode);
             }
         }
-        return false;
+        return lastNodeLineCount;
     }
 
     /**
      * 根据输入的列名统计非重复值的个数，进而给出该列是否为主键
      *
-     * @param pkTable
-     * @param pkCol
-     * @param fkTable
-     * @param fkCol
+     * @param pkTable 需要测试的主表
+     * @param pkCol   主键
+     * @param fkTable 外表
+     * @param fkCol   外键
      * @return 该列是否为主键
-     * @throws TouchstoneToolChainException
-     * @throws SQLException
+     * @throws TouchstoneToolChainException 由于逻辑错误无法判断是否为主键的异常
+     * @throws SQLException                 无法通过数据库SQL查询获得多列属性的ndv
      */
     private boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneToolChainException, SQLException {
         if (String.format("%s.%s", pkTable, pkCol).equals(getSchema(fkTable).getMetaDataFks().get(fkCol))) {
@@ -386,23 +323,8 @@ public abstract class AbstractAnalyzer {
         }
     }
 
-    public Map<String, List<String>> getArgsAndIndex() {
-        return argsAndIndex;
-    }
-
-    public void outputSuccess(boolean success) {
-        if (success) {
-            lastArgIndex = sqlArgIndex;
-        } else {
-            sqlArgIndex = lastArgIndex;
-        }
-        for (Schema schema : schemas.values()) {
-            schema.keepJoinTag(success);
-        }
-    }
-
     public int getParameterId() {
-        return sqlArgIndex++;
+        return parameterId++;
     }
 
     public Schema getSchema(String tableName) throws CannotFindSchemaException {

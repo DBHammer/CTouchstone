@@ -4,10 +4,19 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
+import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
+import ecnu.db.constraintchain.arithmetic.ArithmeticNodeDeserializer;
+import ecnu.db.constraintchain.chain.ConstraintChain;
+import ecnu.db.constraintchain.chain.ConstraintChainNode;
+import ecnu.db.constraintchain.chain.ConstraintChainNodeDeserializer;
+import ecnu.db.constraintchain.filter.BoolExprNode;
+import ecnu.db.constraintchain.filter.BoolExprNodeDeserializer;
+import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnDeserializer;
@@ -16,7 +25,6 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,6 +36,19 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author alan
  */
 public class StorageManager {
+    public static final ObjectMapper mapper;
+
+    static {
+        SimpleModule module = new SimpleModule()
+                .addDeserializer(AbstractColumn.class, new ColumnDeserializer())
+                .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
+                .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
+                .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
+        mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .registerModule(module);
+    }
+
     private final File retDir;
     private final File retSqlDir;
     private final File dumpDir;
@@ -51,23 +72,14 @@ public class StorageManager {
         FileUtils.writeStringToFile(new File(retSqlDir.getPath(), sqlFile.getName()), content, UTF_8);
     }
 
-    public void storeSchemaResult(Map<String, Schema> schemas) throws ParseException, IOException {
-        StringBuilder sb = new StringBuilder();
-        for (Schema schema : schemas.values()) {
-            String schemaInfo = schema.formatSchemaInfo(), dataDistributionInfo = schema.formatDataDistributionInfo();
-            if (schemaInfo != null) {
-                sb.append(schemaInfo).append(System.lineSeparator());
-            }
-            if (dataDistributionInfo != null) {
-                sb.append(dataDistributionInfo).append(System.lineSeparator());
-            }
-        }
-        FileUtils.writeStringToFile(new File(retDir.getPath(), "schema.conf"), sb.toString(), UTF_8);
+    public void storeSchemaResult(Map<String, Schema> schemas) throws IOException {
+        String content = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
+        FileUtils.writeStringToFile(new File(retDir.getPath(), "schema.json"), content, UTF_8);
     }
 
-    public void storeConstrainChainResult(List<String> queryInfos) throws IOException {
-        String content = queryInfos.stream().collect(Collectors.joining(System.lineSeparator()));
-        FileUtils.writeStringToFile(new File(retDir.getPath(), "constraintChain.conf"), content, UTF_8);
+    public void storeConstrainChainResult(Map<String, List<ConstraintChain>> queryInfos) throws IOException {
+        String content = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(queryInfos);
+        FileUtils.writeStringToFile(new File(retDir.getPath(), "constraintChain.json"), content, UTF_8);
     }
 
     public void dumpStaticInfo(Map<String, Integer> multiColNdvMap, Map<String, Schema> schemas, List<String> tableNames) throws IOException {
@@ -88,14 +100,13 @@ public class StorageManager {
 
     private void storeStaticInfo(File dumpDir, Map<String, Integer> multiColNdvMap, Map<String, Schema> schemas, List<String> tableNames) throws IOException {
         File multiColMapFile = new File(dumpDir.getPath(), String.format("multiColNdv.%s", DUMP_FILE_POSTFIX));
-        String multiColContent = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(multiColNdvMap);
+        String multiColContent = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(multiColNdvMap);
         FileUtils.writeStringToFile(multiColMapFile, multiColContent, UTF_8);
         File schemaFile = new File(dumpDir, String.format("schemas.%s", DUMP_FILE_POSTFIX));
         for (Schema schema : schemas.values()) {
             schema.setJoinTag(1);
-            schema.setLastJoinTag(1);
         }
-        String schemasContent = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
+        String schemasContent = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
         FileUtils.writeStringToFile(schemaFile, schemasContent, UTF_8);
         String tableNamesContent = String.join(System.lineSeparator(), tableNames);
         File tableNameFile = new File(dumpDir.getPath(), String.format("tableNames.%s", DUMP_FILE_POSTFIX));
@@ -122,10 +133,6 @@ public class StorageManager {
         if (!schemaFile.isFile()) {
             throw new TouchstoneToolChainException(String.format("找不到%s", schemaFile.getAbsolutePath()));
         }
-        ObjectMapper mapper = new ObjectMapper();
-        SimpleModule module = new SimpleModule();
-        module.addDeserializer(AbstractColumn.class, new ColumnDeserializer());
-        mapper.registerModule(module);
         schemas = mapper.readValue(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<HashMap<String, Schema>>() {
         });
         return schemas;
@@ -137,7 +144,7 @@ public class StorageManager {
         if (!multiColNdvFile.isFile()) {
             throw new TouchstoneToolChainException(String.format("找不到%s", multiColNdvFile.getAbsolutePath()));
         }
-        multiColNdvMap = new ObjectMapper().readValue(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<HashMap<String, Integer>>() {
+        multiColNdvMap = mapper.readValue(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<HashMap<String, Integer>>() {
         });
         return multiColNdvMap;
     }

@@ -4,8 +4,8 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
+import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.TouchstoneToolChainException;
 
 import java.util.HashSet;
 import java.util.List;

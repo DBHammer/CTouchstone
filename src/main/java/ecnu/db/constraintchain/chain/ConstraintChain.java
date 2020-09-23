@@ -1,5 +1,8 @@
 package ecnu.db.constraintchain.chain;
 
+import ecnu.db.constraintchain.filter.Parameter;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -7,29 +10,47 @@ import java.util.List;
  */
 public class ConstraintChain {
 
-    private final String tableName;
-    private final List<ConstraintChainNode> nodes;
+    private final List<ConstraintChainNode> nodes = new ArrayList<>();
+    private String tableName;
+    private List<Parameter> parameters = new ArrayList<>();
 
-    public ConstraintChain(String tableName, List<ConstraintChainNode> nodes) {
-        super();
+    public ConstraintChain() {
+    }
+
+    public ConstraintChain(String tableName) {
         this.tableName = tableName;
-        this.nodes = nodes;
     }
 
     public void addNode(ConstraintChainNode node) {
         nodes.add(node);
     }
 
-    public String getTableName() {
-        return tableName;
-    }
-
     public List<ConstraintChainNode> getNodes() {
         return nodes;
     }
 
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public void addParameters(List<Parameter> parameters) {
+        this.parameters.addAll(parameters);
+    }
+
+    public List<Parameter> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(List<Parameter> parameters) {
+        this.parameters = parameters;
+    }
+
     @Override
     public String toString() {
-        return "\nConstraintChain [tableName=" + tableName + ", nodes=" + nodes + "]";
+        return "{tableName:" + tableName + ",nodes:" + nodes + "}";
     }
 }

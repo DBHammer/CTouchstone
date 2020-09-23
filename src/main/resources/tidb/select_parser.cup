@@ -1,0 +1,297 @@
+import java_cup.runtime.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.HashSet;
+import java.math.BigDecimal;
+import ecnu.db.constraintchain.arithmetic.*;
+import ecnu.db.constraintchain.arithmetic.operator.*;
+import ecnu.db.constraintchain.arithmetic.value.*;
+import ecnu.db.constraintchain.filter.operation.*;
+import ecnu.db.constraintchain.filter.logical.*;
+import ecnu.db.constraintchain.filter.*;
+import ecnu.db.analyzer.online.AbstractAnalyzer;
+import java.io.StringReader;
+import ecnu.db.schema.Schema;
+import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.schema.column.ColumnType;
+
+
+/* define how to connect to the scanner! */
+parser code {:
+  private AndNode root = new AndNode();
+  private AbstractAnalyzer analyzer;
+  private List<Parameter> parameters;
+  private Set<String> columns;
+  private String tableName;
+  public void setAnalyzer(AbstractAnalyzer analyzer) {
+    this.analyzer = analyzer;
+  }
+  public SelectResult parseSelectOperatorInfo(String operatorInfo) throws Exception {
+    this.parameters = new ArrayList<>();
+    this.columns = new HashSet<>();
+    this.tableName = null;
+    this.root = new AndNode();
+    ((TidbSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
+    this.parse();
+    SelectResult result = new SelectResult();
+    result.setParameters(this.parameters);
+    result.setCondition(this.root);
+    result.setTableName(this.tableName);
+    result.setColumns(this.columns);
+    return result;
+  }
+  private String getCanonicalTableName(String canonicalColumnName) {
+    String[] names = canonicalColumnName.split("\\.");
+    return String.format("%s.%s", names[0], names[1]);
+  }
+  private void verifyTableName(String tableName) throws TouchstoneToolChainException {
+    if (this.tableName == null) {
+      this.tableName = tableName;
+    } else if (!this.tableName.equals(tableName)) {
+      throw new TouchstoneToolChainException("select表名不一致");
+    }
+  }
+  private float getColumnNullProbability(String tableName, String canonicalColumnName) throws TouchstoneToolChainException {
+    return analyzer.getSchema(tableName).getColumn(canonicalColumnName.split("\\.")[2]).getNullPercentage();
+  }
+  private boolean isColumnNeedQuote(String canonicalColumnName) throws TouchstoneToolChainException {
+    boolean needQuote = false;
+    ColumnType columnType = analyzer.getSchema(this.tableName).getColumn(canonicalColumnName.split("\\.")[2]).getColumnType();
+    if (columnType == ColumnType.DATETIME || columnType == ColumnType.VARCHAR) {
+        needQuote = true;
+    }
+    return needQuote;
+  }
+  private boolean isColumnDate(String canonicalColumnName) throws TouchstoneToolChainException {
+    ColumnType columnType = analyzer.getSchema(this.tableName).getColumn(canonicalColumnName.split("\\.")[2]).getColumnType();
+    return columnType == ColumnType.DATETIME;
+  }
+:};
+
+/* Terminals (tokens returned by the scanner. */
+terminal   ArithmeticNodeType    PLUS, MINUS, DIV, MUL;
+terminal                         LPAREN, RPAREN;
+terminal   CompareOperator       ISNULL;
+terminal                         NOT;
+terminal                         AND, OR;
+terminal   CompareOperator       LT, GT, LE, GE, NE, EQ, LIKE, IN;
+terminal   Integer               INTEGER;
+terminal   String                STRING;
+terminal   String                DATE;
+terminal   String                CANONICAL_COLUMN_NAME;
+terminal   Float                 FLOAT;
+
+/* Non terminals */
+non terminal                                    expr;
+non terminal          List<BoolExprNode>        bool_exprs;
+non terminal          BoolExprNode              bool_expr;
+non terminal          BoolExprNode              logical_expr;
+non terminal          List<BoolExprNode>        logical_arguments;
+non terminal          AbstractFilterOperation   compare_expr;
+non terminal          AbstractFilterOperation   uni_compare_expr;
+non terminal          CompareOperator           uni_compare_operator;
+non terminal          String                    uni_compare_constant;
+non terminal          AbstractFilterOperation   multi_compare_expr;
+non terminal          UniVarFilterOperation     in_compare_expr;
+non terminal          List<String>              in_arguments;
+non terminal          UniVarFilterOperation     like_compare_expr;
+non terminal          ArithmeticNode            arithmetic_expr;
+non terminal          ArithmeticNodeType        arithmetic_operator;
+non terminal          IsNullFilterOperation     isnull_expr;
+non terminal          AbstractFilterOperation   not_expr;
+
+/* start with */
+start with expr;
+
+/* ================= */
+/* The grammar rules */
+/* ================= */
+expr ::= bool_exprs:children                     {:
+                                                     for (BoolExprNode child: children) {
+                                                         root.addChild(child);
+                                                     }
+                                                 :}
+        ;
+bool_exprs ::=
+        bool_exprs:e2 bool_expr:e1                {:  e2.add(e1); RESULT = e2;  :}
+        | bool_expr:e                             {:
+                                                      List<BoolExprNode> children = new ArrayList<>();
+                                                      children.add(e);
+                                                      RESULT = children;
+                                                 :}
+        ;
+bool_expr ::=
+        logical_expr:e                           {:  RESULT = e;  :}
+        | compare_expr:e                         {:  RESULT = e;  :}
+        | isnull_expr:e                          {:  RESULT = e;  :}
+        | not_expr:e                             {:  RESULT = e;  :}
+        ;
+
+/* logical expressions */
+
+logical_expr ::=
+        OR:or LPAREN bool_expr:e1 bool_expr:e2 RPAREN      {:
+                                                                OrNode node = new OrNode();
+                                                                node.setLeftNode(e1);
+                                                                node.setRightNode(e2);
+                                                                RESULT = node;
+                                                            :}
+        | AND:and LPAREN logical_arguments:children RPAREN  {:  
+                                                                AndNode node = new AndNode();
+                                                                for (BoolExprNode child: children) {
+                                                                    node.addChild(child);
+                                                                }
+                                                                RESULT = node;
+                                                            :}
+        ;
+logical_arguments ::=
+        bool_expr:e1 bool_expr:e2                            {:  RESULT = new ArrayList<>(Arrays.asList(e1, e2));  :}
+        | bool_expr:e1 logical_arguments:e2                  {:  e2.add(e1);  RESULT=e2;  :}      
+        ;
+
+/* compare expressions */
+
+compare_expr ::=
+        uni_compare_expr:e                                   {:  RESULT=e;  :}  
+        | multi_compare_expr:e                               {:  RESULT=e;  :} 
+        ;
+uni_compare_expr ::=
+        uni_compare_operator:op LPAREN arithmetic_expr:e1 uni_compare_constant:constant RPAREN  {:
+                                                                                                    AbstractFilterOperation operation;
+                                                                                                    boolean needQuote = false, isDate = false;
+                                                                                                    if (e1.getType() == ArithmeticNodeType.COLUMN) {
+                                                                                                        String canonicalColumnName = String.format("%s.%s", tableName, ((ColumnNode) e1).getColumnName());
+                                                                                                        operation = new UniVarFilterOperation(canonicalColumnName, op);
+                                                                                                        needQuote = isColumnNeedQuote(canonicalColumnName);
+                                                                                                        isDate = isColumnDate(canonicalColumnName);
+                                                                                                        columns.add(canonicalColumnName);
+                                                                                                    } else {
+                                                                                                        operation = new MultiVarFilterOperation(op, e1);
+                                                                                                    }
+                                                                                                    Parameter parameter = new Parameter(analyzer.getParameterId(), constant, needQuote, isDate, op, e1.toString());
+                                                                                                    operation.addParameter(parameter);
+                                                                                                    parameters.add(parameter);
+                                                                                                    RESULT = operation;
+                                                                                                :}
+        ;
+uni_compare_operator ::=
+        LT:lt                                                    {:  RESULT = lt;  :}
+        | GT:gt                                                  {:  RESULT = gt;  :}
+        | LE:le                                                  {:  RESULT = le;  :}
+        | GE:ge                                                  {:  RESULT = ge;  :}
+        | EQ:eq                                                  {:  RESULT = eq;  :}
+        | NE:ne                                                  {:  RESULT = ne;  :}
+        ;
+uni_compare_constant ::=
+        INTEGER:num                                              {:  RESULT = num.toString();  :}
+        | FLOAT:num                                              {:  RESULT = num.toString();  :}
+        | DATE:date                                              {:  RESULT = date;  :}
+        | STRING:str                                             {:  RESULT = str; :}
+        ;
+multi_compare_expr ::=                       
+        in_compare_expr:e                                        {:  RESULT=e;  :}
+        | like_compare_expr:e                                    {:  RESULT=e;  :}
+        ;
+in_compare_expr ::=
+        IN:in LPAREN CANONICAL_COLUMN_NAME:col in_arguments:arguments RPAREN      {:
+                                                                                      String tableName = getCanonicalTableName(col);
+                                                                                      verifyTableName(tableName);
+                                                                                      UniVarFilterOperation operation = new UniVarFilterOperation(col, in);
+                                                                                      boolean needQuote = isColumnNeedQuote(col), isDate = isColumnDate(col);
+                                                                                      for (String argument: arguments) {
+                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), argument, needQuote, isDate, CompareOperator.IN, col);
+                                                                                        operation.addParameter(parameter);
+                                                                                        parameters.add(parameter);
+                                                                                      }
+                                                                                      columns.add(col);
+                                                                                      RESULT = operation;
+                                                                                  :}
+        ;
+in_arguments ::=
+        STRING:str                                                                {:
+                                                                                      List<String> children = new ArrayList<>();
+                                                                                      children.add(str);
+                                                                                      RESULT = children;
+                                                                                  :}
+        | in_arguments:e1 STRING:str                                              {:
+                                                                                      String string = str;
+                                                                                      e1.add(string);
+                                                                                      RESULT = e1;
+                                                                                  :}
+        ;
+like_compare_expr ::=
+        LIKE:like LPAREN CANONICAL_COLUMN_NAME:col STRING:str INTEGER RPAREN      {:
+                                                                                      String tableName = getCanonicalTableName(col);
+                                                                                      verifyTableName(tableName);
+                                                                                      UniVarFilterOperation operation = new UniVarFilterOperation(col, like);
+                                                                                      Parameter parameter = new Parameter(analyzer.getParameterId(), str, true, false, CompareOperator.LIKE, col);
+                                                                                      operation.addParameter(parameter);
+                                                                                      parameters.add(parameter);
+                                                                                      columns.add(col);
+                                                                                      RESULT = operation;
+                                                                                  :}
+        ;
+
+/* arithmetic expressions */
+arithmetic_expr ::=
+        arithmetic_operator:op LPAREN arithmetic_expr:e1 arithmetic_expr:e2 RPAREN            {:
+                                                                                                  ArithmeticNode node = ArithmeticNodeFactory.create(op);
+                                                                                                  node.setLeftNode(e1);
+                                                                                                  node.setRightNode(e2);
+                                                                                                  RESULT = node;
+                                                                                              :}
+        | CANONICAL_COLUMN_NAME:col                                               {:
+                                                                                      String tableName = getCanonicalTableName(col);
+                                                                                      verifyTableName(tableName);
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
+                                                                                      ((ColumnNode) node).setColumnName(col.split("\\.")[2]);
+                                                                                      ((ColumnNode) node).setCanonicalTableName(tableName);
+                                                                                      columns.add(col);
+                                                                                      RESULT = node;
+                                                                                  :}
+        | INTEGER:num                                                             {:
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.CONSTANT);
+                                                                                      ((NumericNode) node).setConstant(num);
+                                                                                      RESULT = node;
+                                                                                  :}
+        | FLOAT:num                                                               {:
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.CONSTANT);
+                                                                                      ((NumericNode) node).setConstant(num);
+                                                                                      RESULT = node;
+                                                                                  :}
+        ;
+arithmetic_operator ::=
+        PLUS:plus                                                                 {:  RESULT = plus;  :}
+        | MINUS:minus                                                             {:  RESULT = minus;  :}
+        | MUL:mul                                                                 {:  RESULT = mul;  :}
+        | DIV:div                                                                 {:  RESULT = div;  :}
+        ;
+
+/* isnull expressions */
+isnull_expr ::=
+        ISNULL:isnull LPAREN CANONICAL_COLUMN_NAME:col RPAREN                      {:
+                                                                                      String tableName = getCanonicalTableName(col);
+                                                                                      verifyTableName(tableName);
+                                                                                      float nullProbability = getColumnNullProbability(tableName, col);
+                                                                                      IsNullFilterOperation operation = new IsNullFilterOperation(col, BigDecimal.valueOf(nullProbability));
+                                                                                      RESULT = operation;
+                                                                                  :}
+        ;
+
+/* not expressions */
+not_expr ::=
+        NOT:not LPAREN like_compare_expr:e RPAREN                                 {:
+                                                                                      e.setHasNot(true);
+                                                                                      RESULT = e;
+                                                                                  :}
+        | NOT:not LPAREN in_compare_expr:e RPAREN                                 {:
+                                                                                      e.setHasNot(true);
+                                                                                      RESULT = e;
+                                                                                  :}
+        | NOT:not LPAREN isnull_expr:e RPAREN                                     {:
+                                                                                      e.setHasNot(true);
+                                                                                      RESULT = e;
+                                                                                  :}
+        ;

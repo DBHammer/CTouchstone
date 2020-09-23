@@ -1,6 +1,6 @@
 package ecnu.db.dbconnector;
 
-import ecnu.db.utils.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneToolChainException;
 
 import java.util.List;
 import java.util.Map;
@@ -9,22 +9,15 @@ import static ecnu.db.utils.CommonUtils.DUMP_FILE_POSTFIX;
 
 public class DumpFileConnector implements DatabaseConnectorInterface {
 
-    private final List<String> tableNames;
-
     private final Map<String, List<String[]>> queryPlanMap;
 
     private final Map<String, Integer> multiColumnsNdvMap;
 
-    public DumpFileConnector(List<String> tableNames, Map<String, List<String[]>> queryPlanMap, Map<String, Integer> multiColumnsNdvMap) {
-        this.tableNames = tableNames;
+    public DumpFileConnector(Map<String, List<String[]>> queryPlanMap, Map<String, Integer> multiColumnsNdvMap) {
         this.queryPlanMap = queryPlanMap;
         this.multiColumnsNdvMap = multiColumnsNdvMap;
     }
 
-    @Override
-    public List<String> getTableNames() {
-        return tableNames;
-    }
 
     @Override
     public List<String[]> explainQuery(String queryCanonicalName, String sql, String[] sqlInfoColumns) throws TouchstoneToolChainException {
@@ -36,10 +29,10 @@ public class DumpFileConnector implements DatabaseConnectorInterface {
     }
 
     @Override
-    public int getMultiColNdv(String schema, String columns) throws TouchstoneToolChainException {
-        Integer ndv = this.multiColumnsNdvMap.get(String.format("%s.%s", schema, columns));
+    public int getMultiColNdv(String canonicalTableName, String columns) throws TouchstoneToolChainException {
+        Integer ndv = this.multiColumnsNdvMap.get(String.format("%s.%s", canonicalTableName, columns));
         if (ndv == null) {
-            throw new TouchstoneToolChainException(String.format("cannot find multicolumn ndv information for schema:%s, cols:%s", schema, columns));
+            throw new TouchstoneToolChainException(String.format("cannot find multicolumn ndv information for schema:%s, cols:%s", canonicalTableName, columns));
         }
         return ndv;
     }
