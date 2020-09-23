@@ -31,5 +31,8 @@ result
 conf
 dependency-reduced-pom.xml
 
-# ignore jflex generated files and idea backups
+# ignore jflex generated files
 src/main/java/ecnu/db/tidb/parser
+
+# kubernetes config for testing
+k8s.config

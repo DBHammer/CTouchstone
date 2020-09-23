@@ -9,6 +9,7 @@
   "resultDirectory": "touchstoneconf",
   "loadDirectory": "load",
   "dumpDirectory": "dump",
+  "logDirectory": "/var/log",
   "typeConvert": {
     "INTEGER": [
       "int"
