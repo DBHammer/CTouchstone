@@ -203,11 +203,11 @@ class QueryInstantiationTest {
         double rate;
         chains = query2chains.get("t1.sql_1");
         rate = getRate(schemas, generateSize, chains).get("test.test");
-        assertEquals(0.3270440252, rate, 0.02);
+        assertEquals(0.3270440252, rate, 0.03);
 
         chains = query2chains.get("t1.sql_2");
         rate = getRate(schemas, generateSize, chains).get("test.test");
-        assertEquals(0.8364779874, rate, 0.02);
+        assertEquals(0.8364779874, rate, 0.03);
 
     }
 

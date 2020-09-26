@@ -26,7 +26,6 @@ public class SystemConfig {
     private String dumpDirectory;
     private String logDirectory;
     private int sampleSize;
-
     private Double skipNodeThreshold;
 
     public SystemConfig() {

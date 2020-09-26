@@ -16,6 +16,8 @@ public class TouchstoneApp implements Callable<Integer> {
     @Option(names = {"-c", "--config_path"}, description = "file path to read configuration")
     private String configPath;
 
+
+
     public static void main(String... args) {
         int exitCode = new CommandLine(new TouchstoneApp()).execute(args);
         System.exit(exitCode);
