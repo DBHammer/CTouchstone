@@ -36,12 +36,11 @@ import static ecnu.db.utils.CommonUtils.INIT_HASHMAP_SIZE;
 /**
  * @author wangqingshuai
  */
-public class Main {
+public class Extractor {
 
-    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+    private static final Logger logger = LoggerFactory.getLogger(Extractor.class);
 
-    public static void main(String[] args) throws Exception {
-        SystemConfig config = SystemConfig.readConfig(args[0]);
+    public static void extract(SystemConfig config) throws Exception {
         List<File> files = Optional.ofNullable(new File(config.getSqlsDirectory()).listFiles())
                 .map(Arrays::asList)
                 .orElse(new ArrayList<>())

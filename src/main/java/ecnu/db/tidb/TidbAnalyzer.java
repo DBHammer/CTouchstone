@@ -317,7 +317,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             if (outerInfo.find()) {
                 String[] outerInfos = outerInfo.group(1).split("\\.");
                 result[2] = String.join(".", Arrays.asList(outerInfos[0], outerInfos[1]));
-                result[3] = outerInfos[2].substring(0, outerInfos[2].length() - 1);
+                result[3] = outerInfos[2];
             } else {
                 throw new TouchstoneToolChainException("无法匹配的join格式" + joinInfo);
             }

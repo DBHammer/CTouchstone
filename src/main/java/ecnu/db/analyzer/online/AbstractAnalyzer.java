@@ -153,21 +153,19 @@ public abstract class AbstractAnalyzer {
      * @param paths 需要返回的路径
      */
     private void getPathsIterate(ExecutionNode root, List<List<ExecutionNode>> paths) {
-        if (root.leftNode != null) {
-            getPathsIterate(root.leftNode, paths);
-            for (List<ExecutionNode> path : paths) {
-                path.add(root);
-            }
-        }
-        if (root.rightNode != null) {
-            getPathsIterate(root.rightNode, paths);
-            for (List<ExecutionNode> path : paths) {
-                path.add(root);
-            }
-        }
         if (root.leftNode == null && root.rightNode == null) {
             List<ExecutionNode> newPath = Lists.newArrayList(root);
             paths.add(newPath);
+            return;
+        }
+        if (root.leftNode != null) {
+            getPathsIterate(root.leftNode, paths);
+        }
+        if (root.rightNode != null) {
+            getPathsIterate(root.rightNode, paths);
+        }
+        for (List<ExecutionNode> path : paths) {
+            path.add(root);
         }
     }
 
@@ -271,7 +269,7 @@ public abstract class AbstractAnalyzer {
                 constraintChain.addNode(pkJoinNode);
                 //设置主键
                 getSchema(localTable).setPrimaryKeys(localCol);
-                return node.getOutputRows();
+                return -1; // 主键的情况下停止继续遍历
             } else {
                 if (node.getJoinTag() < 0) {
                     node.setJoinTag(getSchema(localTable).getJoinTag());
