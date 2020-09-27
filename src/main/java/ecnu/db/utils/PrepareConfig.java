@@ -1,7 +1,6 @@
 package ecnu.db.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ecnu.db.schema.column.ColumnType;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -10,7 +9,7 @@ import java.io.IOException;
 /**
  * @author qingshuai.wang
  */
-public class SystemConfig {
+public class PrepareConfig {
 
     private String databaseIp;
     private String databasePort;
@@ -19,7 +18,6 @@ public class SystemConfig {
     private String databaseName;
     private boolean crossMultiDatabase;
     private String resultDirectory;
-    private String tidbHttpPort;
     private TouchstoneSupportedDatabaseVersion databaseVersion;
     private String sqlsDirectory;
     private String loadDirectory;
@@ -28,7 +26,7 @@ public class SystemConfig {
     private int sampleSize;
     private Double skipNodeThreshold;
 
-    public SystemConfig() {
+    public PrepareConfig() {
         databaseIp = "127.0.0.1";
         databaseUser = "root";
         databasePwd = "";
@@ -36,14 +34,14 @@ public class SystemConfig {
         databaseName = "tpch";
     }
 
-    public static SystemConfig readConfig(String filePath) throws IOException {
+    public static PrepareConfig readConfig(String filePath) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         StringBuilder configJson = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
             configJson.append(line);
         }
-        return new ObjectMapper().readValue(configJson.toString(), SystemConfig.class);
+        return new ObjectMapper().readValue(configJson.toString(), PrepareConfig.class);
     }
 
     public boolean isCrossMultiDatabase() {
@@ -84,18 +82,6 @@ public class SystemConfig {
 
     public void setDumpDirectory(String dumpDirectory) {
         this.dumpDirectory = dumpDirectory;
-    }
-
-    public String getTidbHttpPort() {
-        return tidbHttpPort;
-    }
-
-    public void setTidbHttpPort(String tidbHttpPort) {
-        this.tidbHttpPort = tidbHttpPort;
-    }
-
-    public ColumnType getColumnType(String readType) {
-        return ColumnType.INTEGER;
     }
 
     public String getDatabaseIp() {

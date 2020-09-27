@@ -10,7 +10,7 @@ import ecnu.db.schema.column.IntColumn;
 import ecnu.db.schema.column.StringColumn;
 import ecnu.db.tidb.TidbAnalyzer;
 import ecnu.db.tidb.TidbInfo;
-import ecnu.db.utils.SystemConfig;
+import ecnu.db.utils.PrepareConfig;
 import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +33,7 @@ public class TidbSelectOperatorInfoParserTest {
 
     @BeforeEach
     void setUp() throws UnsupportedDBTypeException, IOException {
-        SystemConfig config = new SystemConfig();
+        PrepareConfig config = new PrepareConfig();
         config.setDatabaseVersion(TouchstoneSupportedDatabaseVersion.TiDB4);
         Map<String, Schema> schemas = new HashMap<>();
         Schema schema = new Schema();

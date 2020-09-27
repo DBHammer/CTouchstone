@@ -14,7 +14,7 @@ import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.exception.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
 import ecnu.db.utils.AbstractDatabaseInfo;
-import ecnu.db.utils.SystemConfig;
+import ecnu.db.utils.PrepareConfig;
 import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,12 +40,12 @@ public abstract class AbstractAnalyzer {
     protected Map<String, Schema> schemas;
     protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
-    protected SystemConfig config;
+    protected PrepareConfig config;
     protected Multimap<String, String> tblName2CanonicalTblName;
     protected TouchstoneSupportedDatabaseVersion analyzerSupportedDatabaseVersion;
     protected AbstractDatabaseInfo databaseInfo;
 
-    protected AbstractAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector,
+    protected AbstractAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector,
                                AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas,
                                Multimap<String, String> tblName2CanonicalTblName) {
         analyzerSupportedDatabaseVersion = config.getDatabaseVersion();

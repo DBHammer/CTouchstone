@@ -6,7 +6,7 @@ import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaGenerator;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.SystemConfig;
+import ecnu.db.utils.PrepareConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ public class DbConnector implements DatabaseConnectorInterface {
     // 数据库连接
     protected Statement stmt;
 
-    public DbConnector(SystemConfig config, String dbType, String databaseConnectionConfig) throws TouchstoneToolChainException {
+    public DbConnector(PrepareConfig config, String dbType, String databaseConnectionConfig) throws TouchstoneToolChainException {
         String url;
         if (!config.isCrossMultiDatabase()) {
             url = String.format("jdbc:%s://%s:%s/%s?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(), config.getDatabaseName(), databaseConnectionConfig);
