@@ -136,8 +136,8 @@ class QueryInstantiationTest {
         chains = query2chains.get("2.sql_1");
         map = getRate(schemas, generateSize, chains);
         // todo 精度有待提高
-        assertEquals(0.00416, map.get("tpch.part"), 0.0025);
-        assertEquals(0.2, map.get("tpch.region"), 0.0025);
+        assertEquals(0.00416, map.get("tpch.part"), 0.003);
+        assertEquals(0.2, map.get("tpch.region"), 0.003);
 
         chains = query2chains.get("6.sql_1");
         map = getRate(schemas, generateSize, chains);
