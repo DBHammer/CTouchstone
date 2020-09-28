@@ -22,6 +22,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author qingshuai.wang
  */
 public class StringColumn extends AbstractColumn {
+    private static final char[] RANDOM_CHAR_CANDIDATE = new char[76];
+
+    static  {
+        for (int i = 0;  i < 26; i++) {
+            RANDOM_CHAR_CANDIDATE[i] = (char) ('a' + i);
+            RANDOM_CHAR_CANDIDATE[i + 26] = (char) ('A' + i);
+        }
+        char[] symbolArr = new char[]{'!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '-', '=', '_', '[', ']', '<', '>', '?', '|', '{', '}', '~', '`'};
+        System.arraycopy(symbolArr, 0, RANDOM_CHAR_CANDIDATE, 52, symbolArr.length);
+    }
+
     private final Map<String, BigDecimal> likeCandidates = new HashMap<>();
     private int minLength;
     private int maxLength;
@@ -71,15 +82,17 @@ public class StringColumn extends AbstractColumn {
         ThreadLocalRandom rand = ThreadLocalRandom.current();
         String eqCandidate;
         do {
-            eqCandidate = randomString(rand);
+            eqCandidate = randomString(rand, rand.nextInt( 0, maxLength - minLength + 1) + minLength);
         } while (eqCandidates.contains(eqCandidate));
         eqCandidates.add(eqCandidate);
         return eqCandidate;
     }
 
-    private String randomString(ThreadLocalRandom rand) {
-        byte[] array = new byte[rand.nextInt( 0, maxLength - minLength + 1) + minLength];
-        rand.nextBytes(array);
+    private String randomString(ThreadLocalRandom rand, int size) {
+        byte[] array = new byte[size];
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (byte) RANDOM_CHAR_CANDIDATE[rand.nextInt(RANDOM_CHAR_CANDIDATE.length)];
+        }
         return new String(array, UTF_8);
     }
 
@@ -99,9 +112,8 @@ public class StringColumn extends AbstractColumn {
         String likeCandidate;
         ThreadLocalRandom rand = ThreadLocalRandom.current();
         do {
-            byte[] array = new byte[rand.nextInt(maxLength - minLength + 1) + minLength];
-            rand.nextBytes(array);
-            likeCandidate = String.format("%s%s%s", prefix, new String(array, UTF_8), postfix);
+            String randomString = randomString(rand, rand.nextInt( 0, maxLength - minLength + 1) + minLength);
+            likeCandidate = String.format("%s%s%s", prefix, randomString, postfix);
         } while (likeCandidates.containsKey(likeCandidate));
         likeCandidates.put(likeCandidate, probability);
         return likeCandidate;
@@ -162,7 +174,7 @@ public class StringColumn extends AbstractColumn {
             if (strings.containsKey(tag)) {
                 tupleData[i] = strings.get(tag);
             } else {
-                tupleData[i] = randomString(rand);
+                tupleData[i] = randomString(rand, rand.nextInt( 0, maxLength - minLength + 1) + minLength);
             }
         }
     }
@@ -206,26 +218,19 @@ public class StringColumn extends AbstractColumn {
         }
         else if (!startTag) {
             int postLen = rand.nextInt(0, maxLength - (candidate.length() - 1) + 1);
-            byte[] array = new byte[postLen];
-            rand.nextBytes(array);
-            String postStr = new String(array, UTF_8);
+            String postStr = randomString(rand, postLen);
             generatedStr = candidate.substring(0, candidate.length() - 1) + postStr;
         }
         else if (!endTag) {
             int preLen =  rand.nextInt(0, maxLength - (candidate.length() - 1) + 1);
-            byte[] array = new byte[preLen];
-            rand.nextBytes(array);
-            String preStr = new String(array, UTF_8);
+            String preStr = randomString(rand, preLen);
             generatedStr = preStr + candidate.substring(1);
         }
         else {
             int preLen = rand.nextInt(0, maxLength - (candidate.length() - 2) + 1), postLen = maxLength - preLen - (candidate.length() - 2);
             String preStr = "", postStr = "";
             if (preLen > 0) {
-                byte[] preArray;
-                preArray = new byte[preLen];
-                rand.nextBytes(preArray);
-                preStr = new String(preArray, UTF_8);
+                preStr = randomString(rand, preLen);
             }
             if (postLen > 0) {
                 byte[] postArray;
