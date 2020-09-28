@@ -15,6 +15,7 @@ public class CommonUtils {
     public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public static final String DUMP_FILE_POSTFIX = "dump";
     private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
+    public static final String SQL_FILE_POSTFIX = ".sql";
 
     /**
      * 获取正则表达式的匹配

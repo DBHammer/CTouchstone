@@ -64,7 +64,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public boolean[] evaluate(Schema schema, int size) throws TouchstoneToolChainException {
-        AbstractColumn column = schema.getColumn(columnName);
+        AbstractColumn column = schema.getColumn(columnName.split("\\.")[2]);
         boolean[] value = new boolean[size], columnIsnullEvaluations = column.getIsnullEvaluations();
         for (int i = 0; i < size; i++) {
             value[i] = (hasNot ^ columnIsnullEvaluations[i]);

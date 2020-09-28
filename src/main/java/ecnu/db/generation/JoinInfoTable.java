@@ -120,15 +120,15 @@ public class JoinInfoTable implements Externalizable {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.write(primaryKeySize);
-        out.write(joinInfo.size());
+        out.writeInt(primaryKeySize);
+        out.writeInt(joinInfo.size());
         for (Long bitmap : joinInfo.keySet()) {
             out.writeLong(bitmap);
             List<int[]> keys = joinInfo.get(bitmap);
-            out.write(keys.size());
+            out.writeInt(keys.size());
             for (int[] keyIds : keys) {
                 for (Integer keyId : keyIds) {
-                    out.write(keyId);
+                    out.writeInt(keyId);
                 }
             }
         }
@@ -136,16 +136,16 @@ public class JoinInfoTable implements Externalizable {
 
     @Override
     public void readExternal(ObjectInput in) throws IOException {
-        primaryKeySize = in.read();
-        int joinInfoSize = in.read();
+        primaryKeySize = in.readInt();
+        int joinInfoSize = in.readInt();
         joinInfo = new HashMap<>(joinInfoSize);
         for (int i = 0; i < joinInfoSize; i++) {
             Long bitmap = in.readLong();
-            int keyListSize = in.read();
+            int keyListSize = in.readInt();
             for (int j = 0; j < keyListSize; j++) {
                 int[] keyId = new int[primaryKeySize];
                 for (int k = 0; k < primaryKeySize; k++) {
-                    keyId[k] = in.read();
+                    keyId[k] = in.readInt();
                 }
                 joinInfo.compute(bitmap, (b, keys) -> {
                     if (keys == null) {

@@ -28,6 +28,7 @@ import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 
 /**
  * @author qingshuai.wang
+ * todo support column concurrency
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class AbstractColumn {
@@ -330,7 +331,7 @@ public abstract class AbstractColumn {
     abstract void prepareTupleData(int size);
 
     /**
-     * prepareTupleData的对外方法，处理isnull
+     * prepareTupleData的暴露接口，处理isnull
      * @param size 需要生成的size
      */
     public void prepareGeneration(int size) {

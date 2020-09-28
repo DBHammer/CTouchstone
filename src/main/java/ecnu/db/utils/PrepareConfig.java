@@ -1,22 +1,24 @@
 package ecnu.db.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FileUtils;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.File;
 import java.io.IOException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author qingshuai.wang
  */
-public class PrepareConfig {
+public class PrepareConfig implements DatabaseConnectorConfig {
 
     private String databaseIp;
     private String databasePort;
     private String databaseUser;
     private String databasePwd;
     private String databaseName;
-    private boolean crossMultiDatabase;
+    private Boolean crossMultiDatabase;
     private String resultDirectory;
     private TouchstoneSupportedDatabaseVersion databaseVersion;
     private String sqlsDirectory;
@@ -35,20 +37,15 @@ public class PrepareConfig {
     }
 
     public static PrepareConfig readConfig(String filePath) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(filePath));
-        StringBuilder configJson = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            configJson.append(line);
-        }
-        return new ObjectMapper().readValue(configJson.toString(), PrepareConfig.class);
+        String configJson = FileUtils.readFileToString(new File(filePath), UTF_8);
+        return new ObjectMapper().readValue(configJson, PrepareConfig.class);
     }
 
-    public boolean isCrossMultiDatabase() {
+    public Boolean isCrossMultiDatabase() {
         return crossMultiDatabase;
     }
 
-    public void setCrossMultiDatabase(boolean crossMultiDatabase) {
+    public void setCrossMultiDatabase(Boolean crossMultiDatabase) {
         this.crossMultiDatabase = crossMultiDatabase;
     }
 

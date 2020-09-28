@@ -43,7 +43,8 @@ class QueryInstantiationTest {
     @Test
     public void getOperationsTest() throws Exception {
         ParameterResolver.items.clear();
-        Map<String, List<ConstraintChain>> query2chains = ConstraintChainReader.readConstraintChain("src/test/resources/data/query-instantiation/constraintChain.json");
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainReader.readConstraintChain(
+                new File("src/test/resources/data/query-instantiation/constraintChain.json"));
         Multimap<String, AbstractFilterOperation> query2operations = ArrayListMultimap.create();
         for (String query : query2chains.keySet()) {
             List<ConstraintChain> chains = query2chains.get(query);
@@ -82,7 +83,8 @@ class QueryInstantiationTest {
     @Test
     public void computeTest() throws Exception {
         ParameterResolver.items.clear();
-        Map<String, List<ConstraintChain>> query2chains = ConstraintChainReader.readConstraintChain("src/test/resources/data/query-instantiation/constraintChain.json");
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainReader.readConstraintChain(
+                new File("src/test/resources/data/query-instantiation/constraintChain.json"));
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(AbstractColumn.class, new ColumnDeserializer());
@@ -134,8 +136,8 @@ class QueryInstantiationTest {
         chains = query2chains.get("2.sql_1");
         map = getRate(schemas, generateSize, chains);
         // todo 精度有待提高
-        assertEquals(0.00416, map.get("tpch.part"), 0.002);
-        assertEquals(0.2, map.get("tpch.region"), 0.002);
+        assertEquals(0.00416, map.get("tpch.part"), 0.0025);
+        assertEquals(0.2, map.get("tpch.region"), 0.0025);
 
         chains = query2chains.get("6.sql_1");
         map = getRate(schemas, generateSize, chains);
@@ -147,7 +149,8 @@ class QueryInstantiationTest {
         int samplingSize = 100_000;
         ArithmeticNode.setSize(samplingSize);
         ParameterResolver.items.clear();
-        Map<String, List<ConstraintChain>> query2chains = ConstraintChainReader.readConstraintChain("src/test/resources/data/query-instantiation/multi-var-test/constraintChain.json");
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainReader.readConstraintChain(
+                new File("src/test/resources/data/query-instantiation/multi-var-test/constraintChain.json"));
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(AbstractColumn.class, new ColumnDeserializer());

@@ -4,23 +4,25 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
-import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.exception.CannotFindColumnException;
 import ecnu.db.exception.CannotFindSchemaException;
 import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.generation.JoinInfoTable;
-import ecnu.db.schema.column.AbstractColumn;
+import ecnu.db.schema.column.*;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static ecnu.db.Generator.SINGLE_THREAD_TUPLE_SIZE;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 /**
@@ -202,26 +204,22 @@ public class Schema {
      * 准备好生成tuple
      * @param size 需要生成的tuple的大小
      * @param chains 约束链条
-     * @param analyzer 分析器
+     * @param schemas 所有的表的map
      * @param directory joinInfoTable文件存放路径
      * @param neededThreads 每个joinInfoTable至少需要的thread数量
      * @throws TouchstoneToolChainException 生成失败
      */
-    public void prepareTuples(int size, List<ConstraintChain> chains, AbstractAnalyzer analyzer, String directory, int neededThreads) throws TouchstoneToolChainException, IOException {
-        joinInfoTable = new JoinInfoTable();
+    public void prepareTuples(int size, Collection<ConstraintChain> chains, Map<String, Schema> schemas, String directory, int neededThreads) throws TouchstoneToolChainException, IOException, InterruptedException {
+        if (primaryKeys != null) { // primary keys is null, means no table will depend on this tables' join info table, thus it is ignored
+            joinInfoTable = new JoinInfoTable(primaryKeys.split(",").length);
+        }
         Map<Integer, boolean[]> pkBitMap = new HashMap<>();
         Table<String, ConstraintChainFkJoinNode, boolean[]> fkBitMap = HashBasedTable.create();
         for (ConstraintChain chain : chains) {
             chain.evaluate(this, size, pkBitMap, fkBitMap);
         }
-        List<Integer> pks = new ArrayList<>(pkBitMap.keySet());
-        pks.sort(Integer::compareTo);
-        for (int i = 0; i < size; i++) {
-            long bitMap = 1L;
-            for (int pk : pks) {
-                bitMap = ((pkBitMap.get(pk)[i] ? 1L : 0L) & (bitMap << 1));
-            }
-            joinInfoTable.addJoinInfo(bitMap, new int[]{i});
+        if (primaryKeys != null) {
+            initJoinInfoTable(size, pkBitMap);
         }
         for (Map.Entry<String, Map<ConstraintChainFkJoinNode, boolean[]>> entry : fkBitMap.rowMap().entrySet()) {
             Map<ConstraintChainFkJoinNode, boolean[]> fkBitMap4Join = entry.getValue();
@@ -232,7 +230,11 @@ public class Schema {
                 for (ConstraintChainFkJoinNode node : nodes) {
                     bitMap = ((fkBitMap4Join.get(node)[i] ? 1L : 0L) & (bitMap << 1));
                 }
-                AbstractColumn refColumn =  analyzer.getSchema(nodes.get(i).getRefTable()).getColumn(nodes.get(i).getRefCol()), localColumn = getColumn(nodes.get(i).getFkCol());
+                AbstractColumn refColumn =  schemas.get(nodes.get(i).getRefTable()).getColumn(nodes.get(i).getRefCol()), localColumn = getColumn(nodes.get(i).getFkCol());
+                int maximumThreads = (schemas.get(nodes.get(i).getRefTable()).getTableSize() + SINGLE_THREAD_TUPLE_SIZE - 1) / SINGLE_THREAD_TUPLE_SIZE;
+                if (maximumThreads < neededThreads) {
+                    neededThreads = maximumThreads == 1 ? 1 : maximumThreads / 2;
+                }
                 int cnt;
                 do {
                     File file = new File(directory, nodes.get(i).getRefTable());
@@ -240,6 +242,9 @@ public class Schema {
                         cnt = Objects.requireNonNull(file.listFiles()).length;
                     } else {
                         cnt = 0;
+                    }
+                    if (cnt < neededThreads) {
+                        TimeUnit.MICROSECONDS.sleep(100); // if not ok, wait a little while before we check again.
                     }
                 } while (cnt < neededThreads);
                 File[] files = Objects.requireNonNull(new File(directory, nodes.get(i).getRefTable()).listFiles());
@@ -253,8 +258,67 @@ public class Schema {
                 localColumn.setTupleByRefColumn(refColumn, i, pk);
             }
         }
-        File tmpFile = File.createTempFile(String.format("%s_%s_%d", directory, tableName, Thread.currentThread().getId()), "tmp");
-        joinInfoTable.writeExternal(new ObjectOutputStream(new FileOutputStream(tmpFile)));
-        Files.move(tmpFile.toPath(), new File(new File(directory, tableName), Long.toString(Thread.currentThread().getId())).toPath(), ATOMIC_MOVE);
+        if (primaryKeys != null) {
+            File tmpFile = new File(String.format("%s_%s_%d.tmp", directory, tableName, Thread.currentThread().getId()));
+            joinInfoTable.writeExternal(new ObjectOutputStream(new FileOutputStream(tmpFile)));
+            Files.move(tmpFile.toPath(), new File(new File(directory, tableName), Long.toString(Thread.currentThread().getId())).toPath(), ATOMIC_MOVE);
+        }
+    }
+
+    private void initJoinInfoTable(int size, Map<Integer, boolean[]> pkBitMap) {
+        List<Integer> pks = new ArrayList<>(pkBitMap.keySet());
+        pks.sort(Integer::compareTo);
+        for (int i = 0; i < size; i++) {
+            long bitMap = 1L;
+            for (int pk : pks) {
+                bitMap = ((pkBitMap.get(pk)[i] ? 1L : 0L) & (bitMap << 1));
+            }
+            joinInfoTable.addJoinInfo(bitMap, new int[]{i});
+        }
+    }
+
+    public String generateInsertSqls(int size, String newDatabaseName) {
+        Map<String, List<String>> columnName2Data = new HashMap<>();
+        StringBuilder sqls = new StringBuilder();
+        for (String columnName : columns.keySet()) {
+            AbstractColumn column = columns.get(columnName);
+            List<String> data;
+            switch (column.getColumnType()) {
+                case DATE:
+                    data = Arrays.stream(((DateColumn) column).getTupleData()).map((d) -> String.format("'%s'", DateColumn.FMT.format(d))).collect(Collectors.toList());
+                    break;
+                case DATETIME:
+                    data = Arrays.stream(((DateTimeColumn) column).getTupleData()).map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d))).collect(Collectors.toList());
+                    break;
+                case INTEGER:
+                    data = Arrays.stream(((IntColumn) column).getTupleData()).mapToObj(Integer::toString).collect(Collectors.toList());
+                    break;
+                case DECIMAL:
+                    data = Arrays.stream(((DecimalColumn) column).getTupleData()).mapToObj((d) -> BigDecimal.valueOf(d).toString()).collect(Collectors.toList());
+                    break;
+                case VARCHAR:
+                    data = Arrays.stream(((StringColumn) column).getTupleData()).map((d) -> String.format("'%s'", d)).collect(Collectors.toList());
+                    break;
+                case BOOL:
+                default:
+                    throw new UnsupportedOperationException();
+            }
+            columnName2Data.put(columnName, data);
+        }
+        String tableName = this.tableName;
+        if (newDatabaseName != null) {
+            tableName = String.format("%s.%s", newDatabaseName, tableName.split("\\.")[1]);
+        }
+        for (int i = 0; i < size; i++) {
+            String sql = String.format("insert into %s ", tableName);
+            List<String> colNames = new ArrayList<>(), colVals = new ArrayList<>();
+            for (String columnName : columnName2Data.keySet()) {
+                colNames.add(columnName);
+                colVals.add(columnName2Data.get(columnName).get(i));
+            }
+            sql += String.format("(%s) value (%s);\n", String.join(",", colNames), String.join(",", colVals));
+            sqls.append(sql);
+        }
+        return sqls.toString();
     }
 }
