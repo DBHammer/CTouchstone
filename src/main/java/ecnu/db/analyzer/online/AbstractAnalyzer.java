@@ -14,7 +14,7 @@ import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.exception.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
 import ecnu.db.utils.AbstractDatabaseInfo;
-import ecnu.db.utils.SystemConfig;
+import ecnu.db.utils.PrepareConfig;
 import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,12 +40,12 @@ public abstract class AbstractAnalyzer {
     protected Map<String, Schema> schemas;
     protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
-    protected SystemConfig config;
+    protected PrepareConfig config;
     protected Multimap<String, String> tblName2CanonicalTblName;
     protected TouchstoneSupportedDatabaseVersion analyzerSupportedDatabaseVersion;
     protected AbstractDatabaseInfo databaseInfo;
 
-    protected AbstractAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector,
+    protected AbstractAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector,
                                AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas,
                                Multimap<String, String> tblName2CanonicalTblName) {
         analyzerSupportedDatabaseVersion = config.getDatabaseVersion();
@@ -153,21 +153,19 @@ public abstract class AbstractAnalyzer {
      * @param paths 需要返回的路径
      */
     private void getPathsIterate(ExecutionNode root, List<List<ExecutionNode>> paths) {
-        if (root.leftNode != null) {
-            getPathsIterate(root.leftNode, paths);
-            for (List<ExecutionNode> path : paths) {
-                path.add(root);
-            }
-        }
-        if (root.rightNode != null) {
-            getPathsIterate(root.rightNode, paths);
-            for (List<ExecutionNode> path : paths) {
-                path.add(root);
-            }
-        }
         if (root.leftNode == null && root.rightNode == null) {
             List<ExecutionNode> newPath = Lists.newArrayList(root);
             paths.add(newPath);
+            return;
+        }
+        if (root.leftNode != null) {
+            getPathsIterate(root.leftNode, paths);
+        }
+        if (root.rightNode != null) {
+            getPathsIterate(root.rightNode, paths);
+        }
+        for (List<ExecutionNode> path : paths) {
+            path.add(root);
         }
     }
 
@@ -248,40 +246,40 @@ public abstract class AbstractAnalyzer {
             constraintChain.addParameters(result.getParameters());
         } else if (node.getType() == ExecutionNode.ExecutionNodeType.join) {
             String[] joinColumnInfos = analyzeJoinInfo(node.getInfo());
-            String pkTable = joinColumnInfos[0], pkCol = joinColumnInfos[1],
-                    fkTable = joinColumnInfos[2], fkCol = joinColumnInfos[3];
+            String localTable = joinColumnInfos[0], localCol = joinColumnInfos[1],
+                    externalTable = joinColumnInfos[2], externalCol = joinColumnInfos[3];
             // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
-            if (!pkTable.equals(constraintChain.getTableName())
-                    && !fkTable.equals(constraintChain.getTableName())) {
+            if (!localTable.equals(constraintChain.getTableName())
+                    && !externalTable.equals(constraintChain.getTableName())) {
                 return -1;
             }
             //将本表的信息放在前面，交换位置
-            if (constraintChain.getTableName().equals(fkTable)) {
-                pkTable = joinColumnInfos[2];
-                pkCol = joinColumnInfos[3];
-                fkTable = joinColumnInfos[0];
-                fkCol = joinColumnInfos[1];
+            if (constraintChain.getTableName().equals(externalTable)) {
+                localTable = joinColumnInfos[2];
+                localCol = joinColumnInfos[3];
+                externalTable = joinColumnInfos[0];
+                externalCol = joinColumnInfos[1];
             }
             //根据主外键分别设置约束链输出信息
-            if (isPrimaryKey(pkTable, pkCol, fkTable, fkCol)) {
+            if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(getSchema(pkTable).getJoinTag());
+                    node.setJoinTag(getSchema(localTable).getJoinTag());
                 }
-                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(pkTable, node.getJoinTag(), pkCol.split(","));
+                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(localTable, node.getJoinTag(), localCol.split(","));
                 constraintChain.addNode(pkJoinNode);
                 //设置主键
-                getSchema(pkTable).setPrimaryKeys(pkCol);
-                return node.getOutputRows();
+                getSchema(localTable).setPrimaryKeys(localCol);
+                return -1; // 主键的情况下停止继续遍历
             } else {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(getSchema(pkTable).getJoinTag());
+                    node.setJoinTag(getSchema(localTable).getJoinTag());
                 }
                 BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
                 //设置外键
-                logger.info("table:" + pkTable + ".column:" + pkCol + " -ref- table:" +
-                        fkCol + ".column:" + fkTable);
-                getSchema(pkTable).addForeignKey(pkCol, fkTable, fkCol);
-                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(pkTable, fkTable, node.getJoinTag(), getSchema(pkTable).getForeignKeys(), probability);
+                logger.info("table:" + localTable + ".column:" + localCol + " -ref- table:" +
+                        externalCol + ".column:" + externalTable);
+                getSchema(localTable).addForeignKey(localCol, externalTable, externalCol);
+                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable, externalTable, node.getJoinTag(), externalCol, localCol, probability);
                 constraintChain.addNode(fkJoinNode);
             }
         }

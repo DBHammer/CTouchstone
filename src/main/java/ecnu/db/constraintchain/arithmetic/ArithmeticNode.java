@@ -1,6 +1,7 @@
 package ecnu.db.constraintchain.arithmetic;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.exception.CannotFindColumnException;
 import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
 
@@ -57,4 +58,13 @@ public abstract class ArithmeticNode {
     public void setRightNode(ArithmeticNode rightNode) {
         this.rightNode = rightNode;
     }
+
+    /**
+     * 获取当前节点在column生成好数据以后的计算结果
+     * @param schema filter所在的schema，用于查找column
+     * @param size 生成数据的size
+     * @return 返回double类型的计算结果
+     * @throws CannotFindColumnException 找不的column
+     */
+    abstract public double[] calculate(Schema schema, int size) throws CannotFindColumnException;
 }

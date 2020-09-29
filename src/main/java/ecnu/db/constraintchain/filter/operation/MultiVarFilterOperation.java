@@ -6,16 +6,18 @@ import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.arithmetic.value.ColumnNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.exception.CannotFindColumnException;
 import ecnu.db.exception.InstantiateParameterException;
 import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
+import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static ecnu.db.constraintchain.filter.operation.CompareOperator.*;
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.GREATER;
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.LESS;
 
@@ -51,7 +53,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             return;
         }
         if (node.getType() == ArithmeticNodeType.COLUMN) {
-            colNames.add(String.format("%s.%s", ((ColumnNode) node).getCanonicalTableName(), ((ColumnNode) node).getColumnName()));
+            colNames.add(((ColumnNode) node).getColumnName());
         }
         getColNames(node.getLeftNode(), colNames);
         getColNames(node.getRightNode(), colNames);
@@ -60,6 +62,54 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     @Override
     public BoolExprType getType() {
         return BoolExprType.MULTI_FILTER_OPERATION;
+    }
+
+    @Override
+    public boolean[] evaluate(Schema schema, int size) throws CannotFindColumnException {
+        double[] data = arithmeticTree.calculate(schema, size);
+        boolean[] ret = new boolean[data.length];
+        if (operator == LE) {
+            double param = Double.parseDouble(parameters.get(0).getData());
+            for (int i = 0; i < data.length; i++) {
+                ret[i] = (data[i] <= param);
+            }
+        }
+        else if (operator == LT) {
+            double param = Double.parseDouble(parameters.get(0).getData());
+            for (int i = 0; i < data.length; i++) {
+                ret[i] = (data[i] < param);
+            }
+        }
+        else if (operator == GE) {
+            double param = Double.parseDouble(parameters.get(0).getData());
+            for (int i = 0; i < data.length; i++) {
+                ret[i] = (data[i] >= param);
+            }
+        }
+        else if (operator == GT) {
+            double param = Double.parseDouble(parameters.get(0).getData());
+            for (int i = 0; i < data.length; i++) {
+                ret[i] = (data[i] > param);
+            }
+        }
+        else {
+            throw new UnsupportedOperationException();
+        }
+        List<String> columnNames = new ArrayList<>(getColNames());
+        boolean[] nullEvaluations = new boolean[size];
+        for (String columnName : columnNames) {
+            AbstractColumn column = schema.getColumn(columnName);
+            boolean[] columnNullEvaluations = column.getIsnullEvaluations();
+            for (int i = 0; i < nullEvaluations.length; i++) {
+                nullEvaluations[i] = false;
+                nullEvaluations[i] = (nullEvaluations[i] | columnNullEvaluations[i]);
+            }
+        }
+        for (int i = 0; i < size; i++) {
+            ret[i] = (ret[i] & !nullEvaluations[i]);
+        }
+
+        return ret;
     }
 
     @Override
@@ -85,8 +135,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         BigDecimal nonNullProbability = BigDecimal.ONE;
         // 假定null都是均匀独立分布的
         for (String columnName : getColNames()) {
-            String simpleColumnName = CommonUtils.extractSimpleColumnName(columnName);
-            BigDecimal colNullProbability = BigDecimal.valueOf(schema.getColumn(simpleColumnName).getNullPercentage());
+            BigDecimal colNullProbability = BigDecimal.valueOf(schema.getColumn(columnName).getNullPercentage());
             nonNullProbability = nonNullProbability.multiply(BigDecimal.ONE.subtract(colNullProbability));
         }
         if (operator.getType() == GREATER) {
@@ -107,4 +156,6 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             }
         });
     }
+
+
 }

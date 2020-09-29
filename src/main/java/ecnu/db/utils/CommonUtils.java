@@ -3,6 +3,7 @@ package ecnu.db.utils;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,6 +15,7 @@ public class CommonUtils {
     public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public static final String DUMP_FILE_POSTFIX = "dump";
     private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
+    public static final String SQL_FILE_POSTFIX = ".sql";
 
     /**
      * 获取正则表达式的匹配
@@ -81,5 +83,69 @@ public class CommonUtils {
 
     public static String extractSimpleColumnName(String canonicalColumnName) {
         return canonicalColumnName.split("\\.")[2];
+    }
+
+    public static void shuffle(int size, ThreadLocalRandom rand, int[] tupleData) {
+        int tmp;
+        for (int i = size; i > 1; i--) {
+            int idx = rand.nextInt(i);
+            tmp = tupleData[i - 1];
+            tupleData[i - 1] = tupleData[idx];
+            tupleData[idx] = tmp;
+        }
+    }
+
+    public static void shuffle(int size, ThreadLocalRandom rand, double[] tupleData) {
+        double tmp;
+        for (int i = size; i > 1; i--) {
+            int idx = rand.nextInt(i);
+            tmp = tupleData[i - 1];
+            tupleData[i - 1] = tupleData[idx];
+            tupleData[idx] = tmp;
+        }
+    }
+
+    public static void shuffle(int size, ThreadLocalRandom rand, long[] tupleData) {
+        long tmp;
+        for (int i = size; i > 1; i--) {
+            int idx = rand.nextInt(i);
+            tmp = tupleData[i - 1];
+            tupleData[i - 1] = tupleData[idx];
+            tupleData[idx] = tmp;
+        }
+    }
+
+    public static double calcuate(double[] ret) {
+        double sum = 0;
+        for (double v : ret) {
+            sum += v;
+        }
+        return sum / ret.length;
+    }
+
+    public static double calcuate(int[] ret) {
+        double sum = 0;
+        for (int value : ret) {
+            sum += value;
+        }
+        return sum / ret.length;
+    }
+
+    public static double calcuate(boolean[] ret) {
+        double sum = 0;
+        for (boolean b : ret) {
+            sum += (b ? 1 : 0);
+        }
+        return sum / ret.length;
+    }
+
+    public static double min(int[] ret) {
+        double min = ret[0];
+        for (int value : ret) {
+            if (min >= value) {
+                min = value;
+            }
+        }
+        return min;
     }
 }

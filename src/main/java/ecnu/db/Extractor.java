@@ -22,7 +22,7 @@ import ecnu.db.tidb.TidbInfo;
 import ecnu.db.utils.AbstractDatabaseInfo;
 import ecnu.db.utils.SqlTemplateHelper;
 import ecnu.db.utils.StorageManager;
-import ecnu.db.utils.SystemConfig;
+import ecnu.db.utils.PrepareConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,12 +36,11 @@ import static ecnu.db.utils.CommonUtils.INIT_HASHMAP_SIZE;
 /**
  * @author wangqingshuai
  */
-public class Main {
+public class Extractor {
 
-    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+    private static final Logger logger = LoggerFactory.getLogger(Extractor.class);
 
-    public static void main(String[] args) throws Exception {
-        SystemConfig config = SystemConfig.readConfig(args[0]);
+    public static void extract(PrepareConfig config) throws Exception {
         List<File> files = Optional.ofNullable(new File(config.getSqlsDirectory()).listFiles())
                 .map(Arrays::asList)
                 .orElse(new ArrayList<>())
@@ -141,7 +140,7 @@ public class Main {
         storageManager.storeConstrainChainResult(queryInfos);
     }
 
-    private static AbstractAnalyzer getAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector,
+    private static AbstractAnalyzer getAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector,
                                                 AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas)
             throws TouchstoneToolChainException, IOException {
         Multimap<String, String> tblName2CanonicalTblName = ArrayListMultimap.create();

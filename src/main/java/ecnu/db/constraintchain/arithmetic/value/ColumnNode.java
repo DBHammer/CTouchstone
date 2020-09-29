@@ -3,6 +3,7 @@ package ecnu.db.constraintchain.arithmetic.value;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.exception.CannotFindColumnException;
 import ecnu.db.exception.InstantiateParameterException;
 import ecnu.db.exception.TouchstoneToolChainException;
 import ecnu.db.schema.Schema;
@@ -15,8 +16,10 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static ecnu.db.schema.column.ColumnType.DECIMAL;
+import static ecnu.db.schema.column.ColumnType.INTEGER;
 
 /**
  * @author wangqingshuai
@@ -71,7 +74,7 @@ public class ColumnNode extends ArithmeticNode {
         float[] value = new float[ArithmeticNode.size];
         for (EqBucket eqBucket : eqBuckets) {
             for (Map.Entry<BigDecimal, Parameter> entry : eqBucket.eqConditions.entries()) {
-                BigDecimal newCum = cumBorder.add(entry.getKey()).multiply(size);
+                BigDecimal newCum = cumBorder.add(entry.getKey().multiply(size));
                 float eqValue = Float.parseFloat(entry.getValue().getData());
                 for (int j = cumBorder.intValue(); j < newCum.intValue() && j < ArithmeticNode.size; j++) {
                     value[j] = eqValue;
@@ -80,12 +83,12 @@ public class ColumnNode extends ArithmeticNode {
             }
         }
         float bound = max - min;
-        ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
         for (int i = cumBorder.intValue(); i < ArithmeticNode.size; i++) {
-            value[i] = threadLocalRandom.nextFloat() * bound + min;
+            value[i] = (1 - rand.nextFloat()) * bound + min;
         }
         if (cumBorder.compareTo(BigDecimal.ZERO) > 0) {
-            Random rand = new Random();
+            // shuffle
             float tmp;
             for (int i = ArithmeticNode.size; i > 1; i--) {
                 int idx = rand.nextInt(i);
@@ -95,6 +98,22 @@ public class ColumnNode extends ArithmeticNode {
             }
         }
         return value;
+    }
+
+    @Override
+    public double[] calculate(Schema schema, int size) throws CannotFindColumnException {
+        AbstractColumn column = schema.getColumn(columnName);
+        double[] ret;
+        if (column.getColumnType() == INTEGER) {
+            ret = ((IntColumn) column).calculate();
+        }
+        else if (column.getColumnType() == DECIMAL) {
+            ret = ((DecimalColumn) column).calculate();
+        }
+        else {
+            throw new UnsupportedOperationException();
+        }
+        return ret;
     }
 
     @Override

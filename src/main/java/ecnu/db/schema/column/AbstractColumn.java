@@ -16,29 +16,26 @@ import ecnu.db.schema.column.bucket.NonEqBucket;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.EQ;
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.LT;
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.GREATER;
 import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.LESS;
-import static ecnu.db.schema.column.ColumnType.*;
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 
 
 /**
  * @author qingshuai.wang
+ * todo support column concurrency
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class AbstractColumn {
     private final ColumnType columnType;
     protected float nullPercentage;
     protected String columnName;
+    BitSet bitmap;
     // 非等值约束
     protected NonEqBucket bucket;
     // 已经处理过的约束
@@ -50,6 +47,7 @@ public abstract class AbstractColumn {
     protected List<EqBucket> eqBuckets = new ArrayList<>();
     // 生成的等于约束参数数据
     protected Set<String> eqCandidates = new HashSet<>();
+    protected boolean[] isnullEvaluations;
 
     public AbstractColumn(String columnName, ColumnType columnType) {
         this.columnName = columnName;
@@ -218,7 +216,7 @@ public abstract class AbstractColumn {
         eqBuckets.sort(Comparator.comparing(b -> b.leftBorder));
         for (EqBucket eqBucket : eqBuckets) {
             eqBucket.eqConditions.forEach((b, param) -> {
-                String data = generateEqData(eqBucket.leftBorder, eqBucket.rightBorder);
+                String data = generateEqParamData(eqBucket.leftBorder, eqBucket.rightBorder);
                 metConditions.get(EQ + param.getData()).forEach((p) -> p.setData(data));
             });
         }
@@ -246,7 +244,7 @@ public abstract class AbstractColumn {
      * @param maxProbability 等值参数可以出现的概率区间的右边界
      * @return 生成的数据
      */
-    protected abstract String generateEqData(BigDecimal minProbability, BigDecimal maxProbability);
+    protected abstract String generateEqParamData(BigDecimal minProbability, BigDecimal maxProbability);
 
     public boolean hasNotMetCondition(String condition) {
         return !metConditions.containsKey(condition);
@@ -310,12 +308,12 @@ public abstract class AbstractColumn {
             leftProbability = leftBucket.leftBorder;
             rightProbability = rightBucket.leftBorder.add(rightBucket.capacity);
         }
-        String leftData = genData(leftProbability), rightData = genData(rightProbability);
-        lessParameters.forEach((p) -> p.setData(leftData));
-        greaterParameters.forEach((p) -> p.setData(rightData));
+        String leftData = generateNonEqParamData(leftProbability), rightData = generateNonEqParamData(rightProbability);
+        lessParameters.forEach((p) -> p.setData(rightData));
+        greaterParameters.forEach((p) -> p.setData(leftData));
         // todo 当前仅使用LT
         insertNonEqProbability(leftProbability, LT, lessParameters.get(0));
-        insertNonEqProbability(rightProbability, LT, greaterParameters.get(0));
+        insertNonEqProbability(BigDecimal.ONE.subtract(BigDecimal.valueOf(nullPercentage)).subtract(rightProbability), LT, greaterParameters.get(0));
     }
 
     /**
@@ -324,34 +322,35 @@ public abstract class AbstractColumn {
      * @param probability 分割概率
      * @return 生成的数据
      */
-    public String genData(BigDecimal probability) {
-        String ret;
-        if (getColumnType() == INTEGER) {
-            IntColumn column = (IntColumn) this;
-            int value = column.generateData(probability);
-            ret = Integer.toString(value);
-        } else if (getColumnType() == DECIMAL) {
-            DecimalColumn column = (DecimalColumn) this;
-            BigDecimal value = column.generateData(probability);
-            ret = value.toString();
-        } else if (getColumnType() == DATETIME) {
-            DateTimeColumn column = (DateTimeColumn) this;
-            LocalDateTime newDateTime = column.generateData(probability);
-            DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss");
-            if (column.getPrecision() > 0) {
-                builder.appendFraction(ChronoField.MICRO_OF_SECOND, 0, column.getPrecision(), true);
-            }
-            DateTimeFormatter formatter = builder.toFormatter();
-            return formatter.format(newDateTime);
-        } else if (getColumnType() == DATE) {
-            DateColumn column = (DateColumn) this;
-            LocalDate newDate = column.generateData(probability);
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd").toFormatter();
-            return formatter.format(newDate);
-        } else {
-            throw new UnsupportedOperationException();
-        }
+    public abstract String generateNonEqParamData(BigDecimal probability);
 
-        return ret;
+    /**
+     * 在一次数据生成的过程里准备好column的数据, 不处理isnull
+     * @param size 需要生成的size
+     */
+    abstract void prepareTupleData(int size);
+
+    /**
+     * prepareTupleData的暴露接口，处理isnull
+     * @param size 需要生成的size
+     */
+    public void prepareGeneration(int size) {
+        if (isnullEvaluations == null || isnullEvaluations.length != size) {
+            isnullEvaluations = new boolean[size];
+        }
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        for (int i = 0; i < size; i++) {
+            isnullEvaluations[i] = (rand.nextDouble() <= nullPercentage);
+        }
+        prepareTupleData(size);
     }
+
+    abstract public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters, boolean hasNot);
+
+    @JsonIgnore
+    public boolean[] getIsnullEvaluations() {
+        return isnullEvaluations;
+    }
+
+    abstract public void setTupleByRefColumn(AbstractColumn column, int i, int j);
 }

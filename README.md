@@ -128,24 +128,6 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
     "dumpDirectory": "dump",
     "logDirectory": "log",
     "skipNodeThreshold": 0.01,
-    "typeConvert": {
-        "INTEGER": [
-            "int"
-        ],
-        "DATETIME": [
-            "date"
-        ],
-        "DECIMAL": [
-            "decimal"
-        ],
-        "VARCHAR": [
-            "varchar",
-            "char"
-        ],
-        "BOOL": [
-            "bool"
-        ]
-    },
     "tidbHttpPort": "10080"
 }
 ```
@@ -164,10 +146,6 @@ java -jar ./target/TouchstoneToolchain-${version}.jar CONFIG_PATH/config.conf
   4. 日志文件夹，用于存放分析无法处理的query的文件
 
 + 容忍分析阈值。行数与tableSize比值低于该阈值的节点在出错的情况下，会跳过该节点及其上的节点
-
-+ 类型转化配置
-
-  由于数据库中可能会有很多的属性，但是touchstone处理时，会按照常用类型处理，这里定义了可处理的5种类型，如果数据库中出现了未定义的类型，在配置文件中增加即可，比如bigint，smallint等等。
 
 + stats http端口 
 

@@ -17,7 +17,7 @@ import ecnu.db.tidb.parser.TidbSelectOperatorInfoLexer;
 import ecnu.db.tidb.parser.TidbSelectOperatorInfoParser;
 import ecnu.db.utils.AbstractDatabaseInfo;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.SystemConfig;
+import ecnu.db.utils.PrepareConfig;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -45,7 +45,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(new TidbSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
 
 
-    public TidbAnalyzer(SystemConfig config, DatabaseConnectorInterface dbConnector, AbstractDatabaseInfo databaseInfo,
+    public TidbAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector, AbstractDatabaseInfo databaseInfo,
                         Map<String, Schema> schemas, Multimap<String, String> tblName2CanonicalTblName) {
         super(config, dbConnector, databaseInfo, schemas, tblName2CanonicalTblName);
         this.nodeTypeRef = new TidbNodeTypeTool();
@@ -317,7 +317,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             if (outerInfo.find()) {
                 String[] outerInfos = outerInfo.group(1).split("\\.");
                 result[2] = String.join(".", Arrays.asList(outerInfos[0], outerInfos[1]));
-                result[3] = outerInfos[2].substring(0, outerInfos[2].length() - 1);
+                result[3] = outerInfos[2];
             } else {
                 throw new TouchstoneToolChainException("无法匹配的join格式" + joinInfo);
             }

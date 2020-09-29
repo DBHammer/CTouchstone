@@ -22,8 +22,8 @@ public class ConstraintChainReader {
      *
      * @return 加载成功的约束链
      */
-    public static Map<String, List<ConstraintChain>> readConstraintChain(String fileName) throws IOException {
-        String content = FileUtils.readFileToString(new File(fileName), UTF_8);
+    public static Map<String, List<ConstraintChain>> readConstraintChain(File file) throws IOException {
+        String content = FileUtils.readFileToString(file, UTF_8);
         ObjectMapper mapper = StorageManager.mapper;
         return mapper.readValue(content, new TypeReference<Map<String, List<ConstraintChain>>>() {
         });

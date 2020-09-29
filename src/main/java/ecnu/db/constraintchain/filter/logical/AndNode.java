@@ -10,6 +10,8 @@ import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.exception.PushDownProbabilityException;
+import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.schema.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,6 +108,19 @@ public class AndNode implements BoolExprNode {
     @Override
     public BoolExprType getType() {
         return type;
+    }
+
+    @Override
+    public boolean[] evaluate(Schema schema, int size) throws TouchstoneToolChainException {
+        boolean[] value = children.get(0).evaluate(schema, size);
+        for (int i = 1; i < children.size(); i++) {
+            BoolExprNode child = children.get(i);
+            boolean[] childValue = child.evaluate(schema, size);
+            for (int j = 0; j < size; j++) {
+                value[j] = (value[j] & childValue[j]);
+            }
+        }
+        return value;
     }
 
     public void setType(BoolExprType type) {

@@ -1,35 +1,34 @@
 package ecnu.db.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ecnu.db.schema.column.ColumnType;
+import org.apache.commons.io.FileUtils;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.File;
 import java.io.IOException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author qingshuai.wang
  */
-public class SystemConfig {
+public class PrepareConfig implements DatabaseConnectorConfig {
 
     private String databaseIp;
     private String databasePort;
     private String databaseUser;
     private String databasePwd;
     private String databaseName;
-    private boolean crossMultiDatabase;
+    private Boolean crossMultiDatabase;
     private String resultDirectory;
-    private String tidbHttpPort;
     private TouchstoneSupportedDatabaseVersion databaseVersion;
     private String sqlsDirectory;
     private String loadDirectory;
     private String dumpDirectory;
     private String logDirectory;
     private int sampleSize;
-
     private Double skipNodeThreshold;
 
-    public SystemConfig() {
+    public PrepareConfig() {
         databaseIp = "127.0.0.1";
         databaseUser = "root";
         databasePwd = "";
@@ -37,21 +36,16 @@ public class SystemConfig {
         databaseName = "tpch";
     }
 
-    public static SystemConfig readConfig(String filePath) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(filePath));
-        StringBuilder configJson = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            configJson.append(line);
-        }
-        return new ObjectMapper().readValue(configJson.toString(), SystemConfig.class);
+    public static PrepareConfig readConfig(String filePath) throws IOException {
+        String configJson = FileUtils.readFileToString(new File(filePath), UTF_8);
+        return new ObjectMapper().readValue(configJson, PrepareConfig.class);
     }
 
-    public boolean isCrossMultiDatabase() {
+    public Boolean isCrossMultiDatabase() {
         return crossMultiDatabase;
     }
 
-    public void setCrossMultiDatabase(boolean crossMultiDatabase) {
+    public void setCrossMultiDatabase(Boolean crossMultiDatabase) {
         this.crossMultiDatabase = crossMultiDatabase;
     }
 
@@ -85,18 +79,6 @@ public class SystemConfig {
 
     public void setDumpDirectory(String dumpDirectory) {
         this.dumpDirectory = dumpDirectory;
-    }
-
-    public String getTidbHttpPort() {
-        return tidbHttpPort;
-    }
-
-    public void setTidbHttpPort(String tidbHttpPort) {
-        this.tidbHttpPort = tidbHttpPort;
-    }
-
-    public ColumnType getColumnType(String readType) {
-        return ColumnType.INTEGER;
     }
 
     public String getDatabaseIp() {
