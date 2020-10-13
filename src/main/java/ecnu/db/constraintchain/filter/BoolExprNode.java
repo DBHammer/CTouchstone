@@ -2,7 +2,7 @@ package ecnu.db.constraintchain.filter;
 
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.exception.PushDownProbabilityException;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 
 import java.math.BigDecimal;
@@ -34,7 +34,7 @@ public interface BoolExprNode {
      * @param schema 需要的schema
      * @param size 生成的size
      * @return evaluate表达式的布尔值
-     * @throws TouchstoneToolChainException 获取失败
+     * @throws TouchstoneException 获取失败
      */
-    boolean[] evaluate(Schema schema, int size) throws TouchstoneToolChainException;
+    boolean[] evaluate(Schema schema, int size) throws TouchstoneException;
 }

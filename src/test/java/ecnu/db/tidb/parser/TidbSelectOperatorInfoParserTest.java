@@ -10,7 +10,7 @@ import ecnu.db.schema.column.IntColumn;
 import ecnu.db.schema.column.StringColumn;
 import ecnu.db.tidb.TidbAnalyzer;
 import ecnu.db.tidb.TidbInfo;
-import ecnu.db.utils.PrepareConfig;
+import ecnu.db.utils.config.PrepareConfig;
 import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;

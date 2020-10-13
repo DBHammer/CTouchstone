@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mainClass>TouchstoneApp</mainClass>
+        <mainClass>ecnu.db.app.TouchstoneApp</mainClass>
     </properties>
 
     <dependencies>
@@ -201,7 +201,7 @@
                         </goals>
                         <configuration>
                             <!-- mandatory -->
-                            <mainClass>TouchstoneApp</mainClass>
+                            <mainClass>ecnu.db.app.TouchstoneApp</mainClass>
                             <!-- optional -->
                             <bundleJre>false</bundleJre>
                             <generateInstaller>false</generateInstaller>

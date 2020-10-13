@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: touchstone-taskname-clientid
+  labels:
+    jobgroup: touchstone-taskname
+spec:
+  template:
+    metadata:
+      name: jobexample
+      labels:
+        jobgroup: touchstone-taskname
+    spec:
+      containers:
+        - name: touchstone-generator
+          image: dbhammer/touchstone:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: join_table_pv
+              mountPath: "/join_table"
+          env:
+            - name: TABLE_CONFIG
+              valueFrom:
+                - configMapKeyRef:
+                    name: touchstone-taskname-config
+                    key: table_config
+            - name: CONSTRAINT_CHAIN
+              valueFrom:
+                - configMapKeyRef:
+                    name: touchstone-taskname-config
+                    key: constraint_chain
+      restartPolicy: Never

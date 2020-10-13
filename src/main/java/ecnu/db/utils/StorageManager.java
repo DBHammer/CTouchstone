@@ -16,7 +16,7 @@ import ecnu.db.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.constraintchain.chain.ConstraintChainNodeDeserializer;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprNodeDeserializer;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnDeserializer;
@@ -119,30 +119,30 @@ public class StorageManager {
         FileUtils.writeStringToFile(queryPlanFile, content, UTF_8);
     }
 
-    public List<String> loadTableNames() throws TouchstoneToolChainException, IOException {
+    public List<String> loadTableNames() throws TouchstoneException, IOException {
         File tableNameFile = new File(loadDir.getPath(), String.format("tableNames.%s", DUMP_FILE_POSTFIX));
         if (!tableNameFile.isFile()) {
-            throw new TouchstoneToolChainException(String.format("找不到%s", tableNameFile.getAbsolutePath()));
+            throw new TouchstoneException(String.format("找不到%s", tableNameFile.getAbsolutePath()));
         }
         return Arrays.asList(FileUtils.readFileToString(tableNameFile, UTF_8).split(System.lineSeparator()));
     }
 
-    public Map<String, Schema> loadSchemas() throws TouchstoneToolChainException, IOException {
+    public Map<String, Schema> loadSchemas() throws TouchstoneException, IOException {
         Map<String, Schema> schemas;
         File schemaFile = new File(loadDir.getPath(), String.format("schemas.%s", DUMP_FILE_POSTFIX));
         if (!schemaFile.isFile()) {
-            throw new TouchstoneToolChainException(String.format("找不到%s", schemaFile.getAbsolutePath()));
+            throw new TouchstoneException(String.format("找不到%s", schemaFile.getAbsolutePath()));
         }
         schemas = mapper.readValue(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<HashMap<String, Schema>>() {
         });
         return schemas;
     }
 
-    public Map<String, Integer> loadMultiColMap() throws TouchstoneToolChainException, IOException {
+    public Map<String, Integer> loadMultiColMap() throws TouchstoneException, IOException {
         Map<String, Integer> multiColNdvMap;
         File multiColNdvFile = new File(loadDir.getPath(), String.format("multiColNdv.%s", DUMP_FILE_POSTFIX));
         if (!multiColNdvFile.isFile()) {
-            throw new TouchstoneToolChainException(String.format("找不到%s", multiColNdvFile.getAbsolutePath()));
+            throw new TouchstoneException(String.format("找不到%s", multiColNdvFile.getAbsolutePath()));
         }
         multiColNdvMap = mapper.readValue(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<HashMap<String, Integer>>() {
         });
@@ -162,18 +162,18 @@ public class StorageManager {
         return queryPlanMap;
     }
 
-    public void init() throws TouchstoneToolChainException, IOException {
+    public void init() throws TouchstoneException, IOException {
         deleteDirIfExists(dumpDir);
         deleteDirIfExists(retDir);
         deleteDirIfExists(logDir);
         if (!retSqlDir.mkdirs()) {
-            throw new TouchstoneToolChainException("无法创建结果文件夹");
+            throw new TouchstoneException("无法创建结果文件夹");
         }
         if (!logQueryDir.mkdirs()) {
-            throw new TouchstoneToolChainException("无法创建日志文件夹");
+            throw new TouchstoneException("无法创建日志文件夹");
         }
         if (dumpQueryDir != null && !dumpQueryDir.mkdirs()) {
-            throw new TouchstoneToolChainException("无法创建持久化文件夹");
+            throw new TouchstoneException("无法创建持久化文件夹");
         }
     }
 

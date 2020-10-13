@@ -1,6 +1,7 @@
-package ecnu.db.utils;
+package ecnu.db.utils.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;

@@ -2,7 +2,7 @@ package ecnu.db.constraintchain.arithmetic;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.exception.CannotFindColumnException;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 
 /**
@@ -18,11 +18,11 @@ public abstract class ArithmeticNode {
         this.type = type;
     }
 
-    public static void setSize(int size) throws TouchstoneToolChainException {
+    public static void setSize(int size) throws TouchstoneException {
         if (ArithmeticNode.size == -1) {
             ArithmeticNode.size = size;
         } else {
-            throw new TouchstoneToolChainException("不应该重复设置size");
+            throw new TouchstoneException("不应该重复设置size");
         }
     }
 
@@ -33,7 +33,7 @@ public abstract class ArithmeticNode {
      * @return 返回float类型的计算结果
      */
     @JsonIgnore
-    public abstract float[] getVector(Schema schema) throws TouchstoneToolChainException;
+    public abstract float[] getVector(Schema schema) throws TouchstoneException;
 
     public ArithmeticNodeType getType() {
         return this.type;

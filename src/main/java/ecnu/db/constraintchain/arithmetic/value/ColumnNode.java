@@ -5,7 +5,7 @@ import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.exception.CannotFindColumnException;
 import ecnu.db.exception.InstantiateParameterException;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.DecimalColumn;
@@ -34,9 +34,9 @@ public class ColumnNode extends ArithmeticNode {
         super(ArithmeticNodeType.COLUMN);
     }
 
-    public void setMinMax(float min, float max) throws TouchstoneToolChainException {
+    public void setMinMax(float min, float max) throws TouchstoneException {
         if (min > max) {
-            throw new TouchstoneToolChainException("非法的随机生成定义");
+            throw new TouchstoneException("非法的随机生成定义");
         }
         this.min = min;
         this.max = max;
@@ -59,7 +59,7 @@ public class ColumnNode extends ArithmeticNode {
     }
 
     @Override
-    public float[] getVector(Schema schema) throws TouchstoneToolChainException {
+    public float[] getVector(Schema schema) throws TouchstoneException {
         AbstractColumn column = schema.getColumn(columnName);
         if (column instanceof IntColumn) {
             setMinMax((float) ((IntColumn) column).getMin(), (float) ((IntColumn) column).getMax());

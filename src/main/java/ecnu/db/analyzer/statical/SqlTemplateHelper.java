@@ -1,4 +1,4 @@
-package ecnu.db.utils;
+package ecnu.db.analyzer.statical;
 
 import com.alibaba.druid.sql.parser.Lexer;
 import com.alibaba.druid.sql.parser.Token;

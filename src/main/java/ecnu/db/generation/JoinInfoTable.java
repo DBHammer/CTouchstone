@@ -1,6 +1,6 @@
 package ecnu.db.generation;
 
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -49,9 +49,9 @@ public class JoinInfoTable implements Externalizable {
         this.primaryKeySize = primaryKeySize;
     }
 
-    public void mergeJoinInfo(JoinInfoTable toMergeTable) throws TouchstoneToolChainException {
+    public void mergeJoinInfo(JoinInfoTable toMergeTable) throws TouchstoneException {
         if (primaryKeySize != toMergeTable.primaryKeySize) {
-            throw new TouchstoneToolChainException("复合主键的size不同");
+            throw new TouchstoneException("复合主键的size不同");
         }
         toMergeTable.joinInfo.forEach((k, v) -> {
             joinInfo.merge(k, v, (v1, v2) -> {

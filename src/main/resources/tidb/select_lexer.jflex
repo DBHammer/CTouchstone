@@ -11,7 +11,7 @@ import ecnu.db.constraintchain.filter.operation.CompareOperator;
 %class TidbSelectOperatorInfoLexer
 /* throws TouchstoneToolChainException */
 %yylexthrow{
-ecnu.db.exception.TouchstoneToolChainException
+ecnu.db.exception.TouchstoneException
 %yylexthrow}
 
 %{

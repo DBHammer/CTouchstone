@@ -1,4 +1,4 @@
-package ecnu.db;
+package ecnu.db.generation;
 
 
 import com.alibaba.druid.util.JdbcConstants;
@@ -13,16 +13,16 @@ import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.dbconnector.DumpFileConnector;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.exception.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaGenerator;
 import ecnu.db.tidb.TidbAnalyzer;
 import ecnu.db.tidb.TidbInfo;
 import ecnu.db.utils.AbstractDatabaseInfo;
-import ecnu.db.utils.SqlTemplateHelper;
+import ecnu.db.analyzer.statical.SqlTemplateHelper;
 import ecnu.db.utils.StorageManager;
-import ecnu.db.utils.PrepareConfig;
+import ecnu.db.utils.config.PrepareConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +116,7 @@ public class Extractor {
                         logger.info(String.format("%-15s Status:获取成功", queryCanonicalName));
                         query = SqlTemplateHelper.templatizeSql(queryCanonicalName, query, staticalDbType, parameters);
                         storageManager.storeSqlResult(sqlFile, query, staticalDbType);
-                    } catch (TouchstoneToolChainException e) {
+                    } catch (TouchstoneException e) {
                         logger.error(String.format("%-15s Status:获取失败", queryCanonicalName), e);
                         needLog = true;
                         if (queryPlan != null && !queryPlan.isEmpty()) {
@@ -142,7 +142,7 @@ public class Extractor {
 
     private static AbstractAnalyzer getAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector,
                                                 AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas)
-            throws TouchstoneToolChainException, IOException {
+            throws TouchstoneException, IOException {
         Multimap<String, String> tblName2CanonicalTblName = ArrayListMultimap.create();
         for (String canonicalTableName : schemas.keySet()) {
             tblName2CanonicalTblName.put(canonicalTableName.split("\\.")[1], canonicalTableName);

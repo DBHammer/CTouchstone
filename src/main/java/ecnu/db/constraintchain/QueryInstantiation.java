@@ -7,7 +7,7 @@ import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.MultiVarFilterOperation;
 import ecnu.db.constraintchain.filter.operation.RangeFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.utils.CommonUtils;
@@ -22,7 +22,7 @@ import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.*;
  * @author wangqingshuai
  */
 public class QueryInstantiation {
-    public static void compute(List<ConstraintChain> constraintChains, Map<String, Schema> schemas) throws TouchstoneToolChainException {
+    public static void compute(List<ConstraintChain> constraintChains, Map<String, Schema> schemas) throws TouchstoneException {
         //todo 1. 对于数值型的filter, 首先计算单元的filter, 然后计算多值的filter，
         //        对于bet操作，先记录阈值，然后选择合适的区间插入，等值约束也需选择合适的区间
         //        每个filter operation内部保存自己实例化后的结果

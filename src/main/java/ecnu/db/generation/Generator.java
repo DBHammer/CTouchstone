@@ -1,4 +1,4 @@
-package ecnu.db;
+package ecnu.db.generation;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +12,7 @@ import ecnu.db.constraintchain.chain.ConstraintChainReader;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.exception.CircularReferenceException;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.exception.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
@@ -20,7 +20,7 @@ import ecnu.db.schema.column.ColumnDeserializer;
 import ecnu.db.tidb.TidbInfo;
 import ecnu.db.utils.AbstractDatabaseInfo;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.GenerationConfig;
+import ecnu.db.utils.config.GenerationConfig;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +50,7 @@ public class Generator {
     private static final Logger logger = LoggerFactory.getLogger(Generator.class);
     public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
     private static final Pattern pattern = Pattern.compile("'(([0-9]+),[0,1])'");
-    public static void generate(GenerationConfig config) throws IOException, TouchstoneToolChainException, InterruptedException, ExecutionException {
+    public static void generate(GenerationConfig config) throws IOException, TouchstoneException, InterruptedException, ExecutionException {
         ParameterResolver.items.clear();
         Map<String, List<ConstraintChain>> query2chains =
                 ConstraintChainReader.readConstraintChain(new File(config.getInputPath(), "constraintChain.json"));
@@ -74,12 +74,12 @@ public class Generator {
             FileUtils.deleteDirectory(joinInfoPath);
         }
         if (!joinInfoPath.mkdirs()) {
-            throw new TouchstoneToolChainException(String.format("无法创建'%s'的临时存储文件夹", joinInfoPath.getPath()));
+            throw new TouchstoneException(String.format("无法创建'%s'的临时存储文件夹", joinInfoPath.getPath()));
         }
         for (Schema schema : schemas.values()) {
             File schemaDir = new File(config.getJoinInfoPath(), schema.getTableName());
             if (!schemaDir.mkdirs()) {
-                throw new TouchstoneToolChainException(String.format("无法创建'%s'", schemaDir.getPath()));
+                throw new TouchstoneException(String.format("无法创建'%s'", schemaDir.getPath()));
             }
         }
 
@@ -157,7 +157,7 @@ public class Generator {
                         for (Future<Integer> future : futures) {
                             future.get();
                         }
-                    } catch (TouchstoneToolChainException | IOException | InterruptedException | ExecutionException e) {
+                    } catch (TouchstoneException | IOException | InterruptedException | ExecutionException e) {
                         logger.error(String.format("thread %d generate tuple failed", Thread.currentThread().getId()), e);
                         System.exit(1);
                     }

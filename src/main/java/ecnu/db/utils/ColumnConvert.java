@@ -1,6 +1,6 @@
 package ecnu.db.utils;
 
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.column.ColumnType;
 
 import java.util.HashMap;
@@ -26,9 +26,9 @@ public class ColumnConvert {
         dataType2ColumnType.put("bool", BOOL);
     }
 
-    public static ColumnType getColumnType(String dataType) throws TouchstoneToolChainException {
+    public static ColumnType getColumnType(String dataType) throws TouchstoneException {
         if (!dataType2ColumnType.containsKey(dataType)) {
-            throw new TouchstoneToolChainException("数据类型" + dataType + "的匹配模版没有指定");
+            throw new TouchstoneException("数据类型" + dataType + "的匹配模版没有指定");
         }
         return dataType2ColumnType.get(dataType);
     }
