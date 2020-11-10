@@ -6,9 +6,9 @@ import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.arithmetic.value.ColumnNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.exception.CannotFindColumnException;
-import ecnu.db.exception.InstantiateParameterException;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.schema.CannotFindColumnException;
+import ecnu.db.exception.compute.InstantiateParameterException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.utils.CommonUtils;
@@ -130,7 +130,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     /**
      * todo 通过计算树计算概率，暂时不考虑其他FilterOperation对于此操作的阈值影响
      */
-    public void instantiateMultiVarParameter(Schema schema) throws TouchstoneToolChainException {
+    public void instantiateMultiVarParameter(Schema schema) throws TouchstoneException {
         int pos;
         BigDecimal nonNullProbability = BigDecimal.ONE;
         // 假定null都是均匀独立分布的

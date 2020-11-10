@@ -1,6 +1,7 @@
 package ecnu.db.utils;
 
 import com.alibaba.druid.util.JdbcConstants;
+import ecnu.db.analyzer.statical.SqlTemplateHelper;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import org.junit.jupiter.api.Test;

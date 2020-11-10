@@ -14,7 +14,7 @@ import ecnu.db.constraintchain.chain.ConstraintChainReader;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnDeserializer;
@@ -214,7 +214,7 @@ class QueryInstantiationTest {
 
     }
 
-    private Map<String, Double> getRate(Map<String, Schema> schemas, int generateSize, List<ConstraintChain> chains) throws TouchstoneToolChainException {
+    private Map<String, Double> getRate(Map<String, Schema> schemas, int generateSize, List<ConstraintChain> chains) throws TouchstoneException {
         Map<String, Double> ret = new HashMap<>();
         for (ConstraintChain chain : chains) {
             String tableName = chain.getTableName();

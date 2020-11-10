@@ -6,9 +6,9 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
-import ecnu.db.exception.CannotFindColumnException;
-import ecnu.db.exception.CannotFindSchemaException;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.schema.CannotFindColumnException;
+import ecnu.db.exception.schema.CannotFindSchemaException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.generation.JoinInfoTable;
 import ecnu.db.schema.column.*;
 
@@ -22,7 +22,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static ecnu.db.Generator.SINGLE_THREAD_TUPLE_SIZE;
+import static ecnu.db.generation.Generator.SINGLE_THREAD_TUPLE_SIZE;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 /**
@@ -57,9 +57,9 @@ public class Schema {
      * @param metaData 数据库的元信息
      * @param schemas  需要初始化的表
      * @throws SQLException                 无法从数据库的metadata中获取信息
-     * @throws TouchstoneToolChainException 没有找到主键/外键表，或者外键关系冲突
+     * @throws TouchstoneException 没有找到主键/外键表，或者外键关系冲突
      */
-    public static void initFks(DatabaseMetaData metaData, Map<String, Schema> schemas) throws SQLException, TouchstoneToolChainException {
+    public static void initFks(DatabaseMetaData metaData, Map<String, Schema> schemas) throws SQLException, TouchstoneException {
         for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
             String[] canonicalTableName = entry.getKey().split("\\.");
             ResultSet rs = metaData.getImportedKeys(null, canonicalTableName[0], canonicalTableName[1]);
@@ -91,7 +91,7 @@ public class Schema {
         this.joinTag = joinTag;
     }
 
-    public void addForeignKey(String localColumnName, String referencingTable, String referencingInfo) throws TouchstoneToolChainException {
+    public void addForeignKey(String localColumnName, String referencingTable, String referencingInfo) throws TouchstoneException {
         String[] columnNames = localColumnName.split(",");
         String[] refColumnNames = referencingInfo.split(",");
         if (foreignKeys == null) {
@@ -100,7 +100,7 @@ public class Schema {
         for (int i = 0; i < columnNames.length; i++) {
             if (foreignKeys.containsKey(columnNames[i])) {
                 if (!(referencingTable + "." + refColumnNames[i]).equals(foreignKeys.get(columnNames[i]))) {
-                    throw new TouchstoneToolChainException("冲突的主外键连接");
+                    throw new TouchstoneException("冲突的主外键连接");
                 } else {
                     return;
                 }
@@ -159,7 +159,7 @@ public class Schema {
         return primaryKeys;
     }
 
-    public void setPrimaryKeys(String primaryKeys) throws TouchstoneToolChainException {
+    public void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
         if (this.primaryKeys == null) {
             this.primaryKeys = primaryKeys;
         } else {
@@ -168,10 +168,10 @@ public class Schema {
             if (keys.size() == newKeys.size()) {
                 keys.removeAll(newKeys);
                 if (keys.size() > 0) {
-                    throw new TouchstoneToolChainException("query中使用了多列主键的部分主键");
+                    throw new TouchstoneException("query中使用了多列主键的部分主键");
                 }
             } else {
-                throw new TouchstoneToolChainException("query中使用了多列主键的部分主键");
+                throw new TouchstoneException("query中使用了多列主键的部分主键");
             }
         }
     }
@@ -207,9 +207,9 @@ public class Schema {
      * @param schemas 所有的表的map
      * @param directory joinInfoTable文件存放路径
      * @param neededThreads 每个joinInfoTable至少需要的thread数量
-     * @throws TouchstoneToolChainException 生成失败
+     * @throws TouchstoneException 生成失败
      */
-    public void prepareTuples(int size, Collection<ConstraintChain> chains, Map<String, Schema> schemas, String directory, int neededThreads) throws TouchstoneToolChainException, IOException, InterruptedException {
+    public void prepareTuples(int size, Collection<ConstraintChain> chains, Map<String, Schema> schemas, String directory, int neededThreads) throws TouchstoneException, IOException, InterruptedException {
         if (primaryKeys != null) { // primary keys is null, means no table will depend on this tables' join info table, thus it is ignored
             joinInfoTable = new JoinInfoTable(primaryKeys.split(",").length);
         }

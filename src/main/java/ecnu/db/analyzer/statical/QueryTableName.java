@@ -1,10 +1,11 @@
 package ecnu.db.analyzer.statical;
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.utils.CommonUtils;
 
 import java.util.HashSet;
@@ -14,7 +15,7 @@ import java.util.List;
  * @author wangqingshuai
  */
 public class QueryTableName {
-    public static HashSet<String> getTableName(String filePath, String sql, String dbType, boolean isCrossMultiDatabase) throws TouchstoneToolChainException {
+    public static HashSet<String> getTableName(String filePath, String sql, DbType dbType, boolean isCrossMultiDatabase) throws TouchstoneException {
         List<SQLStatement> stmtList = SQLUtils.parseStatements(sql, dbType);
         SQLStatement stmt = stmtList.get(0);
 
@@ -23,7 +24,7 @@ public class QueryTableName {
         HashSet<String> tableName = new HashSet<>();
         for (TableStat.Name name : statVisitor.getTables().keySet()) {
             if (!CommonUtils.isCanonicalTableName(name.getName()) && isCrossMultiDatabase) {
-                throw new TouchstoneToolChainException(
+                throw new TouchstoneException(
                         String.format("'%s'文件的'%s'query中跨数据库的表'%s'形式必须为'<database>.<table>'",
                                 filePath, sql, name.getName()));
             }

@@ -10,7 +10,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
-import ecnu.db.exception.InstantiateParameterException;
+import ecnu.db.exception.compute.InstantiateParameterException;
 import ecnu.db.schema.column.bucket.EqBucket;
 import ecnu.db.schema.column.bucket.NonEqBucket;
 import org.apache.commons.lang3.tuple.Pair;

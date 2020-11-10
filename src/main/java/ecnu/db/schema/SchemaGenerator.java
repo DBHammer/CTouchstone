@@ -1,7 +1,7 @@
 package ecnu.db.schema;
 
 import com.google.common.collect.Lists;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.column.*;
 import ecnu.db.utils.ColumnConvert;
 
@@ -36,7 +36,7 @@ public class SchemaGenerator {
         return sqls;
     }
 
-    public Schema generateSchema(String tableName, String sql) throws TouchstoneToolChainException {
+    public Schema generateSchema(String tableName, String sql) throws TouchstoneException {
         List<String> columnSqls = getColumnSql(sql);
         Map<String, AbstractColumn> columns = new HashMap<>(columnSqls.size());
         for (String columnSql : columnSqls) {
@@ -69,7 +69,7 @@ public class SchemaGenerator {
                     columns.put(columnName, column);
                     break;
                 default:
-                    throw new TouchstoneToolChainException("没有实现的类型转换");
+                    throw new TouchstoneException("没有实现的类型转换");
             }
         }
         return new Schema(tableName, columns);
@@ -81,9 +81,9 @@ public class SchemaGenerator {
      * @param tableName 需要查询的表名
      * @param columns   需要查询的col
      * @return SQL
-     * @throws TouchstoneToolChainException 获取失败
+     * @throws TouchstoneException 获取失败
      */
-    public String getColumnDistributionSql(String tableName, Collection<AbstractColumn> columns) throws TouchstoneToolChainException {
+    public String getColumnDistributionSql(String tableName, Collection<AbstractColumn> columns) throws TouchstoneException {
         StringBuilder sql = new StringBuilder();
         for (AbstractColumn column : columns) {
             switch (column.getColumnType()) {
@@ -106,7 +106,7 @@ public class SchemaGenerator {
                 case BOOL:
                     break;
                 default:
-                    throw new TouchstoneToolChainException("未匹配到的类型");
+                    throw new TouchstoneException("未匹配到的类型");
             }
         }
         return sql.substring(0, sql.length() - 1);
@@ -117,9 +117,9 @@ public class SchemaGenerator {
      *
      * @param columns   需要设置的col
      * @param sqlResult 有关的SQL结果(由AbstractDbConnector.getDataRange返回)
-     * @throws TouchstoneToolChainException 设置失败
+     * @throws TouchstoneException 设置失败
      */
-    public void setDataRangeBySqlResult(Collection<AbstractColumn> columns, String[] sqlResult) throws TouchstoneToolChainException {
+    public void setDataRangeBySqlResult(Collection<AbstractColumn> columns, String[] sqlResult) throws TouchstoneException {
         int index = 0;
         for (AbstractColumn column : columns) {
             switch (column.getColumnType()) {
@@ -148,7 +148,7 @@ public class SchemaGenerator {
                 case BOOL:
                     break;
                 default:
-                    throw new TouchstoneToolChainException("未匹配到的类型");
+                    throw new TouchstoneException("未匹配到的类型");
             }
         }
     }

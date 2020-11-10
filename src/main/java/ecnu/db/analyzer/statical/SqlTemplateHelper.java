@@ -1,5 +1,6 @@
-package ecnu.db.utils;
+package ecnu.db.analyzer.statical;
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.parser.Lexer;
 import com.alibaba.druid.sql.parser.Token;
 import com.google.common.collect.ArrayListMultimap;
@@ -27,7 +28,7 @@ public class SqlTemplateHelper {
      * @param parameters         需要模板化的参数
      * @return 模板化的SQL语句
      */
-    public static String templatizeSql(String queryCanonicalName, String query, String dbType, List<Parameter> parameters) {
+    public static String templatizeSql(String queryCanonicalName, String query, DbType dbType, List<Parameter> parameters) {
         Lexer lexer = new Lexer(query, null, dbType);
         Multimap<String, Pair<Integer, Integer>> literalMap = ArrayListMultimap.create();
         int lastPos = 0, pos;

@@ -2,8 +2,8 @@ package ecnu.db.constraintchain.chain;
 
 import ecnu.db.constraintchain.filter.logical.AndNode;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.exception.PushDownProbabilityException;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.compute.PushDownProbabilityException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 
 import java.math.BigDecimal;
@@ -62,7 +62,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         return String.format("{root:%s,probability:%s}", root.toString(), probability);
     }
 
-    public boolean[] evaluate(Schema schema, int size) throws TouchstoneToolChainException {
+    public boolean[] evaluate(Schema schema, int size) throws TouchstoneException {
         return root.evaluate(schema, size);
     }
 }

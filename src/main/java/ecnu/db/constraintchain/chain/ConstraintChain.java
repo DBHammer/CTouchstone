@@ -2,7 +2,7 @@ package ecnu.db.constraintchain.chain;
 
 import com.google.common.collect.Table;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 
 import java.util.ArrayList;
@@ -66,9 +66,9 @@ public class ConstraintChain {
      * @param size 需要的size
      * @param pkBitMap pkTag -> bitmaps
      * @param fkBitMap ref_col+local_col -> bitmaps
-     * @throws TouchstoneToolChainException 计算失败
+     * @throws TouchstoneException 计算失败
      */
-    public void evaluate(Schema schema, int size, Map<Integer, boolean[]> pkBitMap, Table<String, ConstraintChainFkJoinNode, boolean[]> fkBitMap) throws TouchstoneToolChainException {
+    public void evaluate(Schema schema, int size, Map<Integer, boolean[]> pkBitMap, Table<String, ConstraintChainFkJoinNode, boolean[]> fkBitMap) throws TouchstoneException {
         boolean[] flag = new boolean[size];
         Arrays.fill(flag, true);
         ThreadLocalRandom rand = ThreadLocalRandom.current();

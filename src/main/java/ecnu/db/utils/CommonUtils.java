@@ -115,30 +115,6 @@ public class CommonUtils {
         }
     }
 
-    public static double calcuate(double[] ret) {
-        double sum = 0;
-        for (double v : ret) {
-            sum += v;
-        }
-        return sum / ret.length;
-    }
-
-    public static double calcuate(int[] ret) {
-        double sum = 0;
-        for (int value : ret) {
-            sum += value;
-        }
-        return sum / ret.length;
-    }
-
-    public static double calcuate(boolean[] ret) {
-        double sum = 0;
-        for (boolean b : ret) {
-            sum += (b ? 1 : 0);
-        }
-        return sum / ret.length;
-    }
-
     public static double min(int[] ret) {
         double min = ret[0];
         for (int value : ret) {

@@ -2,7 +2,7 @@ package ecnu.db.tidb.parser;
 
 import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.constraintchain.filter.logical.AndNode;
-import ecnu.db.exception.UnsupportedDBTypeException;
+import ecnu.db.exception.analyze.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.DecimalColumn;
@@ -10,7 +10,7 @@ import ecnu.db.schema.column.IntColumn;
 import ecnu.db.schema.column.StringColumn;
 import ecnu.db.tidb.TidbAnalyzer;
 import ecnu.db.tidb.TidbInfo;
-import ecnu.db.utils.PrepareConfig;
+import ecnu.db.utils.config.PrepareConfig;
 import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;

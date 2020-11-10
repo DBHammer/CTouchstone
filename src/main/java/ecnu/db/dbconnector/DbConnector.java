@@ -1,12 +1,13 @@
 package ecnu.db.dbconnector;
 
+import com.alibaba.druid.DbType;
 import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.analyzer.statical.QueryTableName;
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaGenerator;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.DatabaseConnectorConfig;
+import ecnu.db.utils.config.DatabaseConnectorConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ public class DbConnector implements DatabaseConnectorInterface {
     // 数据库连接
     protected Statement stmt;
 
-    public DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig) throws TouchstoneToolChainException {
+    public DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig) throws TouchstoneException {
         String url;
         if (!config.isCrossMultiDatabase()) {
             url = String.format("jdbc:%s://%s:%s/%s?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(), config.getDatabaseName(), databaseConnectionConfig);
@@ -45,7 +46,7 @@ public class DbConnector implements DatabaseConnectorInterface {
             stmt = DriverManager.getConnection(url, user, pass).createStatement();
             databaseMetaData = DriverManager.getConnection(url, user, pass).getMetaData();
         } catch (SQLException e) {
-            throw new TouchstoneToolChainException(String.format("无法建立数据库连接,连接信息为: '%s'", url));
+            throw new TouchstoneException(String.format("无法建立数据库连接,连接信息为: '%s'", url));
         }
     }
 
@@ -106,10 +107,10 @@ public class DbConnector implements DatabaseConnectorInterface {
      * @param dbType               数据库类型
      * @return 表名
      * @throws IOException                  从SQL文件中获取Query失败
-     * @throws TouchstoneToolChainException 从Query中获取tableNames失败或不支持的数据库类型
+     * @throws TouchstoneException 从Query中获取tableNames失败或不支持的数据库类型
      */
-    public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files, String dbType)
-            throws IOException, TouchstoneToolChainException {
+    public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files, DbType dbType)
+            throws IOException, TouchstoneException {
         List<String> tableNames = new ArrayList<>();
         for (File sqlFile : files) {
             List<String> queries = QueryReader.getQueriesFromFile(sqlFile.getPath(), dbType);
@@ -131,10 +132,10 @@ public class DbConnector implements DatabaseConnectorInterface {
      * @param dbSchemaGenerator  Schema生成器
      * @param canonicalTableName 标准表名
      * @return Schema
-     * @throws TouchstoneToolChainException 生成Schema失败，设置col分布失败或者设置col的cardinality和average length等信息失败
+     * @throws TouchstoneException 生成Schema失败，设置col分布失败或者设置col的cardinality和average length等信息失败
      * @throws SQLException                 获取表的DDL失败或者获取col分布失败
      */
-    public Schema fetchSchema(SchemaGenerator dbSchemaGenerator, String canonicalTableName) throws TouchstoneToolChainException, SQLException {
+    public Schema fetchSchema(SchemaGenerator dbSchemaGenerator, String canonicalTableName) throws TouchstoneException, SQLException {
         String tableMetadata = getTableMetadata(canonicalTableName);
         Schema schema = dbSchemaGenerator.generateSchema(canonicalTableName, tableMetadata);
         String distributionSql = dbSchemaGenerator.getColumnDistributionSql(schema.getTableName(), schema.getColumns().values());

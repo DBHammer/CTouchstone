@@ -1,6 +1,6 @@
-package ecnu.db.utils;
+package ecnu.db.generation;
 
-import ecnu.db.exception.TouchstoneToolChainException;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 
 import java.util.*;
@@ -16,7 +16,7 @@ public class Preprocessor {
      * @param schemas 输入的乱序的表结构
      * @return 按照拓扑序排序的表结构
      */
-    public static List<Schema> getTableOrder(Map<String, Schema> schemas) throws TouchstoneToolChainException {
+    public static List<Schema> getTableOrder(Map<String, Schema> schemas) throws TouchstoneException {
 
         List<Schema> tableOrder = new ArrayList<>();
 
@@ -52,7 +52,7 @@ public class Preprocessor {
                 break;
             }
             if (tableOrder.size() == lastTableOrderSize) { //如果本轮循环中没有加入新的表
-                throw new TouchstoneToolChainException("该数据库表中外键约束不完整");
+                throw new TouchstoneException("该数据库表中外键约束不完整");
             }
             iterator = tableDependencyInfo.entrySet().iterator();
             lastTableOrderSize = tableOrder.size();

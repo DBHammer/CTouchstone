@@ -8,16 +8,16 @@ import ecnu.db.analyzer.online.ExecutionNode.ExecutionNodeType;
 import ecnu.db.analyzer.online.RawNode;
 import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
-import ecnu.db.exception.TouchstoneToolChainException;
-import ecnu.db.exception.UnsupportedDBTypeException;
-import ecnu.db.exception.UnsupportedJoin;
-import ecnu.db.exception.UnsupportedSelect;
+import ecnu.db.exception.TouchstoneException;
+import ecnu.db.exception.analyze.UnsupportedDBTypeException;
+import ecnu.db.exception.analyze.UnsupportedJoin;
+import ecnu.db.exception.analyze.UnsupportedSelect;
 import ecnu.db.schema.Schema;
 import ecnu.db.tidb.parser.TidbSelectOperatorInfoLexer;
 import ecnu.db.tidb.parser.TidbSelectOperatorInfoParser;
 import ecnu.db.utils.AbstractDatabaseInfo;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.PrepareConfig;
+import ecnu.db.utils.config.PrepareConfig;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -53,7 +53,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    public ExecutionNode getExecutionTree(List<String[]> queryPlan) throws TouchstoneToolChainException {
+    public ExecutionNode getExecutionTree(List<String[]> queryPlan) throws TouchstoneException {
         RawNode rawNodeRoot = buildRawNodeTree(queryPlan);
         return buildExecutionTree(rawNodeRoot);
     }
@@ -93,9 +93,9 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      *
      * @param rawNode 需要处理的query plan树
      * @return 处理好的树
-     * @throws TouchstoneToolChainException 构建查询树失败
+     * @throws TouchstoneException 构建查询树失败
      */
-    private ExecutionNode buildExecutionTree(RawNode rawNode) throws TouchstoneToolChainException {
+    private ExecutionNode buildExecutionTree(RawNode rawNode) throws TouchstoneException {
         if (rawNode == null) {
             return null;
         }
@@ -163,18 +163,18 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 node = buildExecutionTree(rawNode.left);
             }
         } else {
-            throw new TouchstoneToolChainException("未支持的查询树Node，类型为" + nodeType);
+            throw new TouchstoneException("未支持的查询树Node，类型为" + nodeType);
         }
         return node;
     }
 
-    private String getCanonicalTblName(String tableName) throws TouchstoneToolChainException {
+    private String getCanonicalTblName(String tableName) throws TouchstoneException {
         if (CommonUtils.isCanonicalTableName(tableName)) {
             return tableName;
         }
         List<String> canonicalTblNames = new ArrayList<>(tblName2CanonicalTblName.get(tableName));
         if (canonicalTblNames.size() > 1) {
-            throw new TouchstoneToolChainException(String.format("'%s'的表名有冲突，请使用别名",
+            throw new TouchstoneException(String.format("'%s'的表名有冲突，请使用别名",
                     canonicalTblNames
                             .stream()
                             .map((name) -> String.format("%s", name))
@@ -189,7 +189,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      * @param queryPlan explain analyze的结果
      * @return 生成好的树
      */
-    private RawNode buildRawNodeTree(List<String[]> queryPlan) throws TouchstoneToolChainException {
+    private RawNode buildRawNodeTree(List<String[]> queryPlan) throws TouchstoneException {
         Deque<Pair<Integer, RawNode>> pStack = new ArrayDeque<>();
         List<List<String>> matches = matchPattern(PLAN_ID, queryPlan.get(0)[0]);
         String nodeType = matches.get(0).get(0).split("_")[0];
@@ -219,12 +219,12 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 pStack.pop(); // pop直到找到同一个层级的节点
             }
             if (pStack.isEmpty()) {
-                throw new TouchstoneToolChainException("pStack不应为空");
+                throw new TouchstoneException("pStack不应为空");
             }
             if (pStack.peek().getKey().equals(level)) {
                 pStack.pop();
                 if (pStack.isEmpty()) {
-                    throw new TouchstoneToolChainException("pStack不应为空");
+                    throw new TouchstoneException("pStack不应为空");
                 }
                 pStack.peek().getValue().right = rawNode;
             } else {
@@ -240,9 +240,9 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      *
      * @param data 需要处理的数据
      * @return 返回plan_id, operator_info, execution_info
-     * @throws TouchstoneToolChainException 不支持的版本
+     * @throws TouchstoneException 不支持的版本
      */
-    private String[] extractSubQueryPlanInfo(String[] data) throws TouchstoneToolChainException {
+    private String[] extractSubQueryPlanInfo(String[] data) throws TouchstoneException {
         switch (analyzerSupportedDatabaseVersion) {
             case TiDB3:
                 return data;
@@ -263,12 +263,12 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      *
      * @param joinInfo join字符串
      * @return 长度为4的字符串数组，0，1为join info左侧的表名和列名，2，3为join右侧的表明和列名
-     * @throws TouchstoneToolChainException 无法分析的join条件
+     * @throws TouchstoneException 无法分析的join条件
      */
     @Override
-    public String[] analyzeJoinInfo(String joinInfo) throws TouchstoneToolChainException {
+    public String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException {
         if (joinInfo.contains("other cond:")) {
-            throw new TouchstoneToolChainException("join中包含其他条件,暂不支持");
+            throw new TouchstoneException("join中包含其他条件,暂不支持");
         }
         if (matchPattern(INNER_JOIN, joinInfo).isEmpty()) {
             throw new UnsupportedJoin(joinInfo);
@@ -293,7 +293,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                         currRightTable = String.format("%s.%s", rightJoinInfos[0], rightJoinInfos[1]),
                         currRightCol = rightJoinInfos[2];
                 if (!leftTable.equals(currLeftTable) || !rightTable.equals(currRightTable)) {
-                    throw new TouchstoneToolChainException("join中包含多个表的约束,暂不支持");
+                    throw new TouchstoneException("join中包含多个表的约束,暂不支持");
                 }
                 leftCols.add(currLeftCol);
                 rightCols.add(currRightCol);
@@ -311,7 +311,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 result[0] = String.join(".", Arrays.asList(innerInfos[0], innerInfos[1]));
                 result[1] = innerInfos[2];
             } else {
-                throw new TouchstoneToolChainException("无法匹配的join格式" + joinInfo);
+                throw new TouchstoneException("无法匹配的join格式" + joinInfo);
             }
             Matcher outerInfo = INNER_JOIN_OUTER_KEY.matcher(joinInfo);
             if (outerInfo.find()) {
@@ -319,7 +319,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 result[2] = String.join(".", Arrays.asList(outerInfos[0], outerInfos[1]));
                 result[3] = outerInfos[2];
             } else {
-                throw new TouchstoneToolChainException("无法匹配的join格式" + joinInfo);
+                throw new TouchstoneException("无法匹配的join格式" + joinInfo);
             }
         }
         if (result[1].contains(")")) {
