@@ -46,17 +46,17 @@ parser code {:
     String[] names = canonicalColumnName.split("\\.");
     return String.format("%s.%s", names[0], names[1]);
   }
-  private void verifyTableName(String tableName) throws TouchstoneToolChainException {
+  private void verifyTableName(String tableName) throws TouchstoneException {
     if (this.tableName == null) {
       this.tableName = tableName;
     } else if (!this.tableName.equals(tableName)) {
-      throw new TouchstoneToolChainException("select表名不一致");
+      throw new TouchstoneException("select表名不一致");
     }
   }
-  private float getColumnNullProbability(String tableName, String canonicalColumnName) throws TouchstoneToolChainException {
+  private float getColumnNullProbability(String tableName, String canonicalColumnName) throws TouchstoneException {
     return analyzer.getSchema(tableName).getColumn(canonicalColumnName.split("\\.")[2]).getNullPercentage();
   }
-  private boolean isColumnNeedQuote(String canonicalColumnName) throws TouchstoneToolChainException {
+  private boolean isColumnNeedQuote(String canonicalColumnName) throws TouchstoneException {
     boolean needQuote = false;
     ColumnType columnType = analyzer.getSchema(this.tableName).getColumn(canonicalColumnName.split("\\.")[2]).getColumnType();
     if (columnType == ColumnType.DATETIME || columnType == ColumnType.VARCHAR) {
@@ -64,7 +64,7 @@ parser code {:
     }
     return needQuote;
   }
-  private boolean isColumnDate(String canonicalColumnName) throws TouchstoneToolChainException {
+  private boolean isColumnDate(String canonicalColumnName) throws TouchstoneException {
     ColumnType columnType = analyzer.getSchema(this.tableName).getColumn(canonicalColumnName.split("\\.")[2]).getColumnType();
     return columnType == ColumnType.DATETIME;
   }

@@ -1,5 +1,6 @@
-package ecnu.db.exception;
+package ecnu.db.exception.analyze;
 
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 
 /**

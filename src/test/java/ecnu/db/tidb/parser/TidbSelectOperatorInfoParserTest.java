@@ -2,7 +2,7 @@ package ecnu.db.tidb.parser;
 
 import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.constraintchain.filter.logical.AndNode;
-import ecnu.db.exception.UnsupportedDBTypeException;
+import ecnu.db.exception.analyze.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.DecimalColumn;

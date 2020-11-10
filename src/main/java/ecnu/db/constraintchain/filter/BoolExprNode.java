@@ -1,7 +1,7 @@
 package ecnu.db.constraintchain.filter;
 
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.exception.PushDownProbabilityException;
+import ecnu.db.exception.compute.PushDownProbabilityException;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 

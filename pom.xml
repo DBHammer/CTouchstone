@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mainClass>ecnu.db.app.TouchstoneApp</mainClass>
+        <mainClass>app.TouchstoneApp</mainClass>
     </properties>
 
     <dependencies>

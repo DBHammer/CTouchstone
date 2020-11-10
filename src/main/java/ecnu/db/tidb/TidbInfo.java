@@ -1,7 +1,7 @@
 package ecnu.db.tidb;
 
 import com.alibaba.druid.util.JdbcConstants;
-import ecnu.db.exception.UnsupportedDBTypeException;
+import ecnu.db.exception.analyze.UnsupportedDBTypeException;
 import ecnu.db.utils.AbstractDatabaseInfo;
 import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 

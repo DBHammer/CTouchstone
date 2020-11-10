@@ -14,7 +14,7 @@ import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.dbconnector.DumpFileConnector;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.UnsupportedDBTypeException;
+import ecnu.db.exception.analyze.UnsupportedDBTypeException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaGenerator;
 import ecnu.db.tidb.TidbAnalyzer;

@@ -2,7 +2,7 @@ package ecnu.db.constraintchain.arithmetic.operator;
 
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
-import ecnu.db.exception.CannotFindColumnException;
+import ecnu.db.exception.schema.CannotFindColumnException;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 
