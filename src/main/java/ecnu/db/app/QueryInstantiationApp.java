@@ -27,7 +27,7 @@ class QueryInstantiationApp implements Callable<Integer> {
     private String databasePwd;
     @CommandLine.Option(names = {"--database_name"}, description = "database name")
     private String databaseName;
-    @CommandLine.Option(names = {"--cross_multibase"}, negatable = true, description = "is cross multi-database")
+    @CommandLine.Option(names = {"--cross_multibase"}, defaultValue = "false", negatable = true, description = "is cross multi-database")
     private Boolean crossMultiDatabase;
     @CommandLine.Option(names = {"-o", "--output"}, description = "output directory")
     private String resultDirectory;

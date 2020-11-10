@@ -42,6 +42,9 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     private static final Pattern PLAN_ID = Pattern.compile("([a-zA-Z]+_[0-9]+)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("eq\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+), ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private static final Pattern INNER_JOIN = Pattern.compile("inner join");
+    private static final Pattern LEFT_RANGE_BOUND = Pattern.compile("(\\[|\\()([0-9.]+|\\+inf|-inf)");
+    private static final Pattern RIGHT_RANGE_BOUND = Pattern.compile("([0-9.]+|\\+inf|-inf)(]|\\))");
+    private static final Pattern INDEX_COLUMN = Pattern.compile("index:.*\\((.*)\\)");
     private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(new TidbSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
 
 
@@ -108,7 +111,35 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         if (nodeTypeRef.isTableScanNode(nodeType)) {
             String tableName = extractTableName(rawNode.operatorInfo);
             String canonicalTableName = getCanonicalTblName(tableName);
-            return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rawNode.rowCount, "table:" + canonicalTableName);
+            Schema schema = getSchema(canonicalTableName);
+            int tableSize = schema.getTableSize();
+            if (nodeTypeRef.isRangeScanNode(nodeType) && tableSize != rawNode.rowCount) {
+                List<List<String>> leftRangeMatches = matchPattern(LEFT_RANGE_BOUND, rawNode.operatorInfo), rightRangeMatches = matchPattern(RIGHT_RANGE_BOUND, rawNode.operatorInfo);
+                if (leftRangeMatches.size() != 1 || rightRangeMatches.size() != 1 || leftRangeMatches.get(0).size() != 3 || rightRangeMatches.get(0).size() != 3) {
+                    throw new TouchstoneException(String.format("暂不支持此类型的range scan, operator info:'%s'", rawNode.operatorInfo));
+                }
+                String leftOperator = "(".equals(leftRangeMatches.get(0).get(1)) ? "gt" : "ge", leftOperand = leftRangeMatches.get(0).get(2);
+                String rightOperator = ")".equals(rightRangeMatches.get(0).get(1)) ? "lt" : "le", rightOperand = rightRangeMatches.get(0).get(1);
+                List<List<String>> indexMatches = matchPattern(INDEX_COLUMN, rawNode.operatorInfo);
+                String columnName = schema.getPrimaryKeys();
+                if (indexMatches.size() != 0) {
+                    columnName = indexMatches.get(0).get(1);
+                }
+                if (leftOperand.contains("inf")) {
+                    return new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount,
+                            String.format("%s(%s.%s, %s)", rightOperator, canonicalTableName, columnName, rightOperand));
+                } else if (rightOperand.contains("inf")) {
+                    return new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount,
+                            String.format("%s(%s.%s, %s)", leftOperator, canonicalTableName, columnName, leftOperand));
+                } else {
+                    return new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount,
+                            String.format("and(%s(%s.%s, %s), %s(%s.%s, %s))",
+                                    leftOperator, canonicalTableName, columnName, leftOperand,
+                                    rightOperator, canonicalTableName, columnName, rightOperand));
+                }
+            } else {
+                return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rawNode.rowCount, "table:" + canonicalTableName);
+            }
         } else if (nodeTypeRef.isFilterNode(nodeType)) {
             node = new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount, rawNode.operatorInfo);
             // 跳过底部的TableScan
