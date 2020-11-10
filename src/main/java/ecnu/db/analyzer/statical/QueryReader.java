@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.statical;
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 
@@ -13,7 +14,7 @@ import java.util.List;
  * @author qingshuai.wang
  */
 public class QueryReader {
-    public static List<String> getQueriesFromFile(String file, String dbType) throws IOException {
+    public static List<String> getQueriesFromFile(String file, DbType dbType) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         StringBuilder fileContents = new StringBuilder();
         String line;

@@ -1,5 +1,6 @@
 package ecnu.db.dbconnector;
 
+import com.alibaba.druid.DbType;
 import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.analyzer.statical.QueryTableName;
 import ecnu.db.exception.TouchstoneException;
@@ -108,7 +109,7 @@ public class DbConnector implements DatabaseConnectorInterface {
      * @throws IOException                  从SQL文件中获取Query失败
      * @throws TouchstoneException 从Query中获取tableNames失败或不支持的数据库类型
      */
-    public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files, String dbType)
+    public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files, DbType dbType)
             throws IOException, TouchstoneException {
         List<String> tableNames = new ArrayList<>();
         for (File sqlFile : files) {

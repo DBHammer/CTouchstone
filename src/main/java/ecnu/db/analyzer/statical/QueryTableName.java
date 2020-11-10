@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.statical;
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
@@ -14,7 +15,7 @@ import java.util.List;
  * @author wangqingshuai
  */
 public class QueryTableName {
-    public static HashSet<String> getTableName(String filePath, String sql, String dbType, boolean isCrossMultiDatabase) throws TouchstoneException {
+    public static HashSet<String> getTableName(String filePath, String sql, DbType dbType, boolean isCrossMultiDatabase) throws TouchstoneException {
         List<SQLStatement> stmtList = SQLUtils.parseStatements(sql, dbType);
         SQLStatement stmt = stmtList.get(0);
 

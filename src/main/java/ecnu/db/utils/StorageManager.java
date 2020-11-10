@@ -1,5 +1,6 @@
 package ecnu.db.utils;
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -67,7 +68,7 @@ public class StorageManager {
         logQueryDir = Optional.of(logPath).map((dir) -> (new File(dir, "query"))).orElse(null);
     }
 
-    public void storeSqlResult(File sqlFile, String sql, String dbType) throws IOException {
+    public void storeSqlResult(File sqlFile, String sql, DbType dbType) throws IOException {
         String content = SQLUtils.format(sql, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
         FileUtils.writeStringToFile(new File(retSqlDir.getPath(), sqlFile.getName()), content, UTF_8);
     }

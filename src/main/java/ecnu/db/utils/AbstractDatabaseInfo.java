@@ -1,5 +1,6 @@
 package ecnu.db.utils;
 
+import com.alibaba.druid.DbType;
 import ecnu.db.exception.analyze.UnsupportedDBTypeException;
 
 import java.util.Set;
@@ -27,7 +28,7 @@ public abstract class AbstractDatabaseInfo {
      *
      * @return 静态解析器使用的数据库类型
      */
-    public abstract String getStaticalDbVersion();
+    public abstract DbType getStaticalDbVersion();
 
     /**
      * 该Analyzer支持的数据库版本

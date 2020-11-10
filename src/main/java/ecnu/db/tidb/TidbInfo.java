@@ -1,5 +1,6 @@
 package ecnu.db.tidb;
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.util.JdbcConstants;
 import ecnu.db.exception.analyze.UnsupportedDBTypeException;
 import ecnu.db.utils.AbstractDatabaseInfo;
@@ -33,7 +34,7 @@ public class TidbInfo extends AbstractDatabaseInfo {
     }
 
     @Override
-    public String getStaticalDbVersion() {
+    public DbType getStaticalDbVersion() {
         return JdbcConstants.MYSQL;
     }
 

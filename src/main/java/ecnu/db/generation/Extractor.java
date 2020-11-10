@@ -1,6 +1,7 @@
 package ecnu.db.generation;
 
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.util.JdbcConstants;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -91,7 +92,7 @@ public class Extractor {
         }
         AbstractAnalyzer queryAnalyzer = getAnalyzer(config, connector, databaseInfo, schemas);
         Map<String, List<ConstraintChain>> queryInfos = new HashMap<>();
-        String staticalDbType = databaseInfo.getStaticalDbVersion();
+        DbType staticalDbType = databaseInfo.getStaticalDbVersion();
         boolean needLog = false;
         logger.info("开始获取查询计划");
         ArithmeticNode.setSize(config.getSampleSize());

@@ -1,5 +1,6 @@
 package ecnu.db.generation;
 
+import com.alibaba.druid.DbType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -88,7 +89,7 @@ public class Generator {
 
         Map<Integer, Parameter> id2Parameter = getId2Parameter(query2chains);
 
-        String staticalDbType = databaseInfo.getStaticalDbVersion();
+        DbType staticalDbType = databaseInfo.getStaticalDbVersion();
         for (File sqlFile : Objects.requireNonNull(new File(config.getInputPath(), "sql").listFiles())) {
             if (sqlFile.isFile() && sqlFile.getName().endsWith(".sql")) {
                 List<String> queries = QueryReader.getQueriesFromFile(sqlFile.getPath(), staticalDbType);

@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.statical;
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
@@ -18,7 +19,7 @@ import java.util.Map;
  */
 public class QueryAliasParser {
 
-    public Map<String, String> getTableAlias(boolean isCrossMultiDatabase, String databaseName, String sql, String dbType) throws TouchstoneException {
+    public Map<String, String> getTableAlias(boolean isCrossMultiDatabase, String databaseName, String sql, DbType dbType) throws TouchstoneException {
         ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor(isCrossMultiDatabase, databaseName);
         SQLStatement sqlStatement = SQLUtils.parseStatements(sql, dbType).get(0);
         if (!(sqlStatement instanceof SQLSelectStatement)) {
