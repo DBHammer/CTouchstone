@@ -52,10 +52,10 @@ class QueryInstantiationApp implements Callable<Integer> {
         if (configPath != null) {
             config = PrepareConfig.readConfig(configPath);
         }
-        if (databaseIp != null) {
+        if (databaseIp != null && config.getDatabaseIp() == null) {
             config.setDatabaseIp(databaseIp);
         }
-        if (databasePort != null) {
+        if (databasePort != null && config.getDatabasePort() == null) {
             config.setDatabasePort(databasePort);
         }
         if (databaseUser != null) {
@@ -67,7 +67,7 @@ class QueryInstantiationApp implements Callable<Integer> {
         if (databaseName != null) {
             config.setDatabaseName(databaseName);
         }
-        if (crossMultiDatabase != null) {
+        if (crossMultiDatabase != null && config.isCrossMultiDatabase() == null) {
             config.setCrossMultiDatabase(crossMultiDatabase);
         }
         if (resultDirectory != null) {
