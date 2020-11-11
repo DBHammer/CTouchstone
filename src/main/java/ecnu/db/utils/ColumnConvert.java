@@ -18,6 +18,7 @@ public class ColumnConvert {
     static {
         dataType2ColumnType = new HashMap<>();
         dataType2ColumnType.put("int", INTEGER);
+        // todo: use long to represent BIGINT
         dataType2ColumnType.put("bigint", INTEGER);
         dataType2ColumnType.put("date", DATE);
         dataType2ColumnType.put("datetime", DATETIME);
