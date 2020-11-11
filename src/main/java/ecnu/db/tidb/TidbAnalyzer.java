@@ -114,9 +114,10 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             String canonicalTableName = getCanonicalTblName(tableName);
             Schema schema = getSchema(canonicalTableName);
             int tableSize = schema.getTableSize();
-            if (tableSize != rawNode.rowCount && !rawNode.operatorInfo.contains("decided by")) {
+            if (tableSize != rawNode.rowCount && !rawNode.operatorInfo.contains("decided by")) { // 含有decided by的operator info表示join的index range scan
                 String rangeInfo = matchPattern(RANGE, rawNode.operatorInfo).get(0).get(0);
                 List<List<String>> leftRangeMatches = matchPattern(LEFT_RANGE_BOUND, rangeInfo), rightRangeMatches = matchPattern(RIGHT_RANGE_BOUND, rangeInfo);
+                // 目前只支持含有一个range的情况
                 if (leftRangeMatches.size() != 1 || rightRangeMatches.size() != 1 || leftRangeMatches.get(0).size() != 3 || rightRangeMatches.get(0).size() != 3) {
                     throw new UnsupportedSelectionConditionException(rawNode.operatorInfo);
                 }
