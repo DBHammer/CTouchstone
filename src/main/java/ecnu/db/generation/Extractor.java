@@ -81,6 +81,7 @@ public class Extractor {
                         Schema schema = dbConnector.fetchSchema(dbSchemaGenerator, canonicalTableName);
                         int tableSize = dbConnector.getTableSize(canonicalTableName);
                         schema.setTableSize(tableSize);
+                        schema.setPrimaryKeys(dbConnector.getPrimaryKeys(canonicalTableName));
                         schemas.put(canonicalTableName, schema);
                     }
                     Schema.initFks(((DbConnector) connector).databaseMetaData, schemas);

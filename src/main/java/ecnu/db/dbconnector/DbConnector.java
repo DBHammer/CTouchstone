@@ -8,6 +8,7 @@ import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaGenerator;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +56,15 @@ public class DbConnector implements DatabaseConnectorInterface {
         ResultSet rs = stmt.executeQuery("show create table " + canonicalTableName);
         rs.next();
         return rs.getString(2).trim().toLowerCase();
+    }
+
+    public String getPrimaryKeys(String canonicalTableName) throws SQLException {
+        ResultSet rs = stmt.executeQuery("show keys from " + canonicalTableName + " where Key_name='PRIMARY'");
+        List<String> keys = new ArrayList<>();
+        while(rs.next()) {
+            keys.add(rs.getString(5).toLowerCase());
+        }
+        return keys.size() > 0 ? Strings.join(keys, ',') : null;
     }
 
     public String[] getDataRange(String canonicalTableName, String columnInfo) throws SQLException {
