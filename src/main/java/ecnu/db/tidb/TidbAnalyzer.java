@@ -122,7 +122,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                     throw new UnsupportedSelectionConditionException(rawNode.operatorInfo);
                 }
                 String leftOperator = "(".equals(leftRangeMatches.get(0).get(1)) ? "gt" : "ge", leftOperand = leftRangeMatches.get(0).get(2);
-                String rightOperator = ")".equals(rightRangeMatches.get(0).get(1)) ? "lt" : "le", rightOperand = rightRangeMatches.get(0).get(1);
+                String rightOperator = ")".equals(rightRangeMatches.get(0).get(2)) ? "lt" : "le", rightOperand = rightRangeMatches.get(0).get(1);
                 List<List<String>> indexMatches = matchPattern(INDEX_COLUMN, rawNode.operatorInfo);
                 String columnName = schema.getPrimaryKeys();
                 if (indexMatches.size() != 0) {
