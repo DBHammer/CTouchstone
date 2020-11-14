@@ -32,12 +32,12 @@ import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class AbstractColumn {
-    private final ColumnType columnType;
+
+    protected ColumnType columnType;
     protected float nullPercentage;
-    protected String columnName;
-    BitSet bitmap;
     // 非等值约束
-    protected NonEqBucket bucket;
+    protected NonEqBucket bucket = new NonEqBucket();
+    ;
     // 已经处理过的约束
     protected Multimap<String, Parameter> metConditions = ArrayListMultimap.create();
     // 已经处理过的等值参数对应的概率, data->probability
@@ -48,12 +48,6 @@ public abstract class AbstractColumn {
     // 生成的等于约束参数数据
     protected Set<String> eqCandidates = new HashSet<>();
     protected boolean[] isnullEvaluations;
-
-    public AbstractColumn(String columnName, ColumnType columnType) {
-        this.columnName = columnName;
-        this.columnType = columnType;
-        bucket = new NonEqBucket();
-    }
 
     /**
      * 获取该列非重复值的个数
@@ -71,14 +65,6 @@ public abstract class AbstractColumn {
     @JsonSetter
     public void setNullPercentage(float nullPercentage) {
         this.nullPercentage = nullPercentage;
-    }
-
-    public String getColumnName() {
-        return columnName;
-    }
-
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
     }
 
     public ColumnType getColumnType() {
@@ -326,12 +312,14 @@ public abstract class AbstractColumn {
 
     /**
      * 在一次数据生成的过程里准备好column的数据, 不处理isnull
+     *
      * @param size 需要生成的size
      */
     abstract void prepareTupleData(int size);
 
     /**
      * prepareTupleData的暴露接口，处理isnull
+     *
      * @param size 需要生成的size
      */
     public void prepareGeneration(int size) {

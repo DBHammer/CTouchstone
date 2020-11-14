@@ -29,11 +29,8 @@ public class DateColumn extends AbstractColumn {
     private LocalDate[] tupleData;
 
     public DateColumn() {
-        super(null, ColumnType.DATETIME);
-    }
-
-    public DateColumn(String columnName) {
-        super(columnName, ColumnType.DATETIME);
+        super();
+        columnType = ColumnType.DATE;
     }
 
     public LocalDate getBegin() {

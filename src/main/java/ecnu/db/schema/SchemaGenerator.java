@@ -7,10 +7,8 @@ import ecnu.db.utils.ColumnConvert;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -36,72 +34,73 @@ public class SchemaGenerator {
         return sqls;
     }
 
-    public Schema generateSchema(String tableName, String sql) throws TouchstoneException {
+    public Schema generateSchema(String canonicalTableName, String sql) throws TouchstoneException {
         List<String> columnSqls = getColumnSql(sql);
-        Map<String, AbstractColumn> columns = new HashMap<>(columnSqls.size());
+        List<String> canonicalColumnNames = new ArrayList<>();
         for (String columnSql : columnSqls) {
             String[] attributes = columnSql.trim().split(" ");
-            String columnName = attributes[0];
+            String canonicalColumnName = canonicalTableName + "." + attributes[0];
+            canonicalColumnNames.add(canonicalColumnName);
             int indexOfBrackets = attributes[1].indexOf('(');
             String dataType = (indexOfBrackets > 0) ? attributes[1].substring(0, indexOfBrackets) : attributes[1];
             switch (ColumnConvert.getColumnType(dataType)) {
                 case INTEGER:
-                    columns.put(columnName, new IntColumn(columnName));
+                    ColumnManager.addColumn(canonicalColumnName, new IntColumn());
                     break;
                 case BOOL:
-                    columns.put(columnName, new BoolColumn(columnName));
+                    ColumnManager.addColumn(canonicalColumnName, new BoolColumn());
                     break;
                 case DECIMAL:
-                    columns.put(columnName, new DecimalColumn(columnName));
+                    ColumnManager.addColumn(canonicalColumnName, new DecimalColumn());
                     break;
                 case VARCHAR:
-                    columns.put(columnName, new StringColumn(columnName));
+                    ColumnManager.addColumn(canonicalColumnName, new StringColumn());
                     break;
                 case DATE:
-                    columns.put(columnName, new DateColumn(columnName));
+                    ColumnManager.addColumn(canonicalColumnName, new DateColumn());
                 case DATETIME:
-                    DateTimeColumn column = new DateTimeColumn(columnName);
+                    DateTimeColumn column = new DateTimeColumn();
                     if (indexOfBrackets > 0) {
                         column.setPrecision(Integer.parseInt(attributes[1].substring(indexOfBrackets + 1, attributes[1].length() - 1)));
                     } else {
                         column.setPrecision(0);
                     }
-                    columns.put(columnName, column);
+                    ColumnManager.addColumn(canonicalColumnName, column);
                     break;
                 default:
                     throw new TouchstoneException("没有实现的类型转换");
             }
         }
-        return new Schema(tableName, columns);
+        return new Schema(canonicalTableName, canonicalColumnNames);
     }
 
     /**
      * 获取col分布所需的查询SQL语句
      *
-     * @param tableName 需要查询的表名
-     * @param columns   需要查询的col
+     * @param tableName            需要查询的表名
+     * @param canonicalColumnNames 需要查询的col
      * @return SQL
      * @throws TouchstoneException 获取失败
      */
-    public String getColumnDistributionSql(String tableName, Collection<AbstractColumn> columns) throws TouchstoneException {
+    public String getColumnDistributionSql(String tableName, List<String> canonicalColumnNames) throws TouchstoneException {
         StringBuilder sql = new StringBuilder();
-        for (AbstractColumn column : columns) {
-            switch (column.getColumnType()) {
+        for (String canonicalColumnName : canonicalColumnNames) {
+            switch (ColumnManager.getColumn(canonicalColumnName).getColumnType()) {
                 case DATE:
                 case DATETIME:
                 case DECIMAL:
-                    sql.append(String.format("min(%s.%s),", tableName, column.getColumnName()));
-                    sql.append(String.format("max(%s.%s),", tableName, column.getColumnName()));
+                    sql.append(String.format("min(%s.%s),", tableName, canonicalColumnName));
+                    sql.append(String.format("max(%s.%s),", tableName, canonicalColumnName));
                     break;
                 case INTEGER:
-                    sql.append(String.format("min(%s.%s),", tableName, column.getColumnName()));
-                    sql.append(String.format("max(%s.%s),", tableName, column.getColumnName()));
-                    sql.append(String.format("count(distinct %s.%s),", tableName, column.getColumnName()));
+                    sql.append(String.format("min(%s.%s),", tableName, canonicalColumnName));
+                    sql.append(String.format("max(%s.%s),", tableName, canonicalColumnName));
+                    sql.append(String.format("count(distinct %s.%s),", tableName, canonicalColumnName));
                     break;
                 case VARCHAR:
-                    sql.append(String.format("max(length(%s.%s)),", tableName, column.getColumnName()));
-                    sql.append(String.format("min(length(%s.%s)),", tableName, column.getColumnName()));
-                    sql.append(String.format("count(distinct %s.%s),", tableName, column.getColumnName()));
+                    sql.append(String.format("max(length(%s.%s)),", tableName, canonicalColumnName));
+                    sql.append(String.format("min(length(%s.%s)),", tableName, canonicalColumnName));
+                    sql.append(String.format("count(distinct %s.%s),", tableName, canonicalColumnName));
                     break;
                 case BOOL:
                     break;
@@ -115,13 +114,14 @@ public class SchemaGenerator {
     /**
      * 提取col的range信息(最大值，最小值)
      *
-     * @param columns   需要设置的col
-     * @param sqlResult 有关的SQL结果(由AbstractDbConnector.getDataRange返回)
+     * @param canonicalColumnNames 需要设置的col
+     * @param sqlResult            有关的SQL结果(由AbstractDbConnector.getDataRange返回)
      * @throws TouchstoneException 设置失败
      */
-    public void setDataRangeBySqlResult(Collection<AbstractColumn> columns, String[] sqlResult) throws TouchstoneException {
+    public void setDataRangeBySqlResult(List<String> canonicalColumnNames, String[] sqlResult) throws TouchstoneException {
         int index = 0;
-        for (AbstractColumn column : columns) {
+        for (String canonicalColumnName : canonicalColumnNames) {
+            AbstractColumn column = ColumnManager.getColumn(canonicalColumnName);
             switch (column.getColumnType()) {
                 case INTEGER:
                     ((IntColumn) column).setMin(Integer.parseInt(sqlResult[index++]));

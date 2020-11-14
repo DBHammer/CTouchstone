@@ -24,11 +24,8 @@ public class IntColumn extends AbstractColumn {
     private double[] doubleCopyOfTupleData;
 
     public IntColumn() {
-        super(null, ColumnType.INTEGER);
-    }
-
-    public IntColumn(String columnName) {
-        super(columnName, ColumnType.INTEGER);
+        super();
+        columnType = ColumnType.INTEGER;
     }
 
     public int getMin() {
@@ -116,6 +113,7 @@ public class IntColumn extends AbstractColumn {
 
     /**
      * for columnNode
+     *
      * @return 返回用于multi-var计算的一个double数组
      */
     public double[] calculate() {

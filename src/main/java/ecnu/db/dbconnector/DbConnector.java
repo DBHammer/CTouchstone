@@ -148,9 +148,9 @@ public class DbConnector implements DatabaseConnectorInterface {
     public Schema fetchSchema(SchemaGenerator dbSchemaGenerator, String canonicalTableName) throws TouchstoneException, SQLException {
         String tableMetadata = getTableMetadata(canonicalTableName);
         Schema schema = dbSchemaGenerator.generateSchema(canonicalTableName, tableMetadata);
-        String distributionSql = dbSchemaGenerator.getColumnDistributionSql(schema.getTableName(), schema.getColumns().values());
+        String distributionSql = dbSchemaGenerator.getColumnDistributionSql(schema.getCanonicalTableName(), schema.getCanonicalColumnNames());
         String[] dataRange = getDataRange(canonicalTableName, distributionSql);
-        dbSchemaGenerator.setDataRangeBySqlResult(schema.getColumns().values(), dataRange);
+        dbSchemaGenerator.setDataRangeBySqlResult(schema.getCanonicalColumnNames(), dataRange);
         logger.info(String.format("获取'%s'表结构和表数据分布成功", canonicalTableName));
         return schema;
     }

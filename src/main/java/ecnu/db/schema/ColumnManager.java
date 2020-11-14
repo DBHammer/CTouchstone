@@ -16,6 +16,10 @@ public class ColumnManager {
         columns.put(columnName, column);
     }
 
+    public static void prepareGenerationAll(int size) {
+        columns.values().stream().parallel().forEach(column -> column.prepareGeneration(size));
+    }
+
     public static AbstractColumn getColumn(String columnName) throws CannotFindColumnException {
         AbstractColumn column = columns.get(columnName);
         if (column == null) {

@@ -143,8 +143,7 @@ public class Extractor {
     }
 
     private static AbstractAnalyzer getAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector,
-                                                AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas)
-            throws TouchstoneException, IOException {
+                                                AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas) throws TouchstoneException {
         Multimap<String, String> tblName2CanonicalTblName = ArrayListMultimap.create();
         for (String canonicalTableName : schemas.keySet()) {
             tblName2CanonicalTblName.put(canonicalTableName.split("\\.")[1], canonicalTableName);

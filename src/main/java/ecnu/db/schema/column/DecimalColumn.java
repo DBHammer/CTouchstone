@@ -22,11 +22,8 @@ public class DecimalColumn extends AbstractColumn {
     double[] tupleData;
 
     public DecimalColumn() {
-        super(null, ColumnType.DECIMAL);
-    }
-
-    public DecimalColumn(String columnName) {
-        super(columnName, ColumnType.DECIMAL);
+        super();
+        columnType = ColumnType.DECIMAL;
     }
 
     public double getMin() {
@@ -100,6 +97,7 @@ public class DecimalColumn extends AbstractColumn {
 
     /**
      * for columnNode
+     *
      * @return 返回用于multi-var计算的一个double数组
      */
     public double[] calculate() {

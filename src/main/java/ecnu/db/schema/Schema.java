@@ -2,39 +2,24 @@ package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
-import ecnu.db.constraintchain.chain.ConstraintChain;
-import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.schema.CannotFindColumnException;
 import ecnu.db.exception.schema.CannotFindSchemaException;
-import ecnu.db.generation.JoinInfoTable;
-import ecnu.db.schema.column.*;
+import ecnu.db.utils.CommonUtils;
 
-import java.io.*;
-import java.math.BigDecimal;
-import java.nio.file.Files;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static ecnu.db.generation.Generator.SINGLE_THREAD_TUPLE_SIZE;
-import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 /**
  * @author wangqingshuai
  */
 public class Schema {
-    private final static int INIT_HASHMAP_SIZE = 16;
-    private String tableName;
-    private Map<String, AbstractColumn> columns;
+    private String canonicalTableName;
     private int tableSize;
     private String primaryKeys;
+    private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys;
-    private JoinInfoTable joinInfoTable;
     /**
      * 根据Database的metadata获取的外键信息
      */
@@ -44,16 +29,14 @@ public class Schema {
     public Schema() {
     }
 
-    public Schema(String tableName, Map<String, AbstractColumn> columns) {
-        this.tableName = tableName;
-        this.columns = columns;
-        joinTag = 1;
+    public List<String> getCanonicalColumnNames() {
+        return canonicalColumnNames;
     }
 
-    public void init() {
-        if (primaryKeys != null) {
-            joinInfoTable = new JoinInfoTable(primaryKeys.length());
-        }
+    public Schema(String canonicalTableName, List<String> canonicalColumnNames) {
+        this.canonicalTableName = canonicalTableName;
+        this.canonicalColumnNames = canonicalColumnNames;
+        joinTag = 1;
     }
 
     /**
@@ -80,7 +63,7 @@ public class Schema {
 
         for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
             Schema schema = entry.getValue();
-            Map<String, String> fks = Optional.ofNullable(schema.getForeignKeys()).orElse(new HashMap<>(INIT_HASHMAP_SIZE));
+            Map<String, String> fks = Optional.ofNullable(schema.getForeignKeys()).orElse(new HashMap<>(CommonUtils.INIT_HASHMAP_SIZE));
             schema.setMetaDataFks(fks);
         }
     }
@@ -115,14 +98,14 @@ public class Schema {
 
     }
 
-    public String getTableName() {
-        return tableName;
+    public String getCanonicalTableName() {
+        return canonicalTableName;
     }
 
     @JsonSetter
     @SuppressWarnings("unused")
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
+    public void setCanonicalTableName(String canonicalTableName) {
+        this.canonicalTableName = canonicalTableName;
     }
 
     public int getTableSize() {
@@ -174,81 +157,11 @@ public class Schema {
         }
     }
 
-
-    public Map<String, AbstractColumn> getColumns() {
-        return columns;
-    }
-
-    public void setColumns(Map<String, AbstractColumn> columns) {
-        this.columns = columns;
-    }
-
     @Override
     public String toString() {
         return "Schema{" +
-                "tableName='" + tableName + '\'' +
+                "tableName='" + canonicalTableName + '\'' +
                 ", tableSize=" + tableSize +
                 '}';
-    }
-
-
-
-    private void initJoinInfoTable(int size, Map<Integer, boolean[]> pkBitMap) {
-        List<Integer> pks = new ArrayList<>(pkBitMap.keySet());
-        pks.sort(Integer::compareTo);
-        for (int i = 0; i < size; i++) {
-            long bitMap = 1L;
-            for (int pk : pks) {
-                bitMap = ((pkBitMap.get(pk)[i] ? 1L : 0L) & (bitMap << 1));
-            }
-            joinInfoTable.addJoinInfo(bitMap, new int[]{i});
-        }
-    }
-
-    public String transferData() {
-        Map<String, List<String>> columnName2Data = new HashMap<>();
-        for (String columnName : columns.keySet()) {
-            AbstractColumn column = columns.get(columnName);
-            List<String> data;
-            switch (column.getColumnType()) {
-                case DATE:
-                    data = Arrays.stream(((DateColumn) column).getTupleData())
-                            .parallel()
-                            .map((d) -> String.format("'%s'", DateColumn.FMT.format(d)))
-                            .collect(Collectors.toList());
-                    break;
-                case DATETIME:
-                    data = Arrays.stream(((DateTimeColumn) column).getTupleData())
-                            .parallel()
-                            .map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d)))
-                            .collect(Collectors.toList());
-                    break;
-                case INTEGER:
-                    data = Arrays.stream(((IntColumn) column).getTupleData())
-                            .parallel()
-                            .mapToObj(Integer::toString)
-                            .collect(Collectors.toList());
-                    break;
-                case DECIMAL:
-                    data = Arrays.stream(((DecimalColumn) column).getTupleData())
-                            .parallel()
-                            .mapToObj((d) -> BigDecimal.valueOf(d).toString())
-                            .collect(Collectors.toList());
-                    break;
-                case VARCHAR:
-                    data = Arrays.stream(((StringColumn) column).getTupleData())
-                            .parallel()
-                            .map((d) -> String.format("'%s'", d))
-                            .collect(Collectors.toList());
-                    break;
-                case BOOL:
-                default:
-                    throw new UnsupportedOperationException();
-            }
-            columnName2Data.put(columnName, data);
-        }
-        StringBuilder data = new StringBuilder();
-        //todo 添加对于数据的格式化的处理
-        return data.toString();
     }
 }

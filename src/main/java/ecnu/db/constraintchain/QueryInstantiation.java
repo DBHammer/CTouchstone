@@ -11,7 +11,6 @@ import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
-import ecnu.db.utils.CommonUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -56,7 +55,9 @@ public class QueryInstantiation {
                 operation.instantiateUniParamCompParameter(column);
             }
             // init eq bucket
-            schema.getColumns().forEach((s2, col) -> col.initEqProbabilityBucket());
+            for (String canonicalColumnName : schema.getCanonicalColumnNames()) {
+                ColumnManager.getColumn(canonicalColumnName).initEqProbabilityBucket();
+            }
             // uni-var eq
             uniVarFilters = schema2filters.get(schema).stream()
                     .filter((f) -> f instanceof UniVarFilterOperation)
@@ -77,7 +78,9 @@ public class QueryInstantiation {
                 operation.instantiateBetweenParameter(column);
             }
             // init eq params
-            schema.getColumns().values().forEach(AbstractColumn::initEqParameter);
+            for (String canonicalColumnName : schema.getCanonicalColumnNames()) {
+                ColumnManager.getColumn(canonicalColumnName).initEqParameter();
+            }
             // multi-var non-eq
             List<MultiVarFilterOperation> multiVarFilters = schema2filters.get(schema).stream()
                     .filter((f) -> f instanceof MultiVarFilterOperation)

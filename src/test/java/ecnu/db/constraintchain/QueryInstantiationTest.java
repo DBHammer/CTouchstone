@@ -127,11 +127,7 @@ class QueryInstantiationTest {
         // *    test data generation    *
         // ******************************
         int generateSize = 10_000;
-        for (Schema schema : schemas.values()) {
-            for (AbstractColumn column : schema.getColumns().values()) {
-                column.prepareGeneration(generateSize);
-            }
-        }
+        ColumnManager.prepareGenerationAll(generateSize);
 
         List<ConstraintChain> chains;
         Map<String, Double> map;
@@ -197,11 +193,7 @@ class QueryInstantiationTest {
         // *    test data generation    *
         // ******************************
         int generateSize = 10_000;
-        for (Schema schema : schemas.values()) {
-            for (AbstractColumn column : schema.getColumns().values()) {
-                column.prepareGeneration(generateSize);
-            }
-        }
+        ColumnManager.prepareGenerationAll(generateSize);
         List<ConstraintChain> chains;
         double rate;
         chains = query2chains.get("t1.sql_1");
@@ -223,7 +215,7 @@ class QueryInstantiationTest {
                 if (node instanceof ConstraintChainFilterNode) {
                     boolean[] evaluation = ((ConstraintChainFilterNode) node).getRoot().evaluate();
                     double rate = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count() * 1.0 / evaluation.length;
-                    ret.put(schema.getTableName(), rate);
+                    ret.put(schema.getCanonicalTableName(), rate);
                 }
             }
         }

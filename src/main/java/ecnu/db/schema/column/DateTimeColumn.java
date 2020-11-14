@@ -45,11 +45,8 @@ public class DateTimeColumn extends AbstractColumn {
     private LocalDateTime[] tupleData;
 
     public DateTimeColumn() {
-        super(null, ColumnType.DATETIME);
-    }
-
-    public DateTimeColumn(String columnName) {
-        super(columnName, ColumnType.DATETIME);
+        super();
+        columnType = ColumnType.DATETIME;
     }
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss.SSSSSS")

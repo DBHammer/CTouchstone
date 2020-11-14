@@ -37,10 +37,10 @@ public class TidbSelectOperatorInfoParserTest {
     void setUp() throws TouchstoneException {
         PrepareConfig config = new PrepareConfig();
         config.setDatabaseVersion(TouchstoneSupportedDatabaseVersion.TiDB4);
-        ColumnManager.addColumn("db.table.col1", new IntColumn("col1"));
-        ColumnManager.addColumn("db.table.col2", new IntColumn("col2"));
-        ColumnManager.addColumn("db.table.col3", new StringColumn("col3"));
-        ColumnManager.addColumn("db.table.col4", new DecimalColumn("col4"));
+        ColumnManager.addColumn("db.table.col1", new IntColumn());
+        ColumnManager.addColumn("db.table.col2", new IntColumn());
+        ColumnManager.addColumn("db.table.col3", new StringColumn());
+        ColumnManager.addColumn("db.table.col4", new DecimalColumn());
         parser.setAnalyzer(new TidbAnalyzer(config, null, new TidbInfo(TouchstoneSupportedDatabaseVersion.TiDB4), null, null));
     }
 

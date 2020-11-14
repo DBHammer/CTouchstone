@@ -44,14 +44,6 @@ public class StringColumn extends AbstractColumn {
     private BiMap<String, Pair<Integer, Integer>> likeCandidateMap;
     private BiMap<Integer, String> strings;
 
-    public StringColumn() {
-        super(null, ColumnType.VARCHAR);
-    }
-
-    public StringColumn(String columnName) {
-        super(columnName, ColumnType.VARCHAR);
-    }
-
     public int getMinLength() {
         return minLength;
     }

@@ -16,8 +16,7 @@ import ecnu.db.exception.TouchstoneException;
 import ecnu.db.exception.analyze.UnsupportedDBTypeException;
 import ecnu.db.exception.schema.CircularReferenceException;
 import ecnu.db.schema.Schema;
-import ecnu.db.schema.column.AbstractColumn;
-import ecnu.db.schema.column.ColumnDeserializer;
+import ecnu.db.schema.column.*;
 import ecnu.db.tidb.TidbInfo;
 import ecnu.db.utils.AbstractDatabaseInfo;
 import ecnu.db.utils.config.GenerationConfig;
@@ -34,7 +33,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.matchPattern;
-import static ecnu.db.utils.CommonUtils.stepSize;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -72,7 +70,7 @@ public class Generator {
             throw new TouchstoneException(String.format("无法创建'%s'的临时存储文件夹", joinInfoPath.getPath()));
         }
         for (Schema schema : schemas.values()) {
-            File schemaDir = new File(config.getJoinInfoPath(), schema.getTableName());
+            File schemaDir = new File(config.getJoinInfoPath(), schema.getCanonicalTableName());
             if (!schemaDir.mkdirs()) {
                 throw new TouchstoneException(String.format("无法创建'%s'", schemaDir.getPath()));
             }
@@ -127,24 +125,25 @@ public class Generator {
     private static void generateTuples(Collection<ConstraintChain> constraintChains, Schema schema,
                                        BufferedWriter dataWriter,
                                        int rangeStart, int rangeEnd) throws IOException {
-        int loop = (rangeEnd - rangeStart) / stepSize;
-        for (int i = 0; i < loop; i++) {
-            for (AbstractColumn column : schema.getColumns().values()) {
-                column.prepareGeneration(stepSize);
-            }
-            //schema.fillForeignKeys(rangeStart, stepSize, constraintChains);
-            rangeStart += stepSize;
-            dataWriter.write(schema.transferData());
-        }
-        if (rangeStart != rangeEnd) {
-            int retainSize = rangeEnd - rangeStart;
-            for (AbstractColumn column : schema.getColumns().values()) {
-                column.prepareGeneration(retainSize);
-            }
-            //schema.fillForeignKeys(rangeStart, retainSize, constraintChains);
-            dataWriter.write(schema.transferData());
-        }
-        dataWriter.close();
+        //todo
+//        int loop = (rangeEnd - rangeStart) / stepSize;
+//        for (int i = 0; i < loop; i++) {
+//            for (AbstractColumn column : schema.getColumns().values()) {
+//                column.prepareGeneration(stepSize);
+//            }
+//            //schema.fillForeignKeys(rangeStart, stepSize, constraintChains);
+//            rangeStart += stepSize;
+//            dataWriter.write(schema.transferData());
+//        }
+//        if (rangeStart != rangeEnd) {
+//            int retainSize = rangeEnd - rangeStart;
+//            for (AbstractColumn column : schema.getColumns().values()) {
+//                column.prepareGeneration(retainSize);
+//            }
+//            //schema.fillForeignKeys(rangeStart, retainSize, constraintChains);
+//            dataWriter.write(schema.transferData());
+//        }
+//        dataWriter.close();
     }
 
     private static Map<Integer, Parameter> getId2Parameter(Map<String, List<ConstraintChain>> query2chains) {
@@ -186,11 +185,11 @@ public class Generator {
         Set<Schema> notReferenced = new HashSet<>(schemas.values());
         for (Schema schema : schemas.values()) {
             GraphNode node = new GraphNode(schema, 0);
-            graph.put(schema.getTableName(), node);
+            graph.put(schema.getCanonicalTableName(), node);
         }
         for (Schema schema : schemas.values()) {
             if (schema.getForeignKeys() != null) {
-                graph.get(schema.getTableName()).cnt = schema.getForeignKeys().size();
+                graph.get(schema.getCanonicalTableName()).cnt = schema.getForeignKeys().size();
                 notReferenced.remove(schema);
                 for (String externalColumnName : schema.getForeignKeys().values()) {
                     String[] externalColumnNames = externalColumnName.split("\\.");
@@ -208,8 +207,8 @@ public class Generator {
             Schema schema = notReferencedQueue.peek();
             notReferencedQueue.pop();
             topologicalOrder.add(schema);
-            for (Schema edge : graph.get(schema.getTableName()).edges) {
-                GraphNode node = graph.get(edge.getTableName());
+            for (Schema edge : graph.get(schema.getCanonicalTableName()).edges) {
+                GraphNode node = graph.get(edge.getCanonicalTableName());
                 node.cnt--;
                 if (node.cnt == 0) {
                     notReferencedQueue.push(node.schema);
@@ -219,4 +218,51 @@ public class Generator {
 
         return topologicalOrder;
     }
+//todo
+//    public static String transferData() {
+//        Map<String, List<String>> columnName2Data = new HashMap<>();
+//        for (String columnName : columns.keySet()) {
+//            AbstractColumn column = columns.get(columnName);
+//            List<String> data;
+//            switch (column.getColumnType()) {
+//                case DATE:
+//                    data = Arrays.stream(((DateColumn) column).getTupleData())
+//                            .parallel()
+//                            .map((d) -> String.format("'%s'", DateColumn.FMT.format(d)))
+//                            .collect(Collectors.toList());
+//                    break;
+//                case DATETIME:
+//                    data = Arrays.stream(((DateTimeColumn) column).getTupleData())
+//                            .parallel()
+//                            .map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d)))
+//                            .collect(Collectors.toList());
+//                    break;
+//                case INTEGER:
+//                    data = Arrays.stream(((IntColumn) column).getTupleData())
+//                            .parallel()
+//                            .mapToObj(Integer::toString)
+//                            .collect(Collectors.toList());
+//                    break;
+//                case DECIMAL:
+//                    data = Arrays.stream(((DecimalColumn) column).getTupleData())
+//                            .parallel()
+//                            .mapToObj((d) -> BigDecimal.valueOf(d).toString())
+//                            .collect(Collectors.toList());
+//                    break;
+//                case VARCHAR:
+//                    data = Arrays.stream(((StringColumn) column).getTupleData())
+//                            .parallel()
+//                            .map((d) -> String.format("'%s'", d))
+//                            .collect(Collectors.toList());
+//                    break;
+//                case BOOL:
+//                default:
+//                    throw new UnsupportedOperationException();
+//            }
+//            columnName2Data.put(columnName, data);
+//        }
+//        StringBuilder data = new StringBuilder();
+//        //todo 添加对于数据的格式化的处理
+//        return data.toString();
+//    }
 }

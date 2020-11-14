@@ -14,11 +14,8 @@ public class BoolColumn extends AbstractColumn {
     private BigDecimal trueProbability;
 
     public BoolColumn() {
-        super(null, ColumnType.BOOL);
-    }
-
-    public BoolColumn(String columnName) {
-        super(columnName, ColumnType.BOOL);
+        super();
+        columnType=ColumnType.BOOL;
     }
 
     @Override
