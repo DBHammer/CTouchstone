@@ -8,6 +8,7 @@ import ecnu.db.constraintchain.filter.operation.MultiVarFilterOperation;
 import ecnu.db.constraintchain.filter.operation.RangeFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.exception.TouchstoneException;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.utils.CommonUtils;
@@ -51,8 +52,7 @@ public class QueryInstantiation {
                     .map((f) -> (UniVarFilterOperation) f)
                     .collect(Collectors.toList());
             for (UniVarFilterOperation operation : uniVarFilters) {
-                String columnName = CommonUtils.extractSimpleColumnName(operation.getColumnName());
-                AbstractColumn column = schema.getColumn(columnName);
+                AbstractColumn column = ColumnManager.getColumn(operation.getCanonicalColumnName());
                 operation.instantiateUniParamCompParameter(column);
             }
             // init eq bucket
@@ -64,8 +64,7 @@ public class QueryInstantiation {
                     .map((f) -> (UniVarFilterOperation) f)
                     .collect(Collectors.toList());
             for (UniVarFilterOperation operation : uniVarFilters) {
-                String columnName = CommonUtils.extractSimpleColumnName(operation.getColumnName());
-                AbstractColumn column = schema.getColumn(columnName);
+                AbstractColumn column = ColumnManager.getColumn(operation.getCanonicalColumnName());
                 operation.instantiateEqualParameter(column);
             }
             // uni-var bet
@@ -74,8 +73,7 @@ public class QueryInstantiation {
                     .map((f) -> (RangeFilterOperation) f)
                     .collect(Collectors.toList());
             for (RangeFilterOperation operation : rangeFilters) {
-                String columnName = CommonUtils.extractSimpleColumnName(operation.getColumnName());
-                AbstractColumn column = schema.getColumn(columnName);
+                AbstractColumn column = ColumnManager.getColumn(operation.getCanonicalColumnName());
                 operation.instantiateBetweenParameter(column);
             }
             // init eq params
@@ -86,7 +84,7 @@ public class QueryInstantiation {
                     .map((f) -> (MultiVarFilterOperation) f)
                     .collect(Collectors.toList());
             for (MultiVarFilterOperation operation : multiVarFilters) {
-                operation.instantiateMultiVarParameter(schema);
+                operation.instantiateMultiVarParameter();
             }
         }
     }

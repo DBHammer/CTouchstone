@@ -92,7 +92,7 @@ public class RangeFilterOperation extends UniVarFilterOperation {
     }
 
     @Override
-    public boolean[] evaluate(Schema schema, int size) {
+    public boolean[] evaluate() {
         throw new UnsupportedOperationException();
     }
 }

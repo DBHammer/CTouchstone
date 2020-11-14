@@ -71,9 +71,9 @@ public class OrNode implements BoolExprNode {
             } else if (child.getType() == UNI_FILTER_OPERATION) {
                 UniVarFilterOperation operation = (UniVarFilterOperation) child;
                 if (operation.getOperator().getType() == CompareOperator.TYPE.LESS) {
-                    lessCol2UniFilters.put(operation.getColumnName(), operation);
+                    lessCol2UniFilters.put(operation.getCanonicalColumnName(), operation);
                 } else if (operation.getOperator().getType() == CompareOperator.TYPE.GREATER) {
-                    greaterCol2UniFilters.put(operation.getColumnName(), operation);
+                    greaterCol2UniFilters.put(operation.getCanonicalColumnName(), operation);
                 } else if (operation.getOperator().getType() == CompareOperator.TYPE.EQUAL) {
                     otherNodes.add(operation);
                 } else {
@@ -122,9 +122,9 @@ public class OrNode implements BoolExprNode {
     }
 
     @Override
-    public boolean[] evaluate(Schema schema, int size) throws TouchstoneException {
-        boolean[] leftValue = leftNode.evaluate(schema, size), rightValue = rightNode.evaluate(schema, size);
-        for (int i = 0; i < size; i++) {
+    public boolean[] evaluate() throws TouchstoneException {
+        boolean[] leftValue = leftNode.evaluate(), rightValue = rightNode.evaluate();
+        for (int i = 0; i < leftValue.length; i++) {
             leftValue[i] = (leftValue[i] | rightValue[i]);
         }
         return leftValue;

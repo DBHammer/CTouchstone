@@ -88,7 +88,7 @@ public class DateColumn extends AbstractColumn {
     public void prepareTupleData(int size) {
         eqBuckets.sort(Comparator.comparing(o -> o.leftBorder));
         ThreadLocalRandom rand = ThreadLocalRandom.current();
-        BigDecimal cumBorder = BigDecimal.ZERO, sizeVal = BigDecimal.valueOf(size);
+        BigDecimal cumBorder = BigDecimal.ZERO;
         if (longCopyOfTupleData == null || longCopyOfTupleData.length != size) {
             longCopyOfTupleData = new long[size];
         }

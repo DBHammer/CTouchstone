@@ -6,9 +6,9 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.exception.schema.CannotFindColumnException;
 import ecnu.db.exception.schema.CannotFindSchemaException;
-import ecnu.db.exception.TouchstoneException;
 import ecnu.db.generation.JoinInfoTable;
 import ecnu.db.schema.column.*;
 
@@ -19,7 +19,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static ecnu.db.generation.Generator.SINGLE_THREAD_TUPLE_SIZE;
@@ -51,12 +50,18 @@ public class Schema {
         joinTag = 1;
     }
 
+    public void init() {
+        if (primaryKeys != null) {
+            joinInfoTable = new JoinInfoTable(primaryKeys.length());
+        }
+    }
+
     /**
      * 初始化Schema.foreignKeys和Schema.metaDataFks
      *
      * @param metaData 数据库的元信息
      * @param schemas  需要初始化的表
-     * @throws SQLException                 无法从数据库的metadata中获取信息
+     * @throws SQLException        无法从数据库的metadata中获取信息
      * @throws TouchstoneException 没有找到主键/外键表，或者外键关系冲突
      */
     public static void initFks(DatabaseMetaData metaData, Map<String, Schema> schemas) throws SQLException, TouchstoneException {
@@ -108,13 +113,6 @@ public class Schema {
             foreignKeys.put(columnNames[i], referencingTable + "." + refColumnNames[i]);
         }
 
-    }
-
-    public int getNdv(String columnName) throws CannotFindColumnException {
-        if (!columns.containsKey(columnName)) {
-            throw new CannotFindColumnException(tableName, columnName);
-        }
-        return columns.get(columnName).getNdv();
     }
 
     public String getTableName() {
@@ -176,13 +174,6 @@ public class Schema {
         }
     }
 
-    public AbstractColumn getColumn(String columnName) throws CannotFindColumnException {
-        AbstractColumn column = columns.get(columnName);
-        if (column == null) {
-            throw new CannotFindColumnException(tableName, columnName);
-        }
-        return column;
-    }
 
     public Map<String, AbstractColumn> getColumns() {
         return columns;
@@ -200,70 +191,7 @@ public class Schema {
                 '}';
     }
 
-    /**
-     * 准备好生成tuple
-     * @param size 需要生成的tuple的大小
-     * @param chains 约束链条
-     * @param schemas 所有的表的map
-     * @param directory joinInfoTable文件存放路径
-     * @param neededThreads 每个joinInfoTable至少需要的thread数量
-     * @throws TouchstoneException 生成失败
-     */
-    public void prepareTuples(int size, Collection<ConstraintChain> chains, Map<String, Schema> schemas, String directory, int neededThreads) throws TouchstoneException, IOException, InterruptedException {
-        if (primaryKeys != null) { // primary keys is null, means no table will depend on this tables' join info table, thus it is ignored
-            joinInfoTable = new JoinInfoTable(primaryKeys.split(",").length);
-        }
-        Map<Integer, boolean[]> pkBitMap = new HashMap<>();
-        Table<String, ConstraintChainFkJoinNode, boolean[]> fkBitMap = HashBasedTable.create();
-        for (ConstraintChain chain : chains) {
-            chain.evaluate(this, size, pkBitMap, fkBitMap);
-        }
-        if (primaryKeys != null) {
-            initJoinInfoTable(size, pkBitMap);
-        }
-        for (Map.Entry<String, Map<ConstraintChainFkJoinNode, boolean[]>> entry : fkBitMap.rowMap().entrySet()) {
-            Map<ConstraintChainFkJoinNode, boolean[]> fkBitMap4Join = entry.getValue();
-            List<ConstraintChainFkJoinNode> nodes = new ArrayList<>(fkBitMap4Join.keySet()).stream()
-                    .sorted(Comparator.comparingInt(ConstraintChainFkJoinNode::getPkTag)).collect(Collectors.toList());
-            for (int i = 0; i < size; i++) {
-                long bitMap = 1L;
-                for (ConstraintChainFkJoinNode node : nodes) {
-                    bitMap = ((fkBitMap4Join.get(node)[i] ? 1L : 0L) & (bitMap << 1));
-                }
-                AbstractColumn refColumn =  schemas.get(nodes.get(i).getRefTable()).getColumn(nodes.get(i).getRefCol()), localColumn = getColumn(nodes.get(i).getFkCol());
-                int maximumThreads = (schemas.get(nodes.get(i).getRefTable()).getTableSize() + SINGLE_THREAD_TUPLE_SIZE - 1) / SINGLE_THREAD_TUPLE_SIZE;
-                if (maximumThreads < neededThreads) {
-                    neededThreads = maximumThreads == 1 ? 1 : maximumThreads / 2;
-                }
-                int cnt;
-                do {
-                    File file = new File(directory, nodes.get(i).getRefTable());
-                    if (file.isDirectory()) {
-                        cnt = Objects.requireNonNull(file.listFiles()).length;
-                    } else {
-                        cnt = 0;
-                    }
-                    if (cnt < neededThreads) {
-                        TimeUnit.MICROSECONDS.sleep(100); // if not ok, wait a little while before we check again.
-                    }
-                } while (cnt < neededThreads);
-                File[] files = Objects.requireNonNull(new File(directory, nodes.get(i).getRefTable()).listFiles());
-                JoinInfoTable joinInfoTable = new JoinInfoTable();
-                for (File file : files) {
-                    JoinInfoTable joinInfoTableTmp = new JoinInfoTable();
-                    joinInfoTableTmp.readExternal(new ObjectInputStream(new FileInputStream(file)));
-                    joinInfoTable.mergeJoinInfo(joinInfoTableTmp);
-                }
-                int pk = joinInfoTable.getPrimaryKey(bitMap)[0];
-                localColumn.setTupleByRefColumn(refColumn, i, pk);
-            }
-        }
-        if (primaryKeys != null) {
-            File tmpFile = new File(String.format("%s_%s_%d.tmp", directory, tableName, Thread.currentThread().getId()));
-            joinInfoTable.writeExternal(new ObjectOutputStream(new FileOutputStream(tmpFile)));
-            Files.move(tmpFile.toPath(), new File(new File(directory, tableName), Long.toString(Thread.currentThread().getId())).toPath(), ATOMIC_MOVE);
-        }
-    }
+
 
     private void initJoinInfoTable(int size, Map<Integer, boolean[]> pkBitMap) {
         List<Integer> pks = new ArrayList<>(pkBitMap.keySet());
@@ -277,27 +205,41 @@ public class Schema {
         }
     }
 
-    public String generateInsertSqls(int size, String newDatabaseName) {
+    public String transferData() {
         Map<String, List<String>> columnName2Data = new HashMap<>();
-        StringBuilder sqls = new StringBuilder();
         for (String columnName : columns.keySet()) {
             AbstractColumn column = columns.get(columnName);
             List<String> data;
             switch (column.getColumnType()) {
                 case DATE:
-                    data = Arrays.stream(((DateColumn) column).getTupleData()).map((d) -> String.format("'%s'", DateColumn.FMT.format(d))).collect(Collectors.toList());
+                    data = Arrays.stream(((DateColumn) column).getTupleData())
+                            .parallel()
+                            .map((d) -> String.format("'%s'", DateColumn.FMT.format(d)))
+                            .collect(Collectors.toList());
                     break;
                 case DATETIME:
-                    data = Arrays.stream(((DateTimeColumn) column).getTupleData()).map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d))).collect(Collectors.toList());
+                    data = Arrays.stream(((DateTimeColumn) column).getTupleData())
+                            .parallel()
+                            .map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d)))
+                            .collect(Collectors.toList());
                     break;
                 case INTEGER:
-                    data = Arrays.stream(((IntColumn) column).getTupleData()).mapToObj(Integer::toString).collect(Collectors.toList());
+                    data = Arrays.stream(((IntColumn) column).getTupleData())
+                            .parallel()
+                            .mapToObj(Integer::toString)
+                            .collect(Collectors.toList());
                     break;
                 case DECIMAL:
-                    data = Arrays.stream(((DecimalColumn) column).getTupleData()).mapToObj((d) -> BigDecimal.valueOf(d).toString()).collect(Collectors.toList());
+                    data = Arrays.stream(((DecimalColumn) column).getTupleData())
+                            .parallel()
+                            .mapToObj((d) -> BigDecimal.valueOf(d).toString())
+                            .collect(Collectors.toList());
                     break;
                 case VARCHAR:
-                    data = Arrays.stream(((StringColumn) column).getTupleData()).map((d) -> String.format("'%s'", d)).collect(Collectors.toList());
+                    data = Arrays.stream(((StringColumn) column).getTupleData())
+                            .parallel()
+                            .map((d) -> String.format("'%s'", d))
+                            .collect(Collectors.toList());
                     break;
                 case BOOL:
                 default:
@@ -305,20 +247,8 @@ public class Schema {
             }
             columnName2Data.put(columnName, data);
         }
-        String tableName = this.tableName;
-        if (newDatabaseName != null) {
-            tableName = String.format("%s.%s", newDatabaseName, tableName.split("\\.")[1]);
-        }
-        for (int i = 0; i < size; i++) {
-            String sql = String.format("insert into %s ", tableName);
-            List<String> colNames = new ArrayList<>(), colVals = new ArrayList<>();
-            for (String columnName : columnName2Data.keySet()) {
-                colNames.add(columnName);
-                colVals.add(columnName2Data.get(columnName).get(i));
-            }
-            sql += String.format("(%s) value (%s);\n", String.join(",", colNames), String.join(",", colVals));
-            sqls.append(sql);
-        }
-        return sqls.toString();
+        StringBuilder data = new StringBuilder();
+        //todo 添加对于数据的格式化的处理
+        return data.toString();
     }
 }

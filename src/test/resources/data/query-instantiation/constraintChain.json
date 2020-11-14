@@ -22,7 +22,7 @@
                 ],
                 "operator": "EQ",
                 "probability": null,
-                "columnName": "tpch.nation.n_name",
+                "canonicalColumnName": "tpch.nation.n_name",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -69,7 +69,7 @@
                 ],
                 "operator": "EQ",
                 "probability": null,
-                "columnName": "tpch.customer.c_mktsegment",
+                "canonicalColumnName": "tpch.customer.c_mktsegment",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -120,7 +120,7 @@
                 ],
                 "operator": "LT",
                 "probability": null,
-                "columnName": "tpch.orders.o_orderdate",
+                "canonicalColumnName": "tpch.orders.o_orderdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -174,7 +174,7 @@
                 ],
                 "operator": "EQ",
                 "probability": null,
-                "columnName": "tpch.part.p_size",
+                "canonicalColumnName": "tpch.part.p_size",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -184,7 +184,7 @@
                 ],
                 "operator": "LIKE",
                 "probability": null,
-                "columnName": "tpch.part.p_type",
+                "canonicalColumnName": "tpch.part.p_type",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -228,7 +228,7 @@
                 ],
                 "operator": "EQ",
                 "probability": null,
-                "columnName": "tpch.region.r_name",
+                "canonicalColumnName": "tpch.region.r_name",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -278,7 +278,7 @@
                 ],
                 "operator": "EQ",
                 "probability": null,
-                "columnName": "tpch.region.r_name",
+                "canonicalColumnName": "tpch.region.r_name",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -335,7 +335,7 @@
                 ],
                 "operator": "GE",
                 "probability": null,
-                "columnName": "tpch.orders.o_orderdate",
+                "canonicalColumnName": "tpch.orders.o_orderdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -345,7 +345,7 @@
                 ],
                 "operator": "LT",
                 "probability": null,
-                "columnName": "tpch.orders.o_orderdate",
+                "canonicalColumnName": "tpch.orders.o_orderdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -394,7 +394,7 @@
                   ],
                   "operator": "LT",
                   "probability": null,
-                  "columnName": "tpch.lineitem.l_quantity",
+                  "canonicalColumnName": "tpch.lineitem.l_quantity",
                   "hasNot": false,
                   "type": "UNI_FILTER_OPERATION"
                 },
@@ -404,7 +404,7 @@
                   ],
                   "operator": "EQ",
                   "probability": null,
-                  "columnName": "tpch.lineitem.l_quantity",
+                  "canonicalColumnName": "tpch.lineitem.l_quantity",
                   "hasNot": false,
                   "type": "UNI_FILTER_OPERATION"
                 },
@@ -457,7 +457,7 @@
                 ],
                 "operator": "EQ",
                 "probability": null,
-                "columnName": "tpch.region.r_name",
+                "canonicalColumnName": "tpch.region.r_name",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -512,7 +512,7 @@
                 ],
                 "operator": "EQ",
                 "probability": null,
-                "columnName": "tpch.part.p_type",
+                "canonicalColumnName": "tpch.part.p_type",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -574,7 +574,7 @@
                 ],
                 "operator": "GE",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_discount",
+                "canonicalColumnName": "tpch.lineitem.l_discount",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -584,7 +584,7 @@
                 ],
                 "operator": "GE",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_shipdate",
+                "canonicalColumnName": "tpch.lineitem.l_shipdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -594,7 +594,7 @@
                 ],
                 "operator": "LE",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_discount",
+                "canonicalColumnName": "tpch.lineitem.l_discount",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -604,7 +604,7 @@
                 ],
                 "operator": "LT",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_quantity",
+                "canonicalColumnName": "tpch.lineitem.l_quantity",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -614,7 +614,7 @@
                 ],
                 "operator": "LT",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_shipdate",
+                "canonicalColumnName": "tpch.lineitem.l_shipdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -658,7 +658,7 @@
                 ],
                 "operator": "GE",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_shipdate",
+                "canonicalColumnName": "tpch.lineitem.l_shipdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -668,7 +668,7 @@
                 ],
                 "operator": "LT",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_shipdate",
+                "canonicalColumnName": "tpch.lineitem.l_shipdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -703,7 +703,7 @@
                 "parameters": [],
                 "operator": "ISNULL",
                 "probability": 0.0,
-                "columnName": "tpch.nation.n_comment",
+                "canonicalColumnName": "tpch.nation.n_comment",
                 "hasNot": false,
                 "type": "ISNULL_FILTER_OPERATION"
               },
@@ -711,7 +711,7 @@
                 "parameters": [],
                 "operator": "ISNULL",
                 "probability": 0.0,
-                "columnName": "tpch.nation.n_name",
+                "canonicalColumnName": "tpch.nation.n_name",
                 "hasNot": true,
                 "type": "ISNULL_FILTER_OPERATION"
               }
@@ -746,7 +746,7 @@
                 ],
                 "operator": "LE",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_shipdate",
+                "canonicalColumnName": "tpch.lineitem.l_shipdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -783,7 +783,7 @@
                 ],
                 "operator": "EQ",
                 "probability": null,
-                "columnName": "tpch.lineitem.l_returnflag",
+                "canonicalColumnName": "tpch.lineitem.l_returnflag",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -830,7 +830,7 @@
                 ],
                 "operator": "GE",
                 "probability": null,
-                "columnName": "tpch.orders.o_orderdate",
+                "canonicalColumnName": "tpch.orders.o_orderdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -840,7 +840,7 @@
                 ],
                 "operator": "LT",
                 "probability": null,
-                "columnName": "tpch.orders.o_orderdate",
+                "canonicalColumnName": "tpch.orders.o_orderdate",
                 "hasNot": false,
                 "type": "UNI_FILTER_OPERATION"
               }
@@ -938,7 +938,7 @@
                 ],
                 "operator": "IN",
                 "probability": null,
-                "columnName": "tpch.nation.n_comment",
+                "canonicalColumnName": "tpch.nation.n_comment",
                 "hasNot": true,
                 "type": "UNI_FILTER_OPERATION"
               },
@@ -948,7 +948,7 @@
                 ],
                 "operator": "LIKE",
                 "probability": null,
-                "columnName": "tpch.nation.n_comment",
+                "canonicalColumnName": "tpch.nation.n_comment",
                 "hasNot": true,
                 "type": "UNI_FILTER_OPERATION"
               }

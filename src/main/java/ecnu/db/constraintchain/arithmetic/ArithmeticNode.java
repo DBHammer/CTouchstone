@@ -18,22 +18,17 @@ public abstract class ArithmeticNode {
         this.type = type;
     }
 
-    public static void setSize(int size) throws TouchstoneException {
-        if (ArithmeticNode.size == -1) {
-            ArithmeticNode.size = size;
-        } else {
-            throw new TouchstoneException("不应该重复设置size");
-        }
+    public static void setSize(int size) {
+        ArithmeticNode.size = size;
     }
 
     /**
      * 获取当前节点的计算结果
      *
-     * @param schema filter所在的schema，用于查找column
      * @return 返回float类型的计算结果
      */
     @JsonIgnore
-    public abstract float[] getVector(Schema schema) throws TouchstoneException;
+    public abstract float[] getVector() throws TouchstoneException;
 
     public ArithmeticNodeType getType() {
         return this.type;
@@ -61,10 +56,9 @@ public abstract class ArithmeticNode {
 
     /**
      * 获取当前节点在column生成好数据以后的计算结果
-     * @param schema filter所在的schema，用于查找column
-     * @param size 生成数据的size
+     *
      * @return 返回double类型的计算结果
      * @throws CannotFindColumnException 找不的column
      */
-    abstract public double[] calculate(Schema schema, int size) throws CannotFindColumnException;
+    abstract public double[] calculate() throws CannotFindColumnException;
 }

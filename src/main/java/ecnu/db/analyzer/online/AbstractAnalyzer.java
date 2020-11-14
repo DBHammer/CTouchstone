@@ -9,13 +9,14 @@ import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.constraintchain.chain.ConstraintChainPkJoinNode;
 import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.dbconnector.DatabaseConnectorInterface;
-import ecnu.db.exception.schema.CannotFindSchemaException;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.exception.analyze.UnsupportedDBTypeException;
+import ecnu.db.exception.schema.CannotFindSchemaException;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Schema;
 import ecnu.db.utils.AbstractDatabaseInfo;
-import ecnu.db.utils.config.PrepareConfig;
 import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
+import ecnu.db.utils.config.PrepareConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,7 +176,7 @@ public abstract class AbstractAnalyzer {
      * @param path 需要处理的路径
      * @return 获取的约束链
      * @throws TouchstoneException 无法处理路径
-     * @throws SQLException                 无法处理路径
+     * @throws SQLException        无法处理路径
      */
     private ConstraintChain extractConstraintChain(List<ExecutionNode> path) throws TouchstoneException, SQLException {
         if (path == null || path.size() == 0) {
@@ -229,7 +230,7 @@ public abstract class AbstractAnalyzer {
      * @param tableName       表名
      * @return 节点行数，小于0代表停止继续向上分析
      * @throws TouchstoneException 节点分析出错
-     * @throws SQLException                 节点分析出错
+     * @throws SQLException        节点分析出错
      */
     private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, String tableName, int lastNodeLineCount) throws TouchstoneException, SQLException {
         if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
@@ -295,7 +296,7 @@ public abstract class AbstractAnalyzer {
      * @param fkCol   外键
      * @return 该列是否为主键
      * @throws TouchstoneException 由于逻辑错误无法判断是否为主键的异常
-     * @throws SQLException                 无法通过数据库SQL查询获得多列属性的ndv
+     * @throws SQLException        无法通过数据库SQL查询获得多列属性的ndv
      */
     private boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneException, SQLException {
         if (String.format("%s.%s", pkTable, pkCol).equals(getSchema(fkTable).getMetaDataFks().get(fkCol))) {
@@ -305,10 +306,12 @@ public abstract class AbstractAnalyzer {
             return false;
         }
         if (!pkCol.contains(",")) {
-            if (getSchema(pkTable).getNdv(pkCol) == getSchema(fkTable).getNdv(fkCol)) {
+            if (ColumnManager.getColumn(pkTable + "." + pkCol).getNdv() ==
+                    ColumnManager.getColumn(fkTable + "." + fkCol).getNdv()) {
                 return getSchema(pkTable).getTableSize() < getSchema(fkTable).getTableSize();
             } else {
-                return getSchema(pkTable).getNdv(pkCol) > getSchema(fkTable).getNdv(fkCol);
+                return ColumnManager.getColumn(pkTable + "." + pkCol).getNdv() >
+                        ColumnManager.getColumn(fkTable + "." + fkCol).getNdv();
             }
         } else {
             int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);

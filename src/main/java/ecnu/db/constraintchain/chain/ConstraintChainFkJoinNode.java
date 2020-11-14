@@ -54,4 +54,8 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     public String getRefCol() {
         return refCol;
     }
+
+    public String getJoinInfoName() {
+        return fkCol + ":" + refTable + "." + refCol + pkTag;
+    }
 }

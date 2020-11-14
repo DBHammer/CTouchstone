@@ -19,9 +19,8 @@ class JoinInfoTableTest {
         List<int[]> ret = table.getAllKeys(0L);
         int sum = 0;
         for (int i = 0; i < maxListSize; i++) {
-            int val = ret.get(i)[0];
-            sum += val;
+            sum += ret.get(i)[0];
         }
-        assertEquals((1 + maxData) * 1.0 / 2,  1.0 * sum / maxListSize, 200);
+        assertEquals((1 + maxData) * 1.0 / 2, 1.0 * sum / maxListSize, 400);
     }
 }

@@ -120,7 +120,7 @@ public class DateTimeColumn extends AbstractColumn {
     public void prepareTupleData(int size) {
         ThreadLocalRandom rand = ThreadLocalRandom.current();
         eqBuckets.sort(Comparator.comparing(o -> o.leftBorder));
-        BigDecimal cumBorder = BigDecimal.ZERO, sizeVal = BigDecimal.valueOf(size);
+        BigDecimal cumBorder = BigDecimal.ZERO;
         if (longCopyOfTupleData == null || longCopyOfTupleData.length != size) {
             longCopyOfTupleData = new long[size];
         }

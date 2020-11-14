@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 import java.math.BigDecimal;
+import ecnu.db.schema.Schema;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.constraintchain.arithmetic.*;
 import ecnu.db.constraintchain.arithmetic.operator.*;
 import ecnu.db.constraintchain.arithmetic.value.*;
@@ -13,7 +15,6 @@ import ecnu.db.constraintchain.filter.logical.*;
 import ecnu.db.constraintchain.filter.*;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import java.io.StringReader;
-import ecnu.db.schema.Schema;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.column.ColumnType;
 
@@ -53,19 +54,16 @@ parser code {:
       throw new TouchstoneException("select表名不一致");
     }
   }
-  private float getColumnNullProbability(String tableName, String canonicalColumnName) throws TouchstoneException {
-    return analyzer.getSchema(tableName).getColumn(canonicalColumnName.split("\\.")[2]).getNullPercentage();
-  }
   private boolean isColumnNeedQuote(String canonicalColumnName) throws TouchstoneException {
     boolean needQuote = false;
-    ColumnType columnType = analyzer.getSchema(this.tableName).getColumn(canonicalColumnName.split("\\.")[2]).getColumnType();
+    ColumnType columnType = ColumnManager.getColumn(canonicalColumnName).getColumnType();
     if (columnType == ColumnType.DATETIME || columnType == ColumnType.VARCHAR) {
         needQuote = true;
     }
     return needQuote;
   }
   private boolean isColumnDate(String canonicalColumnName) throws TouchstoneException {
-    ColumnType columnType = analyzer.getSchema(this.tableName).getColumn(canonicalColumnName.split("\\.")[2]).getColumnType();
+    ColumnType columnType = ColumnManager.getColumn(canonicalColumnName).getColumnType();
     return columnType == ColumnType.DATETIME;
   }
 :};
@@ -285,11 +283,11 @@ arithmetic_operator ::=
 
 /* isnull expressions */
 isnull_expr ::=
-        ISNULL:isnull LPAREN CANONICAL_COLUMN_NAME:col RPAREN                      {:
-                                                                                      String tableName = getCanonicalTableName(col);
+        ISNULL:isnull LPAREN CANONICAL_COLUMN_NAME:canonicalColumnName RPAREN                      {:
+                                                                                      String tableName = getCanonicalTableName(canonicalColumnName);
                                                                                       verifyTableName(tableName);
-                                                                                      float nullProbability = getColumnNullProbability(tableName, col);
-                                                                                      IsNullFilterOperation operation = new IsNullFilterOperation(col, BigDecimal.valueOf(nullProbability));
+                                                                                      float nullProbability = ColumnManager.getColumn(canonicalColumnName).getNullPercentage();
+                                                                                      IsNullFilterOperation operation = new IsNullFilterOperation(canonicalColumnName, BigDecimal.valueOf(nullProbability));
                                                                                       RESULT = operation;
                                                                                   :}
         ;

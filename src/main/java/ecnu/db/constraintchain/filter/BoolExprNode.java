@@ -31,10 +31,9 @@ public interface BoolExprNode {
 
     /**
      * 获取生成好column以后，evaluate表达式的布尔值
-     * @param schema 需要的schema
-     * @param size 生成的size
+     *
      * @return evaluate表达式的布尔值
      * @throws TouchstoneException 获取失败
      */
-    boolean[] evaluate(Schema schema, int size) throws TouchstoneException;
+    boolean[] evaluate() throws TouchstoneException;
 }

@@ -15,6 +15,7 @@ import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.exception.TouchstoneException;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnDeserializer;
@@ -74,6 +75,7 @@ class QueryInstantiationTest {
         assertEquals(1, operations.size());
         assertThat(BigDecimal.valueOf(0.04), Matchers.comparesEqualTo(operations.get(0).getProbability()));
 
+        //todo check 
         operations = new ArrayList<>(query2operations.get("6.sql_1_tpch.lineitem"));
         assertEquals(3, operations.size());
         assertThat(BigDecimalMath.pow(BigDecimal.valueOf(0.01904131080122942), BigDecimal.ONE.divide(BigDecimal.valueOf(3), BIG_DECIMAL_DEFAULT_PRECISION), BIG_DECIMAL_DEFAULT_PRECISION), Matchers.comparesEqualTo(operations.get(0).getProbability()));
@@ -104,7 +106,7 @@ class QueryInstantiationTest {
             parameters.forEach((param) -> id2Parameter.put(param.getId(), param));
         }
         // 2.sql_1 simple eq
-        IntColumn col = (IntColumn) schemas.get("tpch.part").getColumn("p_size");
+        IntColumn col = (IntColumn) ColumnManager.getColumn("tpch.part.p_size");
         assertTrue(Integer.parseInt(id2Parameter.get(19).getData()) >= col.getMin(),
                 String.format("'%s' should be greater than or equal to '%d'", id2Parameter.get(19).getData(), col.getMin()));
         assertTrue(Integer.parseInt(id2Parameter.get(19).getData()) <= col.getMax(),
@@ -167,9 +169,7 @@ class QueryInstantiationTest {
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());
-            parameters.forEach((param) -> {
-                id2Parameter.put(param.getId(), param);
-            });
+            parameters.forEach((param) -> id2Parameter.put(param.getId(), param));
         }
         // known distribution c2:[2,23], c3[-3,9], c4[0,10]
         Float[] c2 = new Float[samplingSize], c3 = new Float[samplingSize], c4 = new Float[samplingSize];
@@ -221,7 +221,7 @@ class QueryInstantiationTest {
             Schema schema = schemas.get(tableName);
             for (ConstraintChainNode node : chain.getNodes()) {
                 if (node instanceof ConstraintChainFilterNode) {
-                    boolean[] evaluation = ((ConstraintChainFilterNode) node).getRoot().evaluate(schema, generateSize);
+                    boolean[] evaluation = ((ConstraintChainFilterNode) node).getRoot().evaluate();
                     double rate = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count() * 1.0 / evaluation.length;
                     ret.put(schema.getTableName(), rate);
                 }

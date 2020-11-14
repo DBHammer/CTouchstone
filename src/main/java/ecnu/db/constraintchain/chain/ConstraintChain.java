@@ -3,7 +3,6 @@ package ecnu.db.constraintchain.chain;
 import com.google.common.collect.Table;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,36 +61,38 @@ public class ConstraintChain {
 
     /**
      * 计算pk和fk的bitmap
-     * @param schema 需要的schema参数
-     * @param size 需要的size
+     *
+     * @param size     需要的size
      * @param pkBitMap pkTag -> bitmaps
      * @param fkBitMap ref_col+local_col -> bitmaps
      * @throws TouchstoneException 计算失败
      */
-    public void evaluate(Schema schema, int size, Map<Integer, boolean[]> pkBitMap, Table<String, ConstraintChainFkJoinNode, boolean[]> fkBitMap) throws TouchstoneException {
+    public void evaluate(int size, Map<Integer, boolean[]> pkBitMap, Table<String, Integer, boolean[]> fkBitMaps) throws TouchstoneException {
         boolean[] flag = new boolean[size];
         Arrays.fill(flag, true);
-        ThreadLocalRandom rand = ThreadLocalRandom.current();
         for (ConstraintChainNode node : nodes) {
-            if (node instanceof ConstraintChainPkJoinNode) {
-                boolean[] pkBit = new boolean[size];
-                System.arraycopy(flag, 0, pkBit, 0, size);
-                pkBitMap.put(((ConstraintChainPkJoinNode) node).getPkTag(), pkBit);
-            }
-            else if (node instanceof ConstraintChainFilterNode) {
-                boolean[] filter  = ((ConstraintChainFilterNode) node).evaluate(schema, size);
-                System.arraycopy(filter, 0, flag, 0, size);
-            }
-            else if (node instanceof ConstraintChainFkJoinNode) {
-                double probability = ((ConstraintChainFkJoinNode) node).getProbability().doubleValue();
-                boolean[] fkBit = new boolean[size];
-                for (int i = 0; i < size; i++) {
-                    if ((1 - rand.nextDouble(0, 1)) >= probability) {
-                        flag[i] = false;
+            switch (node.getConstraintChainNodeType()) {
+                case FILTER:
+                    int j = 0;
+                    // // TODO: 2020/11/14  setsize
+                    for (boolean b : ((ConstraintChainFilterNode) node).evaluate()) {
+                        flag[j++] &= b;
                     }
-                    fkBit[i] = flag[i];
-                }
-                fkBitMap.put(((ConstraintChainFkJoinNode) node).getRefTable() + ((ConstraintChainFkJoinNode) node).getRefCol() + ((ConstraintChainFkJoinNode) node).getFkCol(), (ConstraintChainFkJoinNode) node, fkBit);
+                    break;
+                case FK_JOIN:
+                    //todo 引入规则
+                    ConstraintChainFkJoinNode constraintChainFkJoinNode = (ConstraintChainFkJoinNode) node;
+                    double probability = constraintChainFkJoinNode.getProbability().doubleValue();
+                    for (int i = 0; i < size; i++) {
+                        flag[i] &= ThreadLocalRandom.current().nextDouble() > probability;
+                    }
+                    fkBitMaps.put(constraintChainFkJoinNode.getJoinInfoName(), constraintChainFkJoinNode.getPkTag(), flag.clone());
+                    break;
+                case PK_JOIN:
+                    pkBitMap.put(((ConstraintChainPkJoinNode) node).getPkTag(), flag.clone());
+                    break;
+                default:
+                    throw new TouchstoneException("不支持的Node类型");
             }
         }
     }

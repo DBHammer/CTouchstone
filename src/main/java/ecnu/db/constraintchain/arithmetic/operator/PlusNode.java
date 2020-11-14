@@ -15,8 +15,8 @@ public class PlusNode extends ArithmeticNode {
     }
 
     @Override
-    public float[] getVector(Schema schema) throws TouchstoneException {
-        float[] leftValue = leftNode.getVector(schema), rightValue = rightNode.getVector(schema);
+    public float[] getVector() throws TouchstoneException {
+        float[] leftValue = leftNode.getVector(), rightValue = rightNode.getVector();
         for (int i = 0; i < leftValue.length; i++) {
             leftValue[i] += rightValue[i];
         }
@@ -24,8 +24,8 @@ public class PlusNode extends ArithmeticNode {
     }
 
     @Override
-    public double[] calculate(Schema schema, int size) throws CannotFindColumnException {
-        double[] leftValue = leftNode.calculate(schema, size), rightValue = rightNode.calculate(schema, size);
+    public double[] calculate() throws CannotFindColumnException {
+        double[] leftValue = leftNode.calculate(), rightValue = rightNode.calculate();
         for (int i = 0; i < leftValue.length; i++) {
             leftValue[i] += rightValue[i];
         }

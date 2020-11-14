@@ -6,9 +6,9 @@ import com.google.common.collect.Multimaps;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.exception.schema.CannotFindColumnException;
 import ecnu.db.exception.compute.InstantiateParameterException;
-import ecnu.db.schema.Schema;
+import ecnu.db.exception.schema.CannotFindColumnException;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.StringColumn;
 import org.apache.commons.collections.CollectionUtils;
@@ -29,16 +29,16 @@ import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.LESS
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UniVarFilterOperation extends AbstractFilterOperation {
-    protected String columnName;
+    protected String canonicalColumnName;
     private Boolean hasNot = false;
 
     public UniVarFilterOperation() {
         super(null);
     }
 
-    public UniVarFilterOperation(String columnName, CompareOperator operator) {
+    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator) {
         super(operator);
-        this.columnName = columnName;
+        this.canonicalColumnName = canonicalColumnName;
     }
 
     /**
@@ -109,18 +109,18 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         this.hasNot = hasNot;
     }
 
-    public String getColumnName() {
-        return columnName;
+    public String getCanonicalColumnName() {
+        return canonicalColumnName;
     }
 
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
+    public void setCanonicalColumnName(String canonicalColumnName) {
+        this.canonicalColumnName = canonicalColumnName;
     }
 
     @Override
     public String toString() {
         List<String> content = parameters.stream().map(Parameter::toString).collect(Collectors.toList());
-        content.add(0, String.format("%s", columnName));
+        content.add(0, String.format("%s", canonicalColumnName));
         if (hasNot) {
             return String.format("not(%s(%s))", operator.toString().toLowerCase(), String.join(", ", content));
         }
@@ -183,8 +183,8 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public boolean[] evaluate(Schema schema, int size) throws CannotFindColumnException {
-        AbstractColumn column = schema.getColumn(columnName.split("\\.")[2]);
+    public boolean[] evaluate() throws CannotFindColumnException {
+        AbstractColumn column = ColumnManager.getColumn(canonicalColumnName);
         return column.evaluate(operator, parameters, hasNot);
     }
 }

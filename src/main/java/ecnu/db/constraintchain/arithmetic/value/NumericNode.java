@@ -35,7 +35,7 @@ public class NumericNode extends ArithmeticNode {
     }
 
     @Override
-    public float[] getVector(Schema schema) {
+    public float[] getVector() {
         int size = ArithmeticNode.size;
         float[] value = new float[size];
         Arrays.fill(value, constant);
@@ -43,7 +43,7 @@ public class NumericNode extends ArithmeticNode {
     }
 
     @Override
-    public double[] calculate(Schema schema, int size) {
+    public double[] calculate() {
         double[] value = new double[size];
         Arrays.fill(value, constant);
         return value;

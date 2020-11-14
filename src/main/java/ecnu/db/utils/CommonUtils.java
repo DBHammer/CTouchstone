@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
  * @author xuechao.lian
  */
 public class CommonUtils {
+    public static final int stepSize = 10000;
     public static final int INIT_HASHMAP_SIZE = 16;
     public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public static final String DUMP_FILE_POSTFIX = "dump";
@@ -79,10 +80,6 @@ public class CommonUtils {
             return false;
         }
         return true;
-    }
-
-    public static String extractSimpleColumnName(String canonicalColumnName) {
-        return canonicalColumnName.split("\\.")[2];
     }
 
     public static void shuffle(int size, ThreadLocalRandom rand, int[] tupleData) {

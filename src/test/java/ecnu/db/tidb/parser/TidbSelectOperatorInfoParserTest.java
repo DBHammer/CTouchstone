@@ -2,7 +2,9 @@ package ecnu.db.tidb.parser;
 
 import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.constraintchain.filter.logical.AndNode;
+import ecnu.db.exception.TouchstoneException;
 import ecnu.db.exception.analyze.UnsupportedDBTypeException;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.DecimalColumn;
@@ -32,19 +34,14 @@ public class TidbSelectOperatorInfoParserTest {
     private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(lexer, new ComplexSymbolFactory());
 
     @BeforeEach
-    void setUp() throws UnsupportedDBTypeException, IOException {
+    void setUp() throws TouchstoneException {
         PrepareConfig config = new PrepareConfig();
         config.setDatabaseVersion(TouchstoneSupportedDatabaseVersion.TiDB4);
-        Map<String, Schema> schemas = new HashMap<>();
-        Schema schema = new Schema();
-        Map<String, AbstractColumn> columns = new HashMap<>();
-        columns.put("col1", new IntColumn("col1"));
-        columns.put("col2", new IntColumn("col2"));
-        columns.put("col3", new StringColumn("col3"));
-        columns.put("col4", new DecimalColumn("col4"));
-        schema.setColumns(columns);
-        schemas.put("db.table", schema);
-        parser.setAnalyzer(new TidbAnalyzer(config, null, new TidbInfo(TouchstoneSupportedDatabaseVersion.TiDB4), schemas, null));
+        ColumnManager.addColumn("db.table.col1", new IntColumn("col1"));
+        ColumnManager.addColumn("db.table.col2", new IntColumn("col2"));
+        ColumnManager.addColumn("db.table.col3", new StringColumn("col3"));
+        ColumnManager.addColumn("db.table.col4", new DecimalColumn("col4"));
+        parser.setAnalyzer(new TidbAnalyzer(config, null, new TidbInfo(TouchstoneSupportedDatabaseVersion.TiDB4), null, null));
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method")

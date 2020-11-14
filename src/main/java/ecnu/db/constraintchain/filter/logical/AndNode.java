@@ -11,7 +11,6 @@ import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.exception.compute.PushDownProbabilityException;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.schema.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +62,7 @@ public class AndNode implements BoolExprNode {
             } else if (child.getType() == UNI_FILTER_OPERATION) {
                 CompareOperator.TYPE type = ((UniVarFilterOperation) child).getOperator().getType();
                 if (type == CompareOperator.TYPE.GREATER || type == CompareOperator.TYPE.LESS) {
-                    col2uniFilters.put(((UniVarFilterOperation) child).getColumnName(), (UniVarFilterOperation) child);
+                    col2uniFilters.put(((UniVarFilterOperation) child).getCanonicalColumnName(), (UniVarFilterOperation) child);
                 } else if (type == CompareOperator.TYPE.EQUAL) {
                     otherNodes.add(child);
                 } else {
@@ -111,12 +110,11 @@ public class AndNode implements BoolExprNode {
     }
 
     @Override
-    public boolean[] evaluate(Schema schema, int size) throws TouchstoneException {
-        boolean[] value = children.get(0).evaluate(schema, size);
+    public boolean[] evaluate() throws TouchstoneException {
+        boolean[] value = children.get(0).evaluate();
         for (int i = 1; i < children.size(); i++) {
-            BoolExprNode child = children.get(i);
-            boolean[] childValue = child.evaluate(schema, size);
-            for (int j = 0; j < size; j++) {
+            boolean[] childValue = children.get(i).evaluate();
+            for (int j = 0; j < value.length; j++) {
                 value[j] = (value[j] & childValue[j]);
             }
         }

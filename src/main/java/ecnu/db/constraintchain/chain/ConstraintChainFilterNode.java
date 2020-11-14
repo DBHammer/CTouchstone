@@ -62,7 +62,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         return String.format("{root:%s,probability:%s}", root.toString(), probability);
     }
 
-    public boolean[] evaluate(Schema schema, int size) throws TouchstoneException {
-        return root.evaluate(schema, size);
+    public boolean[] evaluate() throws TouchstoneException {
+        return root.evaluate();
     }
 }

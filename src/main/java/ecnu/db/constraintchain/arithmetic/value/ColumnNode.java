@@ -6,6 +6,7 @@ import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.exception.schema.CannotFindColumnException;
 import ecnu.db.exception.compute.InstantiateParameterException;
 import ecnu.db.exception.TouchstoneException;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.DecimalColumn;
@@ -59,8 +60,8 @@ public class ColumnNode extends ArithmeticNode {
     }
 
     @Override
-    public float[] getVector(Schema schema) throws TouchstoneException {
-        AbstractColumn column = schema.getColumn(columnName);
+    public float[] getVector() throws TouchstoneException {
+        AbstractColumn column = ColumnManager.getColumn(columnName);
         if (column instanceof IntColumn) {
             setMinMax((float) ((IntColumn) column).getMin(), (float) ((IntColumn) column).getMax());
         } else if (column instanceof DecimalColumn) {
@@ -101,8 +102,8 @@ public class ColumnNode extends ArithmeticNode {
     }
 
     @Override
-    public double[] calculate(Schema schema, int size) throws CannotFindColumnException {
-        AbstractColumn column = schema.getColumn(columnName);
+    public double[] calculate() throws CannotFindColumnException {
+        AbstractColumn column = ColumnManager.getColumn(columnName);
         double[] ret;
         if (column.getColumnType() == INTEGER) {
             ret = ((IntColumn) column).calculate();

@@ -12,37 +12,30 @@ import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.chain.ConstraintChainReader;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
-import ecnu.db.exception.schema.CircularReferenceException;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.exception.analyze.UnsupportedDBTypeException;
+import ecnu.db.exception.schema.CircularReferenceException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnDeserializer;
 import ecnu.db.tidb.TidbInfo;
 import ecnu.db.utils.AbstractDatabaseInfo;
-import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.config.GenerationConfig;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.matchPattern;
+import static ecnu.db.utils.CommonUtils.stepSize;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.WRITE;
 
 /**
  * @author alan
@@ -51,6 +44,7 @@ public class Generator {
     private static final Logger logger = LoggerFactory.getLogger(Generator.class);
     public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
     private static final Pattern pattern = Pattern.compile("'(([0-9]+),[0,1])'");
+
     public static void generate(GenerationConfig config) throws IOException, TouchstoneException, InterruptedException, ExecutionException {
         ParameterResolver.items.clear();
         Map<String, List<ConstraintChain>> query2chains =
@@ -85,7 +79,8 @@ public class Generator {
         }
 
         Multimap<String, ConstraintChain> schema2chains = getSchema2Chains(query2chains);
-        generateTuples(config, schema2chains, schemas, topologicalOrder, neededThreads);
+        //todo generate
+        //generateTuples(config, schema2chains, schemas, topologicalOrder, neededThreads);
 
         Map<Integer, Parameter> id2Parameter = getId2Parameter(query2chains);
 
@@ -119,58 +114,37 @@ public class Generator {
         return schema2chains;
     }
 
-    private static void generateTuples(GenerationConfig config,
-                                       Multimap<String, ConstraintChain> schema2chains,
-                                       Map<String, Schema> schemas,
-                                       List<Schema> topologicalOrder, int neededThreads) throws InterruptedException, IOException, ExecutionException {
-        ExecutorService service = Executors.newFixedThreadPool(config.getThreadPoolSize());
-        int threadNum = config.getThreadNum(), epochSize = config.getEpochSize();
-        for (Schema schema : topologicalOrder) {
-            int tableSize = schema.getTableSize();
-            int step;
-            Collection<ConstraintChain> chains = schema2chains.get(schema.getTableName());
-            AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(
-                    Paths.get(config.getOutputPath(), schema.getTableName() + CommonUtils.SQL_FILE_POSTFIX), WRITE, CREATE);
-            if (tableSize > SINGLE_THREAD_TUPLE_SIZE * threadNum) {
-                step = tableSize / threadNum;
-            } else {
-                step = SINGLE_THREAD_TUPLE_SIZE;
+    /**
+     * 给定一张表，生成并持久化它的所有数据
+     *
+     * @param constraintChains 在表上计算的约束链
+     * @param schema           表的模式定义和生成器定义
+     * @param dataWriter       数据输出接口
+     * @param rangeStart       负责生成的数据开始区间
+     * @param rangeEnd         负责生成的数据结束区间
+     * @throws IOException 无法完成数据写出
+     */
+    private static void generateTuples(Collection<ConstraintChain> constraintChains, Schema schema,
+                                       BufferedWriter dataWriter,
+                                       int rangeStart, int rangeEnd) throws IOException {
+        int loop = (rangeEnd - rangeStart) / stepSize;
+        for (int i = 0; i < loop; i++) {
+            for (AbstractColumn column : schema.getColumns().values()) {
+                column.prepareGeneration(stepSize);
             }
-            List<Future<Integer>> tasks = new ArrayList<>();
-            String newDatabaseName = (!config.isCrossMultiDatabase() && config.getDatabaseName() != null) ? config.getDatabaseName() : null;
-            for (int i = 0; i < tableSize; i += step) {
-                int finalI = i;
-                Future<Integer> task = service.submit(() -> {
-                    int tupleSize = (finalI + step) > tableSize ? tableSize - finalI : step;
-                    try {
-                        List<Future<Integer>> futures = new ArrayList<>();
-                        for (int j = 0; j < tupleSize; j += epochSize) {
-                            int prepareSize = (j + epochSize) > tupleSize ? tupleSize - j : epochSize;
-                            for (AbstractColumn column : schema.getColumns().values()) {
-                                column.prepareGeneration(prepareSize);
-                            }
-                            schema.prepareTuples(prepareSize, chains, schemas, config.getJoinInfoPath(), neededThreads);
-                            String sqls = schema.generateInsertSqls(prepareSize, newDatabaseName);
-                            ByteBuffer buffer = ByteBuffer.wrap(sqls.getBytes(UTF_8));
-                            Future<Integer> future = fileChannel.write(buffer, 0);
-                            futures.add(future);
-                        }
-                        for (Future<Integer> future : futures) {
-                            future.get();
-                        }
-                    } catch (TouchstoneException | IOException | InterruptedException | ExecutionException e) {
-                        logger.error(String.format("thread %d generate tuple failed", Thread.currentThread().getId()), e);
-                        System.exit(1);
-                    }
-                    return 0;
-                });
-                tasks.add(task);
-            }
-            for (Future<Integer> task : tasks) {
-                task.get();
-            }
+            //schema.fillForeignKeys(rangeStart, stepSize, constraintChains);
+            rangeStart += stepSize;
+            dataWriter.write(schema.transferData());
         }
-
+        if (rangeStart != rangeEnd) {
+            int retainSize = rangeEnd - rangeStart;
+            for (AbstractColumn column : schema.getColumns().values()) {
+                column.prepareGeneration(retainSize);
+            }
+            //schema.fillForeignKeys(rangeStart, retainSize, constraintChains);
+            dataWriter.write(schema.transferData());
+        }
+        dataWriter.close();
     }
 
     private static Map<Integer, Parameter> getId2Parameter(Map<String, List<ConstraintChain>> query2chains) {

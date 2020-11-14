@@ -3,7 +3,7 @@ package ecnu.db.constraintchain.filter.operation;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.schema.Schema;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.column.AbstractColumn;
 
 import java.math.BigDecimal;
@@ -15,16 +15,20 @@ import java.util.Set;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IsNullFilterOperation extends AbstractFilterOperation {
-    private String columnName;
+    public void setCanonicalColumnName(String canonicalColumnName) {
+        this.canonicalColumnName = canonicalColumnName;
+    }
+
+    private String canonicalColumnName;
     private Boolean hasNot = false;
 
     public IsNullFilterOperation() {
         super(CompareOperator.ISNULL);
     }
 
-    public IsNullFilterOperation(String columnName, BigDecimal probability) {
+    public IsNullFilterOperation(String canonicalColumnName, BigDecimal probability) {
         super(CompareOperator.ISNULL);
-        this.columnName = columnName;
+        this.canonicalColumnName = canonicalColumnName;
         this.probability = probability;
     }
 
@@ -41,9 +45,9 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     @Override
     public String toString() {
         if (hasNot) {
-            return String.format("not(isnull(%s))", this.columnName);
+            return String.format("not(isnull(%s))", this.canonicalColumnName);
         }
-        return String.format("isnull(%s)", this.columnName);
+        return String.format("isnull(%s)", this.canonicalColumnName);
     }
 
     public Boolean getHasNot() {
@@ -55,18 +59,19 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     }
 
     public String getColumnName() {
-        return columnName;
+        return canonicalColumnName;
     }
 
     public void setColumnName(String columnName) {
-        this.columnName = columnName;
+        this.canonicalColumnName = columnName;
     }
 
     @Override
-    public boolean[] evaluate(Schema schema, int size) throws TouchstoneException {
-        AbstractColumn column = schema.getColumn(columnName.split("\\.")[2]);
-        boolean[] value = new boolean[size], columnIsnullEvaluations = column.getIsnullEvaluations();
-        for (int i = 0; i < size; i++) {
+    public boolean[] evaluate() throws TouchstoneException {
+        AbstractColumn column = ColumnManager.getColumn(canonicalColumnName);
+        boolean[] columnIsnullEvaluations = column.getIsnullEvaluations();
+        boolean[] value = new boolean[columnIsnullEvaluations.length];
+        for (int i = 0; i < columnIsnullEvaluations.length; i++) {
             value[i] = (hasNot ^ columnIsnullEvaluations[i]);
         }
         return value;
