@@ -23,10 +23,6 @@ ecnu.db.exception.TouchstoneException
   private Symbol symbol(int type, Object value) {
     return new Token(type, yycolumn+1, value);
   }
-
-  public void init() {
-    System.out.println("initialized");
-  }
 %}
 
 %implements TidbSelectSymbol

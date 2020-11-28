@@ -1,5 +1,6 @@
 package ecnu.db.generation;
 
+import ecnu.db.app.Generator;
 import ecnu.db.exception.TouchstoneException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

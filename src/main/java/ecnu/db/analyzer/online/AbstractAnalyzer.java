@@ -1,22 +1,15 @@
 package ecnu.db.analyzer.online;
 
+import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import ecnu.db.analyzer.statical.QueryAliasParser;
 import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.constraintchain.chain.ConstraintChainPkJoinNode;
 import ecnu.db.constraintchain.filter.SelectResult;
-import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.analyze.UnsupportedDBTypeException;
-import ecnu.db.exception.schema.CannotFindSchemaException;
-import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Schema;
-import ecnu.db.utils.AbstractDatabaseInfo;
-import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
-import ecnu.db.utils.config.PrepareConfig;
+import ecnu.db.schema.SchemaManager;
+import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,40 +28,9 @@ import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 public abstract class AbstractAnalyzer {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
-    protected final QueryAliasParser queryAliasParser = new QueryAliasParser();
-    protected DatabaseConnectorInterface dbConnector;
     protected Map<String, String> aliasDic = new HashMap<>();
-    protected Map<String, Schema> schemas;
     protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
-    protected PrepareConfig config;
-    protected Multimap<String, String> tblName2CanonicalTblName;
-    protected TouchstoneSupportedDatabaseVersion analyzerSupportedDatabaseVersion;
-    protected AbstractDatabaseInfo databaseInfo;
-
-    protected AbstractAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector,
-                               AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas,
-                               Multimap<String, String> tblName2CanonicalTblName) {
-        analyzerSupportedDatabaseVersion = config.getDatabaseVersion();
-        this.dbConnector = dbConnector;
-        this.schemas = schemas;
-        this.config = config;
-        this.tblName2CanonicalTblName = tblName2CanonicalTblName;
-        this.databaseInfo = databaseInfo;
-    }
-
-    public AbstractAnalyzer check() throws TouchstoneException {
-        if (databaseInfo == null || databaseInfo.getSupportedDatabaseVersions() == null || databaseInfo.getSupportedDatabaseVersions().size() == 0) {
-            throw new TouchstoneException("未制定分析器配置信息");
-        } else if (!databaseInfo.getSupportedDatabaseVersions().contains(analyzerSupportedDatabaseVersion)) {
-            throw new UnsupportedDBTypeException(config.getDatabaseVersion());
-        } else if (nodeTypeRef == null) {
-            throw new TouchstoneException("未初始化node映射");
-        } else {
-            return this;
-        }
-    }
-
 
     /**
      * 从operator_info里提取tableName
@@ -105,32 +67,21 @@ public abstract class AbstractAnalyzer {
      */
     protected abstract SelectResult analyzeSelectInfo(String operatorInfo) throws TouchstoneException;
 
-    public List<String[]> getQueryPlan(String queryCanonicalName, String sql, AbstractDatabaseInfo databaseInfo) throws SQLException, TouchstoneException {
-        aliasDic = queryAliasParser.getTableAlias(config.isCrossMultiDatabase(), config.getDatabaseName(), sql, databaseInfo.getStaticalDbVersion());
-        return dbConnector.explainQuery(queryCanonicalName, sql, databaseInfo.getSqlInfoColumns());
-    }
+    /**
+     * @return 分析器对应的静态解析器类型
+     */
+    public abstract DbType getDbType();
 
     /**
      * 获取查询树的约束链信息和表信息
      *
-     * @param queryCanonicalName query的标准名称
-     * @param root               查询树
+     * @param queryPlan 查询计划
      * @return 该查询树结构出的约束链信息和表信息
      */
-    public List<ConstraintChain> extractQueryInfos(String queryCanonicalName, ExecutionNode root) throws SQLException {
+    public List<ConstraintChain> extractQueryInfos(List<String[]> queryPlan) throws SQLException, TouchstoneException {
         List<ConstraintChain> constraintChains = new ArrayList<>();
-        List<List<ExecutionNode>> paths = getPaths(root);
-        for (List<ExecutionNode> path : paths) {
-            ConstraintChain constraintChain = null;
-            try {
-                constraintChain = extractConstraintChain(path);
-            } catch (TouchstoneException e) {
-                logger.error(String.format("提取'%s'的一个约束链失败", queryCanonicalName), e);
-            }
-            if (constraintChain == null) {
-                break;
-            }
-            constraintChains.add(constraintChain);
+        for (List<ExecutionNode> path : getPaths(getExecutionTree(queryPlan))) {
+            constraintChains.add(extractConstraintChain(path));
         }
         return constraintChains;
     }
@@ -190,7 +141,7 @@ public abstract class AbstractAnalyzer {
             SelectResult result = analyzeSelectInfo(node.getInfo());
             tableName = result.getTableName();
             constraintChain = new ConstraintChain(tableName);
-            BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(getSchema(tableName).getTableSize()), BIG_DECIMAL_DEFAULT_PRECISION);
+            BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(SchemaManager.getInstance().getTableSize(tableName)), BIG_DECIMAL_DEFAULT_PRECISION);
             ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(tableName, ratio, result.getCondition(), result.getColumns());
             constraintChain.addNode(filterNode);
             constraintChain.addParameters(result.getParameters());
@@ -208,7 +159,7 @@ public abstract class AbstractAnalyzer {
                 lastNodeLineCount = analyzeNode(node, constraintChain, tableName, lastNodeLineCount);
             } catch (TouchstoneException e) {
                 // 小于设置的阈值以后略去后续的节点
-                if (node.getOutputRows() * 1.0 / getSchema(tableName).getTableSize() < config.getSkipNodeThreshold()) {
+                if (node.getOutputRows() * 1.0 / SchemaManager.getInstance().getTableSize(tableName) < CommonUtils.skipNodeThreshold) {
                     logger.error("提取约束链失败", e);
                     logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), node));
                     break;
@@ -262,78 +213,30 @@ public abstract class AbstractAnalyzer {
                 externalCol = joinColumnInfos[1];
             }
             //根据主外键分别设置约束链输出信息
-            if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
+            if (SchemaManager.getInstance().isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(getSchema(localTable).getJoinTag());
+                    node.setJoinTag(SchemaManager.getInstance().getJoinTag(localTable));
                 }
                 ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(localTable, node.getJoinTag(), localCol.split(","));
                 constraintChain.addNode(pkJoinNode);
                 //设置主键
-                getSchema(localTable).setPrimaryKeys(localCol);
+                SchemaManager.getInstance().setPrimaryKeys(localTable, localCol);
                 return -1; // 主键的情况下停止继续遍历
             } else {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(getSchema(localTable).getJoinTag());
+                    node.setJoinTag(SchemaManager.getInstance().getJoinTag(localTable));
                 }
                 BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
-                //设置外键
-                logger.info("table:" + localTable + ".column:" + localCol + " -ref- table:" +
-                        externalCol + ".column:" + externalTable);
-                getSchema(localTable).addForeignKey(localCol, externalTable, externalCol);
-                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable, externalTable, node.getJoinTag(), externalCol, localCol, probability);
+                SchemaManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
+                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable, localCol, externalTable, externalCol, node.getJoinTag(), probability);
                 constraintChain.addNode(fkJoinNode);
             }
         }
         return lastNodeLineCount;
     }
 
-    /**
-     * 根据输入的列名统计非重复值的个数，进而给出该列是否为主键
-     *
-     * @param pkTable 需要测试的主表
-     * @param pkCol   主键
-     * @param fkTable 外表
-     * @param fkCol   外键
-     * @return 该列是否为主键
-     * @throws TouchstoneException 由于逻辑错误无法判断是否为主键的异常
-     * @throws SQLException        无法通过数据库SQL查询获得多列属性的ndv
-     */
-    private boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneException, SQLException {
-        if (String.format("%s.%s", pkTable, pkCol).equals(getSchema(fkTable).getMetaDataFks().get(fkCol))) {
-            return true;
-        }
-        if (String.format("%s.%s", fkTable, fkCol).equals(getSchema(pkTable).getMetaDataFks().get(pkCol))) {
-            return false;
-        }
-        if (!pkCol.contains(",")) {
-            if (ColumnManager.getColumn(pkTable + "." + pkCol).getNdv() ==
-                    ColumnManager.getColumn(fkTable + "." + fkCol).getNdv()) {
-                return getSchema(pkTable).getTableSize() < getSchema(fkTable).getTableSize();
-            } else {
-                return ColumnManager.getColumn(pkTable + "." + pkCol).getNdv() >
-                        ColumnManager.getColumn(fkTable + "." + fkCol).getNdv();
-            }
-        } else {
-            int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
-            int rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
-            if (leftTableNdv == rightTableNdv) {
-                return getSchema(pkTable).getTableSize() < getSchema(fkTable).getTableSize();
-            } else {
-                return leftTableNdv > rightTableNdv;
-            }
-        }
-    }
-
     public int getParameterId() {
         return parameterId++;
-    }
-
-    public Schema getSchema(String tableName) throws CannotFindSchemaException {
-        Schema schema = schemas.get(tableName);
-        if (schema == null) {
-            throw new CannotFindSchemaException(tableName);
-        }
-        return schema;
     }
 
 }

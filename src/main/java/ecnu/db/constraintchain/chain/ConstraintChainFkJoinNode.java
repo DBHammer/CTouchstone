@@ -7,21 +7,21 @@ import java.math.BigDecimal;
  */
 public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String refTable;
-    private String refCol;
+    private String refCols;
     private int pkTag;
     private BigDecimal probability;
-    private String fkCol;
+    private String localCols;
 
     public ConstraintChainFkJoinNode() {
         super(null, ConstraintChainNodeType.FK_JOIN);
     }
 
-    public ConstraintChainFkJoinNode(String tableName, String refTable, int pkTag, String refCol, String fkCol, BigDecimal probability) {
-        super(tableName, ConstraintChainNodeType.FK_JOIN);
+    public ConstraintChainFkJoinNode(String localTable, String localCols, String refTable, String refCols, int pkTag, BigDecimal probability) {
+        super(localTable, ConstraintChainNodeType.FK_JOIN);
         this.refTable = refTable;
-        this.refCol = refCol;
+        this.refCols = refCols;
         this.pkTag = pkTag;
-        this.fkCol = fkCol;
+        this.localCols = localCols;
         this.probability = probability;
     }
 
@@ -47,15 +47,15 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         return probability;
     }
 
-    public String getFkCol() {
-        return fkCol;
+    public String getLocalCols() {
+        return localCols;
     }
 
-    public String getRefCol() {
-        return refCol;
+    public String getRefCols() {
+        return refCols;
     }
 
     public String getJoinInfoName() {
-        return fkCol + ":" + refTable + "." + refCol + pkTag;
+        return localCols + ":" + refTable + "." + refCols + pkTag;
     }
 }

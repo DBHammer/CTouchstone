@@ -1,8 +1,6 @@
 package ecnu.db.app;
 
-import ecnu.db.generation.Generator;
 import ecnu.db.utils.config.GenerationConfig;
-import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import picocli.CommandLine;
 
 import java.util.concurrent.Callable;
@@ -32,8 +30,6 @@ class DataGeneratorApp implements Callable<Integer> {
     private String outputPath;
     @CommandLine.Option(names = {"-J", "--join_info_path"}, description = "temporary storage path for join information")
     private String joinInfoPath;
-    @CommandLine.Option(names = {"--db_version"}, description = "database version: ${COMPLETION-CANDIDATES}")
-    private TouchstoneSupportedDatabaseVersion databaseVersion;
     @CommandLine.Option(names = {"--epoch_size"}, defaultValue = "1000", description = "generating tuple size for each iteration per thread, default value : '${DEFAULT-VALUE}'")
     private int epochSize;
     @CommandLine.Option(names = {"--thread_num"}, defaultValue = "16", description = "maximum number of threads per schema, default value: '${DEFAULT-VALUE}'")
@@ -74,9 +70,6 @@ class DataGeneratorApp implements Callable<Integer> {
         if (joinInfoPath != null) {
             config.setJoinInfoPath(joinInfoPath);
         }
-        if (databaseVersion != null) {
-            config.setDatabaseVersion(databaseVersion);
-        }
         if (config.getEpochSize() == 0) {
             config.setEpochSize(epochSize);
         }
@@ -86,7 +79,7 @@ class DataGeneratorApp implements Callable<Integer> {
         if (config.getThreadPoolSize() == 0) {
             config.setThreadPoolSize(threadPoolSize);
         }
-        Generator.generate(config);
+        Generator.generate(config, null);
         return 0;
     }
 }

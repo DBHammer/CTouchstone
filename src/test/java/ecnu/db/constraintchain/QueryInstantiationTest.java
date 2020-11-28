@@ -99,7 +99,7 @@ class QueryInstantiationTest {
         // **********************************
         // *    test query instantiation    *
         // **********************************
-        QueryInstantiation.compute(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), schemas);
+        QueryInstantiation.compute(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());
@@ -132,13 +132,13 @@ class QueryInstantiationTest {
         List<ConstraintChain> chains;
         Map<String, Double> map;
         chains = query2chains.get("2.sql_1");
-        map = getRate(schemas, generateSize, chains);
+        map = getRate(chains);
         // todo 精度有待提高
         assertEquals(0.00416, map.get("tpch.part"), 0.003);
         assertEquals(0.2, map.get("tpch.region"), 0.003);
 
         chains = query2chains.get("6.sql_1");
-        map = getRate(schemas, generateSize, chains);
+        map = getRate(chains);
         assertEquals(0.01904131080, map.get("tpch.lineitem"), 0.003);
     }
 
@@ -161,7 +161,7 @@ class QueryInstantiationTest {
         // *********************************
         // *    test query instantiation   *
         // *********************************
-        QueryInstantiation.compute(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), schemas);
+        QueryInstantiation.compute(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());
@@ -197,25 +197,24 @@ class QueryInstantiationTest {
         List<ConstraintChain> chains;
         double rate;
         chains = query2chains.get("t1.sql_1");
-        rate = getRate(schemas, generateSize, chains).get("test.test");
+        rate = getRate(chains).get("test.test");
         assertEquals(0.3270440252, rate, 0.03);
 
         chains = query2chains.get("t1.sql_2");
-        rate = getRate(schemas, generateSize, chains).get("test.test");
+        rate = getRate(chains).get("test.test");
         assertEquals(0.8364779874, rate, 0.03);
 
     }
 
-    private Map<String, Double> getRate(Map<String, Schema> schemas, int generateSize, List<ConstraintChain> chains) throws TouchstoneException {
+    private Map<String, Double> getRate(List<ConstraintChain> chains) throws TouchstoneException {
         Map<String, Double> ret = new HashMap<>();
         for (ConstraintChain chain : chains) {
             String tableName = chain.getTableName();
-            Schema schema = schemas.get(tableName);
             for (ConstraintChainNode node : chain.getNodes()) {
                 if (node instanceof ConstraintChainFilterNode) {
                     boolean[] evaluation = ((ConstraintChainFilterNode) node).getRoot().evaluate();
                     double rate = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count() * 1.0 / evaluation.length;
-                    ret.put(schema.getCanonicalTableName(), rate);
+                    ret.put(tableName, rate);
                 }
             }
         }

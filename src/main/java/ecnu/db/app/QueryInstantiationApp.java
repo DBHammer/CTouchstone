@@ -1,8 +1,10 @@
 package ecnu.db.app;
 
-import ecnu.db.generation.Extractor;
+import ecnu.db.dbconnector.InputService;
+import ecnu.db.tidb.Tidb4Connector;
+import ecnu.db.tidb.TidbAnalyzer;
+import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.config.PrepareConfig;
-import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import picocli.CommandLine;
 
 import java.util.concurrent.Callable;
@@ -32,8 +34,6 @@ class QueryInstantiationApp implements Callable<Integer> {
     @CommandLine.Option(names = {"-o", "--output"}, description = "output directory")
     private String resultDirectory;
     @CommandLine.Option(names = {"--db_version"}, description = "database version: ${COMPLETION-CANDIDATES}")
-    private TouchstoneSupportedDatabaseVersion databaseVersion;
-    @CommandLine.Option(names = {"--sql_input"}, description = "sql input directory")
     private String sqlsDirectory;
     @CommandLine.Option(names = {"--load_input"}, description = "optional, if not present, then will not load")
     private String loadDirectory;
@@ -73,9 +73,6 @@ class QueryInstantiationApp implements Callable<Integer> {
         if (resultDirectory != null) {
             config.setResultDirectory(resultDirectory);
         }
-        if (databaseVersion != null) {
-            config.setDatabaseVersion(databaseVersion);
-        }
         if (sqlsDirectory != null) {
             config.setSqlsDirectory(sqlsDirectory);
         }
@@ -94,7 +91,12 @@ class QueryInstantiationApp implements Callable<Integer> {
         if (skipNodeThreshold != null) {
             config.setSkipNodeThreshold(skipNodeThreshold);
         }
-        Extractor.extract(config);
+
+        if (!config.isCrossMultiDatabase()) {
+            CommonUtils.DEFAULT_DATABASE = config.getDatabaseName();
+        }
+        InputService.getInputService().setDatabaseConnectorInterface(new Tidb4Connector(config));
+        Extractor.extract(config.getSqlsDirectory(), new Tidb4Connector(config), new TidbAnalyzer());
         return 0;
     }
 }

@@ -1,7 +1,6 @@
 package ecnu.db.utils.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -21,7 +20,6 @@ public class PrepareConfig implements DatabaseConnectorConfig {
     private String databaseName;
     private Boolean crossMultiDatabase;
     private String resultDirectory;
-    private TouchstoneSupportedDatabaseVersion databaseVersion;
     private String sqlsDirectory;
     private String loadDirectory;
     private String dumpDirectory;
@@ -120,14 +118,6 @@ public class PrepareConfig implements DatabaseConnectorConfig {
 
     public void setDatabaseName(String databaseName) {
         this.databaseName = databaseName;
-    }
-
-    public TouchstoneSupportedDatabaseVersion getDatabaseVersion() {
-        return databaseVersion;
-    }
-
-    public void setDatabaseVersion(TouchstoneSupportedDatabaseVersion databaseVersion) {
-        this.databaseVersion = databaseVersion;
     }
 
     public Double getSkipNodeThreshold() {

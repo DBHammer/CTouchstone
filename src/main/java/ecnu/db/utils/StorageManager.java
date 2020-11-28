@@ -37,26 +37,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author alan
  */
 public class StorageManager {
-    public static final ObjectMapper mapper;
 
-    static {
-        SimpleModule module = new SimpleModule()
-                .addDeserializer(AbstractColumn.class, new ColumnDeserializer())
-                .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
-                .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
-                .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
-        mapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .registerModule(module);
-    }
 
-    private final File retDir;
-    private final File retSqlDir;
-    private final File dumpDir;
-    private final File dumpQueryDir;
-    private final File loadDir;
-    private final File logDir;
-    private final File logQueryDir;
+    private static File retDir=new File("result") ;
+    private static File retSqlDir= new File("result/sqls");
+    private static File dumpDir;
+    private static File dumpQueryDir;
+    private static File loadDir;
+    private static File logDir;
+    private static File logQueryDir;
 
     public StorageManager(String resultDirPath, String dumpDirPath, String loadDirPath, String logPath) {
         retDir = new File(resultDirPath);
@@ -68,18 +57,13 @@ public class StorageManager {
         logQueryDir = Optional.of(logPath).map((dir) -> (new File(dir, "query"))).orElse(null);
     }
 
-    public void storeSqlResult(File sqlFile, String sql, DbType dbType) throws IOException {
+    public static void storeSqlResult(String sqlName, String sql, DbType dbType) throws IOException {
         String content = SQLUtils.format(sql, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-        FileUtils.writeStringToFile(new File(retSqlDir.getPath(), sqlFile.getName()), content, UTF_8);
+        FileUtils.writeStringToFile(new File(retSqlDir.getPath(), sqlName), content, UTF_8);
     }
 
-    public void storeSchemaResult(Map<String, Schema> schemas) throws IOException {
-        String content = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
-        FileUtils.writeStringToFile(new File(retDir.getPath(), "schema.json"), content, UTF_8);
-    }
-
-    public void storeConstrainChainResult(Map<String, List<ConstraintChain>> queryInfos) throws IOException {
-        String content = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(queryInfos);
+    public static void storeConstrainChainResult(List<ConstraintChain> constraintChains) throws IOException {
+        String content = CommonUtils.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(constraintChains);
         FileUtils.writeStringToFile(new File(retDir.getPath(), "constraintChain.json"), content, UTF_8);
     }
 
@@ -95,26 +79,26 @@ public class StorageManager {
         storeQueryPlan(dumpQueryDir, queryPlan, queryCanonicalName);
     }
 
-    public void logQueryPlan(List<String[]> queryPlan, String queryCanonicalName) throws IOException {
+    public static void logQueryPlan(List<String[]> queryPlan, String queryCanonicalName) throws IOException {
         storeQueryPlan(logQueryDir, queryPlan, queryCanonicalName);
     }
 
     private void storeStaticInfo(File dumpDir, Map<String, Integer> multiColNdvMap, Map<String, Schema> schemas, List<String> tableNames) throws IOException {
         File multiColMapFile = new File(dumpDir.getPath(), String.format("multiColNdv.%s", DUMP_FILE_POSTFIX));
-        String multiColContent = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(multiColNdvMap);
+        String multiColContent = CommonUtils.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(multiColNdvMap);
         FileUtils.writeStringToFile(multiColMapFile, multiColContent, UTF_8);
         File schemaFile = new File(dumpDir, String.format("schemas.%s", DUMP_FILE_POSTFIX));
         for (Schema schema : schemas.values()) {
             schema.setJoinTag(1);
         }
-        String schemasContent = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
+        String schemasContent = CommonUtils.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
         FileUtils.writeStringToFile(schemaFile, schemasContent, UTF_8);
         String tableNamesContent = String.join(System.lineSeparator(), tableNames);
         File tableNameFile = new File(dumpDir.getPath(), String.format("tableNames.%s", DUMP_FILE_POSTFIX));
         FileUtils.writeStringToFile(tableNameFile, tableNamesContent, UTF_8);
     }
 
-    private void storeQueryPlan(File dumpDir, List<String[]> queryPlan, String queryCanonicalName) throws IOException {
+    private static void storeQueryPlan(File dumpDir, List<String[]> queryPlan, String queryCanonicalName) throws IOException {
         String content = queryPlan.stream().map((strs) -> String.join(";", strs)).collect(Collectors.joining(System.lineSeparator()));
         File queryPlanFile = new File(dumpDir.getPath(), String.format("%s.%s", queryCanonicalName, DUMP_FILE_POSTFIX));
         FileUtils.writeStringToFile(queryPlanFile, content, UTF_8);
@@ -128,16 +112,7 @@ public class StorageManager {
         return Arrays.asList(FileUtils.readFileToString(tableNameFile, UTF_8).split(System.lineSeparator()));
     }
 
-    public Map<String, Schema> loadSchemas() throws TouchstoneException, IOException {
-        Map<String, Schema> schemas;
-        File schemaFile = new File(loadDir.getPath(), String.format("schemas.%s", DUMP_FILE_POSTFIX));
-        if (!schemaFile.isFile()) {
-            throw new TouchstoneException(String.format("找不到%s", schemaFile.getAbsolutePath()));
-        }
-        schemas = mapper.readValue(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<HashMap<String, Schema>>() {
-        });
-        return schemas;
-    }
+
 
     public Map<String, Integer> loadMultiColMap() throws TouchstoneException, IOException {
         Map<String, Integer> multiColNdvMap;
@@ -145,7 +120,7 @@ public class StorageManager {
         if (!multiColNdvFile.isFile()) {
             throw new TouchstoneException(String.format("找不到%s", multiColNdvFile.getAbsolutePath()));
         }
-        multiColNdvMap = mapper.readValue(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<HashMap<String, Integer>>() {
+        multiColNdvMap = CommonUtils.mapper.readValue(FileUtils.readFileToString(multiColNdvFile, UTF_8), new TypeReference<HashMap<String, Integer>>() {
         });
         return multiColNdvMap;
     }
@@ -178,6 +153,8 @@ public class StorageManager {
         }
     }
 
+
+
     private void deleteDirIfExists(File dir) throws IOException {
         if (dir != null && dir.isDirectory()) {
             FileUtils.deleteDirectory(dir);
@@ -192,7 +169,7 @@ public class StorageManager {
         return dumpDir != null && dumpDir.isDirectory();
     }
 
-    public File getLogDir() {
+    public static File getLogDir() {
         return logDir;
     }
 }

@@ -1,7 +1,6 @@
 package ecnu.db.utils.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -21,7 +20,6 @@ public class GenerationConfig implements DatabaseConnectorConfig {
     private String inputPath;
     private String outputPath;
     private String joinInfoPath;
-    private TouchstoneSupportedDatabaseVersion databaseVersion;
     private int epochSize;
     private int threadNum;
     private Boolean isCrossMultiDatabase;
@@ -112,13 +110,6 @@ public class GenerationConfig implements DatabaseConnectorConfig {
         this.joinInfoPath = joinInfoPath;
     }
 
-    public TouchstoneSupportedDatabaseVersion getDatabaseVersion() {
-        return databaseVersion;
-    }
-
-    public void setDatabaseVersion(TouchstoneSupportedDatabaseVersion databaseVersion) {
-        this.databaseVersion = databaseVersion;
-    }
 
     public int getThreadNum() {
         return threadNum;

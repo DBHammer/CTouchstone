@@ -3,27 +3,19 @@ package ecnu.db.tidb.parser;
 import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.constraintchain.filter.logical.AndNode;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.analyze.UnsupportedDBTypeException;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Schema;
-import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.DecimalColumn;
 import ecnu.db.schema.column.IntColumn;
 import ecnu.db.schema.column.StringColumn;
 import ecnu.db.tidb.TidbAnalyzer;
-import ecnu.db.tidb.TidbInfo;
 import ecnu.db.utils.config.PrepareConfig;
-import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,12 +28,11 @@ public class TidbSelectOperatorInfoParserTest {
     @BeforeEach
     void setUp() throws TouchstoneException {
         PrepareConfig config = new PrepareConfig();
-        config.setDatabaseVersion(TouchstoneSupportedDatabaseVersion.TiDB4);
         ColumnManager.addColumn("db.table.col1", new IntColumn());
         ColumnManager.addColumn("db.table.col2", new IntColumn());
         ColumnManager.addColumn("db.table.col3", new StringColumn());
         ColumnManager.addColumn("db.table.col4", new DecimalColumn());
-        parser.setAnalyzer(new TidbAnalyzer(config, null, new TidbInfo(TouchstoneSupportedDatabaseVersion.TiDB4), null, null));
+        parser.setAnalyzer(new TidbAnalyzer());
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method")

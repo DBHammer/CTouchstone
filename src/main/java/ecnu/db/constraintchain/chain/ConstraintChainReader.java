@@ -2,6 +2,7 @@ package ecnu.db.constraintchain.chain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.StorageManager;
 import org.apache.commons.io.FileUtils;
 
@@ -24,7 +25,7 @@ public class ConstraintChainReader {
      */
     public static Map<String, List<ConstraintChain>> readConstraintChain(File file) throws IOException {
         String content = FileUtils.readFileToString(file, UTF_8);
-        ObjectMapper mapper = StorageManager.mapper;
+        ObjectMapper mapper = CommonUtils.mapper;
         return mapper.readValue(content, new TypeReference<Map<String, List<ConstraintChain>>>() {
         });
     }

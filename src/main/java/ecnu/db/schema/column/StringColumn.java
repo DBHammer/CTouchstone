@@ -24,12 +24,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class StringColumn extends AbstractColumn {
     private static final char[] RANDOM_CHAR_CANDIDATE = new char[76];
 
+    public StringColumn() {
+        super();
+        columnType=ColumnType.VARCHAR;
+    }
+
     static  {
         for (int i = 0;  i < 26; i++) {
             RANDOM_CHAR_CANDIDATE[i] = (char) ('a' + i);
             RANDOM_CHAR_CANDIDATE[i + 26] = (char) ('A' + i);
         }
-        char[] symbolArr = new char[]{'!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '-', '=', '_', '[', ']', '<', '>', '?', '|', '{', '}', '~', '`'};
+        //禁止出现$和%
+        char[] symbolArr = new char[]{'!', '@', '#', '^', '&', '*', '(', ')', '+', '-', '=', '_', '[', ']', '<', '>', '?', '|', '{', '}', '~', '`'};
         System.arraycopy(symbolArr, 0, RANDOM_CHAR_CANDIDATE, 52, symbolArr.length);
     }
 

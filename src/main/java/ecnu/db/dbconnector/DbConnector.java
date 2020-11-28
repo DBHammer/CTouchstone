@@ -1,16 +1,12 @@
 package ecnu.db.dbconnector;
 
 import com.alibaba.druid.DbType;
+import com.google.common.collect.Lists;
 import ecnu.db.analyzer.statical.QueryReader;
-import ecnu.db.analyzer.statical.QueryTableName;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.schema.Schema;
-import ecnu.db.schema.SchemaGenerator;
-import ecnu.db.utils.CommonUtils;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
 import org.apache.logging.log4j.util.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,13 +18,24 @@ import java.util.stream.Collectors;
  * @author wangqingshuai
  * 数据库驱动连接器
  */
-public class DbConnector implements DatabaseConnectorInterface {
-
-    private final static Logger logger = LoggerFactory.getLogger(DbConnector.class);
-
+public abstract class DbConnector {
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
 
     public DatabaseMetaData databaseMetaData;
+
+    private final String[] sqlInfoColumns;
+
+    /**
+     * @return 分析器对应的静态解析器类型
+     */
+    public abstract DbType getDbType();
+
+    /**
+     * @return 获取查询计划的列名
+     */
+    protected abstract String[] getSqlInfoColumns();
+
+    protected abstract String[] formatQueryPlan(String[] queryPlan);
 
     // 数据库连接
     protected Statement stmt;
@@ -47,28 +54,36 @@ public class DbConnector implements DatabaseConnectorInterface {
             stmt = DriverManager.getConnection(url, user, pass).createStatement();
             databaseMetaData = DriverManager.getConnection(url, user, pass).getMetaData();
         } catch (SQLException e) {
+            e.printStackTrace();
             throw new TouchstoneException(String.format("无法建立数据库连接,连接信息为: '%s'", url));
         }
+        sqlInfoColumns = getSqlInfoColumns();
     }
 
 
-    public String getTableMetadata(String canonicalTableName) throws SQLException {
+    public List<String> getColumnMetadata(String canonicalTableName) throws SQLException {
         ResultSet rs = stmt.executeQuery("show create table " + canonicalTableName);
         rs.next();
-        return rs.getString(2).trim().toLowerCase();
+        String tableMetadata = rs.getString(2).trim().toLowerCase();
+        tableMetadata = tableMetadata.toLowerCase();
+        tableMetadata = tableMetadata.substring(tableMetadata.indexOf(System.lineSeparator()) + 1, tableMetadata.lastIndexOf(")"));
+        tableMetadata = tableMetadata.replaceAll("`", "");
+        List<String> sqls = Lists.newArrayList(tableMetadata.split(System.lineSeparator()));
+        return sqls.stream().map(String::trim).filter((str -> !str.startsWith("primary key") && !str.startsWith("key")))
+                .collect(Collectors.toList());
     }
 
     public String getPrimaryKeys(String canonicalTableName) throws SQLException {
         ResultSet rs = stmt.executeQuery("show keys from " + canonicalTableName + " where Key_name='PRIMARY'");
         List<String> keys = new ArrayList<>();
-        while(rs.next()) {
+        while (rs.next()) {
             keys.add(rs.getString(5).toLowerCase());
         }
         return keys.size() > 0 ? Strings.join(keys, ',') : null;
     }
 
-    public String[] getDataRange(String canonicalTableName, String columnInfo) throws SQLException {
-        String sql = "select " + columnInfo + " from " + canonicalTableName;
+    public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames) throws SQLException, TouchstoneException {
+        String sql = "select " + getColumnDistributionSql(canonicalColumnNames) + " from " + canonicalTableName;
         ResultSet rs = stmt.executeQuery(sql);
         rs.next();
         String[] infos = new String[rs.getMetaData().getColumnCount()];
@@ -82,8 +97,7 @@ public class DbConnector implements DatabaseConnectorInterface {
         return infos;
     }
 
-    @Override
-    public List<String[]> explainQuery(String queryCanonicalName, String sql, String[] sqlInfoColumns) throws SQLException {
+    public List<String[]> explainQuery(String sql) throws SQLException {
         ResultSet rs = stmt.executeQuery("explain analyze " + sql);
         ArrayList<String[]> result = new ArrayList<>();
         while (rs.next()) {
@@ -91,12 +105,11 @@ public class DbConnector implements DatabaseConnectorInterface {
             for (int i = 0; i < sqlInfoColumns.length; i++) {
                 infos[i] = rs.getString(sqlInfoColumns[i]);
             }
-            result.add(infos);
+            result.add(formatQueryPlan(infos));
         }
         return result;
     }
 
-    @Override
     public int getMultiColNdv(String canonicalTableName, String columns) throws SQLException {
         ResultSet rs = stmt.executeQuery("select count(distinct " + columns + ") from " + canonicalTableName);
         rs.next();
@@ -105,54 +118,26 @@ public class DbConnector implements DatabaseConnectorInterface {
         return result;
     }
 
-    @Override
     public Map<String, Integer> getMultiColNdvMap() {
         return this.multiColNdvMap;
     }
 
     /**
-     * @param isCrossMultiDatabase 是否跨多个数据库
-     * @param databaseName         数据库名称，若isCrossMultiDatabase为false，则可以填写null
-     * @param files                SQL文件
-     * @param dbType               数据库类型
-     * @return 表名
-     * @throws IOException                  从SQL文件中获取Query失败
-     * @throws TouchstoneException 从Query中获取tableNames失败或不支持的数据库类型
+     * @param files SQL文件
+     * @return 所有查询中涉及到的表名
+     * @throws IOException 从SQL文件中获取Query失败
      */
-    public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files, DbType dbType)
-            throws IOException, TouchstoneException {
+    public List<String> fetchTableNames(List<File> files) throws IOException {
         List<String> tableNames = new ArrayList<>();
         for (File sqlFile : files) {
-            List<String> queries = QueryReader.getQueriesFromFile(sqlFile.getPath(), dbType);
+            List<String> queries = QueryReader.getQueriesFromFile(sqlFile.getPath(), getDbType());
             for (String query : queries) {
-                Set<String> tableNameRefs = QueryTableName.getTableName(sqlFile.getAbsolutePath(), query, dbType, isCrossMultiDatabase);
+                Set<String> tableNameRefs = QueryReader.getTableName(query, getDbType());
                 tableNames.addAll(tableNameRefs);
             }
         }
         tableNames = tableNames.stream().distinct().collect(Collectors.toList());
-        if (!isCrossMultiDatabase) {
-            tableNames = tableNames.stream().map((name) -> CommonUtils.addDatabaseNamePrefix(databaseName, name)).collect(Collectors.toList());
-        }
         return tableNames;
-    }
-
-    /**
-     * 从数据库中提取Schema
-     *
-     * @param dbSchemaGenerator  Schema生成器
-     * @param canonicalTableName 标准表名
-     * @return Schema
-     * @throws TouchstoneException 生成Schema失败，设置col分布失败或者设置col的cardinality和average length等信息失败
-     * @throws SQLException                 获取表的DDL失败或者获取col分布失败
-     */
-    public Schema fetchSchema(SchemaGenerator dbSchemaGenerator, String canonicalTableName) throws TouchstoneException, SQLException {
-        String tableMetadata = getTableMetadata(canonicalTableName);
-        Schema schema = dbSchemaGenerator.generateSchema(canonicalTableName, tableMetadata);
-        String distributionSql = dbSchemaGenerator.getColumnDistributionSql(schema.getCanonicalTableName(), schema.getCanonicalColumnNames());
-        String[] dataRange = getDataRange(canonicalTableName, distributionSql);
-        dbSchemaGenerator.setDataRangeBySqlResult(schema.getCanonicalColumnNames(), dataRange);
-        logger.info(String.format("获取'%s'表结构和表数据分布成功", canonicalTableName));
-        return schema;
     }
 
     public int getTableSize(String canonicalTableName) throws SQLException {
@@ -161,5 +146,44 @@ public class DbConnector implements DatabaseConnectorInterface {
             return rs.getInt("cnt");
         }
         throw new SQLException(String.format("table'%s'的size为0", canonicalTableName));
+    }
+
+    /**
+     * 获取col分布所需的查询SQL语句
+     *
+     * @param canonicalColumnNames 需要查询的col
+     * @return SQL
+     * @throws TouchstoneException 获取失败
+     */
+    public String getColumnDistributionSql(List<String> canonicalColumnNames) throws TouchstoneException {
+        StringBuilder sql = new StringBuilder();
+        for (String canonicalColumnName : canonicalColumnNames) {
+            switch (ColumnManager.getColumn(canonicalColumnName).getColumnType()) {
+                case DATE:
+                case DATETIME:
+                case DECIMAL:
+                    sql.append(String.format("min(%s),", canonicalColumnName));
+                    sql.append(String.format("max(%s),", canonicalColumnName));
+
+                    break;
+                case INTEGER:
+                    sql.append(String.format("min(%s),", canonicalColumnName));
+                    sql.append(String.format("max(%s),", canonicalColumnName));
+                    sql.append(String.format("count(distinct %s),", canonicalColumnName));
+                    break;
+                case VARCHAR:
+                    sql.append(String.format("min(length(%s)),", canonicalColumnName));
+                    sql.append(String.format("max(length(%s)),", canonicalColumnName));
+                    sql.append(String.format("count(distinct %s),", canonicalColumnName));
+                    break;
+                case BOOL:
+                    sql.append(String.format("avg(%s)", canonicalColumnName));
+                    break;
+                default:
+                    throw new TouchstoneException("未匹配到的类型");
+            }
+            sql.append(String.format("avg(case when %s IS NULL then 1 else 0 end),", canonicalColumnName));
+        }
+        return sql.substring(0, sql.length() - 1);
     }
 }

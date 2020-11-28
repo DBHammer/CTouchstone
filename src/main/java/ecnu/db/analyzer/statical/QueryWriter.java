@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 /**
  * @author alan
  */
-public class SqlTemplateHelper {
-    private static final Logger logger = LoggerFactory.getLogger(SqlTemplateHelper.class);
+public class QueryWriter {
+    private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
 
     /**
      * 模板化SQL语句
@@ -77,11 +77,11 @@ public class SqlTemplateHelper {
         query = String.join("", fragments);
         if (cannotFindArgs.size() > 0) {
             logger.warn(String.format("请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName));
-            query = SqlTemplateHelper.appendArgs("cannotFindArgs", cannotFindArgs) + query;
+            query = QueryWriter.appendArgs("cannotFindArgs", cannotFindArgs) + query;
         }
         if (conflictArgs.size() > 0) {
             logger.warn(String.format("请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName));
-            query = SqlTemplateHelper.appendArgs("conflictArgs", conflictArgs) + query;
+            query = QueryWriter.appendArgs("conflictArgs", conflictArgs) + query;
         }
 
         return query;
