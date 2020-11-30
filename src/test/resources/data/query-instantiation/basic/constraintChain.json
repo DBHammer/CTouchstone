@@ -1,5 +1,5 @@
 {
-  "11.sql_1": [
+  "11_1.sql": [
     {
       "tableName": "tpch.nation",
       "parameters": [
@@ -46,7 +46,7 @@
       "nodes": []
     }
   ],
-  "3.sql_1": [
+  "3_1.sql": [
     {
       "tableName": "tpch.customer",
       "parameters": [
@@ -146,7 +146,7 @@
       "nodes": []
     }
   ],
-  "2.sql_1": [
+  "2_1.sql": [
     {
       "tableName": "tpch.part",
       "parameters": [
@@ -307,7 +307,7 @@
       "nodes": []
     }
   ],
-  "4.sql_1": [
+  "4_1.sql": [
     {
       "tableName": "tpch.orders",
       "parameters": [
@@ -364,8 +364,8 @@
       "nodes": []
     }
   ],
-  "12.sql_1": [],
-  "m1.sql_1": [
+  "12_1.sql": [],
+  "m1_1.sql": [
     {
       "tableName": "tpch.lineitem",
       "parameters": [
@@ -420,7 +420,7 @@
       ]
     }
   ],
-  "8.sql_1": [
+  "8_1.sql": [
     {
       "tableName": "tpch.nation",
       "parameters": [],
@@ -531,7 +531,7 @@
       "nodes": []
     }
   ],
-  "6.sql_1": [
+  "6_1.sql": [
     {
       "tableName": "tpch.lineitem",
       "parameters": [
@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "14.sql_1": [
+  "14_1.sql": [
     {
       "tableName": "tpch.lineitem",
       "parameters": [
@@ -687,8 +687,8 @@
       "nodes": []
     }
   ],
-  "m4.sql_1": [],
-  "m2.sql_1": [
+  "m4_1.sql": [],
+  "m2_1.sql": [
     {
       "tableName": "tpch.nation",
       "parameters": [],
@@ -723,7 +723,7 @@
       ]
     }
   ],
-  "1.sql_1": [
+  "1_1.sql": [
     {
       "tableName": "tpch.lineitem",
       "parameters": [
@@ -760,7 +760,7 @@
       ]
     }
   ],
-  "10.sql_1": [
+  "10_1.sql": [
     {
       "tableName": "tpch.lineitem",
       "parameters": [
@@ -904,7 +904,7 @@
       ]
     }
   ],
-  "m3.sql_1": [
+  "m3_1.sql": [
     {
       "tableName": "tpch.nation",
       "parameters": [

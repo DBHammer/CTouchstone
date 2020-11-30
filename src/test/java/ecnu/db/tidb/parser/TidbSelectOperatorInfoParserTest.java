@@ -8,7 +8,6 @@ import ecnu.db.schema.column.DecimalColumn;
 import ecnu.db.schema.column.IntColumn;
 import ecnu.db.schema.column.StringColumn;
 import ecnu.db.tidb.TidbAnalyzer;
-import ecnu.db.utils.config.PrepareConfig;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,11 +26,10 @@ public class TidbSelectOperatorInfoParserTest {
 
     @BeforeEach
     void setUp() throws TouchstoneException {
-        PrepareConfig config = new PrepareConfig();
-        ColumnManager.addColumn("db.table.col1", new IntColumn());
-        ColumnManager.addColumn("db.table.col2", new IntColumn());
-        ColumnManager.addColumn("db.table.col3", new StringColumn());
-        ColumnManager.addColumn("db.table.col4", new DecimalColumn());
+        ColumnManager.getInstance().addColumn("db.table.col1", new IntColumn());
+        ColumnManager.getInstance().addColumn("db.table.col2", new IntColumn());
+        ColumnManager.getInstance().addColumn("db.table.col3", new StringColumn());
+        ColumnManager.getInstance().addColumn("db.table.col4", new DecimalColumn());
         parser.setAnalyzer(new TidbAnalyzer());
     }
 

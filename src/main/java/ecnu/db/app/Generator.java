@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import ecnu.db.constraintchain.chain.ConstraintChain;
-import ecnu.db.constraintchain.chain.ConstraintChainReader;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
@@ -35,8 +34,8 @@ public class Generator {
 
     public static void generate(GenerationConfig config, SchemaManager schemaManager) throws IOException, TouchstoneException, InterruptedException, ExecutionException {
         ParameterResolver.items.clear();
-        Map<String, List<ConstraintChain>> query2chains =
-                ConstraintChainReader.readConstraintChain(new File(config.getInputPath(), "constraintChain.json"));
+//        Map<String, List<ConstraintChain>> query2chains =
+//                ConstraintChainReader.readConstraintChain(new File(config.getInputPath(), "constraintChain.json"));
         Map<String, Schema> schemas = getSchemas(config);
 
         List<Schema> topologicalOrder = schemaManager.createTopologicalOrder();
@@ -55,7 +54,7 @@ public class Generator {
 //            }
 //        }
 
-        Multimap<String, ConstraintChain> schema2chains = getSchema2Chains(query2chains);
+//        Multimap<String, ConstraintChain> schema2chains = getSchema2Chains(query2chains);
 
    //     generateTuples(config, schema2chains, schemas, topologicalOrder, neededThreads);
     }

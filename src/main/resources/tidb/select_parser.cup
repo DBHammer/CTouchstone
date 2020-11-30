@@ -56,14 +56,14 @@ parser code {:
   }
   private boolean isColumnNeedQuote(String canonicalColumnName) throws TouchstoneException {
     boolean needQuote = false;
-    ColumnType columnType = ColumnManager.getColumn(canonicalColumnName).getColumnType();
+    ColumnType columnType = ColumnManager.getInstance().getColumnType(canonicalColumnName);
     if (columnType == ColumnType.DATETIME || columnType == ColumnType.VARCHAR) {
         needQuote = true;
     }
     return needQuote;
   }
   private boolean isColumnDate(String canonicalColumnName) throws TouchstoneException {
-    ColumnType columnType = ColumnManager.getColumn(canonicalColumnName).getColumnType();
+    ColumnType columnType = ColumnManager.getInstance().getColumnType(canonicalColumnName);
     return columnType == ColumnType.DATETIME;
   }
 :};
@@ -286,7 +286,7 @@ isnull_expr ::=
         ISNULL:isnull LPAREN CANONICAL_COLUMN_NAME:canonicalColumnName RPAREN                      {:
                                                                                       String tableName = getCanonicalTableName(canonicalColumnName);
                                                                                       verifyTableName(tableName);
-                                                                                      float nullProbability = ColumnManager.getColumn(canonicalColumnName).getNullPercentage();
+                                                                                      float nullProbability = ColumnManager.getInstance().getNullPercentage(canonicalColumnName);
                                                                                       IsNullFilterOperation operation = new IsNullFilterOperation(canonicalColumnName, BigDecimal.valueOf(nullProbability));
                                                                                       RESULT = operation;
                                                                                   :}

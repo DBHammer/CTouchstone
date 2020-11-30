@@ -3,14 +3,8 @@ package ecnu.db.constraintchain.arithmetic.value;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.exception.schema.CannotFindColumnException;
-import ecnu.db.exception.compute.InstantiateParameterException;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Schema;
-import ecnu.db.schema.column.AbstractColumn;
-import ecnu.db.schema.column.DecimalColumn;
-import ecnu.db.schema.column.IntColumn;
 import ecnu.db.schema.column.bucket.EqBucket;
 
 import java.math.BigDecimal;
@@ -18,9 +12,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-
-import static ecnu.db.schema.column.ColumnType.DECIMAL;
-import static ecnu.db.schema.column.ColumnType.INTEGER;
 
 /**
  * @author wangqingshuai
@@ -61,15 +52,8 @@ public class ColumnNode extends ArithmeticNode {
 
     @Override
     public float[] getVector() throws TouchstoneException {
-        AbstractColumn column = ColumnManager.getColumn(columnName);
-        if (column instanceof IntColumn) {
-            setMinMax((float) ((IntColumn) column).getMin(), (float) ((IntColumn) column).getMax());
-        } else if (column instanceof DecimalColumn) {
-            setMinMax((float) ((DecimalColumn) column).getMin(), (float) ((DecimalColumn) column).getMax());
-        } else {
-            throw new InstantiateParameterException(String.format("计算节点出现非法的column'%s'", column));
-        }
-        List<EqBucket> eqBuckets = column.getEqBuckets();
+        setMinMax(ColumnManager.getInstance().getMin(columnName), ColumnManager.getInstance().getMax(columnName));
+        List<EqBucket> eqBuckets = ColumnManager.getInstance().getEqBuckets(columnName);
         eqBuckets.sort(Comparator.comparing(o -> o.leftBorder));
         BigDecimal cumBorder = BigDecimal.ZERO, size = BigDecimal.valueOf(ArithmeticNode.size);
         float[] value = new float[ArithmeticNode.size];
@@ -102,19 +86,8 @@ public class ColumnNode extends ArithmeticNode {
     }
 
     @Override
-    public double[] calculate() throws CannotFindColumnException {
-        AbstractColumn column = ColumnManager.getColumn(columnName);
-        double[] ret;
-        if (column.getColumnType() == INTEGER) {
-            ret = ((IntColumn) column).calculate();
-        }
-        else if (column.getColumnType() == DECIMAL) {
-            ret = ((DecimalColumn) column).calculate();
-        }
-        else {
-            throw new UnsupportedOperationException();
-        }
-        return ret;
+    public double[] calculate() {
+        return ColumnManager.getInstance().calculate(columnName);
     }
 
     @Override

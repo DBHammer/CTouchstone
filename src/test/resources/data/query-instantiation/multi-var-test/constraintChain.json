@@ -1,5 +1,5 @@
 {
-  "t1.sql_2": [
+  "t1_2.sql": [
     {
       "tableName": "test.test",
       "parameters": [
@@ -29,7 +29,7 @@
                       "rightNode": null,
                       "type": "COLUMN",
                       "canonicalTableName": "test.test",
-                      "columnName": "c2"
+                      "columnName": "test.test.c2"
                     },
                     "rightNode": {
                       "leftNode": {
@@ -43,7 +43,7 @@
                         "rightNode": null,
                         "type": "COLUMN",
                         "canonicalTableName": "test.test",
-                        "columnName": "c3"
+                        "columnName": "test.test.c3"
                       },
                       "type": "MUL"
                     },
@@ -54,7 +54,7 @@
                     "rightNode": null,
                     "type": "COLUMN",
                     "canonicalTableName": "test.test",
-                    "columnName": "c4"
+                    "columnName": "test.test.c4"
                   },
                   "type": "PLUS"
                 },
@@ -77,7 +77,7 @@
       ]
     }
   ],
-  "t1.sql_1": [
+  "t1_1.sql": [
     {
       "tableName": "test.test",
       "parameters": [
@@ -106,7 +106,7 @@
                     "rightNode": null,
                     "type": "COLUMN",
                     "canonicalTableName": "test.test",
-                    "columnName": "c2"
+                    "columnName": "test.test.c2"
                   },
                   "rightNode": {
                     "leftNode": {
@@ -121,7 +121,7 @@
                         "rightNode": null,
                         "type": "COLUMN",
                         "canonicalTableName": "test.test",
-                        "columnName": "c3"
+                        "columnName": "test.test.c3"
                       },
                       "type": "MUL"
                     },
@@ -130,7 +130,7 @@
                       "rightNode": null,
                       "type": "COLUMN",
                       "canonicalTableName": "test.test",
-                      "columnName": "c4"
+                      "columnName": "test.test.c4"
                     },
                     "type": "MUL"
                   },

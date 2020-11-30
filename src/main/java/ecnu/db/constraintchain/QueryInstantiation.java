@@ -1,7 +1,5 @@
 package ecnu.db.constraintchain;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import ecnu.db.constraintchain.chain.*;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.MultiVarFilterOperation;
@@ -13,6 +11,7 @@ import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaManager;
 import ecnu.db.schema.column.AbstractColumn;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,13 +26,12 @@ public class QueryInstantiation {
         //        对于bet操作，先记录阈值，然后选择合适的区间插入，等值约束也需选择合适的区间
         //        每个filter operation内部保存自己实例化后的结果
         //     2. 对于字符型的filter, 只有like和eq的运算，直接计算即可
-        Multimap<Schema, AbstractFilterOperation> schema2filters = ArrayListMultimap.create();
+        List<AbstractFilterOperation> filterOperations = new LinkedList<>();
         for (ConstraintChain constraintChain : constraintChains) {
-            Schema schema = SchemaManager.getInstance().getSchema(constraintChain.getTableName());
             for (ConstraintChainNode node : constraintChain.getNodes()) {
                 if (node instanceof ConstraintChainFilterNode) {
                     List<AbstractFilterOperation> operations = ((ConstraintChainFilterNode) node).pushDownProbability();
-                    schema2filters.putAll(schema, operations);
+                    filterOperations.addAll(operations);
                 } else if (node instanceof ConstraintChainPkJoinNode) {
                     assert true;
                 } else if (node instanceof ConstraintChainFkJoinNode) {
@@ -43,53 +41,49 @@ public class QueryInstantiation {
                 }
             }
         }
-        for (Schema schema : schema2filters.keySet()) {
-            // uni-var non-eq
-            List<UniVarFilterOperation> uniVarFilters = schema2filters.get(schema).stream()
-                    .filter((f) -> f instanceof UniVarFilterOperation)
-                    .filter((f) -> f.getOperator().getType() == LESS || f.getOperator().getType() == GREATER)
-                    .map((f) -> (UniVarFilterOperation) f)
-                    .collect(Collectors.toList());
-            for (UniVarFilterOperation operation : uniVarFilters) {
-                AbstractColumn column = ColumnManager.getColumn(operation.getCanonicalColumnName());
-                operation.instantiateUniParamCompParameter(column);
-            }
-            // init eq bucket
-            for (String canonicalColumnName : schema.getCanonicalColumnNames()) {
-                ColumnManager.getColumn(canonicalColumnName).initEqProbabilityBucket();
-            }
-            // uni-var eq
-            uniVarFilters = schema2filters.get(schema).stream()
-                    .filter((f) -> f instanceof UniVarFilterOperation)
-                    .filter((f) -> f.getOperator().getType() == EQUAL)
-                    .map((f) -> (UniVarFilterOperation) f)
-                    .collect(Collectors.toList());
-            for (UniVarFilterOperation operation : uniVarFilters) {
-                AbstractColumn column = ColumnManager.getColumn(operation.getCanonicalColumnName());
-                operation.instantiateEqualParameter(column);
-            }
-            // uni-var bet
-            List<RangeFilterOperation> rangeFilters = schema2filters.get(schema).stream()
-                    .filter((f) -> f instanceof RangeFilterOperation)
-                    .map((f) -> (RangeFilterOperation) f)
-                    .collect(Collectors.toList());
-            for (RangeFilterOperation operation : rangeFilters) {
-                AbstractColumn column = ColumnManager.getColumn(operation.getCanonicalColumnName());
-                operation.instantiateBetweenParameter(column);
-            }
-            // init eq params
-            for (String canonicalColumnName : schema.getCanonicalColumnNames()) {
-                ColumnManager.getColumn(canonicalColumnName).initEqParameter();
-            }
-            // multi-var non-eq
-            List<MultiVarFilterOperation> multiVarFilters = schema2filters.get(schema).stream()
-                    .filter((f) -> f instanceof MultiVarFilterOperation)
-                    .map((f) -> (MultiVarFilterOperation) f)
-                    .collect(Collectors.toList());
-            for (MultiVarFilterOperation operation : multiVarFilters) {
-                operation.instantiateMultiVarParameter();
-            }
+
+        // uni-var non-eq
+        List<UniVarFilterOperation> uniVarFilters = filterOperations.stream()
+                .filter((f) -> f instanceof UniVarFilterOperation)
+                .filter((f) -> f.getOperator().getType() == LESS || f.getOperator().getType() == GREATER)
+                .map((f) -> (UniVarFilterOperation) f)
+                .collect(Collectors.toList());
+        for (UniVarFilterOperation operation : uniVarFilters) {
+            AbstractColumn column = ColumnManager.getInstance().getColumn(operation.getCanonicalColumnName());
+            operation.instantiateUniParamCompParameter(column);
+        }
+        ColumnManager.getInstance().initAllEqProbabilityBucket();
+        // uni-var eq
+        uniVarFilters = filterOperations.stream()
+                .filter((f) -> f instanceof UniVarFilterOperation)
+                .filter((f) -> f.getOperator().getType() == EQUAL)
+                .map((f) -> (UniVarFilterOperation) f)
+                .collect(Collectors.toList());
+        for (UniVarFilterOperation operation : uniVarFilters) {
+            AbstractColumn column = ColumnManager.getInstance().getColumn(operation.getCanonicalColumnName());
+            operation.instantiateEqualParameter(column);
+        }
+        // uni-var bet
+        List<RangeFilterOperation> rangeFilters = filterOperations.stream()
+                .filter((f) -> f instanceof RangeFilterOperation)
+                .map((f) -> (RangeFilterOperation) f)
+                .collect(Collectors.toList());
+
+        for (RangeFilterOperation operation : rangeFilters) {
+            AbstractColumn column = ColumnManager.getInstance().getColumn(operation.getCanonicalColumnName());
+            operation.instantiateBetweenParameter(column);
+        }
+        // init eq params
+        ColumnManager.getInstance().initAllEqParameter();
+        // multi-var non-eq
+        List<MultiVarFilterOperation> multiVarFilters = filterOperations.stream()
+                .filter((f) -> f instanceof MultiVarFilterOperation)
+                .map((f) -> (MultiVarFilterOperation) f)
+                .collect(Collectors.toList());
+        for (MultiVarFilterOperation operation : multiVarFilters) {
+            operation.instantiateMultiVarParameter();
         }
     }
-
 }
+
+

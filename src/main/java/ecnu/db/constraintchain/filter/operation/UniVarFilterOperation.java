@@ -183,8 +183,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public boolean[] evaluate() throws CannotFindColumnException {
-        AbstractColumn column = ColumnManager.getColumn(canonicalColumnName);
-        return column.evaluate(operator, parameters, hasNot);
+    public boolean[] evaluate() {
+        return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters, hasNot);
     }
 }

@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SchemaManager {
     protected static final Logger logger = LoggerFactory.getLogger(SchemaManager.class);
-    private final HashMap<String, Schema> schemas = new HashMap<>();
+    private LinkedHashMap<String, Schema> schemas = new LinkedHashMap<>();
     private static final SchemaManager INSTANCE = new SchemaManager();
 
     // Private constructor suppresses
@@ -28,9 +28,15 @@ public class SchemaManager {
     private SchemaManager() {
     }
 
-    public void storeSchemaResult() throws IOException {
+    public void storeSchemaInfo() throws IOException {
         String content = CommonUtils.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
         FileUtils.writeStringToFile(new File(CommonUtils.getResultDir() + "schema.json"), content, UTF_8);
+    }
+
+    public void loadSchemaInfo(String schemaInfoPath) throws IOException {
+        schemas = CommonUtils.mapper.readValue(FileUtils.readFileToString(new File(schemaInfoPath), UTF_8),
+                new TypeReference<LinkedHashMap<String, Schema>>() {
+                });
     }
 
     public static SchemaManager getInstance() {
@@ -90,12 +96,12 @@ public class SchemaManager {
             return false;
         }
         if (!pkCol.contains(",")) {
-            if (ColumnManager.getColumn(pkTable + "." + pkCol).getNdv() ==
-                    ColumnManager.getColumn(fkTable + "." + fkCol).getNdv()) {
+            if (ColumnManager.getInstance().getNdv(pkTable + "." + pkCol) ==
+                    ColumnManager.getInstance().getNdv(fkTable + "." + fkCol)) {
                 return getSchema(pkTable).getTableSize() < getSchema(fkTable).getTableSize();
             } else {
-                return ColumnManager.getColumn(pkTable + "." + pkCol).getNdv() >
-                        ColumnManager.getColumn(fkTable + "." + fkCol).getNdv();
+                return ColumnManager.getInstance().getNdv(pkTable + "." + pkCol) >
+                        ColumnManager.getInstance().getNdv(fkTable + "." + fkCol);
             }
         } else {
             int leftTableNdv = InputService.getInputService().getDatabaseConnectorInterface().getMultiColNdv(pkTable, pkCol);
@@ -108,10 +114,9 @@ public class SchemaManager {
         }
     }
 
-
-    public Map<String, Schema> loadSchemas() throws TouchstoneException, IOException {
+    public Map<String, Schema> loadSchemas(String schemaPath) throws TouchstoneException, IOException {
         Map<String, Schema> schemas;
-        File schemaFile = new File(CommonUtils.PERSIST_PATH, String.format("schemas.%s", DUMP_FILE_POSTFIX));
+        File schemaFile = new File(schemaPath, String.format("schemas.%s", DUMP_FILE_POSTFIX));
         if (!schemaFile.isFile()) {
             throw new TouchstoneException(String.format("找不到%s", schemaFile.getAbsolutePath()));
         }

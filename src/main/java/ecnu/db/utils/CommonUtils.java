@@ -1,23 +1,31 @@
 package ecnu.db.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNodeDeserializer;
+import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.constraintchain.chain.ConstraintChainNodeDeserializer;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprNodeDeserializer;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnDeserializer;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author xuechao.lian
@@ -30,18 +38,21 @@ public class CommonUtils {
     public static final String DUMP_FILE_POSTFIX = "dump";
     private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
     public static final String SQL_FILE_POSTFIX = ".sql";
-    private static String resultDir = "result/";
+    public final static String queryDir = "/queries/";
+    public final static String constraintChainsInfo = "constraintChain.json";
+    public final static String schemaManageInfo = "schema.json";
 
-    public static String getResultDir() {
+    private static File resultDir = new File("result");
+
+    public static File getResultDir() {
         return resultDir;
     }
 
     public static void setResultDir(String resultDir) {
-        CommonUtils.resultDir = resultDir;
+        CommonUtils.resultDir = new File("result");
     }
 
     public static final double skipNodeThreshold = 0.01;
-    public static String PERSIST_PATH;
 
     public static final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -142,5 +153,12 @@ public class CommonUtils {
             }
         }
         return min;
+    }
+
+    public static Map<String, List<ConstraintChain>> loadConstrainChainResult() throws IOException {
+        return CommonUtils.mapper.readValue(FileUtils.readFileToString(
+                new File(CommonUtils.getResultDir().getPath() + schemaManageInfo), UTF_8),
+                new TypeReference<Map<String, List<ConstraintChain>>>() {
+                });
     }
 }

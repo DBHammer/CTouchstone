@@ -1,0 +1,494 @@
+{
+  "tpch.nation.n_nationkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "n_nationkey",
+    "min": 0,
+    "max": 24,
+    "ndv": 25
+  },
+  "tpch.nation.n_comment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "n_comment",
+    "minLength": 31,
+    "maxLength": 114,
+    "ndv": 25
+  },
+  "tpch.nation.n_regionkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "n_regionkey",
+    "min": 0,
+    "max": 4,
+    "ndv": 5
+  },
+  "tpch.nation.n_name": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "n_name",
+    "minLength": 4,
+    "maxLength": 14,
+    "ndv": 25
+  },
+  "tpch.customer.c_custkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "c_custkey",
+    "min": 1,
+    "max": 150000,
+    "ndv": 150000
+  },
+  "tpch.customer.c_phone": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "c_phone",
+    "minLength": 15,
+    "maxLength": 15,
+    "ndv": 150000
+  },
+  "tpch.customer.c_acctbal": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "c_acctbal",
+    "min": -999.99,
+    "max": 9999.99,
+    "ndv": -1
+  },
+  "tpch.customer.c_mktsegment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "c_mktsegment",
+    "minLength": 8,
+    "maxLength": 10,
+    "ndv": 5
+  },
+  "tpch.customer.c_address": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "c_address",
+    "minLength": 10,
+    "maxLength": 40,
+    "ndv": 150000
+  },
+  "tpch.customer.c_nationkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "c_nationkey",
+    "min": 0,
+    "max": 24,
+    "ndv": 25
+  },
+  "tpch.customer.c_name": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "c_name",
+    "minLength": 18,
+    "maxLength": 18,
+    "ndv": 150000
+  },
+  "tpch.customer.c_comment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "c_comment",
+    "minLength": 29,
+    "maxLength": 116,
+    "ndv": 149968
+  },
+  "tpch.orders.o_orderstatus": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "o_orderstatus",
+    "minLength": 1,
+    "maxLength": 1,
+    "ndv": 3
+  },
+  "tpch.orders.o_clerk": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "o_clerk",
+    "minLength": 15,
+    "maxLength": 15,
+    "ndv": 1000
+  },
+  "tpch.orders.o_orderdate": {
+    "columnType": "DATETIME",
+    "nullPercentage": 0.0,
+    "columnName": "o_orderdate",
+    "begin": "1992-01-01 00:00:00.000000",
+    "end": "1998-08-02 00:00:00.000000",
+    "precision": 0,
+    "ndv": -1
+  },
+  "tpch.orders.o_shippriority": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "o_shippriority",
+    "min": 0,
+    "max": 0,
+    "ndv": 1
+  },
+  "tpch.orders.o_custkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "o_custkey",
+    "min": 1,
+    "max": 149999,
+    "ndv": 99996
+  },
+  "tpch.orders.o_totalprice": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "o_totalprice",
+    "min": 857.71,
+    "max": 555285.16,
+    "ndv": -1
+  },
+  "tpch.orders.o_orderkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "o_orderkey",
+    "min": 1,
+    "max": 6000000,
+    "ndv": 1500000
+  },
+  "tpch.orders.o_comment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "o_comment",
+    "minLength": 19,
+    "maxLength": 78,
+    "ndv": 1482071
+  },
+  "tpch.orders.o_orderpriority": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "o_orderpriority",
+    "minLength": 5,
+    "maxLength": 15,
+    "ndv": 5
+  },
+  "tpch.part.p_partkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "p_partkey",
+    "min": 1,
+    "max": 200000,
+    "ndv": 200000
+  },
+  "tpch.part.p_container": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "p_container",
+    "minLength": 6,
+    "maxLength": 10,
+    "ndv": 40
+  },
+  "tpch.part.p_name": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "p_name",
+    "minLength": 21,
+    "maxLength": 50,
+    "ndv": 199997
+  },
+  "tpch.part.p_comment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "p_comment",
+    "minLength": 5,
+    "maxLength": 22,
+    "ndv": 131753
+  },
+  "tpch.part.p_brand": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "p_brand",
+    "minLength": 8,
+    "maxLength": 8,
+    "ndv": 25
+  },
+  "tpch.part.p_type": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "p_type",
+    "minLength": 16,
+    "maxLength": 25,
+    "ndv": 150
+  },
+  "tpch.part.p_retailprice": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "p_retailprice",
+    "min": 901.0,
+    "max": 2098.99,
+    "ndv": -1
+  },
+  "tpch.part.p_mfgr": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "p_mfgr",
+    "minLength": 14,
+    "maxLength": 14,
+    "ndv": 5
+  },
+  "tpch.part.p_size": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "p_size",
+    "min": 1,
+    "max": 50,
+    "ndv": 50
+  },
+  "tpch.lineitem.l_returnflag": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "l_returnflag",
+    "minLength": 1,
+    "maxLength": 1,
+    "ndv": 3
+  },
+  "tpch.lineitem.l_receiptdate": {
+    "columnType": "DATETIME",
+    "nullPercentage": 0.0,
+    "columnName": "l_receiptdate",
+    "begin": "1992-01-04 00:00:00.000000",
+    "end": "1998-12-31 00:00:00.000000",
+    "precision": 0,
+    "ndv": -1
+  },
+  "tpch.lineitem.l_tax": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "l_tax",
+    "min": 0.0,
+    "max": 0.08,
+    "ndv": -1
+  },
+  "tpch.lineitem.l_shipmode": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "l_shipmode",
+    "minLength": 3,
+    "maxLength": 7,
+    "ndv": 7
+  },
+  "tpch.lineitem.l_suppkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "l_suppkey",
+    "min": 1,
+    "max": 10000,
+    "ndv": 10000
+  },
+  "tpch.lineitem.l_shipdate": {
+    "columnType": "DATETIME",
+    "nullPercentage": 0.0,
+    "columnName": "l_shipdate",
+    "begin": "1992-01-02 00:00:00.000000",
+    "end": "1998-12-01 00:00:00.000000",
+    "precision": 0,
+    "ndv": -1
+  },
+  "tpch.lineitem.l_commitdate": {
+    "columnType": "DATETIME",
+    "nullPercentage": 0.0,
+    "columnName": "l_commitdate",
+    "begin": "1992-01-31 00:00:00.000000",
+    "end": "1998-10-31 00:00:00.000000",
+    "precision": 0,
+    "ndv": -1
+  },
+  "tpch.lineitem.l_partkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "l_partkey",
+    "min": 1,
+    "max": 200000,
+    "ndv": 200000
+  },
+  "tpch.lineitem.l_orderkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "l_orderkey",
+    "min": 1,
+    "max": 6000000,
+    "ndv": 1500000
+  },
+  "tpch.lineitem.l_quantity": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "l_quantity",
+    "min": 1.0,
+    "max": 50.0,
+    "ndv": -1
+  },
+  "tpch.lineitem.l_linestatus": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "l_linestatus",
+    "minLength": 1,
+    "maxLength": 1,
+    "ndv": 2
+  },
+  "tpch.lineitem.l_comment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "l_comment",
+    "minLength": 10,
+    "maxLength": 43,
+    "ndv": 4580667
+  },
+  "tpch.lineitem.l_extendedprice": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "l_extendedprice",
+    "min": 901.0,
+    "max": 104949.5,
+    "ndv": -1
+  },
+  "tpch.lineitem.l_linenumber": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "l_linenumber",
+    "min": 1,
+    "max": 7,
+    "ndv": 7
+  },
+  "tpch.lineitem.l_discount": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "l_discount",
+    "min": 0.0,
+    "max": 0.1,
+    "ndv": -1
+  },
+  "tpch.lineitem.l_shipinstruct": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "l_shipinstruct",
+    "minLength": 4,
+    "maxLength": 17,
+    "ndv": 4
+  },
+  "tpch.partsupp.ps_suppkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "ps_suppkey",
+    "min": 1,
+    "max": 10000,
+    "ndv": 10000
+  },
+  "tpch.partsupp.ps_availqty": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "ps_availqty",
+    "min": 1,
+    "max": 9999,
+    "ndv": 9999
+  },
+  "tpch.partsupp.ps_partkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "ps_partkey",
+    "min": 1,
+    "max": 200000,
+    "ndv": 200000
+  },
+  "tpch.partsupp.ps_supplycost": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "ps_supplycost",
+    "min": 1.0,
+    "max": 1000.0,
+    "ndv": -1
+  },
+  "tpch.partsupp.ps_comment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "ps_comment",
+    "minLength": 49,
+    "maxLength": 198,
+    "ndv": 799124
+  },
+  "tpch.region.r_regionkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "r_regionkey",
+    "min": 0,
+    "max": 4,
+    "ndv": 5
+  },
+  "tpch.region.r_comment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "r_comment",
+    "minLength": 31,
+    "maxLength": 115,
+    "ndv": 5
+  },
+  "tpch.region.r_name": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "r_name",
+    "minLength": 4,
+    "maxLength": 11,
+    "ndv": 5
+  },
+  "tpch.supplier.s_comment": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "s_comment",
+    "minLength": 25,
+    "maxLength": 100,
+    "ndv": 10000
+  },
+  "tpch.supplier.s_phone": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "s_phone",
+    "minLength": 15,
+    "maxLength": 15,
+    "ndv": 10000
+  },
+  "tpch.supplier.s_nationkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "s_nationkey",
+    "min": 0,
+    "max": 24,
+    "ndv": 25
+  },
+  "tpch.supplier.s_name": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "s_name",
+    "minLength": 18,
+    "maxLength": 18,
+    "ndv": 10000
+  },
+  "tpch.supplier.s_address": {
+    "columnType": "VARCHAR",
+    "nullPercentage": 0.0,
+    "columnName": "s_address",
+    "minLength": 10,
+    "maxLength": 40,
+    "ndv": 10000
+  },
+  "tpch.supplier.s_acctbal": {
+    "columnType": "DECIMAL",
+    "nullPercentage": 0.0,
+    "columnName": "s_acctbal",
+    "min": -998.22,
+    "max": 9999.72,
+    "ndv": -1
+  },
+  "tpch.supplier.s_suppkey": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "s_suppkey",
+    "min": 1,
+    "max": 10000,
+    "ndv": 10000
+  }
+}

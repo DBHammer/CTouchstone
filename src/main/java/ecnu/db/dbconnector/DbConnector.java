@@ -158,7 +158,7 @@ public abstract class DbConnector {
     public String getColumnDistributionSql(List<String> canonicalColumnNames) throws TouchstoneException {
         StringBuilder sql = new StringBuilder();
         for (String canonicalColumnName : canonicalColumnNames) {
-            switch (ColumnManager.getColumn(canonicalColumnName).getColumnType()) {
+            switch (ColumnManager.getInstance().getColumnType(canonicalColumnName)) {
                 case DATE:
                 case DATETIME:
                 case DECIMAL:

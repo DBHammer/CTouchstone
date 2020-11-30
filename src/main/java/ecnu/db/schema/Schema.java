@@ -35,19 +35,19 @@ public class Schema {
             String dataType = (indexOfBrackets > 0) ? attributes[1].substring(0, indexOfBrackets) : attributes[1];
             switch (ColumnConvert.getColumnType(dataType)) {
                 case INTEGER:
-                    ColumnManager.addColumn(canonicalColumnName, new IntColumn());
+                    ColumnManager.getInstance().addColumn(canonicalColumnName, new IntColumn());
                     break;
                 case BOOL:
-                    ColumnManager.addColumn(canonicalColumnName, new BoolColumn());
+                    ColumnManager.getInstance().addColumn(canonicalColumnName, new BoolColumn());
                     break;
                 case DECIMAL:
-                    ColumnManager.addColumn(canonicalColumnName, new DecimalColumn());
+                    ColumnManager.getInstance().addColumn(canonicalColumnName, new DecimalColumn());
                     break;
                 case VARCHAR:
-                    ColumnManager.addColumn(canonicalColumnName, new StringColumn());
+                    ColumnManager.getInstance().addColumn(canonicalColumnName, new StringColumn());
                     break;
                 case DATE:
-                    ColumnManager.addColumn(canonicalColumnName, new DateColumn());
+                    ColumnManager.getInstance().addColumn(canonicalColumnName, new DateColumn());
                 case DATETIME:
                     DateTimeColumn column = new DateTimeColumn();
                     if (indexOfBrackets > 0) {
@@ -55,7 +55,7 @@ public class Schema {
                     } else {
                         column.setPrecision(0);
                     }
-                    ColumnManager.addColumn(canonicalColumnName, column);
+                    ColumnManager.getInstance().addColumn(canonicalColumnName, column);
                     break;
                 default:
                     throw new TouchstoneException("没有实现的类型转换");

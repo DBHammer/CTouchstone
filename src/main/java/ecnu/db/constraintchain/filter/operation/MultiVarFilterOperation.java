@@ -86,8 +86,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         getCanonicalColumnNamesColNames(arithmeticTree, canonicalColumnNames);
         boolean[] nullEvaluations = new boolean[data.length];
         for (String columnName : canonicalColumnNames) {
-            AbstractColumn column = ColumnManager.getColumn(columnName);
-            boolean[] columnNullEvaluations = column.getIsnullEvaluations();
+            boolean[] columnNullEvaluations = ColumnManager.getInstance().getIsnullEvaluations(columnName);
             for (int i = 0; i < nullEvaluations.length; i++) {
                 nullEvaluations[i] = false;
                 nullEvaluations[i] = (nullEvaluations[i] | columnNullEvaluations[i]);
@@ -125,7 +124,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         HashSet<String> canonicalColumnNames = new HashSet<>();
         getCanonicalColumnNamesColNames(arithmeticTree, canonicalColumnNames);
         for (String canonicalColumnName : canonicalColumnNames) {
-            BigDecimal colNullProbability = BigDecimal.valueOf(ColumnManager.getColumn(canonicalColumnName).getNullPercentage());
+            BigDecimal colNullProbability = BigDecimal.valueOf(ColumnManager.getInstance().getNullPercentage(canonicalColumnName));
             nonNullProbability = nonNullProbability.multiply(BigDecimal.ONE.subtract(colNullProbability));
         }
         if (operator.getType() == GREATER) {

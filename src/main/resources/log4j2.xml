@@ -19,7 +19,7 @@
 <Configuration status="INFO">
     <Appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
-            <PatternLayout pattern="%style{%d [%t]}{black} %highlight{%-5l} %msg%n%throwable"/>
+            <PatternLayout pattern="%style{%d [%t]} %highlight{%-5l} %msg%n%throwable"/>
         </Console>
     </Appenders>
     <Loggers>
