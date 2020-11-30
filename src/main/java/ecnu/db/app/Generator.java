@@ -10,7 +10,8 @@ import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaManager;
-import ecnu.db.schema.column.*;
+import ecnu.db.schema.column.AbstractColumn;
+import ecnu.db.schema.column.ColumnDeserializer;
 import ecnu.db.utils.config.GenerationConfig;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -19,7 +20,10 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -28,9 +32,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author alan
  */
 public class Generator {
-    private static final Logger logger = LoggerFactory.getLogger(Generator.class);
     public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
-
+    private static final Logger logger = LoggerFactory.getLogger(Generator.class);
 
     public static void generate(GenerationConfig config, SchemaManager schemaManager) throws IOException, TouchstoneException, InterruptedException, ExecutionException {
         ParameterResolver.items.clear();
@@ -56,7 +59,7 @@ public class Generator {
 
 //        Multimap<String, ConstraintChain> schema2chains = getSchema2Chains(query2chains);
 
-   //     generateTuples(config, schema2chains, schemas, topologicalOrder, neededThreads);
+        //     generateTuples(config, schema2chains, schemas, topologicalOrder, neededThreads);
     }
 
     private static Multimap<String, ConstraintChain> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
@@ -104,7 +107,6 @@ public class Generator {
     }
 
 
-
     private static Map<String, Schema> getSchemas(GenerationConfig config) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
@@ -116,7 +118,6 @@ public class Generator {
                 new TypeReference<HashMap<String, Schema>>() {
                 });
     }
-
 
 
 //todo

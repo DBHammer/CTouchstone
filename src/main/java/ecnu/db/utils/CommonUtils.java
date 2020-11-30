@@ -32,16 +32,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class CommonUtils {
     public static final int stepSize = 10000;
-    public static String DEFAULT_DATABASE;
     public static final int INIT_HASHMAP_SIZE = 16;
     public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public static final String DUMP_FILE_POSTFIX = "dump";
-    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
     public static final String SQL_FILE_POSTFIX = ".sql";
     public final static String queryDir = "/queries/";
     public final static String constraintChainsInfo = "constraintChain.json";
     public final static String schemaManageInfo = "schema.json";
-
+    public static final double skipNodeThreshold = 0.01;
+    public static final ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .registerModule(new SimpleModule()
+                    .addDeserializer(AbstractColumn.class, new ColumnDeserializer())
+                    .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
+                    .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
+                    .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer()));
+    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
+    public static String DEFAULT_DATABASE;
     private static File resultDir = new File("result");
 
     public static File getResultDir() {
@@ -51,17 +58,6 @@ public class CommonUtils {
     public static void setResultDir(String resultDir) {
         CommonUtils.resultDir = new File("result");
     }
-
-    public static final double skipNodeThreshold = 0.01;
-
-    public static final ObjectMapper mapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .registerModule(new SimpleModule()
-                    .addDeserializer(AbstractColumn.class, new ColumnDeserializer())
-                    .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
-                    .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
-                    .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer()));
-
 
     /**
      * 获取正则表达式的匹配

@@ -22,9 +22,8 @@ import static ecnu.db.schema.column.ColumnType.INTEGER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ColumnManager {
-    private LinkedHashMap<String, AbstractColumn> columns = new LinkedHashMap<>();
-
     private static final ColumnManager INSTANCE = new ColumnManager();
+    private LinkedHashMap<String, AbstractColumn> columns = new LinkedHashMap<>();
 
     // Private constructor suppresses
     // default public constructor
@@ -34,7 +33,6 @@ public class ColumnManager {
     public static ColumnManager getInstance() {
         return INSTANCE;
     }
-
 
 
     public AbstractColumn getColumn(String columnName) {

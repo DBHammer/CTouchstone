@@ -16,18 +16,9 @@ import static java.lang.Math.*;
 
 public class JoinInfoTable implements Externalizable {
     /**
-     * 复合主键的数量
-     */
-    private int primaryKeySize;
-    /**
      * 最大可以容纳的链表长度，超过该长度会触发压缩
      */
     private static int maxListSize = 1000;
-    /**
-     * join info table，map status -> key list
-     */
-    private Map<Long, List<int[]>> joinInfo = new HashMap<>();
-
     /**
      * 记录Reservoir sampling Algorithm L 中的状态数据结构，对于每个status list记录三个状态值，按照顺序为
      * 1. 当前list被add的次数n
@@ -36,17 +27,25 @@ public class JoinInfoTable implements Externalizable {
      * 使用double记录次数可以保证，在 2^52≈4.5E15 范围内的整数的次数可以被准确的记录，而数据生成的任务量，一般不会达到这个量级
      */
     private final Map<Long, double[]> counters = new HashMap<>();
+    /**
+     * 复合主键的数量
+     */
+    private int primaryKeySize;
+    /**
+     * join info table，map status -> key list
+     */
+    private Map<Long, List<int[]>> joinInfo = new HashMap<>();
 
 
     public JoinInfoTable() {
     }
 
-    public static void setMaxListSize(int maxListSize) {
-        JoinInfoTable.maxListSize = maxListSize;
-    }
-
     public JoinInfoTable(int primaryKeySize) {
         this.primaryKeySize = primaryKeySize;
+    }
+
+    public static void setMaxListSize(int maxListSize) {
+        JoinInfoTable.maxListSize = maxListSize;
     }
 
     public void mergeJoinInfo(JoinInfoTable toMergeTable) throws TouchstoneException {

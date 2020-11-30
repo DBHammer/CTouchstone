@@ -9,9 +9,8 @@ import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
-import ecnu.db.exception.compute.PushDownProbabilityException;
 import ecnu.db.exception.TouchstoneException;
-import ecnu.db.schema.Schema;
+import ecnu.db.exception.compute.PushDownProbabilityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

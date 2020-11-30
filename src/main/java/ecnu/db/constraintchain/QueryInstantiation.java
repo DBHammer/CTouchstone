@@ -7,8 +7,6 @@ import ecnu.db.constraintchain.filter.operation.RangeFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Schema;
-import ecnu.db.schema.SchemaManager;
 import ecnu.db.schema.column.AbstractColumn;
 
 import java.util.LinkedList;

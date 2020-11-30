@@ -9,8 +9,8 @@ import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
-import ecnu.db.exception.compute.PushDownProbabilityException;
 import ecnu.db.exception.TouchstoneException;
+import ecnu.db.exception.compute.PushDownProbabilityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,6 +109,10 @@ public class AndNode implements BoolExprNode {
         return type;
     }
 
+    public void setType(BoolExprType type) {
+        this.type = type;
+    }
+
     @Override
     public boolean[] evaluate() throws TouchstoneException {
         boolean[] value = children.get(0).evaluate();
@@ -119,10 +123,6 @@ public class AndNode implements BoolExprNode {
             }
         }
         return value;
-    }
-
-    public void setType(BoolExprType type) {
-        this.type = type;
     }
 
     public LinkedList<BoolExprNode> getChildren() {

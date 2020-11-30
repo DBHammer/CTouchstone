@@ -1,8 +1,6 @@
 package ecnu.db.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
@@ -11,9 +9,6 @@ import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Schema;
-import ecnu.db.schema.column.AbstractColumn;
-import ecnu.db.schema.column.ColumnDeserializer;
 import ecnu.db.utils.CommonUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;

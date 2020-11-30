@@ -58,6 +58,10 @@ public class GenerationConfig implements DatabaseConnectorConfig {
         return databasePwd;
     }
 
+    public void setDatabasePwd(String databasePwd) {
+        this.databasePwd = databasePwd;
+    }
+
     public String getDatabaseName() {
         return databaseName;
     }
@@ -72,10 +76,6 @@ public class GenerationConfig implements DatabaseConnectorConfig {
 
     public void setCrossMultiDatabase(Boolean crossMultiDatabase) {
         isCrossMultiDatabase = crossMultiDatabase;
-    }
-
-    public void setDatabasePwd(String databasePwd) {
-        this.databasePwd = databasePwd;
     }
 
     public String getInputPath() {

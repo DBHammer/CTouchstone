@@ -20,23 +20,8 @@ import java.util.stream.Collectors;
  */
 public abstract class DbConnector {
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
-
-    public DatabaseMetaData databaseMetaData;
-
     private final String[] sqlInfoColumns;
-
-    /**
-     * @return 分析器对应的静态解析器类型
-     */
-    public abstract DbType getDbType();
-
-    /**
-     * @return 获取查询计划的列名
-     */
-    protected abstract String[] getSqlInfoColumns();
-
-    protected abstract String[] formatQueryPlan(String[] queryPlan);
-
+    public DatabaseMetaData databaseMetaData;
     // 数据库连接
     protected Statement stmt;
 
@@ -60,6 +45,17 @@ public abstract class DbConnector {
         sqlInfoColumns = getSqlInfoColumns();
     }
 
+    /**
+     * @return 分析器对应的静态解析器类型
+     */
+    public abstract DbType getDbType();
+
+    /**
+     * @return 获取查询计划的列名
+     */
+    protected abstract String[] getSqlInfoColumns();
+
+    protected abstract String[] formatQueryPlan(String[] queryPlan);
 
     public List<String> getColumnMetadata(String canonicalTableName) throws SQLException {
         ResultSet rs = stmt.executeQuery("show create table " + canonicalTableName);

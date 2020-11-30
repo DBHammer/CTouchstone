@@ -20,6 +20,8 @@ import java.util.*;
  * @author qingshuai.wang
  */
 public class QueryReader {
+    private static final ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor();
+
     public static List<String> getQueriesFromFile(String file, DbType dbType) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         StringBuilder fileContents = new StringBuilder();
@@ -56,8 +58,6 @@ public class QueryReader {
         }
         return tableName;
     }
-
-    private static final ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor();
 
     public static Map<String, String> getTableAlias(String sql, DbType dbType) throws TouchstoneException {
         SQLStatement sqlStatement = SQLUtils.parseStatements(sql, dbType).get(0);

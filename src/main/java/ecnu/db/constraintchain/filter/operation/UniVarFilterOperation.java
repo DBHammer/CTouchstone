@@ -7,7 +7,6 @@ import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.exception.compute.InstantiateParameterException;
-import ecnu.db.exception.schema.CannotFindColumnException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.StringColumn;

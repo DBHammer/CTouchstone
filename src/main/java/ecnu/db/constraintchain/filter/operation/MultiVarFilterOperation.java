@@ -10,8 +10,6 @@ import ecnu.db.exception.TouchstoneException;
 import ecnu.db.exception.compute.InstantiateParameterException;
 import ecnu.db.exception.schema.CannotFindColumnException;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Schema;
-import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;

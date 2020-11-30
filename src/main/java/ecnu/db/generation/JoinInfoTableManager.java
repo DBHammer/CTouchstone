@@ -12,28 +12,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class JoinInfoTableManager {
+    private static final Logger logger = LoggerFactory.getLogger(Generator.class);
+    private static final ConcurrentHashMap<String, JoinInfoTable> tableName2JoinInformationTable = new ConcurrentHashMap<>();
     private static int joinInfoTableId;
     private static int joinInfoTableNum;
     private static String joinInfoTablePath;
-    private static final Logger logger = LoggerFactory.getLogger(Generator.class);
-    private static final ConcurrentHashMap<String, JoinInfoTable> tableName2JoinInformationTable = new ConcurrentHashMap<>();
 
     public static JoinInfoTable getJoinInformationTable(String tableName) {
         tableName2JoinInformationTable.putIfAbsent(tableName, new JoinInfoTable());
         return tableName2JoinInformationTable.get(tableName);
-    }
-
-    private void initJoinInfoTable(int size, Map<Integer, boolean[]> pkBitMap) {
-        List<Integer> pks = new ArrayList<>(pkBitMap.keySet());
-        pks.sort(Integer::compareTo);
-        for (int i = 0; i < size; i++) {
-            long bitMap = 1L;
-            for (int pk : pks) {
-                bitMap = ((pkBitMap.get(pk)[i] ? 1L : 0L) & (bitMap << 1));
-            }
-            //todo
-//            joinInfoTable.addJoinInfo(bitMap, new int[]{i});
-        }
     }
 
     public static void persistentAndMergeOthers(String tableName) throws IOException, TouchstoneException, InterruptedException, ClassNotFoundException {
@@ -56,5 +43,18 @@ public class JoinInfoTableManager {
             }
         }
         logger.info("读取所有JoinInfoTable-" + tableName + "成功");
+    }
+
+    private void initJoinInfoTable(int size, Map<Integer, boolean[]> pkBitMap) {
+        List<Integer> pks = new ArrayList<>(pkBitMap.keySet());
+        pks.sort(Integer::compareTo);
+        for (int i = 0; i < size; i++) {
+            long bitMap = 1L;
+            for (int pk : pks) {
+                bitMap = ((pkBitMap.get(pk)[i] ? 1L : 0L) & (bitMap << 1));
+            }
+            //todo
+//            joinInfoTable.addJoinInfo(bitMap, new int[]{i});
+        }
     }
 }

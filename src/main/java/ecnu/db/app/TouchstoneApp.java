@@ -18,13 +18,14 @@ import picocli.CommandLine.Command;
                 "@|green   | | (_) | |_| | (__| | | \\__ \\ || (_) | | | |  __/ |@",
                 "@|green   |_|\\___/ \\__,_|\\___|_| |_|___/\\__\\___/|_| |_|\\___| |@",
                 ""}
-        )
+)
 public class TouchstoneApp implements Runnable {
-    @Override
-    public void run() {}
-
     public static void main(String... args) {
         int exitCode = new CommandLine(new TouchstoneApp()).execute(args);
         System.exit(exitCode);
+    }
+
+    @Override
+    public void run() {
     }
 }

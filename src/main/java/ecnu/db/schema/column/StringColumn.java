@@ -24,13 +24,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class StringColumn extends AbstractColumn {
     private static final char[] RANDOM_CHAR_CANDIDATE = new char[76];
 
-    public StringColumn() {
-        super();
-        columnType=ColumnType.VARCHAR;
-    }
-
-    static  {
-        for (int i = 0;  i < 26; i++) {
+    static {
+        for (int i = 0; i < 26; i++) {
             RANDOM_CHAR_CANDIDATE[i] = (char) ('a' + i);
             RANDOM_CHAR_CANDIDATE[i + 26] = (char) ('A' + i);
         }
@@ -43,12 +38,15 @@ public class StringColumn extends AbstractColumn {
     private int minLength;
     private int maxLength;
     private int ndv;
-
     private int[] intCopyOfTupleData;
     private String[] tupleData;
     private BiMap<String, Integer> eqCandidateMap;
     private BiMap<String, Pair<Integer, Integer>> likeCandidateMap;
     private BiMap<Integer, String> strings;
+    public StringColumn() {
+        super();
+        columnType = ColumnType.VARCHAR;
+    }
 
     public int getMinLength() {
         return minLength;
@@ -80,7 +78,7 @@ public class StringColumn extends AbstractColumn {
         ThreadLocalRandom rand = ThreadLocalRandom.current();
         String eqCandidate;
         do {
-            eqCandidate = randomString(rand, rand.nextInt( 0, maxLength - minLength + 1) + minLength);
+            eqCandidate = randomString(rand, rand.nextInt(0, maxLength - minLength + 1) + minLength);
         } while (eqCandidates.contains(eqCandidate));
         eqCandidates.add(eqCandidate);
         return eqCandidate;
@@ -110,7 +108,7 @@ public class StringColumn extends AbstractColumn {
         String likeCandidate;
         ThreadLocalRandom rand = ThreadLocalRandom.current();
         do {
-            String randomString = randomString(rand, rand.nextInt( 0, maxLength - minLength + 1) + minLength);
+            String randomString = randomString(rand, rand.nextInt(0, maxLength - minLength + 1) + minLength);
             likeCandidate = String.format("%s%s%s", prefix, randomString, postfix);
         } while (likeCandidates.containsKey(likeCandidate));
         likeCandidates.put(likeCandidate, probability);
@@ -172,7 +170,7 @@ public class StringColumn extends AbstractColumn {
             if (strings.containsKey(tag)) {
                 tupleData[i] = strings.get(tag);
             } else {
-                tupleData[i] = randomString(rand, rand.nextInt( 0, maxLength - minLength + 1) + minLength);
+                tupleData[i] = randomString(rand, rand.nextInt(0, maxLength - minLength + 1) + minLength);
             }
         }
     }
@@ -213,18 +211,15 @@ public class StringColumn extends AbstractColumn {
         String generatedStr;
         if (!startTag && !endTag) {
             generatedStr = candidate;
-        }
-        else if (!startTag) {
+        } else if (!startTag) {
             int postLen = rand.nextInt(0, maxLength - (candidate.length() - 1) + 1);
             String postStr = randomString(rand, postLen);
             generatedStr = candidate.substring(0, candidate.length() - 1) + postStr;
-        }
-        else if (!endTag) {
-            int preLen =  rand.nextInt(0, maxLength - (candidate.length() - 1) + 1);
+        } else if (!endTag) {
+            int preLen = rand.nextInt(0, maxLength - (candidate.length() - 1) + 1);
             String preStr = randomString(rand, preLen);
             generatedStr = preStr + candidate.substring(1);
-        }
-        else {
+        } else {
             int preLen = rand.nextInt(0, maxLength - (candidate.length() - 2) + 1), postLen = maxLength - preLen - (candidate.length() - 2);
             String preStr = "", postStr = "";
             if (preLen > 0) {

@@ -15,7 +15,7 @@ public class BoolColumn extends AbstractColumn {
 
     public BoolColumn() {
         super();
-        columnType=ColumnType.BOOL;
+        columnType = ColumnType.BOOL;
     }
 
     @Override

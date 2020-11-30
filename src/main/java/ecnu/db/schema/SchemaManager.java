@@ -20,12 +20,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SchemaManager {
     protected static final Logger logger = LoggerFactory.getLogger(SchemaManager.class);
-    private LinkedHashMap<String, Schema> schemas = new LinkedHashMap<>();
     private static final SchemaManager INSTANCE = new SchemaManager();
+    private LinkedHashMap<String, Schema> schemas = new LinkedHashMap<>();
 
     // Private constructor suppresses
     // default public constructor
     private SchemaManager() {
+    }
+
+    public static SchemaManager getInstance() {
+        return INSTANCE;
     }
 
     public void storeSchemaInfo() throws IOException {
@@ -37,10 +41,6 @@ public class SchemaManager {
         schemas = CommonUtils.mapper.readValue(FileUtils.readFileToString(new File(schemaInfoPath), UTF_8),
                 new TypeReference<LinkedHashMap<String, Schema>>() {
                 });
-    }
-
-    public static SchemaManager getInstance() {
-        return INSTANCE;
     }
 
     public void addSchema(String tableName, Schema schema) {

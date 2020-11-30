@@ -3,7 +3,6 @@ package ecnu.db.constraintchain.arithmetic.value;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
-import ecnu.db.schema.Schema;
 
 import java.util.Arrays;
 

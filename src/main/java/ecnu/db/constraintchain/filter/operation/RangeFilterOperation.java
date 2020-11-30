@@ -2,7 +2,6 @@ package ecnu.db.constraintchain.filter.operation;
 
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.schema.Schema;
 import ecnu.db.schema.column.AbstractColumn;
 
 import java.util.ArrayList;

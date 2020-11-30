@@ -21,10 +21,6 @@ public class Schema {
     public Schema() {
     }
 
-    public List<String> getCanonicalColumnNames() {
-        return canonicalColumnNames;
-    }
-
     public Schema(String canonicalTableName, List<String> columnsMetadata) throws TouchstoneException {
         List<String> canonicalColumnNames = new ArrayList<>();
         for (String columnMetadata : columnsMetadata) {
@@ -63,6 +59,10 @@ public class Schema {
         }
         this.canonicalColumnNames = canonicalColumnNames;
         joinTag = 1;
+    }
+
+    public List<String> getCanonicalColumnNames() {
+        return canonicalColumnNames;
     }
 
     public int getJoinTag() {

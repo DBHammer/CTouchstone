@@ -13,13 +13,8 @@ import java.util.Set;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IsNullFilterOperation extends AbstractFilterOperation {
-    public void setCanonicalColumnName(String canonicalColumnName) {
-        this.canonicalColumnName = canonicalColumnName;
-    }
-
     private String canonicalColumnName;
     private Boolean hasNot = false;
-
     public IsNullFilterOperation() {
         super(CompareOperator.ISNULL);
     }
@@ -28,6 +23,10 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         super(CompareOperator.ISNULL);
         this.canonicalColumnName = canonicalColumnName;
         this.probability = probability;
+    }
+
+    public void setCanonicalColumnName(String canonicalColumnName) {
+        this.canonicalColumnName = canonicalColumnName;
     }
 
     @Override
