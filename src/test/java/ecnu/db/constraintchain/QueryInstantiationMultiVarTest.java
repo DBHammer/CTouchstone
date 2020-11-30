@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class QueryInstantiationMultiVarTest {
     Map<String, List<ConstraintChain>> query2chains;
-    private final static int samplingSize = 100_000;
+    private final static int samplingSize = 10_000;
 
     @BeforeEach
     public void setUp() throws IOException {

@@ -107,7 +107,11 @@ public class ColumnManager {
 
     public void storeColumnDistribution() throws IOException {
         String content = CommonUtils.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(columns);
-        FileUtils.writeStringToFile(new File(CommonUtils.getResultDir() + "distribution.json"), content, UTF_8);
+        FileUtils.writeStringToFile(new File(CommonUtils.getResultDir() + CommonUtils.columnManageInfo), content, UTF_8);
+    }
+
+    public void loadColumnDistribution() throws IOException {
+        loadColumnDistribution(CommonUtils.getResultDir() + CommonUtils.columnManageInfo);
     }
 
     public void loadColumnDistribution(String columnDistributionPath) throws IOException {

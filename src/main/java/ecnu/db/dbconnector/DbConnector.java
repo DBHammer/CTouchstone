@@ -6,7 +6,7 @@ import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
-import org.apache.logging.log4j.util.Strings;
+import io.sundr.codegen.utils.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,7 +75,7 @@ public abstract class DbConnector {
         while (rs.next()) {
             keys.add(rs.getString(5).toLowerCase());
         }
-        return keys.size() > 0 ? Strings.join(keys, ',') : null;
+        return keys.size() > 0 ? StringUtils.join(keys.toArray(), ",") : null;
     }
 
     public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames) throws SQLException, TouchstoneException {

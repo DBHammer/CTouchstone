@@ -8,10 +8,12 @@ import com.google.common.collect.Multimap;
 import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.exception.TouchstoneException;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaManager;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.ColumnDeserializer;
+import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.config.GenerationConfig;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -32,16 +34,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author alan
  */
 public class Generator {
-    public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
     private static final Logger logger = LoggerFactory.getLogger(Generator.class);
-
-    public static void generate(GenerationConfig config, SchemaManager schemaManager) throws IOException, TouchstoneException, InterruptedException, ExecutionException {
+    public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
+    public static void generate(GenerationConfig config) throws IOException, TouchstoneException, InterruptedException, ExecutionException {
         ParameterResolver.items.clear();
-//        Map<String, List<ConstraintChain>> query2chains =
-//                ConstraintChainReader.readConstraintChain(new File(config.getInputPath(), "constraintChain.json"));
-        Map<String, Schema> schemas = getSchemas(config);
+        SchemaManager.getInstance().loadSchemaInfo();
+        ColumnManager.getInstance().loadColumnDistribution();
+        Map<String, List<ConstraintChain>> query2chains = CommonUtils.loadConstrainChainResult();
 
-        List<Schema> topologicalOrder = schemaManager.createTopologicalOrder();
+
+//        List<Schema> topologicalOrder = schemaManager.createTopologicalOrder();
         int threadNum = config.getThreadNum(), neededThreads = threadNum == 1 ? threadNum : threadNum / 2;
         File joinInfoPath = new File(config.getJoinInfoPath());
         if (joinInfoPath.isDirectory()) {

@@ -79,7 +79,7 @@ class DataGeneratorApp implements Callable<Integer> {
         if (config.getThreadPoolSize() == 0) {
             config.setThreadPoolSize(threadPoolSize);
         }
-        Generator.generate(config, null);
+        Generator.generate(config);
         return 0;
     }
 }

@@ -37,8 +37,9 @@ public class CommonUtils {
     public static final String DUMP_FILE_POSTFIX = "dump";
     public static final String SQL_FILE_POSTFIX = ".sql";
     public final static String queryDir = "/queries/";
-    public final static String constraintChainsInfo = "constraintChain.json";
-    public final static String schemaManageInfo = "schema.json";
+    public final static String constraintChainsInfo = "/constraintChain.json";
+    public final static String schemaManageInfo = "/schema.json";
+    public final static String columnManageInfo = "/distribution.json";
     public static final double skipNodeThreshold = 0.01;
     public static final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())

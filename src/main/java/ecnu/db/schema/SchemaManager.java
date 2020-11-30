@@ -13,9 +13,11 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 
-import static ecnu.db.utils.CommonUtils.DUMP_FILE_POSTFIX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SchemaManager {
@@ -34,11 +36,11 @@ public class SchemaManager {
 
     public void storeSchemaInfo() throws IOException {
         String content = CommonUtils.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
-        FileUtils.writeStringToFile(new File(CommonUtils.getResultDir() + "schema.json"), content, UTF_8);
+        FileUtils.writeStringToFile(new File(CommonUtils.getResultDir() + CommonUtils.schemaManageInfo), content, UTF_8);
     }
 
-    public void loadSchemaInfo(String schemaInfoPath) throws IOException {
-        schemas = CommonUtils.mapper.readValue(FileUtils.readFileToString(new File(schemaInfoPath), UTF_8),
+    public void loadSchemaInfo() throws IOException {
+        schemas = CommonUtils.mapper.readValue(FileUtils.readFileToString(new File(CommonUtils.getResultDir() + CommonUtils.schemaManageInfo), UTF_8),
                 new TypeReference<LinkedHashMap<String, Schema>>() {
                 });
     }
@@ -112,17 +114,6 @@ public class SchemaManager {
                 return leftTableNdv > rightTableNdv;
             }
         }
-    }
-
-    public Map<String, Schema> loadSchemas(String schemaPath) throws TouchstoneException, IOException {
-        Map<String, Schema> schemas;
-        File schemaFile = new File(schemaPath, String.format("schemas.%s", DUMP_FILE_POSTFIX));
-        if (!schemaFile.isFile()) {
-            throw new TouchstoneException(String.format("找不到%s", schemaFile.getAbsolutePath()));
-        }
-        schemas = CommonUtils.mapper.readValue(FileUtils.readFileToString(schemaFile, UTF_8), new TypeReference<HashMap<String, Schema>>() {
-        });
-        return schemas;
     }
 
     //todo
