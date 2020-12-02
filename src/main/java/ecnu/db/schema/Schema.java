@@ -44,6 +44,7 @@ public class Schema {
                     break;
                 case DATE:
                     ColumnManager.getInstance().addColumn(canonicalColumnName, new DateColumn());
+                    break;
                 case DATETIME:
                     DateTimeColumn column = new DateTimeColumn();
                     if (indexOfBrackets > 0) {

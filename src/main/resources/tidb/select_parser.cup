@@ -18,11 +18,9 @@ import java.io.StringReader;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.column.ColumnType;
 
-import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
-
-
 /* define how to connect to the scanner! */
 parser code {:
+  private final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
   private AndNode root = new AndNode();
   private AbstractAnalyzer analyzer;
   private List<Parameter> parameters;
