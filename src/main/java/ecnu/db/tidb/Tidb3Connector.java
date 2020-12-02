@@ -2,8 +2,8 @@ package ecnu.db.tidb;
 
 import com.alibaba.druid.DbType;
 import ecnu.db.dbconnector.DbConnector;
-import ecnu.db.exception.TouchstoneException;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
+import ecnu.db.utils.exception.TouchstoneException;
 
 public class Tidb3Connector extends DbConnector {
     private final static String DB_DRIVER_TYPE = "mysql";
@@ -13,6 +13,7 @@ public class Tidb3Connector extends DbConnector {
         super(config, DB_DRIVER_TYPE, JDBC_PROPERTY);
     }
 
+    @Override
     public String[] getSqlInfoColumns() {
         return new String[]{"id", "operator info", "execution info"};
     }

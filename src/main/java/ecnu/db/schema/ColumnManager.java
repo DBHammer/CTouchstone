@@ -3,11 +3,11 @@ package ecnu.db.schema;
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
-import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.compute.InstantiateParameterException;
 import ecnu.db.schema.column.*;
 import ecnu.db.schema.column.bucket.EqBucket;
 import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.utils.exception.compute.InstantiateParameterException;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -19,11 +19,14 @@ import java.util.List;
 
 import static ecnu.db.schema.column.ColumnType.DECIMAL;
 import static ecnu.db.schema.column.ColumnType.INTEGER;
+import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
     private LinkedHashMap<String, AbstractColumn> columns = new LinkedHashMap<>();
+
+    private File distributionInfoPath;
 
     // Private constructor suppresses
     // default public constructor
@@ -34,6 +37,11 @@ public class ColumnManager {
         return INSTANCE;
     }
 
+    public void setResultDir(String resultDir) {
+        if (distributionInfoPath == null) {
+            this.distributionInfoPath = new File(resultDir + CommonUtils.COLUMN_MANAGE_INFO);
+        }
+    }
 
     public AbstractColumn getColumn(String columnName) {
         return columns.get(columnName);
@@ -99,23 +107,20 @@ public class ColumnManager {
     }
 
     public void addColumn(String columnName, AbstractColumn column) throws TouchstoneException {
-        if (columnName.split("\\.").length != 3) {
+        if (columnName.split(CANONICAL_NAME_SPLIT_REGEX).length != 3) {
             throw new TouchstoneException("非canonicalColumnName格式");
         }
         columns.put(columnName, column);
     }
 
     public void storeColumnDistribution() throws IOException {
-        String content = CommonUtils.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(columns);
-        FileUtils.writeStringToFile(new File(CommonUtils.getResultDir() + CommonUtils.columnManageInfo), content, UTF_8);
+        String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columns);
+        FileUtils.writeStringToFile(distributionInfoPath, content, UTF_8);
     }
 
-    public void loadColumnDistribution() throws IOException {
-        loadColumnDistribution(CommonUtils.getResultDir() + CommonUtils.columnManageInfo);
-    }
 
     public void loadColumnDistribution(String columnDistributionPath) throws IOException {
-        columns = CommonUtils.mapper.readValue(FileUtils.readFileToString(new File(columnDistributionPath), UTF_8),
+        columns = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(new File(columnDistributionPath), UTF_8),
                 new TypeReference<LinkedHashMap<String, AbstractColumn>>() {
                 });
     }

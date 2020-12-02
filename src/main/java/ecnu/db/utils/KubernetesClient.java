@@ -1,6 +1,6 @@
 package ecnu.db.utils;
 
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;

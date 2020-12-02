@@ -1,4 +1,4 @@
-package ecnu.db.generation.threadpool;
+package ecnu.db.utils.threadpool;
 
 
 import org.checkerframework.checker.nullness.qual.NonNull;

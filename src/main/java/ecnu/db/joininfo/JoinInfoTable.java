@@ -1,6 +1,6 @@
-package ecnu.db.generation;
+package ecnu.db.joininfo;
 
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 
 import java.io.Externalizable;
 import java.io.IOException;

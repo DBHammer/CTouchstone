@@ -1,4 +1,4 @@
-package ecnu.db.exception;
+package ecnu.db.utils.exception;
 
 /**
  * @author qingshuai.wang

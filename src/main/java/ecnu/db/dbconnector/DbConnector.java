@@ -2,16 +2,15 @@ package ecnu.db.dbconnector;
 
 import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
-import ecnu.db.analyzer.statical.QueryReader;
-import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
-import io.sundr.codegen.utils.StringUtils;
+import ecnu.db.utils.exception.TouchstoneException;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -27,7 +26,7 @@ public abstract class DbConnector {
 
     public DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig) throws TouchstoneException {
         String url;
-        if (!config.isCrossMultiDatabase()) {
+        if (config.getDatabaseName() != null) {
             url = String.format("jdbc:%s://%s:%s/%s?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(), config.getDatabaseName(), databaseConnectionConfig);
         } else {
             url = String.format("jdbc:%s://%s:%s?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(), databaseConnectionConfig);
@@ -75,7 +74,7 @@ public abstract class DbConnector {
         while (rs.next()) {
             keys.add(rs.getString(5).toLowerCase());
         }
-        return keys.size() > 0 ? StringUtils.join(keys.toArray(), ",") : null;
+        return keys.size() > 0 ? String.join(",", keys) : null;
     }
 
     public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames) throws SQLException, TouchstoneException {
@@ -118,23 +117,6 @@ public abstract class DbConnector {
         return this.multiColNdvMap;
     }
 
-    /**
-     * @param files SQL文件
-     * @return 所有查询中涉及到的表名
-     * @throws IOException 从SQL文件中获取Query失败
-     */
-    public List<String> fetchTableNames(List<File> files) throws IOException {
-        List<String> tableNames = new ArrayList<>();
-        for (File sqlFile : files) {
-            List<String> queries = QueryReader.getQueriesFromFile(sqlFile.getPath(), getDbType());
-            for (String query : queries) {
-                Set<String> tableNameRefs = QueryReader.getTableName(query, getDbType());
-                tableNames.addAll(tableNameRefs);
-            }
-        }
-        tableNames = tableNames.stream().distinct().collect(Collectors.toList());
-        return tableNames;
-    }
 
     public int getTableSize(String canonicalTableName) throws SQLException {
         ResultSet rs = stmt.executeQuery(String.format("select count(*) as cnt from %s", canonicalTableName));

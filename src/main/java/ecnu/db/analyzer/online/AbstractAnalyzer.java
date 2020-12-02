@@ -1,15 +1,16 @@
 package ecnu.db.analyzer.online;
 
-import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
 import ecnu.db.constraintchain.chain.ConstraintChain;
 import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.constraintchain.chain.ConstraintChainPkJoinNode;
 import ecnu.db.constraintchain.filter.SelectResult;
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.dbconnector.DbConnector;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.SchemaManager;
-import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +20,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
+import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 
 /**
  * @author wangqingshuai
@@ -31,6 +34,17 @@ public abstract class AbstractAnalyzer {
     protected Map<String, String> aliasDic = new HashMap<>();
     protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
+    protected double skipNodeThreshold = 0.01;
+    private DbConnector dbConnector;
+    protected String defaultDatabase;
+
+    public void setDefaultDatabase(String defaultDatabase) {
+        this.defaultDatabase = defaultDatabase;
+    }
+
+    public void setSkipNodeThreshold(double skipNodeThreshold) {
+        this.skipNodeThreshold = skipNodeThreshold;
+    }
 
     /**
      * 从operator_info里提取tableName
@@ -38,7 +52,7 @@ public abstract class AbstractAnalyzer {
      * @param operatorInfo 需要处理的operator_info
      * @return 提取的表名
      */
-    protected abstract String extractTableName(String operatorInfo);
+    protected abstract String extractTableName(String operatorInfo) throws IllegalQueryTableNameException;
 
     /**
      * 查询树的解析
@@ -67,24 +81,31 @@ public abstract class AbstractAnalyzer {
      */
     protected abstract SelectResult analyzeSelectInfo(String operatorInfo) throws TouchstoneException;
 
-    /**
-     * @return 分析器对应的静态解析器类型
-     */
-    public abstract DbType getDbType();
 
     /**
      * 获取查询树的约束链信息和表信息
      *
-     * @param queryPlan 查询计划
+     * @param query 查询语句
      * @return 该查询树结构出的约束链信息和表信息
      */
-    public List<ConstraintChain> extractQueryInfos(List<String[]> queryPlan) throws SQLException, TouchstoneException {
+    public List<ConstraintChain> extractQuery(String query) throws SQLException {
         List<ConstraintChain> constraintChains = new ArrayList<>();
-        for (List<ExecutionNode> path : getPaths(getExecutionTree(queryPlan))) {
-            constraintChains.add(extractConstraintChain(path));
+        List<String[]> queryPlan = dbConnector.explainQuery(query);
+        try {
+            for (List<ExecutionNode> path : getPaths(getExecutionTree(queryPlan))) {
+                constraintChains.add(extractConstraintChain(path));
+            }
+        } catch (TouchstoneException | SQLException e) {
+            if (queryPlan != null && !queryPlan.isEmpty()) {
+                String queryPlanContent = queryPlan.stream().map((strs) -> String.join(";", strs))
+                        .collect(Collectors.joining(System.lineSeparator()));
+                logger.error(queryPlanContent, e);
+            }
         }
+        logger.info("Status:获取完成");
         return constraintChains;
     }
+
 
     /**
      * 获取查询树的所有路径
@@ -127,7 +148,7 @@ public abstract class AbstractAnalyzer {
      * @param path 需要处理的路径
      * @return 获取的约束链
      * @throws TouchstoneException 无法处理路径
-     * @throws SQLException        无法处理路径
+     * @throws SQLException        无法采集多列主键的ndv
      */
     private ConstraintChain extractConstraintChain(List<ExecutionNode> path) throws TouchstoneException, SQLException {
         if (path == null || path.size() == 0) {
@@ -159,7 +180,7 @@ public abstract class AbstractAnalyzer {
                 lastNodeLineCount = analyzeNode(node, constraintChain, tableName, lastNodeLineCount);
             } catch (TouchstoneException e) {
                 // 小于设置的阈值以后略去后续的节点
-                if (node.getOutputRows() * 1.0 / SchemaManager.getInstance().getTableSize(tableName) < CommonUtils.skipNodeThreshold) {
+                if (node.getOutputRows() * 1.0 / SchemaManager.getInstance().getTableSize(tableName) < skipNodeThreshold) {
                     logger.error("提取约束链失败", e);
                     logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), node));
                     break;
@@ -181,7 +202,7 @@ public abstract class AbstractAnalyzer {
      * @param tableName       表名
      * @return 节点行数，小于0代表停止继续向上分析
      * @throws TouchstoneException 节点分析出错
-     * @throws SQLException        节点分析出错
+     * @throws SQLException        无法收集多列主键的ndv
      */
     private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, String tableName, int lastNodeLineCount) throws TouchstoneException, SQLException {
         if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
@@ -213,7 +234,7 @@ public abstract class AbstractAnalyzer {
                 externalCol = joinColumnInfos[1];
             }
             //根据主外键分别设置约束链输出信息
-            if (SchemaManager.getInstance().isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
+            if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
                 if (node.getJoinTag() < 0) {
                     node.setJoinTag(SchemaManager.getInstance().getJoinTag(localTable));
                 }
@@ -233,6 +254,47 @@ public abstract class AbstractAnalyzer {
             }
         }
         return lastNodeLineCount;
+    }
+
+    public void setDbConnector(DbConnector dbConnector) {
+        this.dbConnector = dbConnector;
+    }
+
+    /**
+     * 根据输入的列名统计非重复值的个数，进而给出该列是否为主键
+     *
+     * @param pkTable 需要测试的主表
+     * @param pkCol   主键
+     * @param fkTable 外表
+     * @param fkCol   外键
+     * @return 该列是否为主键
+     * @throws TouchstoneException 由于逻辑错误无法判断是否为主键的异常
+     * @throws SQLException        无法通过数据库SQL查询获得多列属性的ndv
+     */
+    public boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneException, SQLException {
+        if (SchemaManager.getInstance().isRefTable(fkTable, fkCol, pkCol)) {
+            return true;
+        }
+        if (SchemaManager.getInstance().isRefTable(pkTable, pkCol, fkCol)) {
+            return false;
+        }
+        if (!pkCol.contains(",")) {
+            if (ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol) ==
+                    ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol)) {
+                return SchemaManager.getInstance().getTableSize(pkTable) < SchemaManager.getInstance().getTableSize(fkTable);
+            } else {
+                return ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol) >
+                        ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
+            }
+        } else {
+            int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
+            int rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
+            if (leftTableNdv == rightTableNdv) {
+                return SchemaManager.getInstance().getTableSize(pkTable) < SchemaManager.getInstance().getTableSize(fkTable);
+            } else {
+                return leftTableNdv > rightTableNdv;
+            }
+        }
     }
 
     public int getParameterId() {

@@ -15,8 +15,10 @@ import ecnu.db.constraintchain.filter.logical.*;
 import ecnu.db.constraintchain.filter.*;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import java.io.StringReader;
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.column.ColumnType;
+
+import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 
 
 /* define how to connect to the scanner! */
@@ -44,7 +46,7 @@ parser code {:
     return result;
   }
   private String getCanonicalTableName(String canonicalColumnName) {
-    String[] names = canonicalColumnName.split("\\.");
+    String[] names = canonicalColumnName.split(CANONICAL_NAME_SPLIT_REGEX);
     return String.format("%s.%s", names[0], names[1]);
   }
   private void verifyTableName(String tableName) throws TouchstoneException {
@@ -258,7 +260,7 @@ arithmetic_expr ::=
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
-                                                                                      ((ColumnNode) node).setColumnName(col.split("\\.")[2]);
+                                                                                      ((ColumnNode) node).setColumnName(col.split(CANONICAL_NAME_SPLIT_REGEX)[2]);
                                                                                       ((ColumnNode) node).setCanonicalTableName(tableName);
                                                                                       columns.add(col);
                                                                                       RESULT = node;

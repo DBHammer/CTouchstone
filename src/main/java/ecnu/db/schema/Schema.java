@@ -2,9 +2,9 @@ package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.column.*;
 import ecnu.db.utils.ColumnConvert;
+import ecnu.db.utils.exception.TouchstoneException;
 
 import java.util.*;
 

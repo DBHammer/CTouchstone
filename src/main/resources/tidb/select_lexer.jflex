@@ -1,6 +1,6 @@
 package ecnu.db.tidb.parser;
 
-import ecnu.db.exception.analyze.IllegalCharacterException;
+import ecnu.db.utils.exception.analyze.IllegalCharacterException;
 import ecnu.db.tidb.Token;
 import java_cup.runtime.*;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
@@ -11,7 +11,7 @@ import ecnu.db.constraintchain.filter.operation.CompareOperator;
 %class TidbSelectOperatorInfoLexer
 /* throws TouchstoneException */
 %yylexthrow{
-ecnu.db.exception.TouchstoneException
+ecnu.db.utils.exception.TouchstoneException
 %yylexthrow}
 
 %{

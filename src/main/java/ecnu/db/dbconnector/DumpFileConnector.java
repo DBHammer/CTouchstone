@@ -1,6 +1,6 @@
 package ecnu.db.dbconnector;
 
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 
 import java.util.List;
 import java.util.Map;

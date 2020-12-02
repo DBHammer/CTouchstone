@@ -1,4 +1,4 @@
-package ecnu.db.generation;
+package ecnu.db.joininfo;
 
 import org.junit.jupiter.api.Test;
 

@@ -8,7 +8,7 @@ import picocli.CommandLine.Command;
                 "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
                 "OS: ${os.name} ${os.version} ${os.arch}"},
         description = "tool for generating test database", sortOptions = false,
-        subcommands = {QueryInstantiationApp.class, DataGeneratorApp.class},
+        subcommands = {TaskConfigurator.class, DataGeneratorApp.class},
         mixinStandardHelpOptions = true,
         commandListHeading = "Commands:\n",
         header = {

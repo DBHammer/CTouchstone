@@ -2,8 +2,8 @@ package ecnu.db.tidb;
 
 import com.alibaba.druid.DbType;
 import ecnu.db.dbconnector.DbConnector;
-import ecnu.db.exception.TouchstoneException;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
+import ecnu.db.utils.exception.TouchstoneException;
 
 
 /**

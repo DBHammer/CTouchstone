@@ -3,9 +3,9 @@ package ecnu.db.constraintchain.arithmetic.value;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.column.bucket.EqBucket;
+import ecnu.db.utils.exception.TouchstoneException;
 
 import java.math.BigDecimal;
 import java.util.Comparator;

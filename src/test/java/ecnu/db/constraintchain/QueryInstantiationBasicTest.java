@@ -10,7 +10,7 @@ import ecnu.db.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.column.DateTimeColumn;
 import ecnu.db.schema.column.IntColumn;
@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static ecnu.db.app.TaskConfigurator.queryInstantiation;
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,8 +42,8 @@ class QueryInstantiationBasicTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        ParameterResolver.items.clear();
-        query2chains = CommonUtils.mapper.readValue(FileUtils.readFileToString(
+        ParameterResolver.ITEMS.clear();
+        query2chains = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
                 new File("src/test/resources/data/query-instantiation/basic/constraintChain.json"), UTF_8),
                 new TypeReference<Map<String, List<ConstraintChain>>>() {
                 });
@@ -93,7 +94,7 @@ class QueryInstantiationBasicTest {
         // **********************************
         // *    test query instantiation    *
         // **********************************
-        QueryInstantiation.compute(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+        queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());

@@ -15,6 +15,7 @@ import java.util.Set;
 public class IsNullFilterOperation extends AbstractFilterOperation {
     private String canonicalColumnName;
     private Boolean hasNot = false;
+
     public IsNullFilterOperation() {
         super(CompareOperator.ISNULL);
     }

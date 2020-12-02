@@ -43,6 +43,7 @@ public class StringColumn extends AbstractColumn {
     private BiMap<String, Integer> eqCandidateMap;
     private BiMap<String, Pair<Integer, Integer>> likeCandidateMap;
     private BiMap<Integer, String> strings;
+
     public StringColumn() {
         super();
         columnType = ColumnType.VARCHAR;

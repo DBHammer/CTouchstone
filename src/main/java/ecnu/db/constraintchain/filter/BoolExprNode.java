@@ -1,8 +1,8 @@
 package ecnu.db.constraintchain.filter;
 
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.compute.PushDownProbabilityException;
+import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.utils.exception.compute.PushDownProbabilityException;
 
 import java.math.BigDecimal;
 import java.util.List;

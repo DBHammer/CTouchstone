@@ -6,10 +6,10 @@ import com.google.common.collect.Multimaps;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.exception.compute.InstantiateParameterException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.schema.column.StringColumn;
+import ecnu.db.utils.exception.compute.InstantiateParameterException;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.math.BigDecimal;

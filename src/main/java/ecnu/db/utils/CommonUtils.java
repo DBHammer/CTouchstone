@@ -36,63 +36,18 @@ public class CommonUtils {
     public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public static final String DUMP_FILE_POSTFIX = "dump";
     public static final String SQL_FILE_POSTFIX = ".sql";
-    public final static String queryDir = "/queries/";
-    public final static String constraintChainsInfo = "/constraintChain.json";
-    public final static String schemaManageInfo = "/schema.json";
-    public final static String columnManageInfo = "/distribution.json";
-    public static final double skipNodeThreshold = 0.01;
-    public static final ObjectMapper mapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .registerModule(new SimpleModule()
-                    .addDeserializer(AbstractColumn.class, new ColumnDeserializer())
-                    .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
-                    .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
-                    .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer()));
-    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
-    public static String DEFAULT_DATABASE;
-    private static File resultDir = new File("result");
+    public final static String QUERY_DIR = "/queries/";
+    public final static String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
+    public final static String SCHEMA_MANAGE_INFO = "/schema.json";
+    public final static String COLUMN_MANAGE_INFO = "/distribution.json";
+    public final static String CANONICAL_NAME_CONTACT_SYMBOL = ".";
+    public final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
 
-    public static File getResultDir() {
-        return resultDir;
-    }
-
-    public static void setResultDir(String resultDir) {
-        CommonUtils.resultDir = new File("result");
-    }
-
-    /**
-     * 获取正则表达式的匹配
-     *
-     * @param pattern 正则表达式
-     * @param str     传入的字符串
-     * @return 成功的所有匹配，一个{@code List<String>}对应一个匹配的所有group
-     */
-    public static List<List<String>> matchPattern(Pattern pattern, String str) {
-        Matcher matcher = pattern.matcher(str);
-        List<List<String>> ret = new ArrayList<>();
-        while (matcher.find()) {
-            List<String> groups = new ArrayList<>();
-            for (int i = 0; i <= matcher.groupCount(); i++) {
-                groups.add(matcher.group(i));
-            }
-            ret.add(groups);
-        }
-
-        return ret;
-    }
-
-    /**
-     * todo
-     * 单个数据库时把表转换为<database>.<table>的形式
-     *
-     * @param tableName 表名
-     * @return 转换后的表名
-     */
-    public static String addDatabaseNamePrefix(String tableName) {
-        List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
-        return matches.size() == 1 && matches.get(0).get(0).length() == tableName.length() ?
-                tableName : String.format("%s.%s", DEFAULT_DATABASE, tableName);
-    }
+    public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule()).registerModule(new SimpleModule()
+            .addDeserializer(AbstractColumn.class, new ColumnDeserializer())
+            .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
+            .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
+            .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer()));
 
     public static boolean isInteger(String str) {
         try {
@@ -152,9 +107,30 @@ public class CommonUtils {
         return min;
     }
 
-    public static Map<String, List<ConstraintChain>> loadConstrainChainResult() throws IOException {
-        return CommonUtils.mapper.readValue(FileUtils.readFileToString(
-                new File(CommonUtils.getResultDir().getPath() + schemaManageInfo), UTF_8),
+
+    /**
+     * 获取正则表达式的匹配
+     *
+     * @param pattern 正则表达式
+     * @param str     传入的字符串
+     * @return 成功的所有匹配，一个{@code List<String>}对应一个匹配的所有group
+     */
+    public static List<List<String>> matchPattern(Pattern pattern, String str) {
+        Matcher matcher = pattern.matcher(str);
+        List<List<String>> ret = new ArrayList<>();
+        while (matcher.find()) {
+            List<String> groups = new ArrayList<>();
+            for (int i = 0; i <= matcher.groupCount(); i++) {
+                groups.add(matcher.group(i));
+            }
+            ret.add(groups);
+        }
+        return ret;
+    }
+
+    public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
+        return CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
+                new File(resultDir + SCHEMA_MANAGE_INFO), UTF_8),
                 new TypeReference<Map<String, List<ConstraintChain>>>() {
                 });
     }

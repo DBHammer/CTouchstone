@@ -2,7 +2,7 @@ package ecnu.db.constraintchain.chain;
 
 import com.google.common.collect.Table;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 
 import java.util.ArrayList;
 import java.util.Arrays;

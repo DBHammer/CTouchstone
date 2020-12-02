@@ -1,4 +1,4 @@
-package ecnu.db.generation.threadpool;
+package ecnu.db.utils.threadpool;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;

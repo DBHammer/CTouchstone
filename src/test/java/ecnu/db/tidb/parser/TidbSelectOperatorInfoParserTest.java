@@ -2,7 +2,7 @@ package ecnu.db.tidb.parser;
 
 import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.constraintchain.filter.logical.AndNode;
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.column.DecimalColumn;
 import ecnu.db.schema.column.IntColumn;

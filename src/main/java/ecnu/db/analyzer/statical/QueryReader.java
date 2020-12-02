@@ -8,21 +8,51 @@ import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
-import ecnu.db.exception.TouchstoneException;
-import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static ecnu.db.utils.CommonUtils.matchPattern;
 
 /**
  * @author qingshuai.wang
  */
 public class QueryReader {
-    private static final ExportTableAliasVisitor statVisitor = new ExportTableAliasVisitor();
+    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
+    private final ExportTableAliasVisitor aliasVisitor;
+    private final String queriesDir;
+    private DbType dbType;
 
-    public static List<String> getQueriesFromFile(String file, DbType dbType) throws IOException {
+    public QueryReader(String defaultDatabaseName, String queriesDir) {
+        if(defaultDatabaseName==null){
+            this.aliasVisitor = new ExportTableAliasVisitor();
+        }else {
+            this.aliasVisitor = new ExportTableAliasVisitor(defaultDatabaseName);
+        }
+        this.queriesDir = queriesDir;
+    }
+
+    public void setDbType(DbType dbType) {
+        this.dbType = dbType;
+    }
+
+    public List<File> loadQueryFiles() {
+        return Optional.ofNullable(new File(queriesDir).listFiles())
+                .map(Arrays::asList)
+                .orElse(new ArrayList<>())
+                .stream()
+                .filter((file) -> file.isFile() && file.getName().endsWith(".sql"))
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getQueriesFromFile(String file) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         StringBuilder fileContents = new StringBuilder();
         String line;
@@ -46,36 +76,67 @@ public class QueryReader {
         return sqls;
     }
 
-    public static HashSet<String> getTableName(String sql, DbType dbType) {
+    public HashSet<String> getTableName(String sql) throws IllegalQueryTableNameException {
         List<SQLStatement> stmtList = SQLUtils.parseStatements(sql, dbType);
         SQLStatement stmt = stmtList.get(0);
-
         SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(dbType);
         stmt.accept(statVisitor);
         HashSet<String> tableName = new HashSet<>();
         for (TableStat.Name name : statVisitor.getTables().keySet()) {
-            tableName.add(CommonUtils.addDatabaseNamePrefix(name.getName().toLowerCase()));
+            tableName.add(aliasVisitor.addDatabaseNamePrefix(name.getName().toLowerCase()));
         }
         return tableName;
     }
 
-    public static Map<String, String> getTableAlias(String sql, DbType dbType) throws TouchstoneException {
+    public Map<String, String> getTableAlias(String sql, DbType dbType) throws TouchstoneException {
         SQLStatement sqlStatement = SQLUtils.parseStatements(sql, dbType).get(0);
         if (!(sqlStatement instanceof SQLSelectStatement)) {
             throw new TouchstoneException("Only support select statement");
         }
         SQLSelectStatement statement = (SQLSelectStatement) sqlStatement;
-        statement.accept(statVisitor);
-        return statVisitor.getAliasMap();
+        statement.accept(aliasVisitor);
+        return aliasVisitor.getAliasMap();
+    }
+
+    /**
+     * @param files SQL文件
+     * @return 所有查询中涉及到的表名
+     * @throws IOException 从SQL文件中获取Query失败
+     */
+    public List<String> fetchTableNames(List<File> files) throws IOException, IllegalQueryTableNameException {
+        List<String> tableNames = new ArrayList<>();
+        for (File sqlFile : files) {
+            List<String> queries = getQueriesFromFile(sqlFile.getPath());
+            for (String query : queries) {
+                Set<String> tableNameRefs = getTableName(query);
+                tableNames.addAll(tableNameRefs);
+            }
+        }
+        tableNames = tableNames.stream().distinct().collect(Collectors.toList());
+        return tableNames;
     }
 
     private static class ExportTableAliasVisitor extends MySqlASTVisitorAdapter {
         private final Map<String, String> aliasMap = new HashMap<>();
+        private final String defaultDatabaseName;
+
+        public ExportTableAliasVisitor(String defaultDatabaseName) {
+            this.defaultDatabaseName = defaultDatabaseName;
+        }
+
+        public ExportTableAliasVisitor() {
+            this.defaultDatabaseName = null;
+        }
+
 
         @Override
         public boolean visit(SQLExprTableSource x) {
             if (x.getAlias() != null) {
-                aliasMap.put(x.getAlias().toLowerCase(), CommonUtils.addDatabaseNamePrefix(x.getName().toString().toLowerCase()));
+                try {
+                    aliasMap.put(x.getAlias().toLowerCase(), addDatabaseNamePrefix(x.getName().toString().toLowerCase()));
+                } catch (IllegalQueryTableNameException e) {
+                    e.printStackTrace();
+                }
             }
             return true;
         }
@@ -83,5 +144,26 @@ public class QueryReader {
         public Map<String, String> getAliasMap() {
             return aliasMap;
         }
+
+        /**
+         * todo
+         * 单个数据库时把表转换为<database>.<table>的形式
+         *
+         * @param tableName 表名
+         * @return 转换后的表名
+         */
+        public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
+            List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
+            if (matches.size() == 1 && matches.get(0).get(0).length() == tableName.length()) {
+                return tableName;
+            } else {
+                if (defaultDatabaseName == null) {
+                    throw new IllegalQueryTableNameException();
+                }
+                return String.format("%s.%s", defaultDatabaseName, tableName);
+            }
+        }
     }
+
+
 }

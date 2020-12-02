@@ -7,7 +7,7 @@ import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import org.apache.commons.io.FileUtils;
@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static ecnu.db.app.TaskConfigurator.queryInstantiation;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -30,9 +31,8 @@ public class QueryInstantiationMultiVarTest {
     @BeforeEach
     public void setUp() throws IOException {
         ArithmeticNode.setSize(samplingSize);
-        ParameterResolver.items.clear();
-        ParameterResolver.items.clear();
-        query2chains = CommonUtils.mapper.readValue(FileUtils.readFileToString(
+        ParameterResolver.ITEMS.clear();
+        query2chains = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
                 new File("src/test/resources/data/query-instantiation/multi-var-test/constraintChain.json"), UTF_8),
                 new TypeReference<Map<String, List<ConstraintChain>>>() {
                 });
@@ -45,7 +45,7 @@ public class QueryInstantiationMultiVarTest {
         // *********************************
         // *    test query instantiation   *
         // *********************************
-        QueryInstantiation.compute(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+        queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());

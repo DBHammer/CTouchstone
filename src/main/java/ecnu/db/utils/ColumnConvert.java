@@ -1,7 +1,7 @@
 package ecnu.db.utils;
 
-import ecnu.db.exception.TouchstoneException;
 import ecnu.db.schema.column.ColumnType;
+import ecnu.db.utils.exception.TouchstoneException;
 
 import java.util.HashMap;
 import java.util.Map;

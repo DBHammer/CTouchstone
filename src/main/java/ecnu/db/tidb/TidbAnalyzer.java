@@ -1,20 +1,19 @@
 package ecnu.db.tidb;
 
-import com.alibaba.druid.DbType;
 import com.google.common.base.Throwables;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.analyzer.online.ExecutionNode.ExecutionNodeType;
 import ecnu.db.analyzer.online.RawNode;
 import ecnu.db.constraintchain.filter.SelectResult;
-import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.analyze.UnsupportedJoin;
-import ecnu.db.exception.analyze.UnsupportedSelect;
-import ecnu.db.exception.analyze.UnsupportedSelectionConditionException;
 import ecnu.db.schema.SchemaManager;
 import ecnu.db.tidb.parser.TidbSelectOperatorInfoLexer;
 import ecnu.db.tidb.parser.TidbSelectOperatorInfoParser;
-import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
+import ecnu.db.utils.exception.analyze.UnsupportedJoin;
+import ecnu.db.utils.exception.analyze.UnsupportedSelect;
+import ecnu.db.utils.exception.analyze.UnsupportedSelectionConditionException;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -23,6 +22,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
 /**
@@ -42,6 +42,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     private static final Pattern LEFT_RANGE_BOUND = Pattern.compile("(\\[|\\()([0-9.]+|\\+inf|-inf)");
     private static final Pattern RIGHT_RANGE_BOUND = Pattern.compile("([0-9.]+|\\+inf|-inf)(]|\\))");
     private static final Pattern INDEX_COLUMN = Pattern.compile("index:.+\\((.+)\\)");
+    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
     private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(new TidbSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
 
 
@@ -275,13 +276,14 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 throw new UnsupportedOperationException();
             }
             List<List<String>> matches = matchPattern(EQ_OPERATOR, joinInfo);
-            String[] leftJoinInfos = matches.get(0).get(1).split("\\."), rightJoinInfos = matches.get(0).get(2).split("\\.");
+            String[] leftJoinInfos = matches.get(0).get(1).split(CANONICAL_NAME_SPLIT_REGEX);
+            String[] rightJoinInfos = matches.get(0).get(2).split(CANONICAL_NAME_SPLIT_REGEX);
             leftTable = String.format("%s.%s", leftJoinInfos[0], leftJoinInfos[1]);
             rightTable = String.format("%s.%s", rightJoinInfos[0], rightJoinInfos[1]);
             List<String> leftCols = new ArrayList<>(), rightCols = new ArrayList<>();
             for (List<String> match : matches) {
-                leftJoinInfos = match.get(1).split("\\.");
-                rightJoinInfos = match.get(2).split("\\.");
+                leftJoinInfos = match.get(1).split(CANONICAL_NAME_SPLIT_REGEX);
+                rightJoinInfos = match.get(2).split(CANONICAL_NAME_SPLIT_REGEX);
                 String currLeftTable = String.format("%s.%s", leftJoinInfos[0], leftJoinInfos[1]),
                         currLeftCol = leftJoinInfos[2],
                         currRightTable = String.format("%s.%s", rightJoinInfos[0], rightJoinInfos[1]),
@@ -301,7 +303,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         } else {
             Matcher innerInfo = INNER_JOIN_INNER_KEY.matcher(joinInfo);
             if (innerInfo.find()) {
-                String[] innerInfos = innerInfo.group(1).split("\\.");
+                String[] innerInfos = innerInfo.group(1).split(CANONICAL_NAME_SPLIT_REGEX);
                 result[0] = String.join(".", Arrays.asList(innerInfos[0], innerInfos[1]));
                 result[1] = innerInfos[2];
             } else {
@@ -309,7 +311,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             }
             Matcher outerInfo = INNER_JOIN_OUTER_KEY.matcher(joinInfo);
             if (outerInfo.find()) {
-                String[] outerInfos = outerInfo.group(1).split("\\.");
+                String[] outerInfos = outerInfo.group(1).split(CANONICAL_NAME_SPLIT_REGEX);
                 result[2] = String.join(".", Arrays.asList(outerInfos[0], outerInfos[1]));
                 result[3] = outerInfos[2];
             } else {
@@ -336,13 +338,12 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    protected String extractTableName(String operatorInfo) {
+    protected String extractTableName(String operatorInfo) throws IllegalQueryTableNameException {
         String canonicalTableName = operatorInfo.split(",")[0].substring(6).toLowerCase();
         if (aliasDic.containsKey(canonicalTableName)) {
             return aliasDic.get(canonicalTableName);
-        } else {
-            return CommonUtils.addDatabaseNamePrefix(canonicalTableName);
         }
+        return addDatabaseNamePrefix(canonicalTableName);
     }
 
     @Override
@@ -357,8 +358,21 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         }
     }
 
-    @Override
-    public DbType getDbType() {
-        return DbType.mysql;
+    /**
+     * 单个数据库时把表转换为<database>.<table>的形式
+     *
+     * @param tableName 表名
+     * @return 转换后的表名
+     */
+    public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
+        List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
+        if (matches.size() == 1 && matches.get(0).get(0).length() == tableName.length()) {
+            return tableName;
+        } else {
+            if (defaultDatabase == null) {
+                throw new IllegalQueryTableNameException();
+            }
+            return String.format("%s.%s", defaultDatabase, tableName);
+        }
     }
 }

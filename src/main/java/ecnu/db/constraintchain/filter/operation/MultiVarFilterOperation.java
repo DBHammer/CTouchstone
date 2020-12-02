@@ -6,11 +6,11 @@ import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.arithmetic.value.ColumnNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.compute.InstantiateParameterException;
-import ecnu.db.exception.schema.CannotFindColumnException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.utils.exception.compute.InstantiateParameterException;
+import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
 import java.util.Arrays;

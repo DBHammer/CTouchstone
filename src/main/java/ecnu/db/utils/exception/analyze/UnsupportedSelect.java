@@ -1,6 +1,6 @@
-package ecnu.db.exception.analyze;
+package ecnu.db.utils.exception.analyze;
 
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 
 /**
  * @author alan

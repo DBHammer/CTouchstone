@@ -11,7 +11,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @author alan
  */
-public class GenerationConfig implements DatabaseConnectorConfig {
+public class GenerationConfig {
     private String databaseIp;
     private String databasePort;
     private String databaseName;

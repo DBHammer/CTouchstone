@@ -10,20 +10,19 @@ import java.util.Map;
  * @author alan
  */
 public class ParameterResolver implements ObjectIdResolver {
-    public static final Map<ObjectIdGenerator.IdKey, Object> items = new HashMap<>();
+    public static final Map<ObjectIdGenerator.IdKey, Object> ITEMS = new HashMap<>();
 
     @Override
     public void bindItem(ObjectIdGenerator.IdKey id, Object pojo) {
-        if (items.containsKey(id)) {
-            throw new IllegalStateException("Already had POJO for id (" + id.key.getClass().getName() + ") [" + id
-                    + "]");
+        if (ITEMS.containsKey(id)) {
+            throw new IllegalStateException("Already had POJO for id (" + id.key.getClass().getName() + ") [" + id + "]");
         }
-        items.put(id, pojo);
+        ITEMS.put(id, pojo);
     }
 
     @Override
     public Object resolveId(ObjectIdGenerator.IdKey id) {
-        Object object = items.get(id);
+        Object object = ITEMS.get(id);
         return object == null ? getById(id) : object;
     }
 
@@ -35,7 +34,7 @@ public class ParameterResolver implements ObjectIdResolver {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-        items.put(id, object);
+        ITEMS.put(id, object);
         return object;
     }
 
