@@ -36,7 +36,8 @@ public class QueryInstantiationMultiVarTest {
                 new File("src/test/resources/data/query-instantiation/multi-var-test/constraintChain.json"), UTF_8),
                 new TypeReference<Map<String, List<ConstraintChain>>>() {
                 });
-        ColumnManager.getInstance().loadColumnDistribution("src/test/resources/data/query-instantiation/multi-var-test/distribution.json");
+        ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/multi-var-test");
+        ColumnManager.getInstance().loadColumnDistribution();
     }
 
     @Test

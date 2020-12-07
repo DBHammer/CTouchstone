@@ -104,7 +104,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             return rawNode.left == null ? null : buildExecutionTree(rawNode.left);
         }
         ExecutionNode node;
-        if (nodeTypeRef.isRangeScanNode(nodeType)) { // 处理range scan
+        // 处理range scan
+        if (nodeTypeRef.isRangeScanNode(nodeType)) {
             String canonicalTableName = extractTableName(rawNode.operatorInfo);
             int tableSize = SchemaManager.getInstance().getTableSize(canonicalTableName);
             if (tableSize != rawNode.rowCount && !rawNode.operatorInfo.contains("decided by")) { // 含有decided by的operator info表示join的index range scan

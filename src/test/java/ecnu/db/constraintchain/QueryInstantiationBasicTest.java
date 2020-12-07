@@ -90,7 +90,8 @@ class QueryInstantiationBasicTest {
 
     @Test
     public void computeTest() throws Exception {
-        ColumnManager.getInstance().loadColumnDistribution("src/test/resources/data/query-instantiation/basic/distribution.json");
+        ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
+        ColumnManager.getInstance().loadColumnDistribution();
         // **********************************
         // *    test query instantiation    *
         // **********************************

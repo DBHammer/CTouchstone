@@ -3,7 +3,7 @@ package ecnu.db.utils.config;
 /**
  * @author qingshuai.wang
  */
-public class PrepareConfig {
+public class TaskConfiguratorConfig {
     private DatabaseConnectorConfig databaseConnectorConfig;
     private String resultDirectory;
     private String queriesDirectory;

@@ -21,7 +21,6 @@ import ecnu.db.tidb.Tidb4Connector;
 import ecnu.db.tidb.TidbAnalyzer;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
-import ecnu.db.utils.config.PrepareConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -119,13 +118,13 @@ public class TaskConfigurator implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        PrepareConfig config;
+        ecnu.db.utils.config.TaskConfiguratorConfig config;
         if (taskConfiguratorConfig.othersConfig.fileConfigInfo != null) {
             config = new ObjectMapper().readValue(FileUtils.readFileToString(
-                    new File(taskConfiguratorConfig.othersConfig.fileConfigInfo.configPath), UTF_8), PrepareConfig.class);
+                    new File(taskConfiguratorConfig.othersConfig.fileConfigInfo.configPath), UTF_8), ecnu.db.utils.config.TaskConfiguratorConfig.class);
         } else {
             CliConfigInfo cliConfigInfo = taskConfiguratorConfig.othersConfig.cliConfigInfo;
-            config = new PrepareConfig();
+            config = new ecnu.db.utils.config.TaskConfiguratorConfig();
             config.setDatabaseConnectorConfig(new DatabaseConnectorConfig(cliConfigInfo.databaseIp, cliConfigInfo.databasePort,
                     cliConfigInfo.databaseUser, cliConfigInfo.databasePwd, cliConfigInfo.databaseName));
         }
@@ -254,20 +253,6 @@ public class TaskConfigurator implements Callable<Integer> {
         @CommandLine.Option(names = {"-t", "--db_type"}, required = true, description = "database version: ${COMPLETION-CANDIDATES}")
         private TouchstoneDbType dbType;
     }
-
-//    private static void loadSchemaMetadataAndColumnMetadata(PrepareConfig config) throws IOException, TouchstoneException, CsvException {
-//        StorageManager storageManager = new StorageManager(config.getResultDirectory(), config.getDumpDirectory(), config.getLoadDirectory(), config.getLogDirectory());
-//        storageManager.init();
-//        List<String> tableNames;
-//        // todo 静态文件读取时，需要选择合适的数据库信息
-//        tableNames = storageManager.loadTableNames();
-//        logger.info("加载表名成功，表名为:" + tableNames);
-//        Map<String, List<String[]>> queryPlanMap = storageManager.loadQueryPlans();
-//        Map<String, Integer> multiColNdvMap = storageManager.loadMultiColMap();
-//        SchemaManager.getInstance().loadSchemas();
-//        DumpFileConnector connector = new DumpFileConnector(queryPlanMap, multiColNdvMap);
-//        logger.info("数据加载完毕");
-//    }
 
     static class OthersConfig {
         @CommandLine.ArgGroup(exclusive = false, heading = "Input configuration by file%n")

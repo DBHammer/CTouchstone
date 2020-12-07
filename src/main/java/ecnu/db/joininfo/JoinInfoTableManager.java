@@ -1,6 +1,5 @@
 package ecnu.db.joininfo;
 
-import ecnu.db.app.Generator;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +11,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class JoinInfoTableManager {
-    private static final Logger logger = LoggerFactory.getLogger(Generator.class);
+    private static final Logger logger = LoggerFactory.getLogger(JoinInfoTableManager.class);
     private static final ConcurrentHashMap<String, JoinInfoTable> tableName2JoinInformationTable = new ConcurrentHashMap<>();
     private static int joinInfoTableId;
     private static int joinInfoTableNum;
     private static String joinInfoTablePath;
+
+    public static void setJoinInfoTablePath(String joinInfoTablePath) {
+        JoinInfoTableManager.joinInfoTablePath = joinInfoTablePath;
+    }
 
     public static JoinInfoTable getJoinInformationTable(String tableName) {
         tableName2JoinInformationTable.putIfAbsent(tableName, new JoinInfoTable());

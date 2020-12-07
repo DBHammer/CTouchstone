@@ -45,11 +45,6 @@ public abstract class DbConnector {
     }
 
     /**
-     * @return 分析器对应的静态解析器类型
-     */
-    public abstract DbType getDbType();
-
-    /**
      * @return 获取查询计划的列名
      */
     protected abstract String[] getSqlInfoColumns();

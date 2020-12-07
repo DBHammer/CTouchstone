@@ -18,11 +18,6 @@ public class Tidb3Connector extends DbConnector {
         return new String[]{"id", "operator info", "execution info"};
     }
 
-    @Override
-    public DbType getDbType() {
-        return DbType.mysql;
-    }
-
     /**
      * 获取节点上查询计划的信息
      *

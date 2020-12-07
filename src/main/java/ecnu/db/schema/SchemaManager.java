@@ -29,8 +29,6 @@ public class SchemaManager {
     private LinkedHashMap<String, Schema> schemas = new LinkedHashMap<>();
     private File schemaInfoPath;
 
-    // Private constructor suppresses
-    // default public constructor
     private SchemaManager() {
     }
 
@@ -39,9 +37,7 @@ public class SchemaManager {
     }
 
     public void setResultDir(String resultDir) {
-        if (schemaInfoPath == null) {
-            this.schemaInfoPath = new File(resultDir + CommonUtils.SCHEMA_MANAGE_INFO);
-        }
+        this.schemaInfoPath = new File(resultDir + CommonUtils.SCHEMA_MANAGE_INFO);
     }
 
     public void storeSchemaInfo() throws IOException {
@@ -59,33 +55,25 @@ public class SchemaManager {
         schemas.put(tableName, schema);
     }
 
-    public String getPrimaryKeys(String tableName) {
-        return schemas.get(tableName).getPrimaryKeys();
+    public String getPrimaryKeys(String tableName) throws CannotFindSchemaException {
+        return getSchema(tableName).getPrimaryKeys();
     }
 
-    public int getTableSize(String tableName) {
-        return schemas.get(tableName).getTableSize();
+    public int getTableSize(String tableName) throws CannotFindSchemaException {
+        return getSchema(tableName).getTableSize();
     }
 
-    public int getJoinTag(String tableName) {
-        return schemas.get(tableName).getJoinTag();
+    public int getJoinTag(String tableName) throws CannotFindSchemaException {
+        return getSchema(tableName).getJoinTag();
     }
 
     public void setPrimaryKeys(String tableName, String primaryKeys) throws TouchstoneException {
-        schemas.get(tableName).setPrimaryKeys(primaryKeys);
+        getSchema(tableName).setPrimaryKeys(primaryKeys);
     }
 
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
         logger.info("table:" + localTable + ".column:" + localColumns + " -ref- table:" + refTable + ".column:" + refColumns);
-        schemas.get(localTable).addForeignKey(localColumns, refTable, refColumns);
-    }
-
-    private Schema getSchema(String tableName) throws CannotFindSchemaException {
-        Schema schema = schemas.get(tableName);
-        if (schema == null) {
-            throw new CannotFindSchemaException(tableName);
-        }
-        return schema;
+        getSchema(localTable).addForeignKey(localColumns, refTable, refColumns);
     }
 
     public boolean isRefTable(String locTable, String locColumn, String remoteColumn) throws CannotFindSchemaException {
@@ -107,5 +95,17 @@ public class SchemaManager {
             schemas.add(topologicalOrderIterator.next());
         }
         return schemas;
+    }
+
+    public List<String> getColumnNames(String schemaName) throws CannotFindSchemaException {
+        return getSchema(schemaName).getCanonicalColumnNames();
+    }
+
+    private Schema getSchema(String tableName) throws CannotFindSchemaException {
+        Schema schema = schemas.get(tableName);
+        if (schema == null) {
+            throw new CannotFindSchemaException(tableName);
+        }
+        return schema;
     }
 }

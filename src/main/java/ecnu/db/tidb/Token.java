@@ -24,10 +24,7 @@ public class Token extends ComplexSymbolFactory.ComplexSymbol {
 
     @Override
     public String toString() {
-        return "column "
-                + column
-                + ", sym: "
-                + TidbSelectSymbol.terminalNames[this.sym].toLowerCase()
-                + (value == null ? "" : (", value: '" + value + "'"));
+        return "column " + column + ", sym: " + TidbSelectSymbol.terminalNames[this.sym].toLowerCase() +
+                (value == null ? "" : (", value: '" + value + "'"));
     }
 }

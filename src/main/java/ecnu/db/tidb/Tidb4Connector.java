@@ -37,9 +37,4 @@ public class Tidb4Connector extends DbConnector {
         ret[2] = "rows:" + data[2];
         return ret;
     }
-
-    @Override
-    public DbType getDbType() {
-        return DbType.mysql;
-    }
 }

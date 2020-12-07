@@ -31,17 +31,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author xuechao.lian
  */
 public class CommonUtils {
-    public static final int stepSize = 10000;
-    public static final int INIT_HASHMAP_SIZE = 16;
-    public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
-    public static final String DUMP_FILE_POSTFIX = "dump";
-    public static final String SQL_FILE_POSTFIX = ".sql";
+    public final static int stepSize = 10000;
+    public final static MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
+    public final static String DUMP_FILE_POSTFIX = "dump";
+    public final static String SQL_FILE_POSTFIX = ".sql";
     public final static String QUERY_DIR = "/queries/";
     public final static String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
     public final static String SCHEMA_MANAGE_INFO = "/schema.json";
     public final static String COLUMN_MANAGE_INFO = "/distribution.json";
     public final static String CANONICAL_NAME_CONTACT_SYMBOL = ".";
     public final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
+    public final static int SINGLE_THREAD_TUPLE_SIZE = 100;
+    public final static int INIT_HASHMAP_SIZE = 16;
 
     public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule()).registerModule(new SimpleModule()
             .addDeserializer(AbstractColumn.class, new ColumnDeserializer())

@@ -12,10 +12,13 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static ecnu.db.schema.column.ColumnType.DECIMAL;
 import static ecnu.db.schema.column.ColumnType.INTEGER;
@@ -38,9 +41,7 @@ public class ColumnManager {
     }
 
     public void setResultDir(String resultDir) {
-        if (distributionInfoPath == null) {
-            this.distributionInfoPath = new File(resultDir + CommonUtils.COLUMN_MANAGE_INFO);
-        }
+        this.distributionInfoPath = new File(resultDir + CommonUtils.COLUMN_MANAGE_INFO);
     }
 
     public AbstractColumn getColumn(String columnName) {
@@ -119,8 +120,8 @@ public class ColumnManager {
     }
 
 
-    public void loadColumnDistribution(String columnDistributionPath) throws IOException {
-        columns = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(new File(columnDistributionPath), UTF_8),
+    public void loadColumnDistribution() throws IOException {
+        columns = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(distributionInfoPath, UTF_8),
                 new TypeReference<LinkedHashMap<String, AbstractColumn>>() {
                 });
     }
@@ -178,6 +179,44 @@ public class ColumnManager {
                     throw new TouchstoneException("未匹配到的类型");
             }
             column.setNullPercentage(Float.parseFloat(sqlResult[index++]));
+        }
+    }
+
+    public void prepareGeneration(List<String> columnNames, int size) {
+        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareGeneration(size));
+    }
+
+    public List<String> getData(String columnName) {
+        AbstractColumn column = getColumn(columnName);
+        switch (column.getColumnType()) {
+            case DATE:
+                return Arrays.stream(((DateColumn) column).getTupleData())
+                        .parallel()
+                        .map((d) -> String.format("'%s'", DateColumn.FMT.format(d)))
+                        .collect(Collectors.toList());
+            case DATETIME:
+                return Arrays.stream(((DateTimeColumn) column).getTupleData())
+                        .parallel()
+                        .map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d)))
+                        .collect(Collectors.toList());
+            case INTEGER:
+                return Arrays.stream(((IntColumn) column).getTupleData())
+                        .parallel()
+                        .mapToObj(Integer::toString)
+                        .collect(Collectors.toList());
+            case DECIMAL:
+                return Arrays.stream(((DecimalColumn) column).getTupleData())
+                        .parallel()
+                        .mapToObj((d) -> BigDecimal.valueOf(d).toString())
+                        .collect(Collectors.toList());
+            case VARCHAR:
+                return Arrays.stream(((StringColumn) column).getTupleData())
+                        .parallel()
+                        .map((d) -> String.format("'%s'", d))
+                        .collect(Collectors.toList());
+            case BOOL:
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 }

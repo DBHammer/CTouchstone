@@ -13,10 +13,12 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 /**
  * @author alan
@@ -163,6 +165,7 @@ public class DateColumn extends AbstractColumn {
                 for (int i = 0; i < longCopyOfTupleData.length; i++) {
                     ret[i] = (longCopyOfTupleData[i] > value);
                 }
+
                 break;
             case GE:
                 value = LocalDate.parse(parameters.get(0).getData(), FMT).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
