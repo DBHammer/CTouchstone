@@ -28,8 +28,7 @@
                       "leftNode": null,
                       "rightNode": null,
                       "type": "COLUMN",
-                      "canonicalTableName": "test.test",
-                      "columnName": "test.test.c2"
+                      "canonicalColumnName": "test.test.c2"
                     },
                     "rightNode": {
                       "leftNode": {
@@ -42,8 +41,7 @@
                         "leftNode": null,
                         "rightNode": null,
                         "type": "COLUMN",
-                        "canonicalTableName": "test.test",
-                        "columnName": "test.test.c3"
+                        "canonicalColumnName": "test.test.c3"
                       },
                       "type": "MUL"
                     },
@@ -53,8 +51,7 @@
                     "leftNode": null,
                     "rightNode": null,
                     "type": "COLUMN",
-                    "canonicalTableName": "test.test",
-                    "columnName": "test.test.c4"
+                    "canonicalColumnName": "test.test.c4"
                   },
                   "type": "PLUS"
                 },
@@ -105,8 +102,7 @@
                     "leftNode": null,
                     "rightNode": null,
                     "type": "COLUMN",
-                    "canonicalTableName": "test.test",
-                    "columnName": "test.test.c2"
+                    "canonicalColumnName": "test.test.c2"
                   },
                   "rightNode": {
                     "leftNode": {
@@ -120,8 +116,7 @@
                         "leftNode": null,
                         "rightNode": null,
                         "type": "COLUMN",
-                        "canonicalTableName": "test.test",
-                        "columnName": "test.test.c3"
+                        "canonicalColumnName": "test.test.c3"
                       },
                       "type": "MUL"
                     },
@@ -129,8 +124,7 @@
                       "leftNode": null,
                       "rightNode": null,
                       "type": "COLUMN",
-                      "canonicalTableName": "test.test",
-                      "columnName": "test.test.c4"
+                      "canonicalColumnName": "test.test.c4"
                     },
                     "type": "MUL"
                   },

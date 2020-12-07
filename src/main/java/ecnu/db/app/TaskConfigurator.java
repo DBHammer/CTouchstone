@@ -22,6 +22,9 @@ import ecnu.db.tidb.TidbAnalyzer;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.utils.exception.compute.InstantiateParameterException;
+import ecnu.db.utils.exception.compute.PushDownProbabilityException;
+import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,11 +55,20 @@ public class TaskConfigurator implements Callable<Integer> {
     @CommandLine.ArgGroup(exclusive = false, multiplicity = "1")
     private TaskConfiguratorConfig taskConfiguratorConfig;
 
-    public static void queryInstantiation(List<ConstraintChain> constraintChains) throws TouchstoneException {
-        //todo 1. 对于数值型的filter, 首先计算单元的filter, 然后计算多值的filter，
-        //        对于bet操作，先记录阈值，然后选择合适的区间插入，等值约束也需选择合适的区间
-        //        每个filter operation内部保存自己实例化后的结果
-        //     2. 对于字符型的filter, 只有like和eq的运算，直接计算即可
+    /**
+     * 1. 对于数值型的filter, 首先计算单元的filter, 然后计算多值的filter，对于bet操作，先记录阈值，然后选择合适的区间插入，
+     * 等值约束也需选择合适的区间每个filter operation内部保存自己实例化后的结果
+     * 2. 对于字符型的filter, 只有like和eq的运算，直接计算即可
+     *
+     * @param constraintChains 待计算的约束链
+     * @param samplingSize 多元非等值的采样大小
+     * @throws CannotFindColumnException 随机采样时无法采样对应的列数据
+     * @throws InstantiateParameterException 1. eq条件与in条件冲突 2. 多元计算无法计算等值
+     * @throws PushDownProbabilityException
+     */
+    public static void queryInstantiation(List<ConstraintChain> constraintChains, int samplingSize)
+            throws CannotFindColumnException, InstantiateParameterException, PushDownProbabilityException {
+
         List<AbstractFilterOperation> filterOperations = new LinkedList<>();
         for (ConstraintChain constraintChain : constraintChains) {
             for (ConstraintChainNode node : constraintChain.getNodes()) {
@@ -111,6 +123,7 @@ public class TaskConfigurator implements Callable<Integer> {
                 .filter((f) -> f instanceof MultiVarFilterOperation)
                 .map((f) -> (MultiVarFilterOperation) f)
                 .collect(Collectors.toList());
+        ColumnManager.getInstance().prepareGenerationAll(samplingSize);
         for (MultiVarFilterOperation operation : multiVarFilters) {
             operation.instantiateMultiVarParameter();
         }
@@ -152,7 +165,7 @@ public class TaskConfigurator implements Callable<Integer> {
                 throw new TouchstoneException("不支持的数据库类型");
         }
         analyzer.setDefaultDatabase(config.getDatabaseConnectorConfig().getDatabaseName());
-        extract(dbConnector, analyzer, queryReader, queryWriter);
+        extract(dbConnector, analyzer, queryReader, queryWriter, config.getSampleSize());
         return 0;
     }
 
@@ -183,8 +196,8 @@ public class TaskConfigurator implements Callable<Integer> {
         return queryFiles;
     }
 
-    public void extract(DbConnector dbConnector, AbstractAnalyzer queryAnalyzer,
-                        QueryReader queryReader, QueryWriter queryWriter) throws IOException, TouchstoneException, SQLException {
+    public void extract(DbConnector dbConnector, AbstractAnalyzer queryAnalyzer, QueryReader queryReader,
+                        QueryWriter queryWriter, int samplingSize) throws IOException, TouchstoneException, SQLException {
         List<File> queryFiles = querySchemaMetadataAndColumnMetadata(queryReader, dbConnector);
         Map<String, String> queryName2QueryTemplates = new HashMap<>();
         Map<String, List<ConstraintChain>> query2constraintChains = new LinkedHashMap<>();
@@ -213,7 +226,7 @@ public class TaskConfigurator implements Callable<Integer> {
         logger.info("持久化查询计划完成");
         logger.info("开始实例化查询计划");
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        queryInstantiation(allConstraintChains);
+        queryInstantiation(allConstraintChains, samplingSize);
         logger.info("实例化查询计划成功, 实例化的参数为");
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         allConstraintChains.stream()

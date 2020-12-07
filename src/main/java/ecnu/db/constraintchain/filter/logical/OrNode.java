@@ -9,13 +9,14 @@ import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
-import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.compute.PushDownProbabilityException;
+import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static ecnu.db.constraintchain.filter.BoolExprType.*;
 import static ecnu.db.constraintchain.filter.operation.UniVarFilterOperation.merge;
@@ -121,13 +122,12 @@ public class OrNode implements BoolExprNode {
     }
 
     @Override
-    public boolean[] evaluate() throws TouchstoneException {
+    public boolean[] evaluate() throws CannotFindColumnException {
         boolean[] leftValue = leftNode.evaluate(), rightValue = rightNode.evaluate();
-        for (int i = 0; i < leftValue.length; i++) {
-            leftValue[i] = (leftValue[i] | rightValue[i]);
-        }
+        IntStream.range(0, leftValue.length).parallel().forEach(i -> leftValue[i] |= rightValue[i]);
         return leftValue;
     }
+
 
     @Override
     public String toString() {

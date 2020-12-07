@@ -1,8 +1,8 @@
 package ecnu.db.constraintchain.filter;
 
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.compute.PushDownProbabilityException;
+import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,7 +32,6 @@ public interface BoolExprNode {
      * 获取生成好column以后，evaluate表达式的布尔值
      *
      * @return evaluate表达式的布尔值
-     * @throws TouchstoneException 获取失败
      */
-    boolean[] evaluate() throws TouchstoneException;
+    boolean[] evaluate() throws CannotFindColumnException;
 }

@@ -146,7 +146,6 @@ public class QueryReader {
         }
 
         /**
-         * todo
          * 单个数据库时把表转换为<database>.<table>的形式
          *
          * @param tableName 表名

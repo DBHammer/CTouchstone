@@ -21,14 +21,6 @@ public abstract class ArithmeticNode {
         ArithmeticNode.size = size;
     }
 
-    /**
-     * 获取当前节点的计算结果
-     *
-     * @return 返回float类型的计算结果
-     */
-    @JsonIgnore
-    public abstract float[] getVector() throws TouchstoneException;
-
     public ArithmeticNodeType getType() {
         return this.type;
     }

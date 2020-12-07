@@ -35,14 +35,22 @@ public abstract class AbstractColumn {
 
     protected ColumnType columnType;
     protected float nullPercentage;
-    // 非等值约束
+    /**
+     * 非等值约束
+     */
     protected NonEqBucket bucket = new NonEqBucket();
     ;
-    // 已经处理过的约束
+    /**
+     * 已经处理过的约束
+     */
     protected Multimap<String, Parameter> metConditions = ArrayListMultimap.create();
-    // 已经处理过的等值参数对应的概率, data->probability
+    /**
+     * 已经处理过的等值参数对应的概率, data->probability
+     */
     protected Map<String, BigDecimal> eqParamData2Probability = new HashMap<>();
-    // 所有的非等值约束划分而成的等值约束的区间
+    /**
+     * 所有的非等值约束划分而成的等值约束的区间
+     */
     @JsonIgnore
     protected List<EqBucket> eqBuckets = new ArrayList<>();
     // 生成的等于约束参数数据

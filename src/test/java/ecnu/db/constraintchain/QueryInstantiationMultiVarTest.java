@@ -7,9 +7,9 @@ import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
-import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ public class QueryInstantiationMultiVarTest {
         // *********************************
         // *    test query instantiation   *
         // *********************************
-        queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+        queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), samplingSize);
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());

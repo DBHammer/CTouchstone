@@ -161,7 +161,7 @@ uni_compare_expr ::=
                                                                                                     AbstractFilterOperation operation;
                                                                                                     boolean needQuote = false, isDate = false;
                                                                                                     if (e1.getType() == ArithmeticNodeType.COLUMN) {
-                                                                                                        String canonicalColumnName = String.format("%s.%s", tableName, ((ColumnNode) e1).getColumnName());
+                                                                                                        String canonicalColumnName = ((ColumnNode) e1).getCanonicalColumnName();
                                                                                                         operation = new UniVarFilterOperation(canonicalColumnName, op);
                                                                                                         needQuote = isColumnNeedQuote(canonicalColumnName);
                                                                                                         isDate = isColumnDate(canonicalColumnName);
@@ -258,8 +258,7 @@ arithmetic_expr ::=
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
-                                                                                      ((ColumnNode) node).setColumnName(col.split(CANONICAL_NAME_SPLIT_REGEX)[2]);
-                                                                                      ((ColumnNode) node).setCanonicalTableName(tableName);
+                                                                                      ((ColumnNode) node).setCanonicalColumnName(col);
                                                                                       columns.add(col);
                                                                                       RESULT = node;
                                                                                   :}

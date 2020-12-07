@@ -73,32 +73,6 @@ public class ColumnManager {
         return ret;
     }
 
-    public float getMin(String columnName) throws InstantiateParameterException {
-        AbstractColumn column = columns.get(columnName);
-        if (column instanceof IntColumn) {
-            return (float) ((IntColumn) column).getMin();
-        } else if (column instanceof DecimalColumn) {
-            return (float) ((DecimalColumn) column).getMin();
-        } else {
-            throw new InstantiateParameterException(String.format("计算节点出现非法的column'%s'", column));
-        }
-    }
-
-    public List<EqBucket> getEqBuckets(String columnName) {
-        return columns.get(columnName).getEqBuckets();
-    }
-
-    public float getMax(String columnName) throws InstantiateParameterException {
-        AbstractColumn column = columns.get(columnName);
-        if (column instanceof IntColumn) {
-            return (float) ((IntColumn) column).getMax();
-        } else if (column instanceof DecimalColumn) {
-            return (float) ((DecimalColumn) column).getMax();
-        } else {
-            throw new InstantiateParameterException(String.format("计算节点出现非法的column'%s'", column));
-        }
-    }
-
     public ColumnType getColumnType(String columnName) {
         return columns.get(columnName).getColumnType();
     }

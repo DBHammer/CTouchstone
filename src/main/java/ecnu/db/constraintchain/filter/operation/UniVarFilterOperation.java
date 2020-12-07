@@ -153,7 +153,8 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         operator = LT;
         String data = column.generateNonEqParamData(probability);
         parameters.forEach((param) -> param.setData(data));
-        if (column.hasNotMetCondition(operator + data)) { // for uni compare we use operator and generated value as identifier
+        // for uni compare we use operator and generated value as identifier
+        if (column.hasNotMetCondition(operator + data)) {
             column.insertNonEqProbability(probability, operator, parameters.get(0));
         }
     }

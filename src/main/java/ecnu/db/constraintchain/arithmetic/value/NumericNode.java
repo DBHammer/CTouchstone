@@ -34,14 +34,6 @@ public class NumericNode extends ArithmeticNode {
     }
 
     @Override
-    public float[] getVector() {
-        int size = ArithmeticNode.size;
-        float[] value = new float[size];
-        Arrays.fill(value, constant);
-        return value;
-    }
-
-    @Override
     public double[] calculate() {
         double[] value = new double[size];
         Arrays.fill(value, constant);

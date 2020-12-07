@@ -10,11 +10,11 @@ import ecnu.db.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.ParameterResolver;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.column.DateTimeColumn;
 import ecnu.db.schema.column.IntColumn;
 import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
 import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class QueryInstantiationBasicTest {
     Map<String, List<ConstraintChain>> query2chains;
+    int samplingSize = 10_000;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -95,7 +96,7 @@ class QueryInstantiationBasicTest {
         // **********************************
         // *    test query instantiation    *
         // **********************************
-        queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+        queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), samplingSize);
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());
@@ -122,9 +123,6 @@ class QueryInstantiationBasicTest {
         // ******************************
         // *    test data generation    *
         // ******************************
-        int generateSize = 10_000;
-        ColumnManager.getInstance().prepareGenerationAll(generateSize);
-
         List<ConstraintChain> chains;
         Map<String, Double> map;
         chains = query2chains.get("2_1.sql");

@@ -1,11 +1,8 @@
 package ecnu.db.app;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
 import ecnu.db.constraintchain.chain.ConstraintChain;
-import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.joininfo.JoinInfoTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.SchemaManager;
@@ -17,9 +14,11 @@ import picocli.CommandLine;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.stepSize;
 

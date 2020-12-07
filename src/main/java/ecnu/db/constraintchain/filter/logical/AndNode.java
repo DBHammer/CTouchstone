@@ -9,17 +9,15 @@ import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
-import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.compute.PushDownProbabilityException;
+import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static ecnu.db.constraintchain.filter.BoolExprType.*;
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
@@ -114,15 +112,17 @@ public class AndNode implements BoolExprNode {
     }
 
     @Override
-    public boolean[] evaluate() throws TouchstoneException {
-        boolean[] value = children.get(0).evaluate();
-        for (int i = 1; i < children.size(); i++) {
-            boolean[] childValue = children.get(i).evaluate();
-            for (int j = 0; j < value.length; j++) {
-                value[j] = (value[j] & childValue[j]);
-            }
+    public boolean[] evaluate() throws CannotFindColumnException {
+        boolean[][] computeVectors = new boolean[children.size()][];
+        for (int i = 0; i < children.size(); i++) {
+            computeVectors[i] = children.get(i).evaluate();
         }
-        return value;
+        boolean[] resultVector = new boolean[computeVectors[0].length];
+        Arrays.fill(resultVector, true);
+        for (boolean[] computeVector : computeVectors) {
+            IntStream.range(0, resultVector.length).parallel().forEach(i -> resultVector[i] &= computeVector[i]);
+        }
+        return resultVector;
     }
 
     public LinkedList<BoolExprNode> getChildren() {

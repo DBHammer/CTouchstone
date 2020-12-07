@@ -42,7 +42,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             return;
         }
         if (node.getType() == ArithmeticNodeType.COLUMN) {
-            colNames.add(((ColumnNode) node).getColumnName());
+            colNames.add(((ColumnNode) node).getCanonicalColumnName());
         }
         getCanonicalColumnNamesColNames(node.getLeftNode(), colNames);
         getCanonicalColumnNamesColNames(node.getRightNode(), colNames);
@@ -115,7 +115,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     /**
      * todo 通过计算树计算概率，暂时不考虑其他FilterOperation对于此操作的阈值影响
      */
-    public void instantiateMultiVarParameter() throws TouchstoneException {
+    public void instantiateMultiVarParameter() throws CannotFindColumnException, InstantiateParameterException {
         int pos;
         BigDecimal nonNullProbability = BigDecimal.ONE;
         // 假定null都是均匀独立分布的
@@ -130,14 +130,14 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         } else if (operator.getType() != LESS) {
             throw new InstantiateParameterException("多变量计算节点仅接受非等值约束");
         }
-        float[] vector = arithmeticTree.getVector();
+        double[] vector = arithmeticTree.calculate();
         pos = probability.multiply(BigDecimal.valueOf(vector.length)).intValue();
         Arrays.sort(vector);
         parameters.forEach(param -> {
             if (CommonUtils.isInteger(param.getData())) {
                 param.setData(Integer.toString((int) vector[pos]));
             } else if (CommonUtils.isFloat(param.getData())) {
-                param.setData(Float.toString(vector[pos]));
+                param.setData(Double.toString(vector[pos]));
             } else {
                 throw new UnsupportedOperationException();
             }
