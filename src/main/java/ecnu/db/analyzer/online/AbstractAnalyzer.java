@@ -163,7 +163,7 @@ public abstract class AbstractAnalyzer {
             tableName = result.getTableName();
             constraintChain = new ConstraintChain(tableName);
             BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(SchemaManager.getInstance().getTableSize(tableName)), BIG_DECIMAL_DEFAULT_PRECISION);
-            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(tableName, ratio, result.getCondition(), result.getColumns());
+            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result.getCondition(), result.getColumns());
             constraintChain.addNode(filterNode);
             constraintChain.addParameters(result.getParameters());
             lastNodeLineCount = node.getOutputRows();
@@ -211,9 +211,9 @@ public abstract class AbstractAnalyzer {
         if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
             SelectResult result = analyzeSelectInfo(node.getInfo());
             if (!tableName.equals(result.getTableName())) {
-                throw new TouchstoneException("select表名不匹配");
+                return -1;
             }
-            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(tableName, BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount), result.getCondition(), result.getColumns());
+            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount), result.getCondition(), result.getColumns());
             lastNodeLineCount = node.getOutputRows();
             constraintChain.addNode(filterNode);
             constraintChain.addParameters(result.getParameters());
@@ -238,7 +238,7 @@ public abstract class AbstractAnalyzer {
                 if (node.getJoinTag() < 0) {
                     node.setJoinTag(SchemaManager.getInstance().getJoinTag(localTable));
                 }
-                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(localTable, node.getJoinTag(), localCol.split(","));
+                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(node.getJoinTag(), localCol.split(","));
                 constraintChain.addNode(pkJoinNode);
                 //设置主键
                 SchemaManager.getInstance().setPrimaryKeys(localTable, localCol);
@@ -249,7 +249,7 @@ public abstract class AbstractAnalyzer {
                 }
                 BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
                 SchemaManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
-                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable, localCol, externalTable, externalCol, node.getJoinTag(), probability);
+                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable+"."+localCol, externalTable+"."+externalCol, node.getJoinTag(), probability);
                 constraintChain.addNode(fkJoinNode);
             }
         }
@@ -272,10 +272,10 @@ public abstract class AbstractAnalyzer {
      * @throws SQLException        无法通过数据库SQL查询获得多列属性的ndv
      */
     public boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneException, SQLException {
-        if (SchemaManager.getInstance().isRefTable(fkTable, fkCol, pkCol)) {
+        if (SchemaManager.getInstance().isRefTable(fkTable, fkCol, pkTable + "." + pkCol)) {
             return true;
         }
-        if (SchemaManager.getInstance().isRefTable(pkTable, pkCol, fkCol)) {
+        if (SchemaManager.getInstance().isRefTable(pkTable, pkCol, fkTable + "." + fkCol)) {
             return false;
         }
         if (!pkCol.contains(",")) {
@@ -283,8 +283,9 @@ public abstract class AbstractAnalyzer {
                     ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol)) {
                 return SchemaManager.getInstance().getTableSize(pkTable) < SchemaManager.getInstance().getTableSize(fkTable);
             } else {
-                return ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol) >
-                        ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
+                int pkTableNdv = ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol);
+                int fkTableNdv = ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
+                return pkTableNdv > fkTableNdv;
             }
         } else {
             int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);

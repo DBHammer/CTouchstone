@@ -1,6 +1,5 @@
 package ecnu.db.dbconnector;
 
-import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.config.DatabaseConnectorConfig;
@@ -67,7 +66,7 @@ public abstract class DbConnector {
         ResultSet rs = stmt.executeQuery("show keys from " + canonicalTableName + " where Key_name='PRIMARY'");
         List<String> keys = new ArrayList<>();
         while (rs.next()) {
-            keys.add(rs.getString(5).toLowerCase());
+            keys.add(canonicalTableName + "." + rs.getString(5).toLowerCase());
         }
         return keys.size() > 0 ? String.join(",", keys) : null;
     }

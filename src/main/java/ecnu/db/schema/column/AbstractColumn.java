@@ -30,7 +30,6 @@ import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
  * @author qingshuai.wang
  * todo support column concurrency
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class AbstractColumn {
 
     protected ColumnType columnType;

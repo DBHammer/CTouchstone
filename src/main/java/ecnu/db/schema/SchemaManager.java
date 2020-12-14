@@ -68,16 +68,16 @@ public class SchemaManager {
     }
 
     public void setPrimaryKeys(String tableName, String primaryKeys) throws TouchstoneException {
-        getSchema(tableName).setPrimaryKeys(primaryKeys);
+        getSchema(tableName).setPrimaryKeys(tableName + "." + primaryKeys);
     }
 
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
-        logger.info("table:" + localTable + ".column:" + localColumns + " -ref- table:" + refTable + ".column:" + refColumns);
-        getSchema(localTable).addForeignKey(localColumns, refTable, refColumns);
+        logger.info("table:" + localTable + ", column:" + localColumns + " -ref- table:" + refTable + ", column:" + refColumns);
+        getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
     }
 
     public boolean isRefTable(String locTable, String locColumn, String remoteColumn) throws CannotFindSchemaException {
-        return getSchema(locTable).isRefTable(locColumn, remoteColumn);
+        return getSchema(locTable).isRefTable(locTable + "." + locColumn, remoteColumn);
     }
 
     public List<String> createTopologicalOrder() {
@@ -97,8 +97,8 @@ public class SchemaManager {
         return schemas;
     }
 
-    public List<String> getColumnNames(String schemaName) throws CannotFindSchemaException {
-        return getSchema(schemaName).getCanonicalColumnNames();
+    public List<String> getColumnNamesNotKey(String schemaName) throws CannotFindSchemaException {
+        return getSchema(schemaName).getCanonicalColumnNamesNotFk();
     }
 
     private Schema getSchema(String tableName) throws CannotFindSchemaException {

@@ -18,11 +18,11 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
     private Set<String> columns;
 
     public ConstraintChainFilterNode() {
-        super(null, ConstraintChainNodeType.FILTER);
+        super(ConstraintChainNodeType.FILTER);
     }
 
-    public ConstraintChainFilterNode(String tableName, BigDecimal probability, AndNode root, Set<String> columns) {
-        super(tableName, ConstraintChainNodeType.FILTER);
+    public ConstraintChainFilterNode(BigDecimal probability, AndNode root, Set<String> columns) {
+        super(ConstraintChainNodeType.FILTER);
         this.probability = probability;
         this.root = root;
         this.columns = columns;
@@ -58,7 +58,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
 
     @Override
     public String toString() {
-        return String.format("{root:%s,probability:%s}", root.toString(), probability);
+        return root.toString();
     }
 
     public boolean[] evaluate() throws TouchstoneException {

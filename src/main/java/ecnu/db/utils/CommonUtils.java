@@ -131,7 +131,7 @@ public class CommonUtils {
 
     public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
         return CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
-                new File(resultDir + SCHEMA_MANAGE_INFO), UTF_8),
+                new File(resultDir + CONSTRAINT_CHAINS_INFO), UTF_8),
                 new TypeReference<Map<String, List<ConstraintChain>>>() {
                 });
     }

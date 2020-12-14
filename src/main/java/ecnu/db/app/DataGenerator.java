@@ -49,10 +49,10 @@ class DataGenerator implements Callable<Integer> {
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(outputPath + "/" + schemaName + generatorId));
             int resultStart = stepSize * generatorId;
             int tableSize = SchemaManager.getInstance().getTableSize(schemaName);
-            List<String> columnNames = SchemaManager.getInstance().getColumnNames(schemaName);
+            List<String> attColumnNames = SchemaManager.getInstance().getColumnNamesNotKey(schemaName);
             while (resultStart < tableSize) {
                 int range = Math.min(resultStart + stepSize, tableSize) - resultStart;
-                ColumnManager.getInstance().prepareGeneration(columnNames, range);
+                ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
                 computeFksAndPkJoinInfo(resultStart, range, schema2chains.get(schemaName));
                 bufferedWriter.write(transferData());
                 resultStart += range + stepRange;

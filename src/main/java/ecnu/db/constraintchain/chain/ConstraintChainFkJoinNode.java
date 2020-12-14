@@ -6,37 +6,32 @@ import java.math.BigDecimal;
  * @author wangqingshuai
  */
 public class ConstraintChainFkJoinNode extends ConstraintChainNode {
-    private String refTable;
     private String refCols;
+    private String localCols;
     private int pkTag;
     private BigDecimal probability;
-    private String localCols;
+
 
     public ConstraintChainFkJoinNode() {
-        super(null, ConstraintChainNodeType.FK_JOIN);
+        super(ConstraintChainNodeType.FK_JOIN);
     }
 
-    public ConstraintChainFkJoinNode(String localTable, String localCols, String refTable, String refCols, int pkTag, BigDecimal probability) {
-        super(localTable, ConstraintChainNodeType.FK_JOIN);
-        this.refTable = refTable;
+    public ConstraintChainFkJoinNode(String localCols, String refCols, int pkTag, BigDecimal probability) {
+        super(ConstraintChainNodeType.FK_JOIN);
         this.refCols = refCols;
         this.pkTag = pkTag;
         this.localCols = localCols;
         this.probability = probability;
     }
 
-    public ConstraintChainFkJoinNode(String tableName, String constraintChainInfo) {
-        super(tableName, ConstraintChainNodeType.FK_JOIN);
+    public ConstraintChainFkJoinNode(String constraintChainInfo) {
+        super(ConstraintChainNodeType.FK_JOIN);
         //todo 解析constraintChainInfo
     }
 
     @Override
     public String toString() {
-        return String.format("{pkTag:%d,refTable:%s,probability:%s}", pkTag, refTable, probability);
-    }
-
-    public String getRefTable() {
-        return refTable;
+        return String.format("{pkTag:%d,refCols:%s,probability:%s}", pkTag, refCols , probability);
     }
 
     public int getPkTag() {
@@ -51,11 +46,23 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         return localCols;
     }
 
-    public String getRefCols() {
-        return refCols;
+    public void setRefCols(String refCols) {
+        this.refCols = refCols;
     }
 
-    public String getJoinInfoName() {
-        return localCols + ":" + refTable + "." + refCols + pkTag;
+    public void setPkTag(int pkTag) {
+        this.pkTag = pkTag;
+    }
+
+    public void setProbability(BigDecimal probability) {
+        this.probability = probability;
+    }
+
+    public void setLocalCols(String localCols) {
+        this.localCols = localCols;
+    }
+
+    public String getRefCols() {
+        return refCols;
     }
 }

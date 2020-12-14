@@ -4,16 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.schema.column.*;
-import ecnu.db.schema.column.bucket.EqBucket;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.utils.exception.compute.InstantiateParameterException;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -81,11 +78,19 @@ public class ColumnManager {
         return columns.get(columnName).getNdv();
     }
 
+    public void setNdv(String columnName, int ndv) {
+        ((IntColumn) columns.get(columnName)).setNdv(ndv);
+    }
+
     public void addColumn(String columnName, AbstractColumn column) throws TouchstoneException {
         if (columnName.split(CANONICAL_NAME_SPLIT_REGEX).length != 3) {
             throw new TouchstoneException("非canonicalColumnName格式");
         }
         columns.put(columnName, column);
+    }
+
+    public void removeColumn(String columnName) throws TouchstoneException {
+        columns.remove(columnName);
     }
 
     public void storeColumnDistribution() throws IOException {
@@ -139,13 +144,10 @@ public class ColumnManager {
                     ((DecimalColumn) column).setMin(Double.parseDouble(sqlResult[index++]));
                     ((DecimalColumn) column).setMax(Double.parseDouble(sqlResult[index++]));
                     break;
+                case DATE:
                 case DATETIME:
                     ((DateTimeColumn) column).setBegin(LocalDateTime.parse(sqlResult[index++], DateTimeColumn.FMT));
                     ((DateTimeColumn) column).setEnd(LocalDateTime.parse(sqlResult[index++], DateTimeColumn.FMT));
-                    break;
-                case DATE:
-                    ((DateColumn) column).setBegin(LocalDate.parse(sqlResult[index++], DateColumn.FMT));
-                    ((DateColumn) column).setEnd(LocalDate.parse(sqlResult[index++], DateColumn.FMT));
                     break;
                 case BOOL:
                     break;
@@ -164,10 +166,6 @@ public class ColumnManager {
         AbstractColumn column = getColumn(columnName);
         switch (column.getColumnType()) {
             case DATE:
-                return Arrays.stream(((DateColumn) column).getTupleData())
-                        .parallel()
-                        .map((d) -> String.format("'%s'", DateColumn.FMT.format(d)))
-                        .collect(Collectors.toList());
             case DATETIME:
                 return Arrays.stream(((DateTimeColumn) column).getTupleData())
                         .parallel()

@@ -61,8 +61,8 @@ public class TaskConfigurator implements Callable<Integer> {
      * 2. 对于字符型的filter, 只有like和eq的运算，直接计算即可
      *
      * @param constraintChains 待计算的约束链
-     * @param samplingSize 多元非等值的采样大小
-     * @throws CannotFindColumnException 随机采样时无法采样对应的列数据
+     * @param samplingSize     多元非等值的采样大小
+     * @throws CannotFindColumnException     随机采样时无法采样对应的列数据
      * @throws InstantiateParameterException 1. eq条件与in条件冲突 2. 多元计算无法计算等值
      * @throws PushDownProbabilityException
      */
@@ -187,12 +187,6 @@ public class TaskConfigurator implements Callable<Integer> {
             logger.info("获取表" + canonicalTableName + "的数据分布成功");
         }
         logger.info("获取表结构和数据分布成功");
-        logger.info("开始持久化表结构信息");
-        SchemaManager.getInstance().storeSchemaInfo();
-        logger.info("持久化表结构信息成功");
-        logger.info("开始持久化数据分布信息");
-        ColumnManager.getInstance().storeColumnDistribution();
-        logger.info("持久化数据分布信息成功");
         return queryFiles;
     }
 
@@ -220,10 +214,6 @@ public class TaskConfigurator implements Callable<Integer> {
             }
         }
         logger.info("获取查询计划完成");
-        logger.info("开始持久化查询计划");
-        String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
-        FileUtils.writeStringToFile(new File(resultDir + CONSTRAINT_CHAINS_INFO), allConstraintChainsContent, UTF_8);
-        logger.info("持久化查询计划完成");
         logger.info("开始实例化查询计划");
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         queryInstantiation(allConstraintChains, samplingSize);
@@ -234,6 +224,20 @@ public class TaskConfigurator implements Callable<Integer> {
                 .collect(Collectors.toList())
                 .forEach((param) -> id2Parameter.put(param.getId(), param));
         logger.info(String.valueOf(id2Parameter.values()));
+        logger.info("开始持久化表结构信息");
+        SchemaManager.getInstance().storeSchemaInfo();
+        logger.info("持久化表结构信息成功");
+        logger.info("开始持久化数据分布信息");
+        ColumnManager.getInstance().storeColumnDistribution();
+        logger.info("持久化数据分布信息成功");
+        logger.info("开始持久化查询计划");
+        String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
+        FileUtils.writeStringToFile(new File(resultDir + CONSTRAINT_CHAINS_INFO), allConstraintChainsContent, UTF_8);
+        for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
+            FileUtils.writeStringToFile(new File(resultDir + "/pic/" + stringListEntry.getKey() + ".gv"),
+                    ConstraintChainManager.presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()), UTF_8);
+        }
+        logger.info("持久化查询计划完成");
         logger.info("开始填充查询模版");
         for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
             String query = queryName2QueryTemplate.getValue();

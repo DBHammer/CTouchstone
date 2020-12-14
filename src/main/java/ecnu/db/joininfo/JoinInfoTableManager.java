@@ -11,24 +11,24 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class JoinInfoTableManager {
-    private static final Logger logger = LoggerFactory.getLogger(JoinInfoTableManager.class);
-    private static final ConcurrentHashMap<String, JoinInfoTable> tableName2JoinInformationTable = new ConcurrentHashMap<>();
-    private static int joinInfoTableId;
-    private static int joinInfoTableNum;
-    private static String joinInfoTablePath;
+    private final Logger logger = LoggerFactory.getLogger(JoinInfoTableManager.class);
+    private final ConcurrentHashMap<String, JoinInfoTable> TABLE_NAME_2_JOIN_INFORMATION_TABLE = new ConcurrentHashMap<>();
+    private int joinInfoTableId;
+    private int joinInfoTableNum;
+    private String joinInfoTablePath;
 
     public static void setJoinInfoTablePath(String joinInfoTablePath) {
-        JoinInfoTableManager.joinInfoTablePath = joinInfoTablePath;
+//        this.joinInfoTablePath = joinInfoTablePath;
     }
 
-    public static JoinInfoTable getJoinInformationTable(String tableName) {
-        tableName2JoinInformationTable.putIfAbsent(tableName, new JoinInfoTable());
-        return tableName2JoinInformationTable.get(tableName);
+    public JoinInfoTable getJoinInformationTable(String tableName) {
+        TABLE_NAME_2_JOIN_INFORMATION_TABLE.putIfAbsent(tableName, new JoinInfoTable());
+        return TABLE_NAME_2_JOIN_INFORMATION_TABLE.get(tableName);
     }
 
-    public static void persistentAndMergeOthers(String tableName) throws IOException, TouchstoneException, InterruptedException, ClassNotFoundException {
+    public void persistentAndMergeOthers(String tableName) throws IOException, TouchstoneException, InterruptedException, ClassNotFoundException {
         File file = new File(joinInfoTablePath + tableName + joinInfoTableId + ".swp");
-        new ObjectOutputStream(new FileOutputStream(file)).writeObject(tableName2JoinInformationTable.get(tableName));
+        new ObjectOutputStream(new FileOutputStream(file)).writeObject(TABLE_NAME_2_JOIN_INFORMATION_TABLE.get(tableName));
         if (file.renameTo(new File(joinInfoTablePath + tableName + joinInfoTableId))) {
             logger.info("持久化JoinInfoTable-" + tableName + "-" + joinInfoTableId + "成功");
         } else {
@@ -41,12 +41,14 @@ public class JoinInfoTableManager {
                 while (!otherJoinInfoTableFile.exists()) {
                     Thread.sleep(1000);
                 }
-                tableName2JoinInformationTable.get(tableName).mergeJoinInfo(
+                TABLE_NAME_2_JOIN_INFORMATION_TABLE.get(tableName).mergeJoinInfo(
                         (JoinInfoTable) new ObjectInputStream(new FileInputStream(otherJoinInfoTableFile)).readObject());
             }
         }
         logger.info("读取所有JoinInfoTable-" + tableName + "成功");
     }
+
+
 
     private void initJoinInfoTable(int size, Map<Integer, boolean[]> pkBitMap) {
         List<Integer> pks = new ArrayList<>(pkBitMap.keySet());

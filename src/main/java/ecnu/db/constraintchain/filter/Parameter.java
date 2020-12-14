@@ -102,6 +102,6 @@ public class Parameter {
 
     @Override
     public String toString() {
-        return String.format("{id:%d, data:%s}", id, needQuote ? String.format("'%s'", data) : data);
+        return "p" + id;
     }
 }

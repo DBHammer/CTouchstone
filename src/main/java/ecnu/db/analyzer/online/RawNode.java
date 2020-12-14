@@ -22,6 +22,6 @@ public class RawNode {
 
     @Override
     public String toString() {
-        return "RawNode{id=" + id + "}";
+        return "RawNode{id=" + id + ", operatorInfo:" + operatorInfo + "}";
     }
 }

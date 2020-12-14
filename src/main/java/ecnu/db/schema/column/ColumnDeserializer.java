@@ -36,10 +36,9 @@ public class ColumnDeserializer extends StdDeserializer<AbstractColumn> {
                 return mapper.readValue(node.toString(), DecimalColumn.class);
             case VARCHAR:
                 return mapper.readValue(node.toString(), StringColumn.class);
+            case DATE:
             case DATETIME:
                 return mapper.readValue(node.toString(), DateTimeColumn.class);
-            case DATE:
-                return mapper.readValue(node.toString(), DateColumn.class);
             default:
                 throw new IOException(String.format("无法识别的Column数据 %s", node));
         }

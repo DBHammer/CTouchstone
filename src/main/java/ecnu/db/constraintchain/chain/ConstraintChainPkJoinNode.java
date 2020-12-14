@@ -10,11 +10,11 @@ public class ConstraintChainPkJoinNode extends ConstraintChainNode {
     private int pkTag;
 
     public ConstraintChainPkJoinNode() {
-        super(null, ConstraintChainNodeType.PK_JOIN);
+        super(ConstraintChainNodeType.PK_JOIN);
     }
 
-    public ConstraintChainPkJoinNode(String tableName, int pkTag, String[] pkColumns) {
-        super(tableName, ConstraintChainNodeType.PK_JOIN);
+    public ConstraintChainPkJoinNode(int pkTag, String[] pkColumns) {
+        super(ConstraintChainNodeType.PK_JOIN);
         this.pkTag = pkTag;
         this.pkColumns = pkColumns;
     }
@@ -24,8 +24,8 @@ public class ConstraintChainPkJoinNode extends ConstraintChainNode {
      *
      * @param constraintChainInfo 获取到的约束链信息
      */
-    public ConstraintChainPkJoinNode(String tableName, String constraintChainInfo) {
-        super(tableName, ConstraintChainNodeType.PK_JOIN);
+    public ConstraintChainPkJoinNode(String constraintChainInfo) {
+        super(ConstraintChainNodeType.PK_JOIN);
         //todo 解析constraintChainInfo
     }
 

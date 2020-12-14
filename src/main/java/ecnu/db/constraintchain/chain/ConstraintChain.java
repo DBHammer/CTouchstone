@@ -83,7 +83,7 @@ public class ConstraintChain {
                     //todo 引入规则
                     ConstraintChainFkJoinNode constraintChainFkJoinNode = (ConstraintChainFkJoinNode) node;
                     double probability = constraintChainFkJoinNode.getProbability().doubleValue();
-                    long[] fkBitMap = fkBitMaps.get(constraintChainFkJoinNode.getJoinInfoName());
+                    long[] fkBitMap = fkBitMaps.get(constraintChainFkJoinNode.getLocalCols());
                     long fkTag = constraintChainFkJoinNode.getPkTag();
                     for (int i = 0; i < flag.length; i++) {
                         if (flag[i]) {

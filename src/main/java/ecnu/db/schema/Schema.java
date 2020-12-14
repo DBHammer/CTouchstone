@@ -1,6 +1,7 @@
 package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import ecnu.db.schema.column.*;
 import ecnu.db.utils.ColumnConvert;
@@ -13,7 +14,7 @@ import java.util.*;
  */
 public class Schema {
     private int tableSize;
-    private String primaryKeys;
+    private List<String> primaryKeys;
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new HashMap<>();
     private int joinTag;
@@ -43,8 +44,6 @@ public class Schema {
                     ColumnManager.getInstance().addColumn(canonicalColumnName, new StringColumn());
                     break;
                 case DATE:
-                    ColumnManager.getInstance().addColumn(canonicalColumnName, new DateColumn());
-                    break;
                 case DATETIME:
                     DateTimeColumn column = new DateTimeColumn();
                     if (indexOfBrackets > 0) {
@@ -64,6 +63,14 @@ public class Schema {
 
     public List<String> getCanonicalColumnNames() {
         return canonicalColumnNames;
+    }
+
+    @JsonIgnore
+    public List<String> getCanonicalColumnNamesNotFk() {
+        List<String> canonicalColumnNamesNotKey = new LinkedList<>(canonicalColumnNames);
+        canonicalColumnNamesNotKey.removeAll(primaryKeys);
+        canonicalColumnNamesNotKey.removeAll(foreignKeys.keySet());
+        return canonicalColumnNamesNotKey;
     }
 
     public int getJoinTag() {
@@ -92,7 +99,8 @@ public class Schema {
         }
     }
 
-    public void addForeignKey(String localColumnName, String referencingTable, String referencingInfo) throws TouchstoneException {
+    public void addForeignKey(String localTable, String localColumnName,
+                              String referencingTable, String referencingInfo) throws TouchstoneException {
         String[] columnNames = localColumnName.split(",");
         String[] refColumnNames = referencingInfo.split(",");
         if (foreignKeys == null) {
@@ -106,9 +114,9 @@ public class Schema {
                     return;
                 }
             }
-            foreignKeys.put(columnNames[i], referencingTable + "." + refColumnNames[i]);
+            foreignKeys.put(localTable + "." + columnNames[i], referencingTable + "." + refColumnNames[i]);
+            primaryKeys.remove(columnNames[i]);
         }
-
     }
 
 
@@ -133,15 +141,15 @@ public class Schema {
     @JsonGetter
     @SuppressWarnings("unused")
     public String getPrimaryKeys() {
-        return primaryKeys;
+        return primaryKeys.toString();
     }
 
     public void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
         if (this.primaryKeys == null) {
-            this.primaryKeys = primaryKeys;
+            this.primaryKeys = new LinkedList<>(Arrays.asList(primaryKeys.split(",")));
         } else {
             Set<String> newKeys = new HashSet<>(Arrays.asList(primaryKeys.split(",")));
-            Set<String> keys = new HashSet<>(Arrays.asList(this.primaryKeys.split(",")));
+            Set<String> keys = new HashSet<>(this.primaryKeys);
             if (keys.size() == newKeys.size()) {
                 keys.removeAll(newKeys);
                 if (keys.size() > 0) {
