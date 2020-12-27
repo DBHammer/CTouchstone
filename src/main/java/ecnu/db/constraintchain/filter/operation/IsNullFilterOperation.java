@@ -66,11 +66,6 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public boolean[] evaluate() {
-        boolean[] columnIsnullEvaluations = ColumnManager.getInstance().getIsnullEvaluations(canonicalColumnName);
-        boolean[] value = new boolean[columnIsnullEvaluations.length];
-        for (int i = 0; i < columnIsnullEvaluations.length; i++) {
-            value[i] = (hasNot ^ columnIsnullEvaluations[i]);
-        }
-        return value;
+        return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null, hasNot);
     }
 }

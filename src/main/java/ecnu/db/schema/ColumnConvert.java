@@ -1,12 +1,12 @@
-package ecnu.db.utils;
+package ecnu.db.schema;
 
-import ecnu.db.schema.column.ColumnType;
+import ecnu.db.schema.ColumnType;
 import ecnu.db.utils.exception.TouchstoneException;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static ecnu.db.schema.column.ColumnType.*;
+import static ecnu.db.schema.ColumnType.*;
 
 /**
  * @author qingshuai.wang
@@ -34,4 +34,6 @@ public class ColumnConvert {
         }
         return dataType2ColumnType.get(dataType);
     }
+
+
 }

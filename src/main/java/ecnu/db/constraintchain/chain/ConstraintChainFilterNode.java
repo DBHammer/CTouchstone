@@ -28,7 +28,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         this.columns = columns;
     }
 
-    public List<AbstractFilterOperation> pushDownProbability() throws PushDownProbabilityException {
+    public List<AbstractFilterOperation> pushDownProbability() {
         return root.pushDownProbability(probability, columns);
     }
 

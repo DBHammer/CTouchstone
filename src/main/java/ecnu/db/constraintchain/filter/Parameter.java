@@ -3,7 +3,6 @@ package ecnu.db.constraintchain.filter;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import ecnu.db.constraintchain.filter.operation.CompareOperator;
 
 /**
  * @author alan
@@ -11,41 +10,35 @@ import ecnu.db.constraintchain.filter.operation.CompareOperator;
  */
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, resolver = ParameterResolver.class, property = "id", scope = Parameter.class)
 public class Parameter {
+
     /**
      * parameter的id，用于后续实例化
      */
-    private Integer id;
+    @JsonIgnore
+    private int id;
     /**
-     * parameter的data
+     * parameter的内部data，用于快速计算
      */
-    private String data;
-    /**
-     * 在SQL中是否需要加"'"符号，如字符串类型
-     */
-    private boolean needQuote;
-    /**
-     * 是否是Date类型的参数
-     */
-    private boolean isDate;
-    /**
-     * 操作符
-     */
-    private CompareOperator operator;
+    private long data;
     /**
      * 操作数
      */
+    @JsonIgnore
     private String operand;
+
+    /**
+     * String化的值
+     */
+    @JsonIgnore
+    private String dataValue;
 
     public Parameter() {
     }
 
-    public Parameter(Integer id, String data, boolean needQuote, boolean isDate, CompareOperator operator, String operand) {
+    public Parameter(Integer id, String operand, String dataValue) {
         this.id = id;
-        this.data = data;
-        this.needQuote = needQuote;
-        this.isDate = isDate;
-        this.operator = operator;
         this.operand = operand;
+        this.dataValue = dataValue;
     }
 
 
@@ -57,38 +50,17 @@ public class Parameter {
         this.id = id;
     }
 
-    public String getData() {
+    public String getDataValue() {
+        return dataValue;
+    }
+
+    public long getData() {
         return data;
     }
 
-    public void setData(String data) {
+
+    public void setData(long data) {
         this.data = data;
-    }
-
-    public boolean isNeedQuote() {
-        return needQuote;
-    }
-
-    @JsonIgnore
-    public void setNeedQuote(boolean needQuote) {
-        this.needQuote = needQuote;
-    }
-
-    public boolean getIsDate() {
-        return isDate;
-    }
-
-    public void setIsDate(boolean date) {
-        isDate = date;
-    }
-
-    @JsonIgnore
-    public CompareOperator getOperator() {
-        return operator;
-    }
-
-    public void setOperator(CompareOperator operator) {
-        this.operator = operator;
     }
 
     @JsonIgnore
@@ -102,6 +74,6 @@ public class Parameter {
 
     @Override
     public String toString() {
-        return "p" + id;
+        return "{id:" + id + ", data:" + dataValue + "}";
     }
 }

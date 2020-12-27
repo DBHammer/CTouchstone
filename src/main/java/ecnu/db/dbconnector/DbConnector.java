@@ -2,7 +2,7 @@ package ecnu.db.dbconnector;
 
 import com.google.common.collect.Lists;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.utils.config.DatabaseConnectorConfig;
+import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 
 import java.sql.*;
@@ -136,7 +136,6 @@ public abstract class DbConnector {
                 case DECIMAL:
                     sql.append(String.format("min(%s),", canonicalColumnName));
                     sql.append(String.format("max(%s),", canonicalColumnName));
-
                     break;
                 case INTEGER:
                     sql.append(String.format("min(%s),", canonicalColumnName));

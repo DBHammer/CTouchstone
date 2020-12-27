@@ -1,4 +1,4 @@
-package ecnu.db.schema.column;
+package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 

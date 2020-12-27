@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.analyzer.statical.QueryWriter;
-import ecnu.db.constraintchain.chain.*;
+import ecnu.db.constraintchain.chain.ConstraintChain;
+import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
+import ecnu.db.constraintchain.chain.ConstraintChainManager;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.MultiVarFilterOperation;
@@ -15,16 +17,13 @@ import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.SchemaManager;
-import ecnu.db.schema.column.AbstractColumn;
 import ecnu.db.tidb.Tidb3Connector;
 import ecnu.db.tidb.Tidb4Connector;
 import ecnu.db.tidb.TidbAnalyzer;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.config.DatabaseConnectorConfig;
+import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.utils.exception.compute.InstantiateParameterException;
 import ecnu.db.utils.exception.compute.PushDownProbabilityException;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,6 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.*;
 import static ecnu.db.utils.CommonUtils.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -62,82 +60,44 @@ public class TaskConfigurator implements Callable<Integer> {
      *
      * @param constraintChains 待计算的约束链
      * @param samplingSize     多元非等值的采样大小
-     * @throws CannotFindColumnException     随机采样时无法采样对应的列数据
-     * @throws InstantiateParameterException 1. eq条件与in条件冲突 2. 多元计算无法计算等值
-     * @throws PushDownProbabilityException
      */
-    public static void queryInstantiation(List<ConstraintChain> constraintChains, int samplingSize)
-            throws CannotFindColumnException, InstantiateParameterException, PushDownProbabilityException {
+    public static void queryInstantiation(List<ConstraintChain> constraintChains, int samplingSize) {
+        List<AbstractFilterOperation> filterOperations = constraintChains.stream()
+                .map(constraintChain -> constraintChain.getNodes().stream()
+                        .filter(node -> node instanceof ConstraintChainFilterNode)
+                        .map(node -> ((ConstraintChainFilterNode) node).pushDownProbability())
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList()))
+                .flatMap(Collection::stream).collect(Collectors.toList());
 
-        List<AbstractFilterOperation> filterOperations = new LinkedList<>();
-        for (ConstraintChain constraintChain : constraintChains) {
-            for (ConstraintChainNode node : constraintChain.getNodes()) {
-                if (node instanceof ConstraintChainFilterNode) {
-                    List<AbstractFilterOperation> operations = ((ConstraintChainFilterNode) node).pushDownProbability();
-                    filterOperations.addAll(operations);
-                } else if (node instanceof ConstraintChainPkJoinNode) {
-                    assert true;
-                } else if (node instanceof ConstraintChainFkJoinNode) {
-                    assert true;
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-            }
-        }
+        // uni-var operation
+        filterOperations.stream().filter((f) -> f instanceof UniVarFilterOperation)
+                .map(f -> (UniVarFilterOperation) f).forEach(UniVarFilterOperation::instantiateParameter);
 
-        // uni-var non-eq
-        List<UniVarFilterOperation> uniVarFilters = filterOperations.stream()
-                .filter((f) -> f instanceof UniVarFilterOperation)
-                .filter((f) -> f.getOperator().getType() == LESS || f.getOperator().getType() == GREATER)
-                .map((f) -> (UniVarFilterOperation) f)
-                .collect(Collectors.toList());
-        for (UniVarFilterOperation operation : uniVarFilters) {
-            AbstractColumn column = ColumnManager.getInstance().getColumn(operation.getCanonicalColumnName());
-            operation.instantiateUniParamCompParameter(column);
-        }
-        ColumnManager.getInstance().initAllEqProbabilityBucket();
-        // uni-var eq
-        uniVarFilters = filterOperations.stream()
-                .filter((f) -> f instanceof UniVarFilterOperation)
-                .filter((f) -> f.getOperator().getType() == EQUAL)
-                .map((f) -> (UniVarFilterOperation) f)
-                .collect(Collectors.toList());
-        for (UniVarFilterOperation operation : uniVarFilters) {
-            AbstractColumn column = ColumnManager.getInstance().getColumn(operation.getCanonicalColumnName());
-            operation.instantiateEqualParameter(column);
-        }
-        // uni-var bet
-        List<RangeFilterOperation> rangeFilters = filterOperations.stream()
-                .filter((f) -> f instanceof RangeFilterOperation)
-                .map((f) -> (RangeFilterOperation) f)
-                .collect(Collectors.toList());
-
-        for (RangeFilterOperation operation : rangeFilters) {
-            AbstractColumn column = ColumnManager.getInstance().getColumn(operation.getCanonicalColumnName());
-            operation.instantiateBetweenParameter(column);
-        }
         // init eq params
         ColumnManager.getInstance().initAllEqParameter();
-        // multi-var non-eq
-        List<MultiVarFilterOperation> multiVarFilters = filterOperations.stream()
+
+        // multi-var non-eq sampling
+        Set<String> prepareSamplingColumnName = filterOperations.parallelStream()
                 .filter((f) -> f instanceof MultiVarFilterOperation)
-                .map((f) -> (MultiVarFilterOperation) f)
-                .collect(Collectors.toList());
-        ColumnManager.getInstance().prepareGenerationAll(samplingSize);
-        for (MultiVarFilterOperation operation : multiVarFilters) {
-            operation.instantiateMultiVarParameter();
-        }
+                .map(f -> ((MultiVarFilterOperation) f).getAllCanonicalColumnNames())
+                .flatMap(Collection::stream).collect(Collectors.toSet());
+        ColumnManager.getInstance().prepareGenerationAll(prepareSamplingColumnName, samplingSize);
+        filterOperations.parallelStream()
+                .filter((f) -> f instanceof MultiVarFilterOperation)
+                .map(f -> (MultiVarFilterOperation) f)
+                .forEach(MultiVarFilterOperation::instantiateMultiVarParameter);
     }
 
     @Override
     public Integer call() throws Exception {
-        ecnu.db.utils.config.TaskConfiguratorConfig config;
+        ecnu.db.utils.TaskConfiguratorConfig config;
         if (taskConfiguratorConfig.othersConfig.fileConfigInfo != null) {
             config = new ObjectMapper().readValue(FileUtils.readFileToString(
-                    new File(taskConfiguratorConfig.othersConfig.fileConfigInfo.configPath), UTF_8), ecnu.db.utils.config.TaskConfiguratorConfig.class);
+                    new File(taskConfiguratorConfig.othersConfig.fileConfigInfo.configPath), UTF_8), ecnu.db.utils.TaskConfiguratorConfig.class);
         } else {
             CliConfigInfo cliConfigInfo = taskConfiguratorConfig.othersConfig.cliConfigInfo;
-            config = new ecnu.db.utils.config.TaskConfiguratorConfig();
+            config = new ecnu.db.utils.TaskConfiguratorConfig();
             config.setDatabaseConnectorConfig(new DatabaseConnectorConfig(cliConfigInfo.databaseIp, cliConfigInfo.databasePort,
                     cliConfigInfo.databaseUser, cliConfigInfo.databasePwd, cliConfigInfo.databaseName));
         }
@@ -244,7 +204,7 @@ public class TaskConfigurator implements Callable<Integer> {
             List<List<String>> matches = matchPattern(PATTERN, query);
             for (List<String> group : matches) {
                 int parameterId = Integer.parseInt(group.get(2));
-                String parameterData = id2Parameter.remove(parameterId).getData();
+                String parameterData = id2Parameter.remove(parameterId).getDataValue();
                 try {
                     query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
                 } catch (IllegalArgumentException e) {

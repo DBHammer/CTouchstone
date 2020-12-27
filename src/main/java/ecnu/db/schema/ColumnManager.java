@@ -3,7 +3,6 @@ package ecnu.db.schema;
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
-import ecnu.db.schema.column.*;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.apache.commons.io.FileUtils;
@@ -11,20 +10,18 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
-import static ecnu.db.schema.column.ColumnType.DECIMAL;
-import static ecnu.db.schema.column.ColumnType.INTEGER;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
-    private LinkedHashMap<String, AbstractColumn> columns = new LinkedHashMap<>();
+    private LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
+
 
     private File distributionInfoPath;
 
@@ -37,11 +34,19 @@ public class ColumnManager {
         return INSTANCE;
     }
 
+    public void setSpecialValue(String columnName, int specialValue) {
+        getColumn(columnName).setSpecialValue(specialValue);
+    }
+
+    public void insertUniVarProbability(String columnName, BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
+        getColumn(columnName).insertUniVarProbability(probability, operator, parameters);
+    }
+
     public void setResultDir(String resultDir) {
         this.distributionInfoPath = new File(resultDir + CommonUtils.COLUMN_MANAGE_INFO);
     }
 
-    public AbstractColumn getColumn(String columnName) {
+    private Column getColumn(String columnName) {
         return columns.get(columnName);
     }
 
@@ -49,25 +54,12 @@ public class ColumnManager {
         return columns.get(columnName).evaluate(operator, parameters, hasNot);
     }
 
-    public boolean[] getIsnullEvaluations(String columnName) {
-        return columns.get(columnName).getIsnullEvaluations();
-    }
-
     public float getNullPercentage(String columnName) {
         return columns.get(columnName).getNullPercentage();
     }
 
     public double[] calculate(String columnName) {
-        AbstractColumn column = columns.get(columnName);
-        double[] ret;
-        if (column.getColumnType() == INTEGER) {
-            ret = ((IntColumn) column).calculate();
-        } else if (column.getColumnType() == DECIMAL) {
-            ret = ((DecimalColumn) column).calculate();
-        } else {
-            throw new UnsupportedOperationException();
-        }
-        return ret;
+        return getColumn(columnName).calculate();
     }
 
     public ColumnType getColumnType(String columnName) {
@@ -75,14 +67,10 @@ public class ColumnManager {
     }
 
     public int getNdv(String columnName) {
-        return columns.get(columnName).getNdv();
+        return getColumn(columnName).getNdv();
     }
 
-    public void setNdv(String columnName, int ndv) {
-        ((IntColumn) columns.get(columnName)).setNdv(ndv);
-    }
-
-    public void addColumn(String columnName, AbstractColumn column) throws TouchstoneException {
+    public void addColumn(String columnName, Column column) throws TouchstoneException {
         if (columnName.split(CANONICAL_NAME_SPLIT_REGEX).length != 3) {
             throw new TouchstoneException("非canonicalColumnName格式");
         }
@@ -101,21 +89,16 @@ public class ColumnManager {
 
     public void loadColumnDistribution() throws IOException {
         columns = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(distributionInfoPath, UTF_8),
-                new TypeReference<LinkedHashMap<String, AbstractColumn>>() {
+                new TypeReference<LinkedHashMap<String, Column>>() {
                 });
     }
 
-    public void prepareGenerationAll(int size) {
-        columns.values().stream().parallel().forEach(column -> column.prepareGeneration(size));
-    }
-
-
-    public void initAllEqProbabilityBucket() {
-        columns.values().parallelStream().forEach(AbstractColumn::initEqProbabilityBucket);
+    public void prepareGenerationAll(Set<String> tableNames, int size) {
+        tableNames.stream().parallel().forEach(tableName -> columns.get(tableName).prepareTupleData(size));
     }
 
     public void initAllEqParameter() {
-        columns.values().parallelStream().forEach(AbstractColumn::initEqParameter);
+        columns.values().parallelStream().forEach(Column::initEqParameter);
     }
 
     /**
@@ -128,29 +111,35 @@ public class ColumnManager {
     public void setDataRangeBySqlResult(List<String> canonicalColumnNames, String[] sqlResult) throws TouchstoneException {
         int index = 0;
         for (String canonicalColumnName : canonicalColumnNames) {
-            AbstractColumn column = columns.get(canonicalColumnName);
+            Column column = columns.get(canonicalColumnName);
             switch (column.getColumnType()) {
                 case INTEGER:
-                    ((IntColumn) column).setMin(Integer.parseInt(sqlResult[index++]));
-                    ((IntColumn) column).setMax(Integer.parseInt(sqlResult[index++]));
-                    ((IntColumn) column).setNdv(Integer.parseInt(sqlResult[index++]));
+                    column.setMin(Long.parseLong(sqlResult[index++]));
+                    long maxBound = Long.parseLong(sqlResult[index++]);
+                    column.setRange(Long.parseLong(sqlResult[index++]));
+                    column.setSpecialValue((int) ((maxBound - column.getMin()) / column.getRange()));
                     break;
                 case VARCHAR:
-                    ((StringColumn) column).setMinLength(Integer.parseInt(sqlResult[index++]));
-                    ((StringColumn) column).setMaxLength(Integer.parseInt(sqlResult[index++]));
-                    ((StringColumn) column).setNdv(Integer.parseInt(sqlResult[index++]));
+                    StringTemplate stringTemplate = new StringTemplate();
+                    stringTemplate.minLength = Integer.parseInt(sqlResult[index++]);
+                    stringTemplate.rangeLength = Integer.parseInt(sqlResult[index++]) - stringTemplate.minLength;
+                    column.setStringTemplate(stringTemplate);
+                    column.setMin(0);
+                    column.setRange(Integer.parseInt(sqlResult[index++]));
+                    column.setSpecialValue(ThreadLocalRandom.current().nextInt());
                     break;
                 case DECIMAL:
-                    ((DecimalColumn) column).setMin(Double.parseDouble(sqlResult[index++]));
-                    ((DecimalColumn) column).setMax(Double.parseDouble(sqlResult[index++]));
+                    int precision = CommonUtils.SampleDoublePrecision;
+                    column.setMin((long) (Double.parseDouble(sqlResult[index++]) * precision));
+                    column.setRange((long) (Double.parseDouble(sqlResult[index++]) * precision) - column.getMin());
+                    column.setSpecialValue(precision);
                     break;
                 case DATE:
                 case DATETIME:
-                    ((DateTimeColumn) column).setBegin(LocalDateTime.parse(sqlResult[index++], DateTimeColumn.FMT));
-                    ((DateTimeColumn) column).setEnd(LocalDateTime.parse(sqlResult[index++], DateTimeColumn.FMT));
+                    column.setMin(CommonUtils.getUnixTimeStamp(sqlResult[index++]));
+                    column.setRange(CommonUtils.getUnixTimeStamp(sqlResult[index++]) - column.getMin());
                     break;
                 case BOOL:
-                    break;
                 default:
                     throw new TouchstoneException("未匹配到的类型");
             }
@@ -159,36 +148,42 @@ public class ColumnManager {
     }
 
     public void prepareGeneration(List<String> columnNames, int size) {
-        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareGeneration(size));
+        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
     }
 
-    public List<String> getData(String columnName) {
-        AbstractColumn column = getColumn(columnName);
-        switch (column.getColumnType()) {
-            case DATE:
-            case DATETIME:
-                return Arrays.stream(((DateTimeColumn) column).getTupleData())
-                        .parallel()
-                        .map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d)))
-                        .collect(Collectors.toList());
-            case INTEGER:
-                return Arrays.stream(((IntColumn) column).getTupleData())
-                        .parallel()
-                        .mapToObj(Integer::toString)
-                        .collect(Collectors.toList());
-            case DECIMAL:
-                return Arrays.stream(((DecimalColumn) column).getTupleData())
-                        .parallel()
-                        .mapToObj((d) -> BigDecimal.valueOf(d).toString())
-                        .collect(Collectors.toList());
-            case VARCHAR:
-                return Arrays.stream(((StringColumn) column).getTupleData())
-                        .parallel()
-                        .map((d) -> String.format("'%s'", d))
-                        .collect(Collectors.toList());
-            case BOOL:
-            default:
-                throw new UnsupportedOperationException();
-        }
+//    public List<String> getData(String columnName) {
+//        Column column = getColumn(columnName);
+//        switch (column.getColumnType()) {
+//            case DATE:
+//            case DATETIME:
+//                return Arrays.stream(((DateTimeColumn) column).getTupleData())
+//                        .parallel()
+//                        .map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d)))
+//                        .collect(Collectors.toList());
+//            case INTEGER:
+//                return Arrays.stream(((IntColumn) column).getTupleData())
+//                        .parallel()
+//                        .mapToObj(Integer::toString)
+//                        .collect(Collectors.toList());
+//            case DECIMAL:
+//                return Arrays.stream(((DecimalColumn) column).getTupleData())
+//                        .parallel()
+//                        .mapToObj((d) -> BigDecimal.valueOf(d).toString())
+//                        .collect(Collectors.toList());
+//            case VARCHAR:
+//                return Arrays.stream(((StringColumn) column).getTupleData())
+//                        .parallel()
+//                        .map((d) -> String.format("'%s'", d))
+//                        .collect(Collectors.toList());
+//            case BOOL:
+//            default:
+//                throw new UnsupportedOperationException();
+//        }
+//    }
+
+    public void insertBetweenProbability(String columnName, BigDecimal probability,
+                                         CompareOperator lessOperator, List<Parameter> lessParameters,
+                                         CompareOperator greaterOperator, List<Parameter> greaterParameters) {
+        columns.get(columnName).insertBetweenProbability(probability, lessOperator, lessParameters, greaterOperator, greaterParameters);
     }
 }

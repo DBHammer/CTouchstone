@@ -16,7 +16,7 @@ import ecnu.db.constraintchain.filter.*;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import java.io.StringReader;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.schema.column.ColumnType;
+import ecnu.db.schema.ColumnType;
 
 /* define how to connect to the scanner! */
 parser code {:
@@ -53,18 +53,6 @@ parser code {:
     } else if (!this.tableName.equals(tableName)) {
       throw new TouchstoneException("select表名不一致");
     }
-  }
-  private boolean isColumnNeedQuote(String canonicalColumnName) throws TouchstoneException {
-    boolean needQuote = false;
-    ColumnType columnType = ColumnManager.getInstance().getColumnType(canonicalColumnName);
-    if (columnType == ColumnType.DATETIME || columnType == ColumnType.VARCHAR) {
-        needQuote = true;
-    }
-    return needQuote;
-  }
-  private boolean isColumnDate(String canonicalColumnName) throws TouchstoneException {
-    ColumnType columnType = ColumnManager.getInstance().getColumnType(canonicalColumnName);
-    return columnType == ColumnType.DATETIME;
   }
 :};
 
@@ -159,17 +147,14 @@ compare_expr ::=
 uni_compare_expr ::=
         uni_compare_operator:op LPAREN arithmetic_expr:e1 uni_compare_constant:constant RPAREN  {:
                                                                                                     AbstractFilterOperation operation;
-                                                                                                    boolean needQuote = false, isDate = false;
                                                                                                     if (e1.getType() == ArithmeticNodeType.COLUMN) {
                                                                                                         String canonicalColumnName = ((ColumnNode) e1).getCanonicalColumnName();
                                                                                                         operation = new UniVarFilterOperation(canonicalColumnName, op);
-                                                                                                        needQuote = isColumnNeedQuote(canonicalColumnName);
-                                                                                                        isDate = isColumnDate(canonicalColumnName);
                                                                                                         columns.add(canonicalColumnName);
                                                                                                     } else {
                                                                                                         operation = new MultiVarFilterOperation(op, e1);
                                                                                                     }
-                                                                                                    Parameter parameter = new Parameter(analyzer.getParameterId(), constant, needQuote, isDate, op, e1.toString());
+                                                                                                    Parameter parameter = new Parameter(analyzer.getParameterId(), e1.toString(), constant);
                                                                                                     operation.addParameter(parameter);
                                                                                                     parameters.add(parameter);
                                                                                                     RESULT = operation;
@@ -198,9 +183,8 @@ in_compare_expr ::=
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       UniVarFilterOperation operation = new UniVarFilterOperation(col, in);
-                                                                                      boolean needQuote = isColumnNeedQuote(col), isDate = isColumnDate(col);
                                                                                       for (String argument: arguments) {
-                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), argument, needQuote, isDate, CompareOperator.IN, col);
+                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), col, argument);
                                                                                         operation.addParameter(parameter);
                                                                                         parameters.add(parameter);
                                                                                       }
@@ -238,7 +222,7 @@ like_compare_expr ::=
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       UniVarFilterOperation operation = new UniVarFilterOperation(col, like);
-                                                                                      Parameter parameter = new Parameter(analyzer.getParameterId(), str, true, false, CompareOperator.LIKE, col);
+                                                                                      Parameter parameter = new Parameter(analyzer.getParameterId(), col, str);
                                                                                       operation.addParameter(parameter);
                                                                                       parameters.add(parameter);
                                                                                       columns.add(col);

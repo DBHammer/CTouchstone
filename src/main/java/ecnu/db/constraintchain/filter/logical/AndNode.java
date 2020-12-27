@@ -9,7 +9,6 @@ import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
-import ecnu.db.utils.exception.compute.PushDownProbabilityException;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,52 +45,67 @@ public class AndNode implements BoolExprNode {
      * @param probability 当前节点的总概率值
      */
     @Override
-    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) throws PushDownProbabilityException {
+    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             logger.info(String.format("'%s'的概率为0", toString()));
             return new ArrayList<>();
         }
-
         List<BoolExprNode> otherNodes = new LinkedList<>();
         Multimap<String, UniVarFilterOperation> col2uniFilters = ArrayListMultimap.create();
         for (BoolExprNode child : children) {
-            if (child.getType() == AND || child.getType() == OR || child.getType() == MULTI_FILTER_OPERATION) {
-                otherNodes.add(child);
-            } else if (child.getType() == UNI_FILTER_OPERATION) {
-                CompareOperator.TYPE type = ((UniVarFilterOperation) child).getOperator().getType();
-                if (type == CompareOperator.TYPE.GREATER || type == CompareOperator.TYPE.LESS) {
-                    col2uniFilters.put(((UniVarFilterOperation) child).getCanonicalColumnName(), (UniVarFilterOperation) child);
-                } else if (type == CompareOperator.TYPE.EQUAL) {
+            switch (child.getType()){
+                case AND:
+                case OR:
+                case MULTI_FILTER_OPERATION:
                     otherNodes.add(child);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-            } else if (child.getType() == ISNULL_FILTER_OPERATION) {
-                String columnName = ((IsNullFilterOperation) child).getColumnName();
-                boolean hasNot = ((IsNullFilterOperation) child).getHasNot();
-                if (columns.contains(columnName)) {
-                    if (!hasNot) {
-                        throw new PushDownProbabilityException(String.format("and中包含了isnull(%s)与其他运算, 冲突而总概率不为0", ((IsNullFilterOperation) child).getColumnName()));
+                    break;
+                case UNI_FILTER_OPERATION:
+                    CompareOperator operator = ((UniVarFilterOperation) child).getOperator();
+                    switch (operator) {
+                        case GE:
+                        case GT:
+                        case LE:
+                        case LT:
+                            col2uniFilters.put(((UniVarFilterOperation) child).getCanonicalColumnName(), (UniVarFilterOperation) child);
+                            break;
+                        case EQ:
+                        case LIKE:
+                        case NE:
+                        case IN:
+                            otherNodes.add(child);
+                            break;
+                        default:
+                            throw new UnsupportedOperationException();
                     }
-                } else {
-                    BigDecimal nullProbability = ((IsNullFilterOperation) child).getProbability();
-                    BigDecimal toDivide = hasNot ? BigDecimal.ONE.subtract(nullProbability) : nullProbability;
-                    if (toDivide.compareTo(BigDecimal.ZERO) == 0) {
-                        throw new PushDownProbabilityException(String.format("'%s'的概率为0而and总概率不为0", child.toString()));
+                    break;
+                case ISNULL_FILTER_OPERATION:
+                    String columnName = ((IsNullFilterOperation) child).getColumnName();
+                    boolean hasNot = ((IsNullFilterOperation) child).getHasNot();
+                    if (columns.contains(columnName)) {
+                        if (!hasNot) {
+                            throw new UnsupportedOperationException(String.format("and中包含了isnull(%s)与其他运算, 冲突而总概率不为0", ((IsNullFilterOperation) child).getColumnName()));
+                        }
                     } else {
-                        probability = probability.divide(toDivide, BIG_DECIMAL_DEFAULT_PRECISION);
+                        BigDecimal nullProbability = ((IsNullFilterOperation) child).getProbability();
+                        BigDecimal toDivide = hasNot ? BigDecimal.ONE.subtract(nullProbability) : nullProbability;
+                        if (toDivide.compareTo(BigDecimal.ZERO) == 0) {
+                            throw new UnsupportedOperationException(String.format("'%s'的概率为0而and总概率不为0", child.toString()));
+                        } else {
+                            probability = probability.divide(toDivide, BIG_DECIMAL_DEFAULT_PRECISION);
+                        }
                     }
-                }
-            } else {
-                throw new UnsupportedOperationException();
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
             }
         }
 
         UniVarFilterOperation.merge(otherNodes, col2uniFilters, true);
+
         if (otherNodes.size() != 0) {
             probability = BigDecimalMath.pow(probability, BigDecimal.ONE.divide(BigDecimal.valueOf(otherNodes.size()), BIG_DECIMAL_DEFAULT_PRECISION), BIG_DECIMAL_DEFAULT_PRECISION);
         } else if (probability.compareTo(BigDecimal.ONE) != 0) {
-            throw new PushDownProbabilityException(String.format("全部为isnull计算，但去除isnull后的总概率为'%s', 不等于1", probability));
+            throw new UnsupportedOperationException(String.format("全部为isnull计算，但去除isnull后的总概率为'%s', 不等于1", probability));
         }
 
         List<AbstractFilterOperation> operations = new LinkedList<>();

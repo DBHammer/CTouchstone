@@ -16,7 +16,7 @@ public class MulNode extends ArithmeticNode {
     }
 
     @Override
-    public double[] calculate() throws CannotFindColumnException {
+    public double[] calculate() {
         double[] leftValue = leftNode.calculate(), rightValue = rightNode.calculate();
         IntStream.range(0, leftValue.length).parallel().forEach(i -> leftValue[i] *= rightValue[i]);
         return leftValue;

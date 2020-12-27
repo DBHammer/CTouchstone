@@ -6,20 +6,14 @@ import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.constraintchain.arithmetic.value.ColumnNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.utils.exception.compute.InstantiateParameterException;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.stream.Collectors;
-
-import static ecnu.db.constraintchain.filter.operation.CompareOperator.*;
-import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.GREATER;
-import static ecnu.db.constraintchain.filter.operation.CompareOperator.TYPE.LESS;
+import java.util.stream.IntStream;
 
 /**
  * @author wangqingshuai
@@ -35,6 +29,12 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     public MultiVarFilterOperation(CompareOperator operator, ArithmeticNode arithmeticTree) {
         super(operator);
         this.arithmeticTree = arithmeticTree;
+    }
+
+    public HashSet<String> getAllCanonicalColumnNames() {
+        HashSet<String> allTables = new HashSet<>();
+        getCanonicalColumnNamesColNames(arithmeticTree, allTables);
+        return allTables;
     }
 
     private void getCanonicalColumnNamesColNames(ArithmeticNode node, HashSet<String> colNames) {
@@ -53,47 +53,33 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         return BoolExprType.MULTI_FILTER_OPERATION;
     }
 
+    /**
+     * todo 暂时不考虑NULL
+     *
+     * @return 多值表达式的计算结果
+     * @throws CannotFindColumnException 计算树中对应的数据列找不到
+     */
     @Override
     public boolean[] evaluate() throws CannotFindColumnException {
         double[] data = arithmeticTree.calculate();
         boolean[] ret = new boolean[data.length];
-        if (operator == LE) {
-            double param = Double.parseDouble(parameters.get(0).getData());
-            for (int i = 0; i < data.length; i++) {
-                ret[i] = (data[i] <= param);
-            }
-        } else if (operator == LT) {
-            double param = Double.parseDouble(parameters.get(0).getData());
-            for (int i = 0; i < data.length; i++) {
-                ret[i] = (data[i] < param);
-            }
-        } else if (operator == GE) {
-            double param = Double.parseDouble(parameters.get(0).getData());
-            for (int i = 0; i < data.length; i++) {
-                ret[i] = (data[i] >= param);
-            }
-        } else if (operator == GT) {
-            double param = Double.parseDouble(parameters.get(0).getData());
-            for (int i = 0; i < data.length; i++) {
-                ret[i] = (data[i] > param);
-            }
-        } else {
-            throw new UnsupportedOperationException();
+        double parameterValue = (double) parameters.get(0).getData() / CommonUtils.SampleDoublePrecision;
+        switch (operator) {
+            case LT:
+                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] < parameterValue);
+                break;
+            case LE:
+                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] <= parameterValue);
+                break;
+            case GT:
+                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] > parameterValue);
+                break;
+            case GE:
+                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] >= parameterValue);
+                break;
+            default:
+                throw new UnsupportedOperationException();
         }
-        HashSet<String> canonicalColumnNames = new HashSet<>();
-        getCanonicalColumnNamesColNames(arithmeticTree, canonicalColumnNames);
-        boolean[] nullEvaluations = new boolean[data.length];
-        for (String columnName : canonicalColumnNames) {
-            boolean[] columnNullEvaluations = ColumnManager.getInstance().getIsnullEvaluations(columnName);
-            for (int i = 0; i < nullEvaluations.length; i++) {
-                nullEvaluations[i] = false;
-                nullEvaluations[i] = (nullEvaluations[i] | columnNullEvaluations[i]);
-            }
-        }
-        for (int i = 0; i < data.length; i++) {
-            ret[i] = (ret[i] & !nullEvaluations[i]);
-        }
-
         return ret;
     }
 
@@ -114,33 +100,23 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
 
     /**
      * todo 通过计算树计算概率，暂时不考虑其他FilterOperation对于此操作的阈值影响
+     * todo 暂时不考虑null
      */
-    public void instantiateMultiVarParameter() throws CannotFindColumnException, InstantiateParameterException {
-        int pos;
-        BigDecimal nonNullProbability = BigDecimal.ONE;
-        // 假定null都是均匀独立分布的
-        HashSet<String> canonicalColumnNames = new HashSet<>();
-        getCanonicalColumnNamesColNames(arithmeticTree, canonicalColumnNames);
-        for (String canonicalColumnName : canonicalColumnNames) {
-            BigDecimal colNullProbability = BigDecimal.valueOf(ColumnManager.getInstance().getNullPercentage(canonicalColumnName));
-            nonNullProbability = nonNullProbability.multiply(BigDecimal.ONE.subtract(colNullProbability));
-        }
-        if (operator.getType() == GREATER) {
-            probability = nonNullProbability.subtract(probability);
-        } else if (operator.getType() != LESS) {
-            throw new InstantiateParameterException("多变量计算节点仅接受非等值约束");
+    public void instantiateMultiVarParameter() {
+        switch (operator){
+            case GE:
+            case GT:
+                probability = BigDecimal.ONE.subtract(probability);
+            case LE:
+            case LT:
+                break;
+            default:
+                throw new UnsupportedOperationException("多变量计算节点仅接受非等值约束");
         }
         double[] vector = arithmeticTree.calculate();
-        pos = probability.multiply(BigDecimal.valueOf(vector.length)).intValue();
+        int pos = probability.multiply(BigDecimal.valueOf(vector.length)).intValue();
         Arrays.sort(vector);
-        parameters.forEach(param -> {
-            if (CommonUtils.isInteger(param.getData())) {
-                param.setData(Integer.toString((int) vector[pos]));
-            } else if (CommonUtils.isFloat(param.getData())) {
-                param.setData(Double.toString(vector[pos]));
-            } else {
-                throw new UnsupportedOperationException();
-            }
-        });
+        long internalValue = (long) (vector[pos] * CommonUtils.SampleDoublePrecision) / CommonUtils.SampleDoublePrecision;
+        parameters.forEach(param -> param.setData(internalValue));
     }
 }

@@ -62,10 +62,7 @@ public class QueryWriter {
         List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
         TreeMap<Integer, Pair<Parameter, Pair<Integer, Integer>>> replaceParams = new TreeMap<>();
         for (Parameter parameter : parameters) {
-            String data = parameter.getData();
-            if (parameter.isNeedQuote()) {
-                data = String.format("'%s'", data);
-            }
+            String data = parameter.getDataValue();
             Collection<Pair<Integer, Integer>> matches = literalMap.get(data);
             if (matches.size() == 0) {
                 cannotFindArgs.add(parameter);
@@ -77,19 +74,18 @@ public class QueryWriter {
                 replaceParams.put(startPos, Pair.of(parameter, pair));
             }
         }
-        List<String> fragments = new ArrayList<>();
+        StringBuilder fragments = new StringBuilder();
         int currentPos = 0;
         while (!replaceParams.isEmpty()) {
             Map.Entry<Integer, Pair<Parameter, Pair<Integer, Integer>>> entry = replaceParams.pollFirstEntry();
             Pair<Parameter, Pair<Integer, Integer>> pair = entry.getValue();
             Parameter parameter = pair.getKey();
             int startPos = pair.getValue().getLeft(), endPos = pair.getValue().getRight();
-            fragments.add(query.substring(currentPos, startPos));
-            fragments.add(String.format("'%s,%d'", parameter.getId(), parameter.getIsDate() ? 1 : 0));
+            fragments.append(query, currentPos, startPos).append(String.format("'%s'", parameter.getId()));
             currentPos = endPos;
         }
-        fragments.add(query.substring(currentPos));
-        query = String.join("", fragments);
+        fragments.append(query.substring(currentPos));
+        query = fragments.toString();
         if (cannotFindArgs.size() > 0) {
             logger.warn(String.format("请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName));
             query = appendArgs("cannotFindArgs", cannotFindArgs) + query;
@@ -112,12 +108,10 @@ public class QueryWriter {
     public String appendArgs(String title, List<Parameter> params) {
         String argsString = params.stream().map(
                 (parameter) ->
-                        String.format("{id:%s,data:%s,operator:%s,operand:%s,isDate:%d}",
+                        String.format("{id:%s,data:%s,operand:%s}",
                                 parameter.getId(),
-                                parameter.isNeedQuote() ? "'" + parameter.getData() + "'" : parameter.getData(),
-                                parameter.getOperator().toString().toLowerCase(),
-                                parameter.getOperand(),
-                                parameter.getIsDate() ? 1 : 0
+                                "'" + parameter.getDataValue() + "'",
+                                parameter.getOperand()
                         ))
                 .collect(Collectors.joining(","));
         return String.format("-- %s:%s%s", title, argsString, System.lineSeparator());
@@ -126,6 +120,5 @@ public class QueryWriter {
     public void writeQuery(String queryFileName, String query) throws IOException {
         String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
         FileUtils.writeStringToFile(new File(queryDir + queryFileName), formatQuery, UTF_8);
-
     }
 }

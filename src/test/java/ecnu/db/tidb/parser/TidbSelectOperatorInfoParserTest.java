@@ -2,11 +2,10 @@ package ecnu.db.tidb.parser;
 
 import ecnu.db.constraintchain.filter.SelectResult;
 import ecnu.db.constraintchain.filter.logical.AndNode;
+import ecnu.db.schema.Column;
+import ecnu.db.schema.ColumnType;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.column.DecimalColumn;
-import ecnu.db.schema.column.IntColumn;
-import ecnu.db.schema.column.StringColumn;
 import ecnu.db.tidb.TidbAnalyzer;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,10 +25,10 @@ public class TidbSelectOperatorInfoParserTest {
 
     @BeforeEach
     void setUp() throws TouchstoneException {
-        ColumnManager.getInstance().addColumn("db.table.col1", new IntColumn());
-        ColumnManager.getInstance().addColumn("db.table.col2", new IntColumn());
-        ColumnManager.getInstance().addColumn("db.table.col3", new StringColumn());
-        ColumnManager.getInstance().addColumn("db.table.col4", new DecimalColumn());
+        ColumnManager.getInstance().addColumn("db.table.col1", new Column(ColumnType.INTEGER));
+        ColumnManager.getInstance().addColumn("db.table.col2", new Column(ColumnType.INTEGER));
+        ColumnManager.getInstance().addColumn("db.table.col3", new Column(ColumnType.INTEGER));
+        ColumnManager.getInstance().addColumn("db.table.col4", new Column(ColumnType.INTEGER));
         parser.setAnalyzer(new TidbAnalyzer());
     }
 
@@ -72,7 +71,7 @@ public class TidbSelectOperatorInfoParserTest {
         String testCase = "or(ge(db.table.col1, 2), not(in(db.table.col3, \"3\", \"2\")))";
         SelectResult result = parser.parseSelectOperatorInfo(testCase);
         AndNode node = result.getCondition();
-        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:'3'}, {id:2, data:'2'}))))", node.toString());
+        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:3}, {id:2, data:2}))))", node.toString());
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method with isnull")

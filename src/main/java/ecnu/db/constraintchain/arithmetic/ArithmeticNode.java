@@ -49,7 +49,6 @@ public abstract class ArithmeticNode {
      * 获取当前节点在column生成好数据以后的计算结果
      *
      * @return 返回double类型的计算结果
-     * @throws CannotFindColumnException 找不的column
      */
-    abstract public double[] calculate() throws CannotFindColumnException;
+    abstract public double[] calculate();
 }

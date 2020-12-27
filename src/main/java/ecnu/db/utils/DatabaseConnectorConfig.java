@@ -1,4 +1,4 @@
-package ecnu.db.utils.config;
+package ecnu.db.utils;
 
 /**
  * @author alan

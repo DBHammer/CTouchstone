@@ -19,7 +19,7 @@ public interface BoolExprNode {
      * @param probability 当前节点的总概率
      * @throws PushDownProbabilityException 计算异常
      */
-    List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) throws PushDownProbabilityException;
+    List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns);
 
     /**
      * 获得当前布尔表达式节点的类型

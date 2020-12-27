@@ -9,7 +9,6 @@ import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
-import ecnu.db.utils.exception.compute.PushDownProbabilityException;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,54 +56,70 @@ public class OrNode implements BoolExprNode {
      * @param probability 当前节点的总概率值
      */
     @Override
-    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) throws PushDownProbabilityException {
+    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             logger.info(String.format("'%s'的概率为0", toString()));
             return new ArrayList<>();
         }
 
         List<BoolExprNode> otherNodes = new LinkedList<>();
-        Multimap<String, UniVarFilterOperation> lessCol2UniFilters = ArrayListMultimap.create(), greaterCol2UniFilters = ArrayListMultimap.create();
+        Multimap<String, UniVarFilterOperation> lessCol2UniFilters = ArrayListMultimap.create();
+        Multimap<String, UniVarFilterOperation> greaterCol2UniFilters = ArrayListMultimap.create();
         for (BoolExprNode child : Arrays.asList(leftNode, rightNode)) {
-            if (child.getType() == AND || child.getType() == OR || child.getType() == MULTI_FILTER_OPERATION) {
-                otherNodes.add(child);
-            } else if (child.getType() == UNI_FILTER_OPERATION) {
-                UniVarFilterOperation operation = (UniVarFilterOperation) child;
-                if (operation.getOperator().getType() == CompareOperator.TYPE.LESS) {
-                    lessCol2UniFilters.put(operation.getCanonicalColumnName(), operation);
-                } else if (operation.getOperator().getType() == CompareOperator.TYPE.GREATER) {
-                    greaterCol2UniFilters.put(operation.getCanonicalColumnName(), operation);
-                } else if (operation.getOperator().getType() == CompareOperator.TYPE.EQUAL) {
-                    otherNodes.add(operation);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-            } else if (child.getType() == ISNULL_FILTER_OPERATION) {
-                String columnName = ((IsNullFilterOperation) child).getColumnName();
-                boolean hasNot = ((IsNullFilterOperation) child).getHasNot();
-                if (columns.contains(columnName)) {
-                    if (hasNot && !probability.equals(((IsNullFilterOperation) child).getProbability())) {
-                        throw new PushDownProbabilityException("or中包含了not(isnull(%s))与其他运算, 总概率不等于not isnull的概率");
+            switch (child.getType()){
+                case AND:
+                case OR:
+                case MULTI_FILTER_OPERATION:
+                    otherNodes.add(child);
+                    break;
+                case UNI_FILTER_OPERATION:
+                    UniVarFilterOperation operation = (UniVarFilterOperation) child;
+                    switch (operation.getOperator()) {
+                        case GE:
+                        case GT:
+                            greaterCol2UniFilters.put(operation.getCanonicalColumnName(), operation);
+                            break;
+                        case LE:
+                        case LT:
+                            lessCol2UniFilters.put(operation.getCanonicalColumnName(), operation);
+                            break;
+                        case EQ:
+                        case LIKE:
+                        case NE:
+                        case IN:
+                            otherNodes.add(child);
+                            break;
+                        default:
+                            throw new UnsupportedOperationException();
                     }
-                } else {
-                    BigDecimal nullProbability = ((IsNullFilterOperation) child).getProbability();
-                    BigDecimal toDivide = hasNot ? nullProbability : BigDecimal.ONE.subtract(nullProbability);
-                    if (toDivide.compareTo(BigDecimal.ZERO) == 0) {
-                        if (probability.compareTo(BigDecimal.ONE) != 0) {
-                            throw new PushDownProbabilityException(String.format("'%s'的概率为1而总概率不为1", child.toString()));
+                    break;
+                case ISNULL_FILTER_OPERATION:
+                    IsNullFilterOperation isNullFilterOperation = ((IsNullFilterOperation) child);
+                    String columnName = isNullFilterOperation.getColumnName();
+                    boolean hasNot = isNullFilterOperation.getHasNot();
+                    if (columns.contains(columnName)) {
+                        if (hasNot && !probability.equals(isNullFilterOperation.getProbability())) {
+                            throw new UnsupportedOperationException("or中包含了not(isnull(%s))与其他运算, 总概率不等于not isnull的概率");
                         }
                     } else {
-                        probability = BigDecimal.ONE.subtract(BigDecimal.ONE.subtract(probability).divide(toDivide, BIG_DECIMAL_DEFAULT_PRECISION));
+                        BigDecimal nullProbability = isNullFilterOperation.getProbability();
+                        BigDecimal toDivide = hasNot ? nullProbability : BigDecimal.ONE.subtract(nullProbability);
+                        if (toDivide.compareTo(BigDecimal.ZERO) == 0) {
+                            if (probability.compareTo(BigDecimal.ONE) != 0) {
+                                throw new UnsupportedOperationException(String.format("'%s'的概率为1而总概率不为1", child.toString()));
+                            }
+                        } else {
+                            probability = BigDecimal.ONE.subtract(BigDecimal.ONE.subtract(probability).divide(toDivide, BIG_DECIMAL_DEFAULT_PRECISION));
+                        }
                     }
-                }
-            } else {
-                throw new UnsupportedOperationException();
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
             }
         }
 
         merge(otherNodes, lessCol2UniFilters, false);
         merge(otherNodes, greaterCol2UniFilters, false);
-
 
         probability = BigDecimalMath.pow(BigDecimal.ONE.subtract(probability), BigDecimal.ONE.divide(BigDecimal.valueOf(otherNodes.size()), BIG_DECIMAL_DEFAULT_PRECISION), BIG_DECIMAL_DEFAULT_PRECISION);
 

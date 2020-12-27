@@ -10,55 +10,41 @@ public enum CompareOperator {
     /**
      * 大于或等于
      */
-    GE(TYPE.GREATER),
+    GE,
     /**
      * 比较运算符，大于
      */
-    GT(TYPE.GREATER),
+    GT,
     /**
      * 小于或等于
      */
-    LE(TYPE.LESS),
+    LE,
     /**
      * 比较运算符，小于
      */
-    LT(TYPE.LESS),
+    LT,
     /**
      * 比较运算符，等于
      */
-    EQ(TYPE.EQUAL),
+    EQ,
     /**
      * 比较运算符，不等于
      */
-    NE(TYPE.EQUAL),
+    NE,
     /**
      * 比较运算符，相似
      */
-    LIKE(TYPE.EQUAL),
+    LIKE,
     /**
      * 比较运算符，包含
      */
-    IN(TYPE.EQUAL),
+    IN,
     /**
      * ISNULL运算符
      */
-    ISNULL(TYPE.EQUAL),
+    ISNULL,
     /**
      * RANGE运算符，表示多个lt,gt,le,ge的整合，不直接在parser中使用
      */
-    RANGE(TYPE.RANGE);
-
-    private final TYPE type;
-
-    CompareOperator(TYPE type) {
-        this.type = type;
-    }
-
-    public TYPE getType() {
-        return type;
-    }
-
-    public enum TYPE {
-        LESS, GREATER, EQUAL, RANGE
-    }
+    RANGE;
 }

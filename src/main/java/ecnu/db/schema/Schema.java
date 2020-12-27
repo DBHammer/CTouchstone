@@ -3,8 +3,6 @@ package ecnu.db.schema;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import ecnu.db.schema.column.*;
-import ecnu.db.utils.ColumnConvert;
 import ecnu.db.utils.exception.TouchstoneException;
 
 import java.util.*;
@@ -30,32 +28,7 @@ public class Schema {
             canonicalColumnNames.add(canonicalColumnName);
             int indexOfBrackets = attributes[1].indexOf('(');
             String dataType = (indexOfBrackets > 0) ? attributes[1].substring(0, indexOfBrackets) : attributes[1];
-            switch (ColumnConvert.getColumnType(dataType)) {
-                case INTEGER:
-                    ColumnManager.getInstance().addColumn(canonicalColumnName, new IntColumn());
-                    break;
-                case BOOL:
-                    ColumnManager.getInstance().addColumn(canonicalColumnName, new BoolColumn());
-                    break;
-                case DECIMAL:
-                    ColumnManager.getInstance().addColumn(canonicalColumnName, new DecimalColumn());
-                    break;
-                case VARCHAR:
-                    ColumnManager.getInstance().addColumn(canonicalColumnName, new StringColumn());
-                    break;
-                case DATE:
-                case DATETIME:
-                    DateTimeColumn column = new DateTimeColumn();
-                    if (indexOfBrackets > 0) {
-                        column.setPrecision(Integer.parseInt(attributes[1].substring(indexOfBrackets + 1, attributes[1].length() - 1)));
-                    } else {
-                        column.setPrecision(0);
-                    }
-                    ColumnManager.getInstance().addColumn(canonicalColumnName, column);
-                    break;
-                default:
-                    throw new TouchstoneException("没有实现的类型转换");
-            }
+            ColumnManager.getInstance().addColumn(canonicalColumnName, new Column(ColumnConvert.getColumnType(dataType)));
         }
         this.canonicalColumnNames = canonicalColumnNames;
         joinTag = 1;

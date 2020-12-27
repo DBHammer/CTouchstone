@@ -1,5 +1,6 @@
 package ecnu.db.utils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -11,17 +12,18 @@ import ecnu.db.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.constraintchain.chain.ConstraintChainNodeDeserializer;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprNodeDeserializer;
-import ecnu.db.schema.column.AbstractColumn;
-import ecnu.db.schema.column.ColumnDeserializer;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.math.MathContext;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,73 +43,25 @@ public class CommonUtils {
     public final static String COLUMN_MANAGE_INFO = "/distribution.json";
     public final static String CANONICAL_NAME_CONTACT_SYMBOL = ".";
     public final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
+    public final static int SampleDoublePrecision = (int) 10E6;
     public final static int SINGLE_THREAD_TUPLE_SIZE = 100;
     public final static int INIT_HASHMAP_SIZE = 16;
+    private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
+            .toFormatter();
 
-    public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule()).registerModule(new SimpleModule()
-            .addDeserializer(AbstractColumn.class, new ColumnDeserializer())
+    private static final SimpleModule touchStoneJsonModule = new SimpleModule()
             .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
             .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
-            .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer()));
+            .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
 
-    public static boolean isInteger(String str) {
-        try {
-            int val = Integer.parseInt(str);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        return true;
+    public static final ObjectMapper MAPPER = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
+
+    public static long getUnixTimeStamp(String timeValue) {
+        return LocalDateTime.parse(timeValue, CommonUtils.FMT).toEpochSecond(ZoneOffset.UTC);
     }
-
-    public static boolean isFloat(String str) {
-        try {
-            float val = Float.parseFloat(str);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static void shuffle(int size, ThreadLocalRandom rand, int[] tupleData) {
-        int tmp;
-        for (int i = size; i > 1; i--) {
-            int idx = rand.nextInt(i);
-            tmp = tupleData[i - 1];
-            tupleData[i - 1] = tupleData[idx];
-            tupleData[idx] = tmp;
-        }
-    }
-
-    public static void shuffle(int size, ThreadLocalRandom rand, double[] tupleData) {
-        double tmp;
-        for (int i = size; i > 1; i--) {
-            int idx = rand.nextInt(i);
-            tmp = tupleData[i - 1];
-            tupleData[i - 1] = tupleData[idx];
-            tupleData[idx] = tmp;
-        }
-    }
-
-    public static void shuffle(int size, ThreadLocalRandom rand, long[] tupleData) {
-        long tmp;
-        for (int i = size; i > 1; i--) {
-            int idx = rand.nextInt(i);
-            tmp = tupleData[i - 1];
-            tupleData[i - 1] = tupleData[idx];
-            tupleData[idx] = tmp;
-        }
-    }
-
-    public static double min(int[] ret) {
-        double min = ret[0];
-        for (int value : ret) {
-            if (min >= value) {
-                min = value;
-            }
-        }
-        return min;
-    }
-
 
     /**
      * 获取正则表达式的匹配
