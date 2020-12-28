@@ -1,8 +1,12 @@
 package ecnu.db.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
@@ -13,14 +17,17 @@ import ecnu.db.constraintchain.chain.ConstraintChainNodeDeserializer;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprNodeDeserializer;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.MathContext;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +50,15 @@ public class CommonUtils {
     public final static String COLUMN_MANAGE_INFO = "/distribution.json";
     public final static String CANONICAL_NAME_CONTACT_SYMBOL = ".";
     public final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
-    public final static int SampleDoublePrecision = (int) 10E6;
+    public final static int SampleDoublePrecision = (int) 1E6;
     public final static int SINGLE_THREAD_TUPLE_SIZE = 100;
     public final static int INIT_HASHMAP_SIZE = 16;
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
             .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
+                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter())
             .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
             .toFormatter();
 
@@ -56,12 +67,22 @@ public class CommonUtils {
             .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
             .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
 
-    public static final ObjectMapper MAPPER = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL)
+    private static final DefaultPrettyPrinter dpf = new DefaultPrettyPrinter();
+
+    static {
+        dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
+    }
+
+    public static final ObjectMapper MAPPER = new ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+            .setDefaultPrettyPrinter(dpf)
             .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
 
     public static long getUnixTimeStamp(String timeValue) {
         return LocalDateTime.parse(timeValue, CommonUtils.FMT).toEpochSecond(ZoneOffset.UTC);
     }
+
 
     /**
      * 获取正则表达式的匹配

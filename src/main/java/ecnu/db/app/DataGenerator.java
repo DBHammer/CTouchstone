@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static ecnu.db.utils.CommonUtils.stepSize;
 
@@ -54,12 +56,19 @@ class DataGenerator implements Callable<Integer> {
                 int range = Math.min(resultStart + stepSize, tableSize) - resultStart;
                 ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
                 computeFksAndPkJoinInfo(resultStart, range, schema2chains.get(schemaName));
-                bufferedWriter.write(transferData());
+                String[][] columnData = getColumnData();
+                bufferedWriter.write(IntStream.range(0, columnData[0].length).parallel().mapToObj(
+                        index -> String.join(",", columnData[index])
+                ).collect(Collectors.joining(System.lineSeparator())));
                 resultStart += range + stepRange;
             }
             bufferedWriter.close();
         }
         return 0;
+    }
+
+    private String[][] getColumnData() {
+        return null;
     }
 
     private static Multimap<String, ConstraintChain> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
@@ -87,17 +96,5 @@ class DataGenerator implements Callable<Integer> {
         for (ConstraintChain chain : chains) {
             chain.evaluate(pkBitMap, fkBitMap);
         }
-
-    }
-
-    //todo
-    public String transferData() {
-        Map<String, List<String>> columnName2Data = new HashMap<>();
-//        for (String columnName : columns.keySet()) {
-//            columnName2Data.put(columnName, ColumnManager.getInstance().get(columnName));
-//        }
-        StringBuilder data = new StringBuilder();
-        //todo 添加对于数据的格式化的处理
-        return data.toString();
     }
 }

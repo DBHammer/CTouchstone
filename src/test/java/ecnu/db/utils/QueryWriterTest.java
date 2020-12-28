@@ -62,7 +62,7 @@ class QueryWriterTest {
         parameters.add(new Parameter(0, "db.test.a", "5"));
         parameters.add(new Parameter(1, "db.test.b", "5"));
         String modified = queryWriter.templatizeSql("q5", sql, parameters);
-        assertEquals("-- conflictArgs:{id:0,data:'5',operator:eq,operand:db.test.a,isDate:0},{id:1,data:'5',operator:eq,operand:db.test.b,isDate:0}\nselect * from test where a='5' or b='5'", modified);
+        assertEquals("-- conflictArgs:{id:0,data:'5',operand:db.test.a},{id:1,data:'5',operand:db.test.b}\nselect * from test where a='5' or b='5'", modified);
     }
 
     @Test
@@ -72,6 +72,6 @@ class QueryWriterTest {
         Parameter parameter = new Parameter(0, "db.test.b", "6");
         parameters.add(parameter);
         String modified = queryWriter.templatizeSql("q6", sql, parameters);
-        assertEquals("-- cannotFindArgs:{id:0,data:'6',operator:eq,operand:db.test.b,isDate:0}\nselect * from test where a='5' or b='5'", modified);
+        assertEquals("-- cannotFindArgs:{id:0,data:'6',operand:db.test.b}\nselect * from test where a='5' or b='5'", modified);
     }
 }

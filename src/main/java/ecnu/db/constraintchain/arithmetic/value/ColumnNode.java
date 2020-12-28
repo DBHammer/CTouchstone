@@ -4,6 +4,8 @@ import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.schema.ColumnManager;
 
+import java.util.Arrays;
+
 /**
  * @author wangqingshuai
  */
@@ -24,7 +26,8 @@ public class ColumnNode extends ArithmeticNode {
 
     @Override
     public double[] calculate() {
-        return ColumnManager.getInstance().calculate(canonicalColumnName);
+        double[] columnValue = ColumnManager.getInstance().calculate(canonicalColumnName);
+        return Arrays.copyOf(columnValue, columnValue.length);
     }
 
     @Override

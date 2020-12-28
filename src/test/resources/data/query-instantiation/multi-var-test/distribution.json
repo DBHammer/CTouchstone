@@ -5,7 +5,7 @@
     "columnName": "c3",
     "min": -3,
     "max": 9,
-    "ndv": 13
+    "range": 13
   },
   "test.test.c4": {
     "columnType": "INTEGER",

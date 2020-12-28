@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -67,7 +68,7 @@ public class ColumnManager {
     }
 
     public int getNdv(String columnName) {
-        return getColumn(columnName).getNdv();
+        return (int) getColumn(columnName).getRange();
     }
 
     public void addColumn(String columnName, Column column) throws TouchstoneException {
@@ -77,15 +78,10 @@ public class ColumnManager {
         columns.put(columnName, column);
     }
 
-    public void removeColumn(String columnName) throws TouchstoneException {
-        columns.remove(columnName);
-    }
-
     public void storeColumnDistribution() throws IOException {
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columns);
         FileUtils.writeStringToFile(distributionInfoPath, content, UTF_8);
     }
-
 
     public void loadColumnDistribution() throws IOException {
         columns = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(distributionInfoPath, UTF_8),
@@ -98,7 +94,16 @@ public class ColumnManager {
     }
 
     public void initAllEqParameter() {
-        columns.values().parallelStream().forEach(Column::initEqParameter);
+        for (Map.Entry<String, Column> columnName2Column : columns.entrySet()) {
+            try {
+                columnName2Column.getValue().initEqParameter();
+            } catch (Exception e) {
+                System.out.println(columnName2Column.getKey() + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        // todo 找到更好的方式
+        // columns.values().parallelStream().forEach(Column::initEqParameter);
     }
 
     /**
@@ -112,37 +117,43 @@ public class ColumnManager {
         int index = 0;
         for (String canonicalColumnName : canonicalColumnNames) {
             Column column = columns.get(canonicalColumnName);
+            long min, range, specialValue;
             switch (column.getColumnType()) {
                 case INTEGER:
-                    column.setMin(Long.parseLong(sqlResult[index++]));
+                    min = Long.parseLong(sqlResult[index++]);
                     long maxBound = Long.parseLong(sqlResult[index++]);
-                    column.setRange(Long.parseLong(sqlResult[index++]));
-                    column.setSpecialValue((int) ((maxBound - column.getMin()) / column.getRange()));
+                    range = Long.parseLong(sqlResult[index++]);
+                    specialValue = (int) ((maxBound - min + 1) / range);
                     break;
                 case VARCHAR:
                     StringTemplate stringTemplate = new StringTemplate();
                     stringTemplate.minLength = Integer.parseInt(sqlResult[index++]);
                     stringTemplate.rangeLength = Integer.parseInt(sqlResult[index++]) - stringTemplate.minLength;
                     column.setStringTemplate(stringTemplate);
-                    column.setMin(0);
-                    column.setRange(Integer.parseInt(sqlResult[index++]));
-                    column.setSpecialValue(ThreadLocalRandom.current().nextInt());
+                    min = 0;
+                    range = Integer.parseInt(sqlResult[index++]);
+                    specialValue = ThreadLocalRandom.current().nextInt();
                     break;
                 case DECIMAL:
                     int precision = CommonUtils.SampleDoublePrecision;
-                    column.setMin((long) (Double.parseDouble(sqlResult[index++]) * precision));
-                    column.setRange((long) (Double.parseDouble(sqlResult[index++]) * precision) - column.getMin());
-                    column.setSpecialValue(precision);
+                    min = (long) (Double.parseDouble(sqlResult[index++]) * precision);
+                    range = (long) (Double.parseDouble(sqlResult[index++]) * precision) - min;
+                    specialValue = precision;
                     break;
                 case DATE:
                 case DATETIME:
-                    column.setMin(CommonUtils.getUnixTimeStamp(sqlResult[index++]));
-                    column.setRange(CommonUtils.getUnixTimeStamp(sqlResult[index++]) - column.getMin());
+                    min = CommonUtils.getUnixTimeStamp(sqlResult[index++]);
+                    range = CommonUtils.getUnixTimeStamp(sqlResult[index++]) - min;
+                    specialValue = 0;
                     break;
                 case BOOL:
                 default:
                     throw new TouchstoneException("未匹配到的类型");
             }
+            column.setMin(min);
+            column.setRange(range);
+            column.setSpecialValue(specialValue);
+            column.initBucketBound2FreeSpace();
             column.setNullPercentage(Float.parseFloat(sqlResult[index++]));
         }
     }

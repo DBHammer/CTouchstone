@@ -7,7 +7,6 @@ import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
-import org.apache.commons.collections.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -41,7 +40,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
             Collection<UniVarFilterOperation> filters = col2uniFilters.get(colName);
             Multimap<CompareOperator, UniVarFilterOperation> typ2Filter = Multimaps.index(filters, AbstractFilterOperation::getOperator);
             if (typ2Filter.size() == 1) {
-                toMergeNodes.add((BoolExprNode) CollectionUtils.get(typ2Filter.values(), 0));
+                toMergeNodes.addAll(typ2Filter.values());
                 continue;
             }
             RangeFilterOperation newFilter = new RangeFilterOperation(colName);

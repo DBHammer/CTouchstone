@@ -18,7 +18,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ecnu.db.constraintchain.filter.BoolExprType.*;
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 
 /**
@@ -53,7 +52,7 @@ public class AndNode implements BoolExprNode {
         List<BoolExprNode> otherNodes = new LinkedList<>();
         Multimap<String, UniVarFilterOperation> col2uniFilters = ArrayListMultimap.create();
         for (BoolExprNode child : children) {
-            switch (child.getType()){
+            switch (child.getType()) {
                 case AND:
                 case OR:
                 case MULTI_FILTER_OPERATION:
@@ -149,6 +148,10 @@ public class AndNode implements BoolExprNode {
 
     @Override
     public String toString() {
-        return String.format("and(%s)", children.stream().map(BoolExprNode::toString).collect(Collectors.joining(", ")));
+        if (children.size() > 1) {
+            return String.format("and(%s)", children.stream().map(BoolExprNode::toString).collect(Collectors.joining("," + System.lineSeparator())));
+        } else {
+            return String.format("and(%s)", children.get(0).toString());
+        }
     }
 }

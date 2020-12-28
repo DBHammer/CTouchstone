@@ -1,15 +1,12 @@
 package ecnu.db.schema;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.util.HashMap;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 class StringTemplate {
     int minLength;
     int rangeLength;
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     HashMap<Long, boolean[]> likeIndex2Status = new HashMap<>();
 
     public String getParameterValue(long specialValue, long dataId) {
@@ -17,9 +14,8 @@ class StringTemplate {
     }
 
     private StringBuilder getParameterBuilder(long specialValue, long dataId) {
-        ThreadLocalRandom random = ThreadLocalRandom.current();
-        random.setSeed(specialValue * dataId);
-        return random.ints(65, 123).limit(minLength + random.nextLong(rangeLength)).
+        Random random = new Random(specialValue * dataId);
+        return random.ints(65, 123).limit(minLength + random.nextInt(rangeLength)).
                 collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append);
     }
 
@@ -41,6 +37,30 @@ class StringTemplate {
             likeIndex2Status.get(dataId)[2] = true;
         }
         return likeValue.toString();
+    }
+
+    public int getMinLength() {
+        return minLength;
+    }
+
+    public void setMinLength(int minLength) {
+        this.minLength = minLength;
+    }
+
+    public int getRangeLength() {
+        return rangeLength;
+    }
+
+    public void setRangeLength(int rangeLength) {
+        this.rangeLength = rangeLength;
+    }
+
+    public HashMap<Long, boolean[]> getLikeIndex2Status() {
+        return likeIndex2Status;
+    }
+
+    public void setLikeIndex2Status(HashMap<Long, boolean[]> likeIndex2Status) {
+        this.likeIndex2Status = likeIndex2Status;
     }
 
     public String transferColumnData2Value(long specialValue, long data) {

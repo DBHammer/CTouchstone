@@ -1,5 +1,6 @@
 package ecnu.db.constraintchain.chain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.utils.exception.TouchstoneException;
 
@@ -8,8 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author wangqingshuai
@@ -17,7 +16,9 @@ import java.util.stream.Stream;
 public class ConstraintChain {
 
     private final List<ConstraintChainNode> nodes = new ArrayList<>();
+
     private String tableName;
+    @JsonIgnore
     private List<Parameter> parameters = new ArrayList<>();
 
     public ConstraintChain() {

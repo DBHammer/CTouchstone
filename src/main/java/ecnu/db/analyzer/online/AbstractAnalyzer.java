@@ -251,6 +251,7 @@ public abstract class AbstractAnalyzer {
                 SchemaManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
                 ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable+"."+localCol, externalTable+"."+externalCol, node.getJoinTag(), probability);
                 constraintChain.addNode(fkJoinNode);
+                lastNodeLineCount = node.getOutputRows();
             }
         }
         return lastNodeLineCount;

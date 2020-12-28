@@ -12,6 +12,7 @@ import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -40,6 +41,7 @@ public class QueryInstantiationMultiVarTest {
         ColumnManager.getInstance().loadColumnDistribution();
     }
 
+    @Disabled
     @Test
     public void computeMultiVarTest() throws Exception {
 

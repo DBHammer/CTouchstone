@@ -1,965 +1,330 @@
 {
-  "11_1.sql": [
+  "6_1.sql" : [
     {
-      "tableName": "tpch.nation",
-      "parameters": [
+      "nodes" : [
         {
-          "id": 11,
-          "data": "MOZAMBIQUE",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.nation",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
               {
-                "parameters": [
-                  11
+                "parameters" : [
+                  {
+                    "id" : 0,
+                    "data" : 82028
+                  }
                 ],
-                "operator": "EQ",
-                "probability": null,
-                "canonicalColumnName": "tpch.nation.n_name",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.04,
-          "columns": [
-            "tpch.nation.n_name"
-          ]
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.supplier",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.partsupp",
-      "parameters": [],
-      "nodes": []
-    }
-  ],
-  "3_1.sql": [
-    {
-      "tableName": "tpch.customer",
-      "parameters": [
-        {
-          "id": 12,
-          "data": "HOUSEHOLD",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.customer",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  12
-                ],
-                "operator": "EQ",
-                "probability": null,
-                "canonicalColumnName": "tpch.customer.c_mktsegment",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.20126,
-          "columns": [
-            "tpch.customer.c_mktsegment"
-          ]
-        },
-        {
-          "tableName": "tpch.customer",
-          "constraintChainNodeType": "PK_JOIN",
-          "pkColumns": [
-            "c_custkey"
-          ],
-          "pkTag": 1
-        },
-        {
-          "tableName": "tpch.customer",
-          "constraintChainNodeType": "PK_JOIN",
-          "pkColumns": [
-            "c_custkey"
-          ],
-          "pkTag": 1
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.orders",
-      "parameters": [
-        {
-          "id": 13,
-          "data": "1995-03-10",
-          "isDate": true
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.orders",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  13
-                ],
-                "operator": "LT",
-                "probability": null,
-                "canonicalColumnName": "tpch.orders.o_orderdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.4827473333,
-          "columns": [
-            "tpch.orders.o_orderdate"
-          ]
-        },
-        {
-          "tableName": "tpch.orders",
-          "constraintChainNodeType": "FK_JOIN",
-          "refTable": "tpch.customer",
-          "pkTag": 1,
-          "probability": 0.1995716185554624
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.lineitem",
-      "parameters": [],
-      "nodes": []
-    }
-  ],
-  "2_1.sql": [
-    {
-      "tableName": "tpch.part",
-      "parameters": [
-        {
-          "id": 19,
-          "data": "5",
-          "isDate": false
-        },
-        {
-          "id": 20,
-          "data": "%COPPER",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.part",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  19
-                ],
-                "operator": "EQ",
-                "probability": null,
-                "canonicalColumnName": "tpch.part.p_size",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
+                "operator" : "GE",
+                "canonicalColumnName" : "tpch.lineitem.l_discount",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
               },
               {
-                "parameters": [
-                  20
+                "parameters" : [
+                  {
+                    "id" : 1,
+                    "data" : 86279669
+                  }
                 ],
-                "operator": "LIKE",
-                "probability": null,
-                "canonicalColumnName": "tpch.part.p_type",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.00416,
-          "columns": [
-            "tpch.part.p_type",
-            "tpch.part.p_size"
-          ]
-        },
-        {
-          "tableName": "tpch.part",
-          "constraintChainNodeType": "PK_JOIN",
-          "pkColumns": [
-            "p_partkey"
-          ],
-          "pkTag": 1
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.region",
-      "parameters": [
-        {
-          "id": 21,
-          "data": "AMERICA",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.region",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  21
-                ],
-                "operator": "EQ",
-                "probability": null,
-                "canonicalColumnName": "tpch.region.r_name",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.2,
-          "columns": [
-            "tpch.region.r_name"
-          ]
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.nation",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.supplier",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.partsupp",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.region",
-      "parameters": [
-        {
-          "id": 22,
-          "data": "AMERICA",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.region",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  22
-                ],
-                "operator": "EQ",
-                "probability": null,
-                "canonicalColumnName": "tpch.region.r_name",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.2,
-          "columns": [
-            "tpch.region.r_name"
-          ]
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.nation",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.supplier",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.partsupp",
-      "parameters": [],
-      "nodes": []
-    }
-  ],
-  "4_1.sql": [
-    {
-      "tableName": "tpch.orders",
-      "parameters": [
-        {
-          "id": 2,
-          "data": "1994-06-01",
-          "isDate": true
-        },
-        {
-          "id": 3,
-          "data": "1994-09-01",
-          "isDate": true
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.orders",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  2
-                ],
-                "operator": "GE",
-                "probability": null,
-                "canonicalColumnName": "tpch.orders.o_orderdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
+                "operator" : "GE",
+                "canonicalColumnName" : "tpch.lineitem.l_shipdate",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
               },
               {
-                "parameters": [
-                  3
+                "parameters" : [
+                  {
+                    "id" : 2,
+                    "data" : 55334
+                  }
                 ],
-                "operator": "LT",
-                "probability": null,
-                "canonicalColumnName": "tpch.orders.o_orderdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.038316,
-          "columns": [
-            "tpch.orders.o_orderdate"
-          ]
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.lineitem",
-      "parameters": [],
-      "nodes": []
-    }
-  ],
-  "12_1.sql": [],
-  "m1_1.sql": [
-    {
-      "tableName": "tpch.lineitem",
-      "parameters": [
-        {
-          "id": 0,
-          "data": "24",
-          "isDate": false
-        },
-        {
-          "id": 1,
-          "data": "29",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.lineitem",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "leftNode": {
-                  "parameters": [
-                    0
-                  ],
-                  "operator": "LT",
-                  "probability": null,
-                  "canonicalColumnName": "tpch.lineitem.l_quantity",
-                  "hasNot": false,
-                  "type": "UNI_FILTER_OPERATION"
-                },
-                "rightNode": {
-                  "parameters": [
-                    1
-                  ],
-                  "operator": "EQ",
-                  "probability": null,
-                  "canonicalColumnName": "tpch.lineitem.l_quantity",
-                  "hasNot": false,
-                  "type": "UNI_FILTER_OPERATION"
-                },
-                "type": "OR"
-              }
-            ]
-          },
-          "probability": 0.4796910292,
-          "columns": [
-            "tpch.lineitem.l_quantity"
-          ]
-        }
-      ]
-    }
-  ],
-  "8_1.sql": [
-    {
-      "tableName": "tpch.nation",
-      "parameters": [],
-      "nodes": [
-        {
-          "tableName": "tpch.nation",
-          "constraintChainNodeType": "PK_JOIN",
-          "pkColumns": [
-            "n_nationkey"
-          ],
-          "pkTag": 2
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.region",
-      "parameters": [
-        {
-          "id": 14,
-          "data": "ASIA",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.region",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  14
-                ],
-                "operator": "EQ",
-                "probability": null,
-                "canonicalColumnName": "tpch.region.r_name",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.2,
-          "columns": [
-            "tpch.region.r_name"
-          ]
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.nation",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.customer",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.orders",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.lineitem",
-      "parameters": [],
-      "nodes": []
-    },
-    {
-      "tableName": "tpch.part",
-      "parameters": [
-        {
-          "id": 15,
-          "data": "STANDARD BURNISHED NICKEL",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.part",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  15
-                ],
-                "operator": "EQ",
-                "probability": null,
-                "canonicalColumnName": "tpch.part.p_type",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.01223,
-          "columns": [
-            "tpch.part.p_type"
-          ]
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.supplier",
-      "parameters": [],
-      "nodes": []
-    }
-  ],
-  "6_1.sql": [
-    {
-      "tableName": "tpch.lineitem",
-      "parameters": [
-        {
-          "id": 25,
-          "data": "0.02",
-          "isDate": false
-        },
-        {
-          "id": 26,
-          "data": "1997-01-01",
-          "isDate": true
-        },
-        {
-          "id": 27,
-          "data": "0.04",
-          "isDate": false
-        },
-        {
-          "id": 28,
-          "data": "24",
-          "isDate": false
-        },
-        {
-          "id": 29,
-          "data": "1998-01-01",
-          "isDate": true
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.lineitem",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  25
-                ],
-                "operator": "GE",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_discount",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
+                "operator" : "LE",
+                "canonicalColumnName" : "tpch.lineitem.l_discount",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
               },
               {
-                "parameters": [
-                  26
+                "parameters" : [
+                  {
+                    "id" : 3,
+                    "data" : 35919600
+                  }
                 ],
-                "operator": "GE",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_shipdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
+                "operator" : "LT",
+                "probability" : 0.2669469264,
+                "canonicalColumnName" : "tpch.lineitem.l_quantity",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
               },
               {
-                "parameters": [
-                  27
+                "parameters" : [
+                  {
+                    "id" : 4,
+                    "data" : 28042527
+                  }
                 ],
-                "operator": "LE",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_discount",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              },
-              {
-                "parameters": [
-                  28
-                ],
-                "operator": "LT",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_quantity",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              },
-              {
-                "parameters": [
-                  29
-                ],
-                "operator": "LT",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_shipdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
+                "operator" : "LT",
+                "canonicalColumnName" : "tpch.lineitem.l_shipdate",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability": 0.01904131080,
-          "columns": [
+          "probability" : 0.01902281455,
+          "columns" : [
             "tpch.lineitem.l_discount",
             "tpch.lineitem.l_quantity",
             "tpch.lineitem.l_shipdate"
           ]
         }
-      ]
+      ],
+      "tableName" : "tpch.lineitem"
     }
   ],
-  "14_1.sql": [
+  "3_1.sql" : [
     {
-      "tableName": "tpch.lineitem",
-      "parameters": [
+      "nodes" : [
         {
-          "id": 23,
-          "data": "1994-09-01",
-          "isDate": true
-        },
-        {
-          "id": 24,
-          "data": "1994-10-01",
-          "isDate": true
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.lineitem",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
               {
-                "parameters": [
-                  23
+                "parameters" : [
+                  {
+                    "id" : 5,
+                    "data" : 4
+                  }
                 ],
-                "operator": "GE",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_shipdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              },
-              {
-                "parameters": [
-                  24
-                ],
-                "operator": "LT",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_shipdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
+                "operator" : "EQ",
+                "probability" : 0.1983466667,
+                "canonicalColumnName" : "tpch.customer.c_mktsegment",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability": 0.01254845894,
-          "columns": [
-            "tpch.lineitem.l_shipdate"
+          "probability" : 0.1983466667,
+          "columns" : [
+            "tpch.customer.c_mktsegment"
           ]
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "c_custkey"
+          ],
+          "pkTag" : 1
         }
-      ]
+      ],
+      "tableName" : "tpch.customer"
     },
     {
-      "tableName": "tpch.part",
-      "parameters": [],
-      "nodes": []
-    }
-  ],
-  "m4_1.sql": [],
-  "m2_1.sql": [
-    {
-      "tableName": "tpch.nation",
-      "parameters": [],
-      "nodes": [
+      "nodes" : [
         {
-          "tableName": "tpch.nation",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [],
-                "operator": "ISNULL",
-                "probability": 0.0,
-                "canonicalColumnName": "tpch.nation.n_comment",
-                "hasNot": false,
-                "type": "ISNULL_FILTER_OPERATION"
-              },
-              {
-                "parameters": [],
-                "operator": "ISNULL",
-                "probability": 0.0,
-                "canonicalColumnName": "tpch.nation.n_name",
-                "hasNot": true,
-                "type": "ISNULL_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0,
-          "columns": []
-        }
-      ]
-    }
-  ],
-  "1_1.sql": [
-    {
-      "tableName": "tpch.lineitem",
-      "parameters": [
-        {
-          "id": 10,
-          "data": "1998-09-28",
-          "isDate": true
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.lineitem",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  10
-                ],
-                "operator": "LE",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_shipdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.9928309517,
-          "columns": [
-            "tpch.lineitem.l_shipdate"
-          ]
-        }
-      ]
-    }
-  ],
-  "10_1.sql": [
-    {
-      "tableName": "tpch.lineitem",
-      "parameters": [
-        {
-          "id": 4,
-          "data": "R",
-          "isDate": false
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.lineitem",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
-              {
-                "parameters": [
-                  4
-                ],
-                "operator": "EQ",
-                "probability": null,
-                "canonicalColumnName": "tpch.lineitem.l_returnflag",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability": 0.2464284316,
-          "columns": [
-            "tpch.lineitem.l_returnflag"
-          ]
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "tpch.customer.c_custkey",
+          "localCols" : "tpch.orders.o_custkey",
+          "pkTag" : 1,
+          "probability" : 0.198302
         },
         {
-          "tableName": "tpch.lineitem",
-          "constraintChainNodeType": "FK_JOIN",
-          "refTable": "tpch.orders",
-          "pkTag": 1,
-          "probability": 0.07643471028555586
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.orders",
-      "parameters": [
-        {
-          "id": 5,
-          "data": "1994-09-01",
-          "isDate": true
-        },
-        {
-          "id": 6,
-          "data": "1994-12-01",
-          "isDate": true
-        }
-      ],
-      "nodes": [
-        {
-          "tableName": "tpch.orders",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
               {
-                "parameters": [
-                  5
+                "parameters" : [
+                  {
+                    "id" : 6,
+                    "data" : 107257872
+                  }
                 ],
-                "operator": "GE",
-                "probability": null,
-                "canonicalColumnName": "tpch.orders.o_orderdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
-              },
-              {
-                "parameters": [
-                  6
-                ],
-                "operator": "LT",
-                "probability": null,
-                "canonicalColumnName": "tpch.orders.o_orderdate",
-                "hasNot": false,
-                "type": "UNI_FILTER_OPERATION"
+                "operator" : "LT",
+                "probability" : 0.4838209734,
+                "canonicalColumnName" : "tpch.orders.o_orderdate",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability": 0.03767733333,
-          "columns": [
+          "probability" : 0.4838209733974779,
+          "columns" : [
             "tpch.orders.o_orderdate"
           ]
         },
         {
-          "tableName": "tpch.orders",
-          "constraintChainNodeType": "FK_JOIN",
-          "refTable": "tpch.customer",
-          "pkTag": 1,
-          "probability": 1.0
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.nation",
-      "parameters": [],
-      "nodes": [
-        {
-          "tableName": "tpch.nation",
-          "constraintChainNodeType": "PK_JOIN",
-          "pkColumns": [
-            "n_nationkey"
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "o_orderkey"
           ],
-          "pkTag": 1
-        },
-        {
-          "tableName": "tpch.nation",
-          "constraintChainNodeType": "PK_JOIN",
-          "pkColumns": [
-            "n_nationkey"
-          ],
-          "pkTag": 1
-        }
-      ]
-    },
-    {
-      "tableName": "tpch.customer",
-      "parameters": [],
-      "nodes": [
-        {
-          "tableName": "tpch.customer",
-          "constraintChainNodeType": "FK_JOIN",
-          "refTable": "tpch.nation",
-          "pkTag": 1,
-          "probability": 1.0
-        },
-        {
-          "tableName": "tpch.customer",
-          "constraintChainNodeType": "PK_JOIN",
-          "pkColumns": [
-            "c_custkey"
-          ],
-          "pkTag": 1
-        }
-      ]
-    }
-  ],
-  "m3_1.sql": [
-    {
-      "tableName": "tpch.nation",
-      "parameters": [
-        {
-          "id": 7,
-          "data": "ha",
-          "isDate": false
-        },
-        {
-          "id": 8,
-          "data": "hb",
-          "isDate": false
-        },
-        {
-          "id": 9,
-          "data": "%ha%",
-          "isDate": false
+          "pkTag" : 1
         }
       ],
-      "nodes": [
+      "tableName" : "tpch.orders"
+    },
+    {
+      "nodes" : [
         {
-          "tableName": "tpch.nation",
-          "constraintChainNodeType": "FILTER",
-          "root": {
-            "type": "AND",
-            "children": [
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "tpch.orders.o_orderkey",
+          "localCols" : "tpch.lineitem.l_orderkey",
+          "pkTag" : 1,
+          "probability" : 0.09587141937091072
+        },
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
               {
-                "parameters": [
-                  7,
-                  8
+                "parameters" : [
+                  {
+                    "id" : 7,
+                    "data" : 11480468
+                  }
                 ],
-                "operator": "IN",
-                "probability": null,
-                "canonicalColumnName": "tpch.nation.n_comment",
-                "hasNot": true,
-                "type": "UNI_FILTER_OPERATION"
-              },
-              {
-                "parameters": [
-                  9
-                ],
-                "operator": "LIKE",
-                "probability": null,
-                "canonicalColumnName": "tpch.nation.n_comment",
-                "hasNot": true,
-                "type": "UNI_FILTER_OPERATION"
+                "operator" : "GT",
+                "probability" : 0.05262407773,
+                "canonicalColumnName" : "tpch.lineitem.l_shipdate",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability": 0.8,
-          "columns": [
-            "tpch.nation.n_comment"
+          "probability" : 0.052624077727276675,
+          "columns" : [
+            "tpch.lineitem.l_shipdate"
           ]
         }
-      ]
+      ],
+      "tableName" : "tpch.lineitem"
+    }
+  ],
+  "1_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 8,
+                    "data" : 4420008
+                  }
+                ],
+                "operator" : "LE",
+                "probability" : 0.9797396027,
+                "canonicalColumnName" : "tpch.lineitem.l_shipdate",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability" : 0.9797396027,
+          "columns" : [
+            "tpch.lineitem.l_shipdate"
+          ]
+        }
+      ],
+      "tableName" : "tpch.lineitem"
+    }
+  ],
+  "15_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 9,
+                    "data" : 70816536
+                  }
+                ],
+                "operator" : "GE",
+                "canonicalColumnName" : "tpch.lineitem.l_shipdate",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
+              },
+              {
+                "parameters" : [
+                  {
+                    "id" : 10,
+                    "data" : 62445468
+                  }
+                ],
+                "operator" : "LT",
+                "canonicalColumnName" : "tpch.lineitem.l_shipdate",
+                "hasNot" : false,
+                "type" : "UNI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability" : 0.03837122983,
+          "columns" : [
+            "tpch.lineitem.l_shipdate"
+          ]
+        }
+      ],
+      "tableName" : "tpch.lineitem"
+    }
+  ],
+  "13_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 11,
+                    "data" : 1482070
+                  }
+                ],
+                "operator" : "LIKE",
+                "probability" : 0.010774,
+                "canonicalColumnName" : "tpch.orders.o_comment",
+                "hasNot" : true,
+                "type" : "UNI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability" : 0.989226,
+          "columns" : [
+            "tpch.orders.o_comment"
+          ]
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "tpch.customer.c_custkey",
+          "localCols" : "tpch.orders.o_custkey",
+          "pkTag" : 2,
+          "probability" : 1.0
+        }
+      ],
+      "tableName" : "tpch.orders"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "c_custkey"
+          ],
+          "pkTag" : 2
+        }
+      ],
+      "tableName" : "tpch.customer"
     }
   ]
 }

@@ -1,7 +1,6 @@
 package ecnu.db.app;
 
 import com.alibaba.druid.DbType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.analyzer.statical.QueryWriter;
@@ -11,7 +10,6 @@ import ecnu.db.constraintchain.chain.ConstraintChainManager;
 import ecnu.db.constraintchain.filter.Parameter;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.constraintchain.filter.operation.MultiVarFilterOperation;
-import ecnu.db.constraintchain.filter.operation.RangeFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.schema.ColumnManager;
@@ -23,7 +21,6 @@ import ecnu.db.tidb.TidbAnalyzer;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.utils.exception.compute.PushDownProbabilityException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +58,7 @@ public class TaskConfigurator implements Callable<Integer> {
      * @param constraintChains 待计算的约束链
      * @param samplingSize     多元非等值的采样大小
      */
-    public static void queryInstantiation(List<ConstraintChain> constraintChains, int samplingSize) {
+    public static Map<Integer, Parameter> queryInstantiation(List<ConstraintChain> constraintChains, int samplingSize) {
         List<AbstractFilterOperation> filterOperations = constraintChains.stream()
                 .map(constraintChain -> constraintChain.getNodes().stream()
                         .filter(node -> node instanceof ConstraintChainFilterNode)
@@ -87,13 +84,17 @@ public class TaskConfigurator implements Callable<Integer> {
                 .filter((f) -> f instanceof MultiVarFilterOperation)
                 .map(f -> (MultiVarFilterOperation) f)
                 .forEach(MultiVarFilterOperation::instantiateMultiVarParameter);
+        Map<Integer, Parameter> id2Parameter = new HashMap<>();
+        filterOperations.stream().map(AbstractFilterOperation::getParameters).flatMap(Collection::stream)
+                .forEach(parameter -> id2Parameter.put(parameter.getId(), parameter));
+        return id2Parameter;
     }
 
     @Override
     public Integer call() throws Exception {
         ecnu.db.utils.TaskConfiguratorConfig config;
         if (taskConfiguratorConfig.othersConfig.fileConfigInfo != null) {
-            config = new ObjectMapper().readValue(FileUtils.readFileToString(
+            config = MAPPER.readValue(FileUtils.readFileToString(
                     new File(taskConfiguratorConfig.othersConfig.fileConfigInfo.configPath), UTF_8), ecnu.db.utils.TaskConfiguratorConfig.class);
         } else {
             CliConfigInfo cliConfigInfo = taskConfiguratorConfig.othersConfig.cliConfigInfo;
@@ -176,13 +177,8 @@ public class TaskConfigurator implements Callable<Integer> {
         logger.info("获取查询计划完成");
         logger.info("开始实例化查询计划");
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        queryInstantiation(allConstraintChains, samplingSize);
+        Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
         logger.info("实例化查询计划成功, 实例化的参数为");
-        Map<Integer, Parameter> id2Parameter = new HashMap<>();
-        allConstraintChains.stream()
-                .flatMap((l) -> l.getParameters().stream())
-                .collect(Collectors.toList())
-                .forEach((param) -> id2Parameter.put(param.getId(), param));
         logger.info(String.valueOf(id2Parameter.values()));
         logger.info("开始持久化表结构信息");
         SchemaManager.getInstance().storeSchemaInfo();

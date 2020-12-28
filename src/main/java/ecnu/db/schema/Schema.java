@@ -15,6 +15,7 @@ public class Schema {
     private List<String> primaryKeys;
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new HashMap<>();
+    @JsonIgnore
     private int joinTag;
 
     public Schema() {
