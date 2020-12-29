@@ -14,10 +14,7 @@ import picocli.CommandLine;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,11 +40,12 @@ class DataGenerator implements Callable<Integer> {
         SchemaManager.getInstance().loadSchemaInfo();
         ColumnManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnDistribution();
-        JoinInfoTableManager.setJoinInfoTablePath(configPath);
+        JoinInfoTableManager.getInstance().setJoinInfoTablePath(configPath);
         Map<String, List<ConstraintChain>> query2chains = CommonUtils.loadConstrainChainResult(configPath);
         int stepRange = stepSize * generatorNum;
         Multimap<String, ConstraintChain> schema2chains = getSchema2Chains(query2chains);
         for (String schemaName : SchemaManager.getInstance().createTopologicalOrder()) {
+            logger.info("开始输出表数据"+schemaName);
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(outputPath + "/" + schemaName + generatorId));
             int resultStart = stepSize * generatorId;
             int tableSize = SchemaManager.getInstance().getTableSize(schemaName);
@@ -55,21 +53,21 @@ class DataGenerator implements Callable<Integer> {
             while (resultStart < tableSize) {
                 int range = Math.min(resultStart + stepSize, tableSize) - resultStart;
                 ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
-                computeFksAndPkJoinInfo(resultStart, range, schema2chains.get(schemaName));
-                String[][] columnData = getColumnData();
-                bufferedWriter.write(IntStream.range(0, columnData[0].length).parallel().mapToObj(
-                        index -> String.join(",", columnData[index])
-                ).collect(Collectors.joining(System.lineSeparator())));
+                //computeFksAndPkJoinInfo(resultStart, range, schema2chains.get(schemaName));
+                String[][] columnData = attColumnNames.parallelStream()
+                        .map(attColumnName -> ColumnManager.getInstance().getData(attColumnName)).toArray(String[][]::new);
+                bufferedWriter.write(IntStream.range(0, columnData[0].length).parallel()
+                        .mapToObj(index -> Arrays.stream(columnData)
+                                .map(column -> column[index]).collect(Collectors.joining(",")))
+                        .collect(Collectors.joining(System.lineSeparator())));
                 resultStart += range + stepRange;
             }
             bufferedWriter.close();
+            logger.info("输出表数据"+schemaName+"完成");
         }
         return 0;
     }
 
-    private String[][] getColumnData() {
-        return null;
-    }
 
     private static Multimap<String, ConstraintChain> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
         Multimap<String, ConstraintChain> schema2chains = ArrayListMultimap.create();

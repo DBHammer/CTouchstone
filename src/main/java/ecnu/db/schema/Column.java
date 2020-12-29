@@ -273,6 +273,7 @@ public class Column {
         //赋值随机数据
         int i = 0;
         long lastBound = 0;
+        bucketBound2FreeSpace.sort(Map.Entry.comparingByKey());
         for (Map.Entry<Long, BigDecimal> bucket2Probability : bucketBound2FreeSpace) {
             int randomSize;
             if (++i == bucketBound2FreeSpace.size()) {
@@ -280,8 +281,13 @@ public class Column {
             } else {
                 randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue();
             }
-            long[] randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, lastBound = bucket2Probability.getKey()).toArray();
-            System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);
+            try {
+                //todo
+                long[] randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, lastBound = bucket2Probability.getKey()).toArray();
+                System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             currentIndex += randomSize;
         }
 

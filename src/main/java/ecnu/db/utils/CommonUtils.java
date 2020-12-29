@@ -36,7 +36,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author xuechao.lian
  */
 public class CommonUtils {
-    public final static int stepSize = 10000;
+    public final static int stepSize = 100000;
     public final static MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public final static String DUMP_FILE_POSTFIX = "dump";
     public final static String SQL_FILE_POSTFIX = ".sql";

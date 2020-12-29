@@ -5,25 +5,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
 public class JoinInfoTableManager {
-    private final Logger logger = LoggerFactory.getLogger(JoinInfoTableManager.class);
-    private final ConcurrentHashMap<String, JoinInfoTable> TABLE_NAME_2_JOIN_INFORMATION_TABLE = new ConcurrentHashMap<>();
     private int joinInfoTableId;
     private int joinInfoTableNum;
     private String joinInfoTablePath;
+    private static final JoinInfoTableManager INSTANCE = new JoinInfoTableManager();
+    private final Logger logger = LoggerFactory.getLogger(JoinInfoTableManager.class);
+    private final HashMap<String, JoinInfoTable> TABLE_NAME_2_JOIN_INFORMATION_TABLE = new HashMap<>();
 
-    public static void setJoinInfoTablePath(String joinInfoTablePath) {
-//        this.joinInfoTablePath = joinInfoTablePath;
+
+    private JoinInfoTableManager() {
     }
 
-    public JoinInfoTable getJoinInformationTable(String tableName) {
-        TABLE_NAME_2_JOIN_INFORMATION_TABLE.putIfAbsent(tableName, new JoinInfoTable());
-        return TABLE_NAME_2_JOIN_INFORMATION_TABLE.get(tableName);
+    public static JoinInfoTableManager getInstance() {
+        return INSTANCE;
+    }
+
+    public void setJoinInfoTablePath(String joinInfoTablePath) {
+        this.joinInfoTablePath = joinInfoTablePath;
+    }
+
+    public void putJoinInfoTable(String tableName, JoinInfoTable joinInfoTable) {
+        if (TABLE_NAME_2_JOIN_INFORMATION_TABLE.containsKey(tableName)) {
+            TABLE_NAME_2_JOIN_INFORMATION_TABLE.get(tableName).mergeJoinInfo(joinInfoTable);
+        } else {
+            TABLE_NAME_2_JOIN_INFORMATION_TABLE.put(tableName, joinInfoTable);
+        }
     }
 
     public void persistentAndMergeOthers(String tableName) throws IOException, TouchstoneException, InterruptedException, ClassNotFoundException {
@@ -41,25 +50,11 @@ public class JoinInfoTableManager {
                 while (!otherJoinInfoTableFile.exists()) {
                     Thread.sleep(1000);
                 }
-                TABLE_NAME_2_JOIN_INFORMATION_TABLE.get(tableName).mergeJoinInfo(
-                        (JoinInfoTable) new ObjectInputStream(new FileInputStream(otherJoinInfoTableFile)).readObject());
+                putJoinInfoTable(tableName, (JoinInfoTable) new ObjectInputStream(new FileInputStream(otherJoinInfoTableFile)).readObject());
             }
         }
         logger.info("读取所有JoinInfoTable-" + tableName + "成功");
     }
 
 
-
-    private void initJoinInfoTable(int size, Map<Integer, boolean[]> pkBitMap) {
-        List<Integer> pks = new ArrayList<>(pkBitMap.keySet());
-        pks.sort(Integer::compareTo);
-        for (int i = 0; i < size; i++) {
-            long bitMap = 1L;
-            for (int pk : pks) {
-                bitMap = ((pkBitMap.get(pk)[i] ? 1L : 0L) & (bitMap << 1));
-            }
-            //todo
-//            joinInfoTable.addJoinInfo(bitMap, new int[]{i});
-        }
-    }
 }

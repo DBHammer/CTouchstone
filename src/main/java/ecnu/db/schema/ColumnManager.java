@@ -149,7 +149,20 @@ public class ColumnManager {
     }
 
     public void prepareGeneration(List<String> columnNames, int size) {
-        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
+        try {
+//            columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
+            for (String columnName : columnNames) {
+                try {
+                    getColumn(columnName).prepareTupleData(size);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(columnNames);
+            System.out.println(size);
+            e.printStackTrace();
+        }
     }
 
     public String[] getData(String columnName) {

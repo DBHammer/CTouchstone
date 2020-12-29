@@ -24,7 +24,7 @@ public class JoinInfoTable implements Externalizable {
      * 1. 当前list被add的次数n
      * 2. 当前list下一个允许被add的item的index
      * 3. 随机概率值W
-     * 使用double记录次数可以保证，在 2^52≈4.5E15 范围内的整数的次数可以被准确的记录，而数据生成的任务量，一般不会达到这个量级
+     * 使用double记录次数可以保证，在 2^52≈4.5E15 范围内的整数的次数可以被准确的记录，该数值大于int的最大值
      */
     private final Map<Long, double[]> counters = new HashMap<>();
     /**
@@ -48,9 +48,9 @@ public class JoinInfoTable implements Externalizable {
         JoinInfoTable.maxListSize = maxListSize;
     }
 
-    public void mergeJoinInfo(JoinInfoTable toMergeTable) throws TouchstoneException {
+    public void mergeJoinInfo(JoinInfoTable toMergeTable) {
         if (primaryKeySize != toMergeTable.primaryKeySize) {
-            throw new TouchstoneException("复合主键的size不同");
+            throw new UnsupportedOperationException("复合主键的size不同");
         }
         toMergeTable.joinInfo.forEach((k, v) -> {
             joinInfo.merge(k, v, (v1, v2) -> {
