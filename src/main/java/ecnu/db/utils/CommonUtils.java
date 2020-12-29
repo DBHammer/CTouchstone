@@ -1,12 +1,10 @@
 package ecnu.db.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ecnu.db.constraintchain.arithmetic.ArithmeticNode;
@@ -17,11 +15,9 @@ import ecnu.db.constraintchain.chain.ConstraintChainNodeDeserializer;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprNodeDeserializer;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.MathContext;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -80,7 +76,7 @@ public class CommonUtils {
             .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
 
     public static long getUnixTimeStamp(String timeValue) {
-        return LocalDateTime.parse(timeValue, CommonUtils.FMT).toEpochSecond(ZoneOffset.UTC);
+        return LocalDateTime.parse(timeValue, CommonUtils.FMT).toEpochSecond(ZoneOffset.UTC) * 1000;
     }
 
 

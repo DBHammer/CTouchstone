@@ -57,7 +57,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
 
     @Override
     public String toString() {
-        return root.toString() + ", probability:" + probability;
+        return root.toString();
     }
 
     public boolean[] evaluate() throws TouchstoneException {

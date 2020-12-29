@@ -107,7 +107,11 @@ public class Column {
             default:
                 throw new UnsupportedOperationException();
         }
-        parameters.parallelStream().forEach(parameter -> parameter.setData(bound));
+        parameters.parallelStream().forEach(parameter -> {
+            parameter.setData(bound);
+            parameter.setDataValue(transferDataToValue(bound));
+        });
+
         this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
     }
 
@@ -285,7 +289,7 @@ public class Column {
         long temp;
         int swapIndex;
         Random rnd = ThreadLocalRandom.current();
-        for (int index = columnData.length - 1; index >= 0; index--) {
+        for (int index = columnData.length - 1; index > 0; index--) {
             swapIndex = rnd.nextInt(index);
             temp = columnData[swapIndex];
             columnData[swapIndex] = columnData[index];
@@ -356,15 +360,15 @@ public class Column {
     public String transferDataToValue(long data) {
         switch (columnType) {
             case INTEGER:
-                return String.valueOf((specialValue * data) + min);
+                return Long.toString((specialValue * data) + min);
             case DECIMAL:
-                return Double.toString((double) (data + min) / specialValue);
+                return Double.toString(((double) (data + min)) / specialValue);
             case VARCHAR:
                 return stringTemplate.transferColumnData2Value(specialValue, data);
             case DATE:
-                return Instant.ofEpochMilli(data).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
+                return Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
             case DATETIME:
-                return Instant.ofEpochMilli(data).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE);
+                return Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE);
             default:
                 throw new UnsupportedOperationException();
         }

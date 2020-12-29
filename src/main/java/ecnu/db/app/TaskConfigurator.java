@@ -44,7 +44,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @CommandLine.Command(name = "prepare", description = "get database information, instantiate queries, prepare for data generation",
         mixinStandardHelpOptions = true)
 public class TaskConfigurator implements Callable<Integer> {
-    private static final Pattern PATTERN = Pattern.compile("'(([0-9]+),[0,1])'");
+    private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
     private final Logger logger = LoggerFactory.getLogger(TaskConfigurator.class);
     private String resultDir;
     @CommandLine.ArgGroup(exclusive = false, multiplicity = "1")
@@ -199,7 +199,7 @@ public class TaskConfigurator implements Callable<Integer> {
             String query = queryName2QueryTemplate.getValue();
             List<List<String>> matches = matchPattern(PATTERN, query);
             for (List<String> group : matches) {
-                int parameterId = Integer.parseInt(group.get(2));
+                int parameterId = Integer.parseInt(group.get(1));
                 String parameterData = id2Parameter.remove(parameterId).getDataValue();
                 try {
                     query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));

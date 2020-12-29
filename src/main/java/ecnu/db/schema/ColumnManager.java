@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -94,16 +93,7 @@ public class ColumnManager {
     }
 
     public void initAllEqParameter() {
-        for (Map.Entry<String, Column> columnName2Column : columns.entrySet()) {
-            try {
-                columnName2Column.getValue().initEqParameter();
-            } catch (Exception e) {
-                System.out.println(columnName2Column.getKey() + e.getMessage());
-                e.printStackTrace();
-            }
-        }
-        // todo 找到更好的方式
-        // columns.values().parallelStream().forEach(Column::initEqParameter);
+        columns.values().parallelStream().forEach(Column::initEqParameter);
     }
 
     /**
@@ -162,35 +152,9 @@ public class ColumnManager {
         columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
     }
 
-//    public List<String> getData(String columnName) {
-//        Column column = getColumn(columnName);
-//        switch (column.getColumnType()) {
-//            case DATE:
-//            case DATETIME:
-//                return Arrays.stream(((DateTimeColumn) column).getTupleData())
-//                        .parallel()
-//                        .map((d) -> String.format("'%s'", DateTimeColumn.FMT.format(d)))
-//                        .collect(Collectors.toList());
-//            case INTEGER:
-//                return Arrays.stream(((IntColumn) column).getTupleData())
-//                        .parallel()
-//                        .mapToObj(Integer::toString)
-//                        .collect(Collectors.toList());
-//            case DECIMAL:
-//                return Arrays.stream(((DecimalColumn) column).getTupleData())
-//                        .parallel()
-//                        .mapToObj((d) -> BigDecimal.valueOf(d).toString())
-//                        .collect(Collectors.toList());
-//            case VARCHAR:
-//                return Arrays.stream(((StringColumn) column).getTupleData())
-//                        .parallel()
-//                        .map((d) -> String.format("'%s'", d))
-//                        .collect(Collectors.toList());
-//            case BOOL:
-//            default:
-//                throw new UnsupportedOperationException();
-//        }
-//    }
+    public String[] getData(String columnName) {
+        return getColumn(columnName).output();
+    }
 
     public void insertBetweenProbability(String columnName, BigDecimal probability,
                                          CompareOperator lessOperator, List<Parameter> lessParameters,
