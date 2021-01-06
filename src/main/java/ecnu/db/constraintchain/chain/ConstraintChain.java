@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 /**
  * @author wangqingshuai
@@ -75,32 +76,29 @@ public class ConstraintChain {
             switch (node.getConstraintChainNodeType()) {
                 case FILTER:
                     boolean[] evaluateStatus = ((ConstraintChainFilterNode) node).evaluate();
-                    assert evaluateStatus.length == flag.length;
-                    for (int i = 0; i < flag.length; i++) {
-                        flag[i] &= evaluateStatus[i];
-                    }
+                    IntStream.range(0, pkBitMap.length).parallel().forEach(i -> flag[i] &= evaluateStatus[i]);
                     break;
                 case FK_JOIN:
-                    //todo 引入规则
                     ConstraintChainFkJoinNode constraintChainFkJoinNode = (ConstraintChainFkJoinNode) node;
                     double probability = constraintChainFkJoinNode.getProbability().doubleValue();
-                    long[] fkBitMap = fkBitMaps.get(constraintChainFkJoinNode.getLocalCols());
+                    long[] fkBitMap = fkBitMaps.computeIfAbsent(constraintChainFkJoinNode.getLocalCols() + ":" +
+                            constraintChainFkJoinNode.getRefCols(), k -> new long[pkBitMap.length]);
                     long fkTag = constraintChainFkJoinNode.getPkTag();
-                    for (int i = 0; i < flag.length; i++) {
-                        if (flag[i]) {
-                            flag[i] &= ThreadLocalRandom.current().nextDouble() > probability;
-                            fkBitMap[i] += fkTag * (1 + Boolean.compare(flag[i], false));
-                        }
-                    }
+                    IntStream.range(0, pkBitMap.length).parallel()
+                            .filter(i -> flag[i])
+                            .forEach(i -> {
+                                //todo 引入规则
+                                flag[i] &= ThreadLocalRandom.current().nextDouble() < probability;
+                                fkBitMap[i] += fkTag * (1 + Boolean.compare(flag[i], false));
+                            });
                     break;
                 case PK_JOIN:
                     long pkTag = ((ConstraintChainPkJoinNode) node).getPkTag();
-                    for (int i = 0; i < flag.length; i++) {
-                        pkBitMap[i] += pkTag * (1 + Boolean.compare(flag[i], false));
-                    }
+                    IntStream.range(0, flag.length).parallel()
+                            .forEach(i -> pkBitMap[i] += pkTag * (1 + Boolean.compare(flag[i], false)));
                     break;
                 default:
-                    throw new TouchstoneException("不支持的Node类型");
+                    throw new UnsupportedOperationException("不支持的Node类型");
             }
         }
     }

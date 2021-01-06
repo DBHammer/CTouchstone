@@ -32,7 +32,7 @@ public class ExecutionNode {
     /**
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
      */
-    private int joinTag = -1;
+    private long joinTag = -1;
 
     public ExecutionNode(String id, ExecutionNodeType type, int outputRows, String info) {
         this.type = type;
@@ -53,11 +53,11 @@ public class ExecutionNode {
     /**
      * @return 当前表最新的join tag
      */
-    public int getJoinTag() {
+    public long getJoinTag() {
         return joinTag;
     }
 
-    public void setJoinTag(int joinTag) {
+    public void setJoinTag(long joinTag) {
         this.joinTag = joinTag;
     }
 

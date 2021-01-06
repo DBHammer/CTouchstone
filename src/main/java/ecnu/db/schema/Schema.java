@@ -16,7 +16,7 @@ public class Schema {
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new HashMap<>();
     @JsonIgnore
-    private int joinTag;
+    private long joinTag;
 
     public Schema() {
     }
@@ -39,6 +39,7 @@ public class Schema {
         return canonicalColumnNames;
     }
 
+
     @JsonIgnore
     public List<String> getCanonicalColumnNamesNotFk() {
         List<String> canonicalColumnNamesNotKey = new LinkedList<>(canonicalColumnNames);
@@ -47,9 +48,9 @@ public class Schema {
         return canonicalColumnNamesNotKey;
     }
 
-    public int getJoinTag() {
-        int temp = joinTag;
-        joinTag += 1;
+    public long getJoinTag() {
+        long temp = joinTag;
+        joinTag *= 4;
         return temp;
     }
 
@@ -115,12 +116,12 @@ public class Schema {
     @JsonGetter
     @SuppressWarnings("unused")
     public String getPrimaryKeys() {
-        return primaryKeys.toString();
+        return String.join(",", primaryKeys);
     }
 
     public void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
         if (this.primaryKeys == null) {
-            this.primaryKeys = new LinkedList<>(Arrays.asList(primaryKeys.split(",")));
+            this.primaryKeys = Arrays.asList(primaryKeys.split(","));
         } else {
             Set<String> newKeys = new HashSet<>(Arrays.asList(primaryKeys.split(",")));
             Set<String> keys = new HashSet<>(this.primaryKeys);

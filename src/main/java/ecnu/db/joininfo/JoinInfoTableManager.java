@@ -8,12 +8,12 @@ import java.io.*;
 import java.util.HashMap;
 
 public class JoinInfoTableManager {
+    private static final JoinInfoTableManager INSTANCE = new JoinInfoTableManager();
+    private final Logger logger = LoggerFactory.getLogger(JoinInfoTableManager.class);
+    private final HashMap<String, JoinInfoTable> pkName2JoinInformationTable = new HashMap<>();
     private int joinInfoTableId;
     private int joinInfoTableNum;
     private String joinInfoTablePath;
-    private static final JoinInfoTableManager INSTANCE = new JoinInfoTableManager();
-    private final Logger logger = LoggerFactory.getLogger(JoinInfoTableManager.class);
-    private final HashMap<String, JoinInfoTable> TABLE_NAME_2_JOIN_INFORMATION_TABLE = new HashMap<>();
 
 
     private JoinInfoTableManager() {
@@ -28,16 +28,16 @@ public class JoinInfoTableManager {
     }
 
     public void putJoinInfoTable(String tableName, JoinInfoTable joinInfoTable) {
-        if (TABLE_NAME_2_JOIN_INFORMATION_TABLE.containsKey(tableName)) {
-            TABLE_NAME_2_JOIN_INFORMATION_TABLE.get(tableName).mergeJoinInfo(joinInfoTable);
+        if (pkName2JoinInformationTable.containsKey(tableName)) {
+            pkName2JoinInformationTable.get(tableName).mergeJoinInfo(joinInfoTable);
         } else {
-            TABLE_NAME_2_JOIN_INFORMATION_TABLE.put(tableName, joinInfoTable);
+            pkName2JoinInformationTable.put(tableName, joinInfoTable);
         }
     }
 
     public void persistentAndMergeOthers(String tableName) throws IOException, TouchstoneException, InterruptedException, ClassNotFoundException {
         File file = new File(joinInfoTablePath + tableName + joinInfoTableId + ".swp");
-        new ObjectOutputStream(new FileOutputStream(file)).writeObject(TABLE_NAME_2_JOIN_INFORMATION_TABLE.get(tableName));
+        new ObjectOutputStream(new FileOutputStream(file)).writeObject(pkName2JoinInformationTable.get(tableName));
         if (file.renameTo(new File(joinInfoTablePath + tableName + joinInfoTableId))) {
             logger.info("持久化JoinInfoTable-" + tableName + "-" + joinInfoTableId + "成功");
         } else {
@@ -56,5 +56,7 @@ public class JoinInfoTableManager {
         logger.info("读取所有JoinInfoTable-" + tableName + "成功");
     }
 
-
+    public int[][] getFks(String tableName, long status, int size) {
+        return pkName2JoinInformationTable.get(tableName).getFks(status, size);
+    }
 }

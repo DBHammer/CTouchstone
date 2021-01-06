@@ -79,7 +79,7 @@ public class TaskConfigurator implements Callable<Integer> {
                 .filter((f) -> f instanceof MultiVarFilterOperation)
                 .map(f -> ((MultiVarFilterOperation) f).getAllCanonicalColumnNames())
                 .flatMap(Collection::stream).collect(Collectors.toSet());
-        ColumnManager.getInstance().prepareGenerationAll(prepareSamplingColumnName, samplingSize);
+        ColumnManager.getInstance().prepareGeneration(prepareSamplingColumnName, samplingSize);
         filterOperations.parallelStream()
                 .filter((f) -> f instanceof MultiVarFilterOperation)
                 .map(f -> (MultiVarFilterOperation) f)

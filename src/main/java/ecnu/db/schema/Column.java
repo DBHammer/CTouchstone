@@ -11,12 +11,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  * @author wangqingshuai
  */
 public class Column {
+    @JsonIgnore
+    private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
+    @JsonIgnore
+    private final HashSet<Integer> likeParameterId = new HashSet<>();
     private ColumnType columnType;
     private long min;
     private long range;
@@ -25,23 +30,17 @@ public class Column {
     private List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace = new LinkedList<>();
     private HashMap<Long, BigDecimal> eqConstraint2Probability = new HashMap<>();
     private StringTemplate stringTemplate;
-
     @JsonIgnore
     private boolean hasBetweenConstraint = false;
-    @JsonIgnore
-    private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
-    @JsonIgnore
-    private final HashSet<Integer> likeParameterId = new HashSet<>();
     @JsonIgnore
     private long[] columnData;
     @JsonIgnore
     private boolean columnData2ComputeData = false;
+    @JsonIgnore
+    private double[] computeData;
 
     public Column() {
     }
-
-    @JsonIgnore
-    private double[] computeData;
 
     public Column(ColumnType columnType) {
         this.columnType = columnType;
@@ -51,20 +50,8 @@ public class Column {
         bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(range, BigDecimal.ONE));
     }
 
-    public void setStringTemplate(StringTemplate stringTemplate) {
-        this.stringTemplate = stringTemplate;
-    }
-
     public ColumnType getColumnType() {
         return columnType;
-    }
-
-    public void setSpecialValue(long specialValue) {
-        this.specialValue = specialValue;
-    }
-
-    public void setMin(long min) {
-        this.min = min;
     }
 
     public long getRange() {
@@ -165,7 +152,6 @@ public class Column {
         }
         if (operator == CompareOperator.LIKE) {
             List<Integer> parameterIds = parameters.stream().mapToInt(Parameter::getId).collect(ArrayList::new, List::add, List::addAll);
-            System.out.println(parameterIds);
             likeParameterId.addAll(parameterIds);
         }
     }
@@ -380,18 +366,29 @@ public class Column {
         }
     }
 
-    public String[] output() {
-        return Arrays.stream(columnData).parallel().mapToObj(this::transferDataToValue).toArray(String[]::new);
+    public void setColumnData(long[] columnData) {
+        this.columnData = columnData;
+    }
+
+    public List<String> output() {
+        return Arrays.stream(columnData).parallel().mapToObj(this::transferDataToValue).collect(Collectors.toList());
     }
 
     public long getMin() {
         return min;
     }
 
+    public void setMin(long min) {
+        this.min = min;
+    }
+
     public long getSpecialValue() {
         return specialValue;
     }
 
+    public void setSpecialValue(long specialValue) {
+        this.specialValue = specialValue;
+    }
 
     public List<Map.Entry<Long, BigDecimal>> getBucketBound2FreeSpace() {
         return bucketBound2FreeSpace;
@@ -411,5 +408,9 @@ public class Column {
 
     public StringTemplate getStringTemplate() {
         return stringTemplate;
+    }
+
+    public void setStringTemplate(StringTemplate stringTemplate) {
+        this.stringTemplate = stringTemplate;
     }
 }

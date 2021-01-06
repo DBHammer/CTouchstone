@@ -1,15 +1,13 @@
 package ecnu.db.joininfo;
 
-import ecnu.db.utils.exception.TouchstoneException;
-
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static java.lang.Math.*;
@@ -26,7 +24,7 @@ public class JoinInfoTable implements Externalizable {
      * 3. 随机概率值W
      * 使用double记录次数可以保证，在 2^52≈4.5E15 范围内的整数的次数可以被准确的记录，该数值大于int的最大值
      */
-    private final Map<Long, double[]> counters = new HashMap<>();
+    private final ConcurrentHashMap<Long, double[]> counters = new ConcurrentHashMap<>();
     /**
      * 复合主键的数量
      */
@@ -34,7 +32,7 @@ public class JoinInfoTable implements Externalizable {
     /**
      * join info table，map status -> key list
      */
-    private Map<Long, List<int[]>> joinInfo = new HashMap<>();
+    private ConcurrentHashMap<Long, List<int[]>> joinInfo = new ConcurrentHashMap<>();
 
 
     public JoinInfoTable() {
@@ -85,26 +83,41 @@ public class JoinInfoTable implements Externalizable {
      * 插入符合这一status的一组KeyId
      * reservoir sampling following Algorithm L in "Reservoir-Sampling Algorithms of Time Complexity O(n(1+log(N/n)))"
      *
-     * @param status join status
-     * @param key    一个复合主键
+     * @param status2Keys join status to 一组复合主键
      */
-    public void addJoinInfo(long status, int[] key) {
+    public void addJoinInfo(Map.Entry<Long, List<int[]>> status2Keys) {
+        long status = status2Keys.getKey();
+        List<int[]> keys = status2Keys.getValue();
         //如果不存在该status，初始化计数器，predict id和权重w
         double[] counter = counters.computeIfAbsent(status, k -> {
                     double w = exp(log(1 - ThreadLocalRandom.current().nextDouble()) / maxListSize);
                     return new double[]{0, maxListSize + predictIdOffset(w), w};
                 }
         );
-        counter[0]++;
-        if (counter[0] <= maxListSize) {
-            joinInfo.computeIfAbsent(status, k -> new ArrayList<>(maxListSize)).add(key);
-        } else {
+
+        int index = 0;
+        while (counter[0]++ < maxListSize && index < keys.size()) {
+            joinInfo.computeIfAbsent(status, k -> new ArrayList<>(maxListSize)).add(keys.get(index++));
+        }
+
+        while (index < keys.size()) {
             if (counter[0] >= counter[1]) {
                 counter[1] += predictIdOffset(counter[2]);
-                joinInfo.get(status).set(ThreadLocalRandom.current().nextInt(maxListSize), key);
+                joinInfo.get(status).set(ThreadLocalRandom.current().nextInt(maxListSize), keys.get(index));
                 counter[2] *= exp(log(1 - ThreadLocalRandom.current().nextDouble()) / maxListSize);
             }
+            // 跳跃index到下一个可以插入的位置
+            int stepSize = Math.min(keys.size(), (int) Math.ceil(counter[1])) - index;
+            counter[0] += stepSize;
+            index += stepSize;
         }
+    }
+
+    public int[][] getFks(long bitmap, int size) {
+        int[][] allKeys = joinInfo.entrySet().parallelStream().filter(e -> (e.getKey() & bitmap) == e.getKey())
+                .map(Map.Entry::getValue).flatMap(List::stream).toArray(int[][]::new);
+        return ThreadLocalRandom.current().ints(size, 0, allKeys.length).parallel()
+                .mapToObj(index -> allKeys[index]).toArray(int[][]::new);
     }
 
     /**
@@ -137,7 +150,7 @@ public class JoinInfoTable implements Externalizable {
     public void readExternal(ObjectInput in) throws IOException {
         primaryKeySize = in.readInt();
         int joinInfoSize = in.readInt();
-        joinInfo = new HashMap<>(joinInfoSize);
+        joinInfo = new ConcurrentHashMap<>(joinInfoSize);
         for (int i = 0; i < joinInfoSize; i++) {
             Long bitmap = in.readLong();
             int keyListSize = in.readInt();

@@ -10,9 +10,9 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
@@ -32,6 +32,10 @@ public class ColumnManager {
 
     public static ColumnManager getInstance() {
         return INSTANCE;
+    }
+
+    public void setData(String columnName, long[] data) {
+        getColumn(columnName).setColumnData(data);
     }
 
     public void setSpecialValue(String columnName, int specialValue) {
@@ -86,10 +90,6 @@ public class ColumnManager {
         columns = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(distributionInfoPath, UTF_8),
                 new TypeReference<LinkedHashMap<String, Column>>() {
                 });
-    }
-
-    public void prepareGenerationAll(Set<String> tableNames, int size) {
-        tableNames.stream().parallel().forEach(tableName -> columns.get(tableName).prepareTupleData(size));
     }
 
     public void initAllEqParameter() {
@@ -148,24 +148,11 @@ public class ColumnManager {
         }
     }
 
-    public void prepareGeneration(List<String> columnNames, int size) {
-        try {
-//            columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
-            for (String columnName : columnNames) {
-                try {
-                    getColumn(columnName).prepareTupleData(size);
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(columnNames);
-            System.out.println(size);
-            e.printStackTrace();
-        }
+    public void prepareGeneration(Collection<String> columnNames, int size) {
+        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
     }
 
-    public String[] getData(String columnName) {
+    public List<String> getData(String columnName) {
         return getColumn(columnName).output();
     }
 

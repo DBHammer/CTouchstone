@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String refCols;
     private String localCols;
-    private int pkTag;
+    private long pkTag;
     private BigDecimal probability;
 
 
@@ -16,7 +16,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         super(ConstraintChainNodeType.FK_JOIN);
     }
 
-    public ConstraintChainFkJoinNode(String localCols, String refCols, int pkTag, BigDecimal probability) {
+    public ConstraintChainFkJoinNode(String localCols, String refCols, long pkTag, BigDecimal probability) {
         super(ConstraintChainNodeType.FK_JOIN);
         this.refCols = refCols;
         this.pkTag = pkTag;
@@ -31,31 +31,27 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     @Override
     public String toString() {
-        return String.format("{pkTag:%d,refCols:%s,probability:%s}", pkTag, refCols , probability);
+        return String.format("{pkTag:%d,refCols:%s,probability:%s}", pkTag, refCols, probability);
     }
 
-    public int getPkTag() {
+    public long getPkTag() {
         return pkTag;
+    }
+
+    public void setPkTag(long pkTag) {
+        this.pkTag = pkTag;
     }
 
     public BigDecimal getProbability() {
         return probability;
     }
 
-    public String getLocalCols() {
-        return localCols;
-    }
-
-    public void setRefCols(String refCols) {
-        this.refCols = refCols;
-    }
-
-    public void setPkTag(int pkTag) {
-        this.pkTag = pkTag;
-    }
-
     public void setProbability(BigDecimal probability) {
         this.probability = probability;
+    }
+
+    public String getLocalCols() {
+        return localCols;
     }
 
     public void setLocalCols(String localCols) {
@@ -64,5 +60,9 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     public String getRefCols() {
         return refCols;
+    }
+
+    public void setRefCols(String refCols) {
+        this.refCols = refCols;
     }
 }

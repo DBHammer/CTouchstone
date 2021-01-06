@@ -8,22 +8,6 @@ public class ConstraintChainManager {
     private static final String[] COLOR_LIST = {"#FFFFCC", "#CCFFFF", "#FFCCCC"};
     private static final String GRAPH_TEMPLATE = "digraph \"%s\" {rankdir=BT;" + System.lineSeparator() + "%s}";
 
-    private static class SubGraph {
-        private String joinTag;
-        private String pkInfo;
-        private String fkInfo;
-
-        public SubGraph(String joinTag) {
-            this.joinTag = joinTag;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("\tsubgraph \"%s\" {" + System.lineSeparator() + "\t\t%s\t\t%s\t}"
-                    + System.lineSeparator(), joinTag, pkInfo, fkInfo);
-        }
-    }
-
     public static String presentConstraintChains(String queryName, List<ConstraintChain> constraintChains) {
         StringBuilder graph = new StringBuilder();
         HashMap<String, SubGraph> subGraphHashMap = new HashMap<>(constraintChains.size());
@@ -43,7 +27,7 @@ public class ConstraintChainManager {
                         break;
                     case FK_JOIN:
                         ConstraintChainFkJoinNode fkJoinNode = ((ConstraintChainFkJoinNode) node);
-                        int tag = fkJoinNode.getPkTag();
+                        long tag = fkJoinNode.getPkTag();
                         String pkCols = fkJoinNode.getRefCols().split("\\.")[2];
                         currentNodeInfo = "\"Fk" + fkJoinNode.getLocalCols().split("\\.")[2] + tag + "\"";
                         String subGraphTag = "cluster" + pkCols + tag;
@@ -55,7 +39,7 @@ public class ConstraintChainManager {
                         break;
                     case PK_JOIN:
                         ConstraintChainPkJoinNode pkJoinNode = ((ConstraintChainPkJoinNode) node);
-                        int pkTag = pkJoinNode.getPkTag();
+                        long pkTag = pkJoinNode.getPkTag();
                         String locPks = pkJoinNode.getPkColumns()[0];
                         currentNodeInfo = "\"Pk" + locPks + pkTag + "\"";
                         String localSubGraph = "cluster" + locPks + pkTag;
@@ -89,5 +73,21 @@ public class ConstraintChainManager {
             subGraphInfo.append(subGraphs.get(size));
         }
         return String.format(GRAPH_TEMPLATE, queryName, subGraphInfo.toString() + graph.toString());
+    }
+
+    private static class SubGraph {
+        private final String joinTag;
+        private String pkInfo;
+        private String fkInfo;
+
+        public SubGraph(String joinTag) {
+            this.joinTag = joinTag;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("\tsubgraph \"%s\" {" + System.lineSeparator() + "\t\t%s\t\t%s\t}"
+                    + System.lineSeparator(), joinTag, pkInfo, fkInfo);
+        }
     }
 }

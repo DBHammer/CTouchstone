@@ -63,7 +63,7 @@ public class SchemaManager {
         return getSchema(tableName).getTableSize();
     }
 
-    public int getJoinTag(String tableName) throws CannotFindSchemaException {
+    public long getJoinTag(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getJoinTag();
     }
 
@@ -99,6 +99,14 @@ public class SchemaManager {
 
     public List<String> getColumnNamesNotKey(String schemaName) throws CannotFindSchemaException {
         return getSchema(schemaName).getCanonicalColumnNamesNotFk();
+    }
+
+    public List<String> getColumnNames(String schemaName) throws CannotFindSchemaException {
+        return getSchema(schemaName).getCanonicalColumnNames();
+    }
+
+    public String getPrimaryKeyColumn(String schemaName) throws CannotFindSchemaException {
+        return getSchema(schemaName).getPrimaryKeys();
     }
 
     private Schema getSchema(String tableName) throws CannotFindSchemaException {
