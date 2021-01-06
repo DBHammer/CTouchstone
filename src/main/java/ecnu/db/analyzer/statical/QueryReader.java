@@ -31,9 +31,9 @@ public class QueryReader {
     private DbType dbType;
 
     public QueryReader(String defaultDatabaseName, String queriesDir) {
-        if(defaultDatabaseName==null){
+        if (defaultDatabaseName == null) {
             this.aliasVisitor = new ExportTableAliasVisitor();
-        }else {
+        } else {
             this.aliasVisitor = new ExportTableAliasVisitor(defaultDatabaseName);
         }
         this.queriesDir = queriesDir;

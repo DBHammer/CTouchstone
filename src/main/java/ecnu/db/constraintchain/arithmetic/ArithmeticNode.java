@@ -1,9 +1,5 @@
 package ecnu.db.constraintchain.arithmetic;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
-
 /**
  * @author wangqingshuai
  */

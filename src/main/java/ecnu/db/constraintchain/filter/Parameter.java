@@ -11,10 +11,6 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, resolver = ParameterResolver.class, property = "id", scope = Parameter.class)
 public class Parameter {
 
-    public void setDataValue(String dataValue) {
-        this.dataValue = dataValue;
-    }
-
     /**
      * parameter的id，用于后续实例化
      */
@@ -28,7 +24,6 @@ public class Parameter {
      */
     @JsonIgnore
     private String operand;
-
     /**
      * String化的值
      */
@@ -44,7 +39,6 @@ public class Parameter {
         this.dataValue = dataValue;
     }
 
-
     public Integer getId() {
         return id;
     }
@@ -55,6 +49,10 @@ public class Parameter {
 
     public String getDataValue() {
         return dataValue;
+    }
+
+    public void setDataValue(String dataValue) {
+        this.dataValue = dataValue;
     }
 
     public long getData() {

@@ -64,16 +64,15 @@ public class CommonUtils {
             .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
 
     private static final DefaultPrettyPrinter dpf = new DefaultPrettyPrinter();
-
-    static {
-        dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
-    }
-
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .setDefaultPrettyPrinter(dpf)
             .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
+
+    static {
+        dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
+    }
 
     public static long getUnixTimeStamp(String timeValue) {
         return LocalDateTime.parse(timeValue, CommonUtils.FMT).toEpochSecond(ZoneOffset.UTC) * 1000;

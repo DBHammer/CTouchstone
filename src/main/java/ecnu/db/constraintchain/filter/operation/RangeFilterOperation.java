@@ -39,17 +39,17 @@ public class RangeFilterOperation extends UniVarFilterOperation {
         return parameters;
     }
 
+    @Override
+    public void setParameters(List<Parameter> parameters) {
+        throw new UnsupportedOperationException();
+    }
+
     public void setLessOperator(boolean isAnd, Multimap<CompareOperator, UniVarFilterOperation> typ2Filter) {
         this.lessOperator = (isAnd && (typ2Filter.containsKey(CompareOperator.LT)) ? CompareOperator.LT : CompareOperator.LE);
     }
 
     public void setGreaterOperator(boolean isAnd, Multimap<CompareOperator, UniVarFilterOperation> typ2Filter) {
         this.greaterOperator = (isAnd && typ2Filter.containsKey(CompareOperator.GT)) ? CompareOperator.GT : CompareOperator.GE;
-    }
-
-    @Override
-    public void setParameters(List<Parameter> parameters) {
-        throw new UnsupportedOperationException();
     }
 
     public void addLessParameters(Collection<Parameter> parameter) {

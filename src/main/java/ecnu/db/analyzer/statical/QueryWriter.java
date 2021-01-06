@@ -64,7 +64,7 @@ public class QueryWriter {
         for (Parameter parameter : parameters) {
             String data = parameter.getDataValue();
             Collection<Pair<Integer, Integer>> matches = literalMap.get(data);
-            matches.addAll(literalMap.get("'"+data+"'"));
+            matches.addAll(literalMap.get("'" + data + "'"));
             if (matches.size() == 0) {
                 cannotFindArgs.add(parameter);
             } else if (matches.size() > 1) {

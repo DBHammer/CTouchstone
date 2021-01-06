@@ -35,8 +35,8 @@ public abstract class AbstractAnalyzer {
     protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
     protected double skipNodeThreshold = 0.01;
-    private DbConnector dbConnector;
     protected String defaultDatabase;
+    private DbConnector dbConnector;
 
     public void setDefaultDatabase(String defaultDatabase) {
         this.defaultDatabase = defaultDatabase;
@@ -249,7 +249,7 @@ public abstract class AbstractAnalyzer {
                 }
                 BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
                 SchemaManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
-                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable+"."+localCol, externalTable+"."+externalCol, node.getJoinTag(), probability);
+                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, node.getJoinTag(), probability);
                 constraintChain.addNode(fkJoinNode);
                 lastNodeLineCount = node.getOutputRows();
             }

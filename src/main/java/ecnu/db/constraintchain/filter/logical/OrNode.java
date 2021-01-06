@@ -6,7 +6,6 @@ import com.google.common.collect.Multimap;
 import ecnu.db.constraintchain.filter.BoolExprNode;
 import ecnu.db.constraintchain.filter.BoolExprType;
 import ecnu.db.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
@@ -17,7 +16,6 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import static ecnu.db.constraintchain.filter.BoolExprType.*;
 import static ecnu.db.constraintchain.filter.operation.UniVarFilterOperation.merge;
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 
@@ -66,7 +64,7 @@ public class OrNode implements BoolExprNode {
         Multimap<String, UniVarFilterOperation> lessCol2UniFilters = ArrayListMultimap.create();
         Multimap<String, UniVarFilterOperation> greaterCol2UniFilters = ArrayListMultimap.create();
         for (BoolExprNode child : Arrays.asList(leftNode, rightNode)) {
-            switch (child.getType()){
+            switch (child.getType()) {
                 case AND:
                 case OR:
                 case MULTI_FILTER_OPERATION:

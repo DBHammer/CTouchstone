@@ -7,12 +7,10 @@ public class DatabaseConnectorConfig {
     private String databaseIp;
     private String databasePort;
     private String databaseUser;
-
-    public DatabaseConnectorConfig() {
-    }
-
     private String databasePwd;
     private String databaseName;
+    public DatabaseConnectorConfig() {
+    }
 
     public DatabaseConnectorConfig(String databaseIp, String databasePort, String databaseUser, String databasePwd, String databaseName) {
         this.databaseIp = databaseIp;

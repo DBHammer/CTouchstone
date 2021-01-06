@@ -103,7 +103,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
      * todo 暂时不考虑null
      */
     public void instantiateMultiVarParameter() {
-        switch (operator){
+        switch (operator) {
             case GE:
             case GT:
                 probability = BigDecimal.ONE.subtract(probability);

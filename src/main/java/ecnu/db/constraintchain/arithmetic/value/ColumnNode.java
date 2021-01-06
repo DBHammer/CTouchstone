@@ -16,12 +16,12 @@ public class ColumnNode extends ArithmeticNode {
         super(ArithmeticNodeType.COLUMN);
     }
 
-    public void setCanonicalColumnName(String canonicalColumnName) {
-        this.canonicalColumnName = canonicalColumnName;
-    }
-
     public String getCanonicalColumnName() {
         return canonicalColumnName;
+    }
+
+    public void setCanonicalColumnName(String canonicalColumnName) {
+        this.canonicalColumnName = canonicalColumnName;
     }
 
     @Override

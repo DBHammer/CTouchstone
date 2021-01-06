@@ -1,6 +1,5 @@
 package ecnu.db.schema;
 
-import ecnu.db.schema.ColumnType;
 import ecnu.db.utils.exception.TouchstoneException;
 
 import java.util.HashMap;
