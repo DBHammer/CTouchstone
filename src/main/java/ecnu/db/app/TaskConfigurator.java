@@ -107,6 +107,10 @@ public class TaskConfigurator implements Callable<Integer> {
         SchemaManager.getInstance().setResultDir(config.getResultDirectory());
         ColumnManager.getInstance().setResultDir(config.getResultDirectory());
         resultDir = config.getResultDirectory();
+        if (taskConfiguratorConfig.isLoad) {
+            SchemaManager.getInstance().loadSchemaInfo();
+            ColumnManager.getInstance().loadColumnDistribution();
+        }
         DbConnector dbConnector;
         AbstractAnalyzer analyzer;
         switch (taskConfiguratorConfig.dbType) {
@@ -137,15 +141,20 @@ public class TaskConfigurator implements Callable<Integer> {
         logger.info("获取表名成功，表名为:" + tableNames);
         for (String canonicalTableName : tableNames) {
             logger.info("开始获取表" + canonicalTableName + "的列元数据信息");
-            Schema schema = new Schema(canonicalTableName, dbConnector.getColumnMetadata(canonicalTableName));
-            schema.setTableSize(dbConnector.getTableSize(canonicalTableName));
-            schema.setPrimaryKeys(dbConnector.getPrimaryKeys(canonicalTableName));
-            SchemaManager.getInstance().addSchema(canonicalTableName, schema);
-            logger.info("获取表" + canonicalTableName + "的列元数据信息成功");
-            logger.info("开始获取表" + canonicalTableName + "的数据分布");
-            ColumnManager.getInstance().setDataRangeBySqlResult(schema.getCanonicalColumnNames(),
-                    dbConnector.getDataRange(canonicalTableName, schema.getCanonicalColumnNames()));
-            logger.info("获取表" + canonicalTableName + "的数据分布成功");
+            if (SchemaManager.getInstance().containSchema(canonicalTableName)) {
+                logger.info("表" + canonicalTableName + "的列元数据信息已经load");
+            } else {
+                Schema schema = new Schema(canonicalTableName, dbConnector.getColumnMetadata(canonicalTableName));
+                schema.setTableSize(dbConnector.getTableSize(canonicalTableName));
+                schema.setPrimaryKeys(dbConnector.getPrimaryKeys(canonicalTableName));
+                SchemaManager.getInstance().addSchema(canonicalTableName, schema);
+                logger.info("获取表" + canonicalTableName + "的列元数据信息成功");
+                logger.info("开始获取表" + canonicalTableName + "的数据分布");
+                ColumnManager.getInstance().setDataRangeBySqlResult(schema.getCanonicalColumnNames(),
+                        dbConnector.getDataRange(canonicalTableName, schema.getCanonicalColumnNames()));
+                logger.info("获取表" + canonicalTableName + "的数据分布成功");
+            }
+
         }
         logger.info("获取表结构和数据分布成功");
         return queryFiles;
@@ -225,6 +234,8 @@ public class TaskConfigurator implements Callable<Integer> {
         private OthersConfig othersConfig;
         @CommandLine.Option(names = {"-t", "--db_type"}, required = true, description = "database version: ${COMPLETION-CANDIDATES}")
         private TouchstoneDbType dbType;
+        @CommandLine.Option(names = {"-l", "--load"})
+        private boolean isLoad;
     }
 
     static class OthersConfig {

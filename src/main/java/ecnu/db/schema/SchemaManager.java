@@ -59,6 +59,10 @@ public class SchemaManager {
         return getSchema(tableName).getPrimaryKeys();
     }
 
+    public boolean containSchema(String tableName) {
+        return schemas.containsKey(tableName);
+    }
+
     public int getTableSize(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getTableSize();
     }
