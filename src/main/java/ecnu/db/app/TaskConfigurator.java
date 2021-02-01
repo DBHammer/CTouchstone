@@ -175,6 +175,7 @@ public class TaskConfigurator implements Callable<Integer> {
                     index++;
                     String queryCanonicalName = queryFile.getName().replace(SQL_FILE_POSTFIX, "_" + index + SQL_FILE_POSTFIX);
                     logger.info(String.format("%-15s Status:开始获取", queryCanonicalName));
+                    queryAnalyzer.setAliasDic(queryReader.getTableAlias(query));
                     List<ConstraintChain> constraintChains = queryAnalyzer.extractQuery(query);
                     List<Parameter> parameters = constraintChains.stream().flatMap((c -> c.getParameters().stream())).collect(Collectors.toList());
                     query2constraintChains.put(queryCanonicalName, constraintChains);
@@ -209,11 +210,14 @@ public class TaskConfigurator implements Callable<Integer> {
             List<List<String>> matches = matchPattern(PATTERN, query);
             for (List<String> group : matches) {
                 int parameterId = Integer.parseInt(group.get(1));
-                String parameterData = id2Parameter.remove(parameterId).getDataValue();
-                try {
-                    query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
-                } catch (IllegalArgumentException e) {
-                    logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
+                Parameter parameter = id2Parameter.remove(parameterId);
+                if (parameter != null) {
+                    String parameterData = parameter.getDataValue();
+                    try {
+                        query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
+                    } catch (IllegalArgumentException e) {
+                        logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
+                    }
                 }
                 queryWriter.writeQuery(queryName2QueryTemplate.getKey(), query);
             }

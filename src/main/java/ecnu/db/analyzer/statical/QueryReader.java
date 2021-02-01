@@ -88,7 +88,7 @@ public class QueryReader {
         return tableName;
     }
 
-    public Map<String, String> getTableAlias(String sql, DbType dbType) throws TouchstoneException {
+    public Map<String, String> getTableAlias(String sql) throws TouchstoneException {
         SQLStatement sqlStatement = SQLUtils.parseStatements(sql, dbType).get(0);
         if (!(sqlStatement instanceof SQLSelectStatement)) {
             throw new TouchstoneException("Only support select statement");

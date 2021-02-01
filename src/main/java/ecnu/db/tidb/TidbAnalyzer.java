@@ -34,7 +34,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     private static final Pattern ROW_COUNTS = Pattern.compile("rows:[0-9]+");
     private static final Pattern INNER_JOIN_OUTER_KEY = Pattern.compile("outer key:(.+),");
     private static final Pattern INNER_JOIN_INNER_KEY = Pattern.compile("inner key:(.+)");
-    private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("equal:\\[.*]");
+    private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("(equal:\\[.*]|equal cond:)");
     private static final Pattern PLAN_ID = Pattern.compile("([a-zA-Z]+_[0-9]+)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("eq\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+), ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private static final Pattern INNER_JOIN = Pattern.compile("inner join");
@@ -43,6 +43,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     private static final Pattern RIGHT_RANGE_BOUND = Pattern.compile("([0-9.]+|\\+inf|-inf)(]|\\))");
     private static final Pattern INDEX_COLUMN = Pattern.compile("index:.+\\((.+)\\)");
     private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
+    private static final Pattern RANGE_SCAN_JOIN_PUSHDOWN = Pattern.compile("range: decided by \\[[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+(, [a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)*]");
     private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(new TidbSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
 
 
@@ -65,31 +66,31 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      * 关于join下推到tikv节点的处理:
      * 1. 有selection的下推
      * ***********************************************************************
-     * *         IndexJoin                                       Filter      *
-     * *         /       \                                         /         *
-     * *    leftNode    IndexLookup              ===>>>          Join        *
-     * *                  /         \                           /   \        *
-     * *        IndexRangeScan     Selection              leftNode  Scan     *
-     * *                            /                                        *
-     * *                          Scan                                       *
+     *           IndexJoin                                       Filter      *
+     *           /       \                                         /         *
+     *      leftNode    IndexLookup              ===>>>          Join        *
+     *                    /         \                           /   \        *
+     *               RangeScan     Selection              leftNode  Scan     *
+     *                              /                                        *
+     *                            Scan                                       *
      * ***********************************************************************
      * <p>
      * 2. 没有selection的下推(leftNode中有Selection节点)
      * ***********************************************************************
-     * *         IndexJoin                                       Join        *
-     * *         /       \                                      /    \       *
-     * *    leftNode    IndexLookup              ===>>>   leftNode   Scan    *
-     * *                /        \                                           *
-     * *        IndexRangeScan  Scan                                         *
+     *           IndexJoin                                       Join        *
+     *           /       \                                      /    \       *
+     *      leftNode    IndexLookup              ===>>>   leftNode   Scan    *
+     *                  /        \                                           *
+     *          RangeScan       Scan                                         *
      * ***********************************************************************
      * <p>
      * 3. 没有selection的下推(leftNode中没有Selection节点，但右边扫描节点上有索引)
      * ***********************************************************************
-     * *        IndexJoin                                        Join        *
-     * *        /       \                                       /    \       *
-     * *    leftNode   IndexReader              ===>>>    leftNode   Scan    *
-     * *                /                                                    *
-     * *          IndexRangeScan                                             *
+     *          IndexJoin                                        Join        *
+     *          /       \                                       /    \       *
+     *      leftNode   IndexReader              ===>>>    leftNode   Scan    *
+     *                  /                                                    *
+     *            RangeScan                                                  *
      * ***********************************************************************
      *
      * @param rawNode 需要处理的query plan树
@@ -105,8 +106,9 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             return rawNode.left == null ? null : buildExecutionTree(rawNode.left);
         }
         ExecutionNode node;
+        List<List<String>> matches = matchPattern(RANGE_SCAN_JOIN_PUSHDOWN, rawNode.operatorInfo);
         // 处理range scan
-        if (nodeTypeRef.isRangeScanNode(nodeType)) {
+        if (nodeTypeRef.isRangeScanNode(nodeType) && matches.isEmpty()) {
             String canonicalTableName = extractTableName(rawNode.operatorInfo);
             int tableSize = SchemaManager.getInstance().getTableSize(canonicalTableName);
             // 含有decided by的operator info表示join的index range scan
@@ -141,6 +143,11 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 throw new UnsupportedSelectionConditionException(rawNode.operatorInfo);
             }
         }
+        else if (nodeTypeRef.isRangeScanNode(nodeType) && !matches.isEmpty()) {
+            String canonicalTableName = extractTableName(rawNode.operatorInfo);
+            int rowCount = SchemaManager.getInstance().getTableSize(canonicalTableName);
+            return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rowCount, "table:" + canonicalTableName);
+        }
         // 处理底层的TableScan
         else if (nodeTypeRef.isTableScanNode(nodeType)) {
             String canonicalTableName = extractTableName(rawNode.operatorInfo);
@@ -150,6 +157,11 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             // 跳过底部的TableScan
             if (rawNode.left != null && nodeTypeRef.isTableScanNode(rawNode.left.nodeType)) {
                 return node;
+            } else if (rawNode.left != null && nodeTypeRef.isRangeScanNode(rawNode.left.nodeType)) {
+                matches = matchPattern(RANGE_SCAN_JOIN_PUSHDOWN, rawNode.left.operatorInfo);
+                if (!matches.isEmpty()) {
+                    return node;
+                }
             }
             node.leftNode = rawNode.left == null ? null : buildExecutionTree(rawNode.left);
             node.rightNode = rawNode.right == null ? null : buildExecutionTree(rawNode.right);
@@ -171,7 +183,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             node.rightNode = rawNode.right == null ? null : buildExecutionTree(rawNode.right);
         } else if (nodeTypeRef.isReaderNode(nodeType)) {
             if (rawNode.right != null) {
-                List<List<String>> matches = matchPattern(EQ_OPERATOR, rawNode.left.operatorInfo);
+                matches = matchPattern(EQ_OPERATOR, rawNode.left.operatorInfo);
                 String canonicalTblName = extractTableName(rawNode.right.operatorInfo);
                 int tableSize = SchemaManager.getInstance().getTableSize(canonicalTblName);
                 // 处理IndexJoin没有selection的下推到tikv情况

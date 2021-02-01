@@ -38,6 +38,10 @@ public abstract class AbstractAnalyzer {
     protected String defaultDatabase;
     private DbConnector dbConnector;
 
+    public void setAliasDic(Map<String, String> aliasDic) {
+        this.aliasDic = aliasDic;
+    }
+
     public void setDefaultDatabase(String defaultDatabase) {
         this.defaultDatabase = defaultDatabase;
     }
@@ -92,7 +96,8 @@ public abstract class AbstractAnalyzer {
         List<ConstraintChain> constraintChains = new ArrayList<>();
         List<String[]> queryPlan = dbConnector.explainQuery(query);
         try {
-            for (List<ExecutionNode> path : getPaths(getExecutionTree(queryPlan))) {
+            ExecutionNode executionTree = getExecutionTree(queryPlan);
+            for (List<ExecutionNode> path : getPaths(executionTree)) {
                 constraintChains.add(extractConstraintChain(path));
             }
         } catch (TouchstoneException | SQLException e) {
