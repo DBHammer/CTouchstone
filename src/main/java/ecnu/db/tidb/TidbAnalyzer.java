@@ -32,6 +32,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
 
 
     private static final Pattern ROW_COUNTS = Pattern.compile("rows:[0-9]+");
+    private static final Pattern ITER = Pattern.compile("iters:([0-9]+)");
     private static final Pattern INNER_JOIN_OUTER_KEY = Pattern.compile("outer key:(.+),");
     private static final Pattern INNER_JOIN_INNER_KEY = Pattern.compile("inner key:(.+)");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("(equal:\\[.*]|equal cond:)");
@@ -233,6 +234,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         Matcher matcher;
         int rowCount = (matcher = ROW_COUNTS.matcher(executionInfo)).find() ?
                 Integer.parseInt(matcher.group(0).split(":")[1]) : 0;
+        List<List<String>> iterMatches = matchPattern(ITER, executionInfo);
+        rowCount = quickFixRowCount(nodeType, rowCount, iterMatches);
         RawNode rawNodeRoot = new RawNode(planId, null, null, nodeType, operatorInfo, rowCount), rawNode;
         pStack.push(Pair.of(0, rawNodeRoot));
         for (String[] subQueryPlan : queryPlan.subList(1, queryPlan.size())) {
@@ -244,6 +247,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             nodeType = matches.get(0).get(0).split("_")[0];
             rowCount = (matcher = ROW_COUNTS.matcher(executionInfo)).find() ?
                     Integer.parseInt(matcher.group(0).split(":")[1]) : 0;
+            rowCount = quickFixRowCount(nodeType, rowCount, iterMatches);
             rawNode = new RawNode(planId, null, null, nodeType, operatorInfo, rowCount);
             int level = (subQueryPlan[0].split("─")[0].length() + 1) / 2;
             while (!pStack.isEmpty() && pStack.peek().getKey() > level) {
@@ -264,6 +268,15 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             pStack.push(Pair.of(level, rawNode));
         }
         return rawNodeRoot;
+    }
+
+    // todo quick fix for tidb bug, maybe remove in the future.
+    private int quickFixRowCount(String nodeType, int rowCount, List<List<String>> iterMatches) {
+        if (nodeTypeRef.isRangeScanNode(nodeType) && !iterMatches.isEmpty()) {
+            int iters = Integer.parseInt(iterMatches.get(0).get(1));
+            rowCount = rowCount / iters;
+        }
+        return rowCount;
     }
 
 
