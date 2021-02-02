@@ -45,7 +45,7 @@ public class TidbSelectOperatorInfoParserTest {
     void testParseWithArithmeticOps() throws Exception {
         String testCase = "ge(mul(db.table.col1, plus(db.table.col2, 3)), 2)";
         AndNode node = parser.parseSelectOperatorInfo(testCase).getCondition();
-        assertEquals("and(ge(mul(db.table.col1, plus(db.table.col2, 3.0)), {id:0, data:2}))", node.toString());
+        assertEquals("and(ge(mul(db.table.col1, plus(db.table.col2, 3)), {id:0, data:2}))", node.toString());
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method with logical ops")

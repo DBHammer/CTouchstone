@@ -159,6 +159,40 @@ uni_compare_expr ::=
                                                                                                     parameters.add(parameter);
                                                                                                     RESULT = operation;
                                                                                                 :}
+        | uni_compare_operator:op LPAREN arithmetic_expr:e1 arithmetic_expr:e2 RPAREN           {:
+                                                                                                    if (e2.getType() == ArithmeticNodeType.CONSTANT) {
+                                                                                                        AbstractFilterOperation operation;
+                                                                                                        if (e1.getType() == ArithmeticNodeType.COLUMN) {
+                                                                                                            String canonicalColumnName = ((ColumnNode) e1).getCanonicalColumnName();
+                                                                                                            operation = new UniVarFilterOperation(canonicalColumnName, op);
+                                                                                                            columns.add(canonicalColumnName);
+                                                                                                        } else {
+                                                                                                            operation = new MultiVarFilterOperation(op, e1);
+                                                                                                        }
+                                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), e1.toString(), ((NumericNode) e2).toString());
+                                                                                                        operation.addParameter(parameter);
+                                                                                                        parameters.add(parameter);
+                                                                                                        RESULT = operation;
+                                                                                                    } else {
+                                                                                                        AbstractFilterOperation operation;
+                                                                                                        if (e1.getType() == ArithmeticNodeType.COLUMN) {
+                                                                                                            String canonicalColumnName = ((ColumnNode) e1).getCanonicalColumnName();
+                                                                                                            columns.add(canonicalColumnName);
+                                                                                                        }
+                                                                                                        if (e2.getType() == ArithmeticNodeType.COLUMN) {
+                                                                                                            String canonicalColumnName = ((ColumnNode) e2).getCanonicalColumnName();
+                                                                                                            columns.add(canonicalColumnName);
+                                                                                                        }
+                                                                                                        ArithmeticNode e = ArithmeticNodeFactory.create(ArithmeticNodeType.MINUS);
+                                                                                                        e.setLeftNode(e1);
+                                                                                                        e.setRightNode(e2);
+                                                                                                        operation = new MultiVarFilterOperation(op, e);
+                                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), e.toString(), "0");
+                                                                                                        operation.addParameter(parameter);
+                                                                                                        parameters.add(parameter);
+                                                                                                        RESULT = operation;
+                                                                                                    }
+                                                                                                :}
         ;
 uni_compare_operator ::=
         LT:lt                                                    {:  RESULT = lt;  :}
@@ -169,9 +203,7 @@ uni_compare_operator ::=
         | NE:ne                                                  {:  RESULT = ne;  :}
         ;
 uni_compare_constant ::=
-        INTEGER:num                                              {:  RESULT = num.toString();  :}
-        | FLOAT:num                                              {:  RESULT = num.toString();  :}
-        | DATE:date                                              {:  RESULT = date;  :}
+        DATE:date                                                {:  RESULT = date;  :}
         | STRING:str                                             {:  RESULT = str; :}
         ;
 multi_compare_expr ::=                       
