@@ -84,7 +84,7 @@ public class PgSelectOperatorInfoParserTest {
     @DisplayName("test PgSelectOperatorInfoParser.parse method with not")
     @Test()
     void testParseWithNot() throws Exception {
-        String testCase = "((db.table.col3) ~~ \"STRING\")";
+        String testCase = "((db.table.col3) ~~ 'STRING')";
         SelectResult result = parser.parseSelectOperatorInfo(testCase);
         AndNode node = result.getCondition();
         //assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:'3'}, {id:2, data:'2'}))))", node.toString());

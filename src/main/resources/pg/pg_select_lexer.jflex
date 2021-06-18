@@ -60,7 +60,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   "in" {
     return symbol(IN, CompareOperator.IN);
   }
-  \~\~ {
+  "~~" {
     return symbol(LIKE, CompareOperator.LIKE);
   }
   "<" {
@@ -137,17 +137,17 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   }
 
   /* string start */
-  \" {
+  ' {
     str_buff.setLength(0); yybegin(STRING_LITERAL);
   }
 
 }
 <STRING_LITERAL> {
-  \" {
+  ' {
     yybegin(YYINITIAL);
     return symbol(STRING, str_buff.toString());
   }
-  [^\n\r\"\\]+                   { str_buff.append( yytext() ); }
+  [^\n\r'\\]+                   { str_buff.append( yytext() ); }
   \\t                            { str_buff.append('\t'); }
   \\n                            { str_buff.append('\n'); }
   \\r                            { str_buff.append('\r'); }
