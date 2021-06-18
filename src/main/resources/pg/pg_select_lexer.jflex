@@ -1,0 +1,161 @@
+package ecnu.db.pg.parser;
+
+import ecnu.db.exception.analyze.IllegalCharacterException;
+import ecnu.db.pg.Token;
+import java_cup.runtime.*;
+import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
+import ecnu.db.constraintchain.filter.operation.CompareOperator;
+%%
+
+%public
+%class PgSelectOperatorInfoLexer
+/* throws TouchstoneException */
+%yylexthrow{
+ecnu.db.exception.TouchstoneException
+%yylexthrow}
+
+%{
+  private StringBuilder str_buff = new StringBuilder();
+  private Symbol symbol(int type) {
+    return new Token(type, yycolumn+1);
+  }
+
+  private Symbol symbol(int type, Object value) {
+    return new Token(type, yycolumn+1, value);
+  }
+
+  public void init() {
+    System.out.println("initialized");
+  }
+%}
+
+%implements PgSelectSymbol
+%line
+%column
+%state STRING_LITERAL
+%unicode
+%cupsym PgSelectSymbol
+%cup
+
+/* tokens */
+DIGIT=[0-9]
+WHITE_SPACE_CHAR=[\n\r\ \t\b\012]
+SCHEMA_NAME_CHAR=[A-Za-z0-9$_]
+CANONICAL_COL_NAME=({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+
+FLOAT=(0|([1-9]({DIGIT}*)))\.({DIGIT}*)
+INTEGER=(0|[1-9]({DIGIT}*))
+DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT}{6})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}))
+%%
+
+<YYINITIAL> {
+  /* logical operators */
+  "and" {
+    return symbol(AND);
+  }
+  "or" {
+    return symbol(OR);
+  }
+
+  /* compare operators */
+  "in" {
+    return symbol(IN, CompareOperator.IN);
+  }
+  \~\~ {
+    return symbol(LIKE, CompareOperator.LIKE);
+  }
+  "<" {
+    return symbol(LT, CompareOperator.LT);
+  }
+  ">" {
+    return symbol(GT, CompareOperator.GT);
+  }
+  "<=" {
+    return symbol(LE, CompareOperator.LE);
+  }
+  ">=" {
+    return symbol(GE, CompareOperator.GE);
+  }
+  "=" {
+    return symbol(EQ, CompareOperator.EQ);
+  }
+  "<>" {
+    return symbol(NE, CompareOperator.NE);
+  }
+
+  /* isnull operators */
+  "IS NULL" {
+    return symbol(ISNULL, CompareOperator.ISNULL);
+  }
+
+  /* arithmetic operators */
+  "+" {
+    return symbol(PLUS, ArithmeticNodeType.PLUS);
+  }
+  "-" {
+    return symbol(MINUS, ArithmeticNodeType.MINUS);
+  }
+  "/" {
+    return symbol(DIV, ArithmeticNodeType.DIV);
+  }
+  "*" {
+    return symbol(MUL, ArithmeticNodeType.MUL);
+  }
+
+  /* not operators */
+  "!~~" {
+    return symbol(NOT_LIKE);
+  }
+
+  /* canonical column names */
+  {CANONICAL_COL_NAME} {
+    return symbol(CANONICAL_COLUMN_NAME, yytext());
+  }
+
+  /* constants */
+  {DATE} {
+    return symbol(DATE, yytext());
+  }
+  {FLOAT} {
+    return symbol(FLOAT, Float.valueOf(yytext()));
+  }
+  {INTEGER} {
+    return symbol(INTEGER, Integer.valueOf(yytext()));
+  }
+
+  /* delimiters */
+  ", " {}
+
+  /* white spaces */
+  {WHITE_SPACE_CHAR}+ {}
+
+  /* parentheses */
+  \( {
+     return symbol(LPAREN);
+  }
+  \) {
+     return symbol(RPAREN);
+  }
+
+  /* string start */
+  \" {
+    str_buff.setLength(0); yybegin(STRING_LITERAL);
+  }
+
+}
+<STRING_LITERAL> {
+  \" {
+    yybegin(YYINITIAL);
+    return symbol(STRING, str_buff.toString());
+  }
+  [^\n\r\"\\]+                   { str_buff.append( yytext() ); }
+  \\t                            { str_buff.append('\t'); }
+  \\n                            { str_buff.append('\n'); }
+  \\r                            { str_buff.append('\r'); }
+  \\\"                           { str_buff.append('\"'); }
+  \\                             { str_buff.append('\\'); }
+}
+<<EOF>>                          { return symbol(EOF); }
+
+. {
+   throw new IllegalCharacterException(yytext(), yyline + 1, yycolumn + 1);
+}

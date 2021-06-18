@@ -157,12 +157,25 @@
                 <version>1.8.2</version>
                 <executions>
                     <execution>
+                        <id>SelectLexer</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
                             <lexDefinitions>
                                 <definition>src/main/resources/tidb/select_lexer.jflex</definition>
+                            </lexDefinitions>
+                            <outputDirectory>src/main/java</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>PgSelectLexer</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <lexDefinitions>
+                                <definition>src/main/resources/pg/pg_select_lexer.jflex</definition>
                             </lexDefinitions>
                             <outputDirectory>src/main/java</outputDirectory>
                         </configuration>
@@ -184,6 +197,19 @@
                             <symbolsName>TidbSelectSymbol</symbolsName>
                             <packageName>ecnu.db.tidb.parser</packageName>
                             <cupDefinition>src/main/resources/tidb/select_parser.cup</cupDefinition>
+                            <outputDirectory>src/main/java</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>PgSelectOperatorInfoParser</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <className>PgSelectOperatorInfoParser</className>
+                            <symbolsName>PgSelectSymbol</symbolsName>
+                            <packageName>ecnu.db.pg.parser</packageName>
+                            <cupDefinition>src/main/resources/pg/pg_select_parser.cup</cupDefinition>
                             <outputDirectory>src/main/java</outputDirectory>
                         </configuration>
                     </execution>

@@ -33,7 +33,7 @@ parser code {:
     this.columns = new HashSet<>();
     this.tableName = null;
     this.root = new AndNode();
-    ((TidbSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
+    ((PgSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
     this.debug_parse();
     SelectResult result = new SelectResult();
     result.setParameters(this.parameters);
@@ -75,6 +75,7 @@ terminal   ArithmeticNodeType    PLUS, MINUS, DIV, MUL;
 terminal                         LPAREN, RPAREN;
 terminal   CompareOperator       ISNULL;
 terminal                         NOT;
+terminal                         NOT_LIKE;
 terminal                         AND, OR;
 terminal   CompareOperator       LT, GT, LE, GE, NE, EQ, LIKE, IN;
 terminal   Integer               INTEGER;
@@ -103,26 +104,21 @@ non terminal          ArithmeticNodeType        arithmetic_operator;
 non terminal          IsNullFilterOperation     isnull_expr;
 non terminal          AbstractFilterOperation   not_expr;
 
+/* precedence */
+precedence left         OR;
+precedence left         AND;
+
 /* start with */
 start with expr;
 
 /* ================= */
 /* The grammar rules */
 /* ================= */
-expr ::= bool_exprs:children                     {:
-                                                     for (BoolExprNode child: children) {
-                                                         root.addChild(child);
-                                                     }
+expr ::= bool_expr:e                             {:
+                                                         this.parser.root.addChild(e);
                                                  :}
         ;
-bool_exprs ::=
-        bool_exprs:e2 bool_expr:e1                {:  e2.add(e1); RESULT = e2;  :}
-        | bool_expr:e                             {:
-                                                      List<BoolExprNode> children = new ArrayList<>();
-                                                      children.add(e);
-                                                      RESULT = children;
-                                                 :}
-        ;
+
 bool_expr ::=
         logical_expr:e                           {:  RESULT = e;  :}
         | compare_expr:e                         {:  RESULT = e;  :}
@@ -133,13 +129,13 @@ bool_expr ::=
 /* logical expressions */
 
 logical_expr ::=
-        OR:or LPAREN bool_expr:e1 bool_expr:e2 RPAREN      {:
+        LPAREN bool_expr:e1 OR:or bool_expr:e2 RPAREN       {:
                                                                 OrNode node = new OrNode();
                                                                 node.setLeftNode(e1);
                                                                 node.setRightNode(e2);
                                                                 RESULT = node;
                                                             :}
-        | AND:and LPAREN logical_arguments:children RPAREN  {:  
+        | LPAREN logical_arguments:children RPAREN          {:
                                                                 AndNode node = new AndNode();
                                                                 for (BoolExprNode child: children) {
                                                                     node.addChild(child);
@@ -148,18 +144,18 @@ logical_expr ::=
                                                             :}
         ;
 logical_arguments ::=
-        bool_expr:e1 bool_expr:e2                            {:  RESULT = new ArrayList<>(Arrays.asList(e1, e2));  :}
-        | bool_expr:e1 logical_arguments:e2                  {:  e2.add(e1);  RESULT=e2;  :}      
+        bool_expr:e1 AND:and bool_expr:e2                   {:  RESULT = new ArrayList<>(Arrays.asList(e1, e2));  :}
         ;
+
 
 /* compare expressions */
 
 compare_expr ::=
-        uni_compare_expr:e                                   {:  RESULT=e;  :}  
-        | multi_compare_expr:e                               {:  RESULT=e;  :} 
+        uni_compare_expr:e                                   {:  RESULT=e;  :}
+        | multi_compare_expr:e                               {:  RESULT=e;  :}
         ;
 uni_compare_expr ::=
-        uni_compare_operator:op LPAREN arithmetic_expr:e1 uni_compare_constant:constant RPAREN  {:
+        LPAREN arithmetic_expr:e1 uni_compare_operator:op uni_compare_constant:constant RPAREN  {:
                                                                                                     AbstractFilterOperation operation;
                                                                                                     boolean needQuote = false, isDate = false;
                                                                                                     if (e1.getType() == ArithmeticNodeType.COLUMN) {
@@ -191,12 +187,12 @@ uni_compare_constant ::=
         | DATE:date                                              {:  RESULT = date;  :}
         | STRING:str                                             {:  RESULT = str; :}
         ;
-multi_compare_expr ::=                       
+multi_compare_expr ::=
         in_compare_expr:e                                        {:  RESULT=e;  :}
         | like_compare_expr:e                                    {:  RESULT=e;  :}
         ;
 in_compare_expr ::=
-        IN:in LPAREN CANONICAL_COLUMN_NAME:col in_arguments:arguments RPAREN      {:
+        LPAREN CANONICAL_COLUMN_NAME:col IN:in in_arguments:arguments RPAREN      {:
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       UniVarFilterOperation operation = new UniVarFilterOperation(col, in);
@@ -236,7 +232,7 @@ in_arguments ::=
                                                                                   :}
         ;
 like_compare_expr ::=
-        LIKE:like LPAREN CANONICAL_COLUMN_NAME:col STRING:str INTEGER RPAREN      {:
+        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN LIKE:like STRING:str RPAREN     {:
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       UniVarFilterOperation operation = new UniVarFilterOperation(col, like);
@@ -250,7 +246,7 @@ like_compare_expr ::=
 
 /* arithmetic expressions */
 arithmetic_expr ::=
-        arithmetic_operator:op LPAREN arithmetic_expr:e1 arithmetic_expr:e2 RPAREN            {:
+        LPAREN arithmetic_expr:e1 arithmetic_operator:op arithmetic_expr:e2 RPAREN            {:
                                                                                                   ArithmeticNode node = ArithmeticNodeFactory.create(op);
                                                                                                   node.setLeftNode(e1);
                                                                                                   node.setRightNode(e2);
@@ -285,7 +281,7 @@ arithmetic_operator ::=
 
 /* isnull expressions */
 isnull_expr ::=
-        ISNULL:isnull LPAREN CANONICAL_COLUMN_NAME:col RPAREN                      {:
+        LPAREN CANONICAL_COLUMN_NAME:col ISNULL:isnull RPAREN                      {:
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       float nullProbability = getColumnNullProbability(tableName, col);
