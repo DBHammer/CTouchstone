@@ -99,4 +99,13 @@ public class PgSelectOperatorInfoParserTest {
         //assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:'3'}, {id:2, data:'2'}))))", node.toString());
     }
 
+    @DisplayName("test PgSelectOperatorInfoParser.parse method in")
+    @Test()
+    void testParseIN() throws Exception {
+        String testCase = "((db.table.col3) = ANY ('{\"dasd\",dasd}'))";
+        SelectResult result = parser.parseSelectOperatorInfo(testCase);
+        AndNode node = result.getCondition();
+        //assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:'3'}, {id:2, data:'2'}))))", node.toString());
+    }
+
 }

@@ -33,6 +33,8 @@ ecnu.db.exception.TouchstoneException
 %line
 %column
 %state STRING_LITERAL
+%state STRING_LITERAL_DOUBLE_QUOTATION
+%state IN_LIST
 %unicode
 %cupsym PgSelectSymbol
 %cup
@@ -57,7 +59,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   }
 
   /* compare operators */
-  "in" {
+  "= ANY" {
     return symbol(IN, CompareOperator.IN);
   }
   "~~" {
@@ -85,6 +87,11 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   /* isnull operators */
   "IS NULL" {
     return symbol(ISNULL, CompareOperator.ISNULL);
+  }
+
+  /* isnull operators */
+  "IS NOT NULL" {
+    return symbol(IS_NOT_NULL, CompareOperator.IS_NOT_NULL);
   }
 
   /* arithmetic operators */
@@ -125,6 +132,9 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   /* delimiters */
   ", " {}
 
+  /* type */
+  ":: text" {}
+
   /* white spaces */
   {WHITE_SPACE_CHAR}+ {}
 
@@ -137,13 +147,24 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   }
 
   /* string start */
-  ' {
+  \' {
     str_buff.setLength(0); yybegin(STRING_LITERAL);
+  }
+
+  /* string by double quotation start */
+  \" {
+    str_buff.setLength(0); yybegin(STRING_LITERAL_DOUBLE_QUOTATION);
+  }
+
+  /* inlist start */
+  "'{" {
+    str_buff.setLength(0);
+    yybegin(IN_LIST);
   }
 
 }
 <STRING_LITERAL> {
-  ' {
+  \' {
     yybegin(YYINITIAL);
     return symbol(STRING, str_buff.toString());
   }
@@ -154,6 +175,50 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   \\\"                           { str_buff.append('\"'); }
   \\                             { str_buff.append('\\'); }
 }
+
+<STRING_LITERAL_DOUBLE_QUOTATION> {
+  \" {
+    yybegin(IN_LIST);
+    return symbol(STRING, str_buff.toString());
+  }
+  [^\n\r\"\\]+                   { str_buff.append( yytext() ); }
+  \\t                            { str_buff.append('\t'); }
+  \\n                            { str_buff.append('\n'); }
+  \\r                            { str_buff.append('\r'); }
+  \\\"                           { str_buff.append('\"'); }
+  \\                             { str_buff.append('\\'); }
+}
+
+<IN_LIST> {
+  "}'" {
+    yybegin(YYINITIAL);
+  }
+
+  {SCHEMA_NAME_CHAR} {
+    return symbol(STRING, str_buff.toString());
+  }
+
+  \" {
+    str_buff.setLength(0); yybegin(STRING_LITERAL_DOUBLE_QUOTATION);
+  }
+
+  {DATE} {
+    return symbol(DATE, yytext());
+  }
+
+  {FLOAT} {
+    return symbol(FLOAT, Float.valueOf(yytext()));
+  }
+
+  {INTEGER} {
+    return symbol(INTEGER, Integer.valueOf(yytext()));
+  }
+
+  "," {}
+
+  {WHITE_SPACE_CHAR}+ {}
+}
+
 <<EOF>>                          { return symbol(EOF); }
 
 . {

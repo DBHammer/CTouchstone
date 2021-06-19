@@ -75,7 +75,7 @@ terminal   ArithmeticNodeType    PLUS, MINUS, DIV, MUL;
 terminal                         LPAREN, RPAREN;
 terminal   CompareOperator       ISNULL;
 terminal                         NOT;
-terminal                         NOT_LIKE;
+terminal   CompareOperator       IS_NOT_NULL, NOT_LIKE;
 terminal                         AND, OR;
 terminal   CompareOperator       LT, GT, LE, GE, NE, EQ, LIKE, IN;
 terminal   Integer               INTEGER;
@@ -83,6 +83,7 @@ terminal   String                STRING;
 terminal   String                DATE;
 terminal   String                CANONICAL_COLUMN_NAME;
 terminal   Float                 FLOAT;
+
 
 /* Non terminals */
 non terminal                                    expr;
@@ -102,6 +103,7 @@ non terminal          UniVarFilterOperation     like_compare_expr;
 non terminal          ArithmeticNode            arithmetic_expr;
 non terminal          ArithmeticNodeType        arithmetic_operator;
 non terminal          IsNullFilterOperation     isnull_expr;
+non terminal          CompareOperator           null_expr;
 non terminal          AbstractFilterOperation   not_expr;
 
 /* precedence */
@@ -192,7 +194,7 @@ multi_compare_expr ::=
         | like_compare_expr:e                                    {:  RESULT=e;  :}
         ;
 in_compare_expr ::=
-        LPAREN CANONICAL_COLUMN_NAME:col IN:in in_arguments:arguments RPAREN      {:
+        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN IN:in LPAREN in_arguments:arguments RPAREN RPAREN      {:
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       UniVarFilterOperation operation = new UniVarFilterOperation(col, in);
@@ -281,27 +283,18 @@ arithmetic_operator ::=
 
 /* isnull expressions */
 isnull_expr ::=
-        LPAREN CANONICAL_COLUMN_NAME:col ISNULL:isnull RPAREN                      {:
+        LPAREN CANONICAL_COLUMN_NAME:col null_expr:isornotnull RPAREN             {:
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       float nullProbability = getColumnNullProbability(tableName, col);
                                                                                       IsNullFilterOperation operation = new IsNullFilterOperation(col, BigDecimal.valueOf(nullProbability));
+                                                                                      if(isornotnull == IS_NOT_NULL){
+                                                                                        operation.setHasNot(true);
+                                                                                      }
                                                                                       RESULT = operation;
                                                                                   :}
         ;
-
-/* not expressions */
-not_expr ::=
-        NOT:not LPAREN like_compare_expr:e RPAREN                                 {:
-                                                                                      e.setHasNot(true);
-                                                                                      RESULT = e;
-                                                                                  :}
-        | NOT:not LPAREN in_compare_expr:e RPAREN                                 {:
-                                                                                      e.setHasNot(true);
-                                                                                      RESULT = e;
-                                                                                  :}
-        | NOT:not LPAREN isnull_expr:e RPAREN                                     {:
-                                                                                      e.setHasNot(true);
-                                                                                      RESULT = e;
-                                                                                  :}
+null_expr ::=
+        IS_NOT_NULL:isnotnull                                                     {: RESULT = isnotnull; :}
+        | ISNULL:isnull                                                           {: RESULT = isnull; :}
         ;
