@@ -75,7 +75,7 @@ terminal   ArithmeticNodeType    PLUS, MINUS, DIV, MUL;
 terminal                         LPAREN, RPAREN;
 terminal   CompareOperator       ISNULL;
 terminal                         NOT;
-terminal   CompareOperator       IS_NOT_NULL, NOT_LIKE;
+terminal   CompareOperator       IS_NOT_NULL, NOT_LIKE, NOT_IN;
 terminal                         AND, OR;
 terminal   CompareOperator       LT, GT, LE, GE, NE, EQ, LIKE, IN;
 terminal   Integer               INTEGER;
@@ -105,6 +105,8 @@ non terminal          ArithmeticNodeType        arithmetic_operator;
 non terminal          IsNullFilterOperation     isnull_expr;
 non terminal          CompareOperator           null_expr;
 non terminal          AbstractFilterOperation   not_expr;
+non terminal          CompareOperator           in_expr;
+non terminal          CompareOperator           like_expr;
 
 /* precedence */
 precedence left         OR;
@@ -194,10 +196,10 @@ multi_compare_expr ::=
         | like_compare_expr:e                                    {:  RESULT=e;  :}
         ;
 in_compare_expr ::=
-        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN IN:in LPAREN in_arguments:arguments RPAREN RPAREN      {:
+        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
-                                                                                      UniVarFilterOperation operation = new UniVarFilterOperation(col, in);
+                                                                                      UniVarFilterOperation operation = new UniVarFilterOperation(col, inornotin);
                                                                                       boolean needQuote = isColumnNeedQuote(col), isDate = isColumnDate(col);
                                                                                       for (String argument: arguments) {
                                                                                         Parameter parameter = new Parameter(analyzer.getParameterId(), argument, needQuote, isDate, CompareOperator.IN, col);
@@ -205,8 +207,15 @@ in_compare_expr ::=
                                                                                         parameters.add(parameter);
                                                                                       }
                                                                                       columns.add(col);
+                                                                                      if(inornotin == CompareOperator.NOT_IN){
+                                                                                        operation.setHasNot(true);
+                                                                                      }
                                                                                       RESULT = operation;
                                                                                   :}
+        ;
+in_expr ::=
+        NOT_IN:notin                                                              {: RESULT = notin; :}
+        | IN:in                                                                   {: RESULT = in; :}
         ;
 in_argument  ::=
         STRING:str                                                                {:
@@ -234,16 +243,23 @@ in_arguments ::=
                                                                                   :}
         ;
 like_compare_expr ::=
-        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN LIKE:like STRING:str RPAREN     {:
-                                                                                      String tableName = getCanonicalTableName(col);
-                                                                                      verifyTableName(tableName);
-                                                                                      UniVarFilterOperation operation = new UniVarFilterOperation(col, like);
-                                                                                      Parameter parameter = new Parameter(analyzer.getParameterId(), str, true, false, CompareOperator.LIKE, col);
-                                                                                      operation.addParameter(parameter);
-                                                                                      parameters.add(parameter);
-                                                                                      columns.add(col);
-                                                                                      RESULT = operation;
-                                                                                  :}
+        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN like_expr:likeornot STRING:str RPAREN     {:
+                                                                                            String tableName = getCanonicalTableName(col);
+                                                                                            verifyTableName(tableName);
+                                                                                            UniVarFilterOperation operation = new UniVarFilterOperation(col, likeornot);
+                                                                                            Parameter parameter = new Parameter(analyzer.getParameterId(), str, true, false, CompareOperator.LIKE, col);
+                                                                                            operation.addParameter(parameter);
+                                                                                            parameters.add(parameter);
+                                                                                            columns.add(col);
+                                                                                            if(likeornot == CompareOperator.NOT_LIKE){
+                                                                                              operation.setHasNot(true);
+                                                                                            }
+                                                                                            RESULT = operation;
+                                                                                       :}
+        ;
+like_expr ::=
+        NOT_LIKE:notlike                                                               {: RESULT = notlike; :}
+        | LIKE:like                                                                    {: RESULT = like; :}
         ;
 
 /* arithmetic expressions */
@@ -288,7 +304,7 @@ isnull_expr ::=
                                                                                       verifyTableName(tableName);
                                                                                       float nullProbability = getColumnNullProbability(tableName, col);
                                                                                       IsNullFilterOperation operation = new IsNullFilterOperation(col, BigDecimal.valueOf(nullProbability));
-                                                                                      if(isornotnull == IS_NOT_NULL){
+                                                                                      if(isornotnull == CompareOperator.IS_NOT_NULL){
                                                                                         operation.setHasNot(true);
                                                                                       }
                                                                                       RESULT = operation;

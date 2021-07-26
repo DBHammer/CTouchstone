@@ -41,6 +41,7 @@ ecnu.db.exception.TouchstoneException
 
 /* tokens */
 DIGIT=[0-9]
+STRING=[A-Za-z0-9$_]+
 WHITE_SPACE_CHAR=[\n\r\ \t\b\012]
 SCHEMA_NAME_CHAR=[A-Za-z0-9$_]
 CANONICAL_COL_NAME=({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+
@@ -61,6 +62,9 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   /* compare operators */
   "= ANY" {
     return symbol(IN, CompareOperator.IN);
+  }
+  "<> ALL" {
+    return symbol(NOT_IN, CompareOperator.NOT_IN);
   }
   "~~" {
     return symbol(LIKE, CompareOperator.LIKE);
@@ -108,7 +112,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
     return symbol(MUL, ArithmeticNodeType.MUL);
   }
 
-  /* not operators */
+  /* not like operators */
   "!~~" {
     return symbol(NOT_LIKE);
   }
@@ -133,7 +137,11 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
   ", " {}
 
   /* type */
-  ":: text" {}
+  "::text" {}
+  "::bpchar" {}
+  "::integer[]" {}
+  "::date" {}
+  "::timestamp without time zone" {}
 
   /* white spaces */
   {WHITE_SPACE_CHAR}+ {}
@@ -194,7 +202,8 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
     yybegin(YYINITIAL);
   }
 
-  {SCHEMA_NAME_CHAR} {
+  {STRING} {
+    str_buff.append( yytext() );
     return symbol(STRING, str_buff.toString());
   }
 
@@ -214,7 +223,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT
     return symbol(INTEGER, Integer.valueOf(yytext()));
   }
 
-  "," {}
+  "," {str_buff.setLength(0); }
 
   {WHITE_SPACE_CHAR}+ {}
 }

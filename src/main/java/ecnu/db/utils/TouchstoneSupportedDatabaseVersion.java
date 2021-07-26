@@ -13,5 +13,9 @@ public enum TouchstoneSupportedDatabaseVersion {
     /**
      * 分布式HTAP数据库——TiDB 4.*版本
      */
-    TiDB4
+    TiDB4,
+    /**
+     * POSTGRES数据库
+     */
+    PG
 }

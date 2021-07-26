@@ -36,9 +36,17 @@ public enum CompareOperator {
      */
     LIKE(TYPE.EQUAL),
     /**
+     * 比较运算符，不相似
+     */
+    NOT_LIKE(TYPE.EQUAL),
+    /**
      * 比较运算符，包含
      */
     IN(TYPE.EQUAL),
+    /**
+     * 比较运算符，不包含
+     */
+    NOT_IN(TYPE.EQUAL),
     /**
      * ISNULL运算符
      */
