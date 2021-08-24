@@ -61,10 +61,10 @@ public class DbConnector implements DatabaseConnectorInterface {
     public String getPrimaryKeys(String canonicalTableName) throws SQLException {
         ResultSet rs = stmt.executeQuery("show keys from " + canonicalTableName + " where Key_name='PRIMARY'");
         List<String> keys = new ArrayList<>();
-        while(rs.next()) {
+        while (rs.next()) {
             keys.add(rs.getString(5).toLowerCase());
         }
-        return keys.size() > 0 ? Strings.join(keys, ',') : null;
+        return keys.isEmpty() ? null : Strings.join(keys, ',');
     }
 
     public String[] getDataRange(String canonicalTableName, String columnInfo) throws SQLException {
@@ -116,7 +116,7 @@ public class DbConnector implements DatabaseConnectorInterface {
      * @param files                SQL文件
      * @param dbType               数据库类型
      * @return 表名
-     * @throws IOException                  从SQL文件中获取Query失败
+     * @throws IOException         从SQL文件中获取Query失败
      * @throws TouchstoneException 从Query中获取tableNames失败或不支持的数据库类型
      */
     public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files, DbType dbType)
@@ -143,7 +143,7 @@ public class DbConnector implements DatabaseConnectorInterface {
      * @param canonicalTableName 标准表名
      * @return Schema
      * @throws TouchstoneException 生成Schema失败，设置col分布失败或者设置col的cardinality和average length等信息失败
-     * @throws SQLException                 获取表的DDL失败或者获取col分布失败
+     * @throws SQLException        获取表的DDL失败或者获取col分布失败
      */
     public Schema fetchSchema(SchemaGenerator dbSchemaGenerator, String canonicalTableName) throws TouchstoneException, SQLException {
         String tableMetadata = getTableMetadata(canonicalTableName);

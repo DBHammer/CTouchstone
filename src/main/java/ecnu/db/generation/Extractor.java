@@ -60,7 +60,7 @@ public class Extractor {
             // todo 静态文件读取时，需要选择合适的数据库信息
             databaseInfo = new TidbInfo(config.getDatabaseVersion());
             tableNames = storageManager.loadTableNames();
-            logger.info("加载表名成功，表名为:" + tableNames);
+            logger.info("加载表名成功，表名为:{}", tableNames);
             Map<String, List<String[]>> queryPlanMap = storageManager.loadQueryPlans();
             Map<String, Integer> multiColNdvMap = storageManager.loadMultiColMap();
             schemas = storageManager.loadSchemas();
@@ -75,7 +75,7 @@ public class Extractor {
                     DbConnector dbConnector = (DbConnector) connector;
                     tableNames = dbConnector.fetchTableNames(config.isCrossMultiDatabase(),
                             config.getDatabaseName(), files, JdbcConstants.MYSQL);
-                    logger.info("获取表名成功，表名为:" + tableNames);
+                    logger.info("获取表名成功，表名为:{}", tableNames);
                     SchemaGenerator dbSchemaGenerator = new SchemaGenerator();
                     for (String canonicalTableName : tableNames) {
                         Schema schema = dbConnector.fetchSchema(dbSchemaGenerator, canonicalTableName);
@@ -106,7 +106,7 @@ public class Extractor {
                     index++;
                     String queryCanonicalName = String.format("%s_%d", sqlFile.getName(), index);
                     try {
-                        logger.info(String.format("%-15s Status:开始获取", queryCanonicalName));
+                        logger.info("%-15s Status:开始获取{}", queryCanonicalName);
                         queryPlan = queryAnalyzer.getQueryPlan(queryCanonicalName, query, databaseInfo);
                         if (storageManager.isDump()) {
                             storageManager.dumpQueryPlan(queryPlan, queryCanonicalName);
@@ -115,7 +115,7 @@ public class Extractor {
                         List<ConstraintChain> constraintChains = queryAnalyzer.extractQueryInfos(queryCanonicalName, root);
                         queryInfos.put(queryCanonicalName, constraintChains);
                         List<Parameter> parameters = constraintChains.stream().flatMap((c -> c.getParameters().stream())).collect(Collectors.toList());
-                        logger.info(String.format("%-15s Status:获取成功", queryCanonicalName));
+                        logger.info("%-15s Status:获取成功{}", queryCanonicalName);
                         query = SqlTemplateHelper.templatizeSql(queryCanonicalName, query, staticalDbType, parameters);
                         storageManager.storeSqlResult(sqlFile, query, staticalDbType);
                     } catch (TouchstoneException e) {
@@ -136,7 +136,7 @@ public class Extractor {
         }
         if (needLog) {
             storageManager.logStaticInfo(connector.getMultiColNdvMap(), schemas, tableNames);
-            logger.info(String.format("关于表的日志信息已经存盘到'%s'", storageManager.getLogDir().getAbsolutePath()));
+            logger.info("关于表的日志信息已经存盘到'{}'", storageManager.getLogDir().getAbsolutePath());
         }
         storageManager.storeSchemaResult(schemas);
         storageManager.storeConstrainChainResult(queryInfos);
@@ -144,7 +144,7 @@ public class Extractor {
 
     private static AbstractAnalyzer getAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector,
                                                 AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas)
-            throws TouchstoneException, IOException {
+            throws TouchstoneException {
         Multimap<String, String> tblName2CanonicalTblName = ArrayListMultimap.create();
         for (String canonicalTableName : schemas.keySet()) {
             tblName2CanonicalTblName.put(canonicalTableName.split("\\.")[1], canonicalTableName);

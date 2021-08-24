@@ -1,15 +1,13 @@
 package ecnu.db.pg;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 
 public class PgNodeTypeInfo {
-    public static final HashSet<String> PASS_NODE_TYPES = new HashSet<>(Arrays.asList("Sort", "Aggregate", "Gather", "Limit", "Gather Merge"));
-    public static final HashSet<String> JOIN_NODE_TYPES = new HashSet<>(Arrays.asList("Hash Join", "Nested Loop"));
-    public static final HashSet<String> FILTER_NODE_TYPES = new HashSet<>(Arrays.asList("Seq Scan", "Index Scan"));
-
-    public PgNodeTypeInfo() {}
+    protected static final Set<String> PASS_NODE_TYPES = new HashSet<>(Arrays.asList("Sort", "Aggregate", "Gather", "Limit", "Gather Merge"));
+    protected static final Set<String> JOIN_NODE_TYPES = new HashSet<>(Arrays.asList("Hash Join", "Nested Loop"));
+    protected static final Set<String> FILTER_NODE_TYPES = new HashSet<>(Arrays.asList("Seq Scan", "Index Scan"));
 
     public boolean isPassNode(String nodeType) {
         return PASS_NODE_TYPES.contains(nodeType);

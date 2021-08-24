@@ -19,8 +19,7 @@ public class PgInfo extends AbstractDatabaseInfo {
 
     @Override
     public String[] getSqlInfoColumns() throws UnsupportedDBTypeException {
-        String[] col = {"1"};
-        return col;
+        return new String[]{"1"};
     }
 
     @Override
@@ -37,6 +36,7 @@ public class PgInfo extends AbstractDatabaseInfo {
     public String getJdbcType() {
         return "mysql";
     }
+    
 
     @Override
     public String getJdbcProperties() {
