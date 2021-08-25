@@ -34,7 +34,7 @@ parser code {:
     this.tableName = null;
     this.root = new AndNode();
     ((TidbSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
-    this.debug_parse();
+    this.parse();
     SelectResult result = new SelectResult();
     result.setParameters(this.parameters);
     result.setCondition(this.root);
