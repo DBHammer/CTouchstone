@@ -36,3 +36,11 @@ src/main/java/ecnu/db/tidb/parser
 
 # kubernetes config for testing
 k8s.config
+
+#eclipse
+.classpath
+.project
+.factorypath
+.settings
+
+/*.iml
