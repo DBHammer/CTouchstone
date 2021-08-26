@@ -21,10 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TidbSelectOperatorInfoParserTest {
     private final TidbSelectOperatorInfoLexer lexer = new TidbSelectOperatorInfoLexer(new StringReader(""));
-    private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(lexer, new ComplexSymbolFactory());
+    private TidbSelectOperatorInfoParser parser;
 
     @BeforeEach
     void setUp() throws TouchstoneException {
+        parser = new TidbSelectOperatorInfoParser(lexer, new ComplexSymbolFactory());
         ColumnManager.getInstance().addColumn("db.table.col1", new Column(ColumnType.INTEGER));
         ColumnManager.getInstance().addColumn("db.table.col2", new Column(ColumnType.INTEGER));
         ColumnManager.getInstance().addColumn("db.table.col3", new Column(ColumnType.INTEGER));

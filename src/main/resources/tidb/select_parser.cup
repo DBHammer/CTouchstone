@@ -20,7 +20,7 @@ import ecnu.db.schema.ColumnType;
 /* define how to connect to the scanner! */
 parser code {:
   private final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
-  private static int parameterId = 0;
+  private int parameterId = 0;
   private AndNode root = new AndNode();
   private List<Parameter> parameters;
   private Set<String> columns;

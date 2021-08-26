@@ -28,10 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class PgSelectOperatorInfoParserTest {
     private final PgSelectOperatorInfoLexer lexer = new PgSelectOperatorInfoLexer(new StringReader(""));
-    private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(lexer, new ComplexSymbolFactory());
+    private PgSelectOperatorInfoParser parser;
 
     @BeforeEach
     void setUp() throws TouchstoneException {
+        parser = new PgSelectOperatorInfoParser(lexer, new ComplexSymbolFactory());
         ColumnManager.getInstance().addColumn("db.table.col1", new Column(ColumnType.INTEGER));
         ColumnManager.getInstance().addColumn("db.table.col2", new Column(ColumnType.INTEGER));
         ColumnManager.getInstance().addColumn("db.table.col3", new Column(ColumnType.INTEGER));
@@ -49,7 +50,7 @@ public class PgSelectOperatorInfoParserTest {
     @DisplayName("test PgSelectOperatorInfoParser.parse method with arithmetic ops")
     @Test
     void testParseWithArithmeticOps() throws Exception {
-        String testCase = "((db.table.col1 * (db.table.col2 + 3)) >= 2)";
+        String testCase = "((db.table.col1 * (db.table.col2 + 3.0)) >= 2)";
         AndNode node = parser.parseSelectOperatorInfo(testCase).getCondition();
         assertEquals("and(ge(mul(db.table.col1, plus(db.table.col2, 3.0)), {id:0, data:2}))", node.toString());
     }
@@ -59,7 +60,7 @@ public class PgSelectOperatorInfoParserTest {
     void testParseWithLogicalOps() throws Exception {
         String testCase = "((db.table.col1 >= 2) or (db.table.col4 < 3.0))";
         AndNode node = parser.parseSelectOperatorInfo(testCase).getCondition();
-        //assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), lt(db.table.col4, {id:1, data:3.0})))", node.toString());
+        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), lt(db.table.col4, {id:1, data:3.0})))", node.toString());
     }
 
     @DisplayName("test PgSelectOperatorInfoParser.parse method with erroneous grammar")
@@ -77,7 +78,7 @@ public class PgSelectOperatorInfoParserTest {
         String testCase = "((db.table.col3) ~~ 'STRING')";
         SelectResult result = parser.parseSelectOperatorInfo(testCase);
         AndNode node = result.getCondition();
-        //assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:'3'}, {id:2, data:'2'}))))", node.toString());
+        assertEquals("and(like(db.table.col3, {id:0, data:STRING}))", node.toString());
     }
 
     @DisplayName("test PgSelectOperatorInfoParser.parse method is null")
@@ -86,7 +87,7 @@ public class PgSelectOperatorInfoParserTest {
         String testCase = "(db.table.col3 IS NULL)";
         SelectResult result = parser.parseSelectOperatorInfo(testCase);
         AndNode node = result.getCondition();
-        //assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:'3'}, {id:2, data:'2'}))))", node.toString());
+        assertEquals("and(isnull(db.table.col3))", node.toString());
     }
 
     @DisplayName("test PgSelectOperatorInfoParser.parse method in")
@@ -95,7 +96,7 @@ public class PgSelectOperatorInfoParserTest {
         String testCase = "((db.table.col3) = ANY ('{\"dasd\",dasd}'))";
         SelectResult result = parser.parseSelectOperatorInfo(testCase);
         AndNode node = result.getCondition();
-        //assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:'3'}, {id:2, data:'2'}))))", node.toString());
+        assertEquals("and(in(db.table.col3, {id:0, data:dasd}, {id:1, data:dasd}))", node.toString());
     }
 
 }
