@@ -1,7 +1,7 @@
 package ecnu.db.analyzer.online.adapter.pg.parser;
 
 import ecnu.db.utils.exception.analyze.IllegalCharacterException;
-import ecnu.db.analyzer.adapter.pg.Token;
+import ecnu.db.analyzer.online.adapter.pg.Token;
 import java_cup.runtime.*;
 import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;

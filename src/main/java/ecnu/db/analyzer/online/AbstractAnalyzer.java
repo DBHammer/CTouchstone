@@ -34,7 +34,6 @@ public abstract class AbstractAnalyzer {
 
     private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
-    protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
     protected double skipNodeThreshold = 0.01;
     protected String defaultDatabase;
