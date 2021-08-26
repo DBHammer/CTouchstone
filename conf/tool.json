@@ -1,32 +1,11 @@
 {
-  "databaseIp": "localhost",
-  "databaseName": "tpch",
-  "databasePort": "4000",
-  "databasePwd": "",
-  "databaseUser": "root",
-  "databaseVersion": "TiDB3",
-  "sqlsDirectory": "conf/sqls",
-  "resultDirectory": "touchstoneconf",
-  "loadDirectory": "load",
-  "dumpDirectory": "dump",
-  "logDirectory": "/var/log",
-  "typeConvert": {
-    "INTEGER": [
-      "int"
-    ],
-    "DATETIME": [
-      "date"
-    ],
-    "DECIMAL": [
-      "decimal"
-    ],
-    "VARCHAR": [
-      "varchar",
-      "char"
-    ],
-    "BOOL": [
-      "bool"
-    ]
+  "databaseConnectorConfig": {
+    "databaseIp": "biui.me",
+    "databaseName": "tpch",
+    "databasePort": "4000",
+    "databasePwd": "",
+    "databaseUser": "root"
   },
-  "tidbHttpPort": "10080"
+  "queriesDirectory": "conf/sqls",
+  "resultDirectory": "result"
 }
