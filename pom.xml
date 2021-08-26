@@ -223,7 +223,7 @@
                         <configuration>
                             <className>TidbSelectOperatorInfoParser</className>
                             <symbolsName>TidbSelectSymbol</symbolsName>
-                            <packageName>ecnu.db.tidb.parser</packageName>
+                            <packageName>ecnu.db.analyzer.online.adapter.tidb.parser</packageName>
                             <cupDefinition>src/main/resources/tidb/select_parser.cup</cupDefinition>
                             <outputDirectory>src/main/java</outputDirectory>
                         </configuration>
@@ -236,7 +236,7 @@
                         <configuration>
                             <className>PgSelectOperatorInfoParser</className>
                             <symbolsName>PgSelectSymbol</symbolsName>
-                            <packageName>ecnu.db.pg.parser</packageName>
+                            <packageName>ecnu.db.analyzer.online.adapter.pg.parser</packageName>
                             <cupDefinition>src/main/resources/pg/pg_select_parser.cup</cupDefinition>
                             <outputDirectory>src/main/java</outputDirectory>
                         </configuration>

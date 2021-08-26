@@ -1,8 +1,8 @@
 package ecnu.db.schema;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.generator.constraintchain.filter.Parameter;
+import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.apache.commons.io.FileUtils;
@@ -50,7 +50,7 @@ public class ColumnManager {
         this.distributionInfoPath = new File(resultDir + CommonUtils.COLUMN_MANAGE_INFO);
     }
 
-    private Column getColumn(String columnName) {
+    public Column getColumn(String columnName) {
         return columns.get(columnName);
     }
 

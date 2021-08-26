@@ -6,7 +6,7 @@ import com.alibaba.druid.sql.parser.Lexer;
 import com.alibaba.druid.sql.parser.Token;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.generator.constraintchain.filter.Parameter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;

@@ -1,15 +1,18 @@
 package ecnu.db.dbconnector;
 
+import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
+import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.schema.Schema;
+import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -113,56 +116,6 @@ public abstract class DbConnector {
 
     public Map<String, Integer> getMultiColNdvMap() {
         return this.multiColNdvMap;
-    }
-
-    /**
-     * @param isCrossMultiDatabase 是否跨多个数据库
-     * @param databaseName         数据库名称，若isCrossMultiDatabase为false，则可以填写null
-     * @param files                SQL文件
-     * @param dbType               数据库类型
-     * @return 表名
-     * @throws IOException         从SQL文件中获取Query失败
-     * @throws TouchstoneException 从Query中获取tableNames失败或不支持的数据库类型
-     */
-    public List<String> fetchTableNames(boolean isCrossMultiDatabase, String databaseName, List<File> files,
-            DbType dbType) throws IOException, TouchstoneException {
-        List<String> tableNames = new ArrayList<>();
-        for (File sqlFile : files) {
-            List<String> queries = QueryReader.getQueriesFromFile(sqlFile.getPath(), dbType);
-            for (String query : queries) {
-                Set<String> tableNameRefs = QueryTableName.getTableName(sqlFile.getAbsolutePath(), query, dbType,
-                        isCrossMultiDatabase);
-                tableNames.addAll(tableNameRefs);
-            }
-        }
-        tableNames = tableNames.stream().distinct().collect(Collectors.toList());
-        if (!isCrossMultiDatabase) {
-            tableNames = tableNames.stream().map((name) -> CommonUtils.addDatabaseNamePrefix(databaseName, name))
-                    .collect(Collectors.toList());
-        }
-        return tableNames;
-    }
-
-    /**
-     * 从数据库中提取Schema
-     *
-     * @param dbSchemaGenerator  Schema生成器
-     * @param canonicalTableName 标准表名
-     * @return Schema
-     * @throws TouchstoneException 生成Schema失败，设置col分布失败或者设置col的cardinality和average
-     *                             length等信息失败
-     * @throws SQLException        获取表的DDL失败或者获取col分布失败
-     */
-    public Schema fetchSchema(SchemaGenerator dbSchemaGenerator, String canonicalTableName)
-            throws TouchstoneException, SQLException {
-        String tableMetadata = getTableMetadata(canonicalTableName);
-        Schema schema = dbSchemaGenerator.generateSchema(canonicalTableName, tableMetadata);
-        String distributionSql = dbSchemaGenerator.getColumnDistributionSql(schema.getTableName(),
-                schema.getColumns().values());
-        String[] dataRange = getDataRange(canonicalTableName, distributionSql);
-        dbSchemaGenerator.setDataRangeBySqlResult(schema.getColumns().values(), dataRange);
-        logger.info(String.format("获取'%s'表结构和表数据分布成功", canonicalTableName));
-        return schema;
     }
 
     public int getTableSize(String canonicalTableName) throws SQLException {

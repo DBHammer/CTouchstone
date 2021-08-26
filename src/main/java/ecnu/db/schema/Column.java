@@ -1,8 +1,8 @@
 package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ecnu.db.constraintchain.filter.Parameter;
-import ecnu.db.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.generator.constraintchain.filter.Parameter;
+import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 
 import java.math.BigDecimal;
 import java.time.Instant;

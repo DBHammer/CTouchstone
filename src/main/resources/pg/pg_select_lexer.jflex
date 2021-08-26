@@ -1,17 +1,17 @@
-package ecnu.db.pg.parser;
+package ecnu.db.analyzer.online.adapter.pg.parser;
 
-import ecnu.db.exception.analyze.IllegalCharacterException;
-import ecnu.db.pg.Token;
+import ecnu.db.utils.exception.analyze.IllegalCharacterException;
+import ecnu.db.analyzer.adapter.pg.Token;
 import java_cup.runtime.*;
-import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
-import ecnu.db.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeType;
+import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 %%
 
 %public
 %class PgSelectOperatorInfoLexer
 /* throws TouchstoneException */
 %yylexthrow{
-ecnu.db.exception.TouchstoneException
+ecnu.db.utils.exception.TouchstoneException
 %yylexthrow}
 
 %{

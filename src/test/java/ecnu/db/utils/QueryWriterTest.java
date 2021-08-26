@@ -2,7 +2,7 @@ package ecnu.db.utils;
 
 import com.alibaba.druid.util.JdbcConstants;
 import ecnu.db.analyzer.statical.QueryWriter;
-import ecnu.db.constraintchain.filter.Parameter;
+import ecnu.db.generator.constraintchain.filter.Parameter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

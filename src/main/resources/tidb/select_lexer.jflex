@@ -1,10 +1,10 @@
-package ecnu.db.tidb.parser;
+package ecnu.db.analyzer.online.adapter.tidb.parser;
 
 import ecnu.db.utils.exception.analyze.IllegalCharacterException;
-import ecnu.db.tidb.Token;
+import ecnu.db.analyzer.adapter.tidb.Token;
 import java_cup.runtime.*;
-import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
-import ecnu.db.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeType;
+import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 %%
 
 %public

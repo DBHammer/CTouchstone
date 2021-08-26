@@ -113,7 +113,7 @@ public class SchemaManager {
         return getSchema(schemaName).getPrimaryKeys();
     }
 
-    private Schema getSchema(String tableName) throws CannotFindSchemaException {
+    public Schema getSchema(String tableName) throws CannotFindSchemaException {
         Schema schema = schemas.get(tableName);
         if (schema == null) {
             throw new CannotFindSchemaException(tableName);

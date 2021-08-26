@@ -1,16 +1,18 @@
 package ecnu.db.analyzer.online;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-import ecnu.db.constraintchain.chain.ConstraintChain;
-import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
-import ecnu.db.constraintchain.chain.ConstraintChainPkJoinNode;
-import ecnu.db.constraintchain.filter.SelectResult;
+import ecnu.db.generator.constraintchain.chain.ConstraintChain;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
+import ecnu.db.generator.constraintchain.filter.SelectResult;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.SchemaManager;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
+import ecnu.db.utils.exception.analyze.UnsupportedSelect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,23 +22,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
-import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
+import static ecnu.db.utils.CommonUtils.*;
 
 /**
  * @author wangqingshuai
  */
 public abstract class AbstractAnalyzer {
 
+    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
-    protected Map<String, String> aliasDic = new HashMap<>();
     protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
     protected double skipNodeThreshold = 0.01;
     protected String defaultDatabase;
     private DbConnector dbConnector;
+    private Map<String, String> aliasDic = new HashMap<>();
 
     public void setAliasDic(Map<String, String> aliasDic) {
         this.aliasDic = aliasDic;
@@ -56,7 +59,7 @@ public abstract class AbstractAnalyzer {
      * @param operatorInfo 需要处理的operator_info
      * @return 提取的表名
      */
-    protected abstract String extractTableName(String operatorInfo) throws IllegalQueryTableNameException;
+    protected abstract String extractOriginTableName(String operatorInfo) throws IllegalQueryTableNameException;
 
     /**
      * 查询树的解析
@@ -83,7 +86,16 @@ public abstract class AbstractAnalyzer {
      * @return SelectResult
      * @throws TouchstoneException 分析失败
      */
-    protected abstract SelectResult analyzeSelectInfo(String operatorInfo) throws TouchstoneException;
+    public SelectResult analyzeSelectInfo(String operatorInfo) throws TouchstoneException{
+        try {
+            return analyzeSelectOperator(operatorInfo);
+        } catch (Exception e) {
+            String stackTrace = Throwables.getStackTraceAsString(e);
+            throw new UnsupportedSelect(operatorInfo, stackTrace);
+        }
+    }
+
+    protected abstract SelectResult analyzeSelectOperator(String operatorInfo) throws Exception;
 
 
     /**
@@ -301,6 +313,42 @@ public abstract class AbstractAnalyzer {
             } else {
                 return leftTableNdv > rightTableNdv;
             }
+        }
+    }
+
+    protected String[] convertToDbTableName(String[] result) {
+        if (aliasDic.containsKey(result[0])) {
+            result[0] = aliasDic.get(result[0]);
+        }
+        if (aliasDic.containsKey(result[2])) {
+            result[2] = aliasDic.get(result[2]);
+        }
+        return result;
+    }
+
+    protected String extractTableName(String operatorInfo) throws IllegalQueryTableNameException {
+        String canonicalTableName = extractOriginTableName(operatorInfo);
+        if (aliasDic.containsKey(canonicalTableName)) {
+            return aliasDic.get(canonicalTableName);
+        }
+        return addDatabaseNamePrefix(canonicalTableName);
+    }
+
+    /**
+     * 单个数据库时把表转换为<database>.<table>的形式
+     *
+     * @param tableName 表名
+     * @return 转换后的表名
+     */
+    public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
+        List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
+        if (matches.size() == 1 && matches.get(0).get(0).length() == tableName.length()) {
+            return tableName;
+        } else {
+            if (defaultDatabase == null) {
+                throw new IllegalQueryTableNameException();
+            }
+            return String.format("%s.%s", defaultDatabase, tableName);
         }
     }
 
