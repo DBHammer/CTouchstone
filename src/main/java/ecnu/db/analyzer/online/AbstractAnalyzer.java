@@ -351,9 +351,4 @@ public abstract class AbstractAnalyzer {
             return String.format("%s.%s", defaultDatabase, tableName);
         }
     }
-
-    public int getParameterId() {
-        return parameterId++;
-    }
-
 }

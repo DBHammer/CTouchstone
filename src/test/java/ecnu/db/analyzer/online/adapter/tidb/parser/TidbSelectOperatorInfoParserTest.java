@@ -29,7 +29,6 @@ public class TidbSelectOperatorInfoParserTest {
         ColumnManager.getInstance().addColumn("db.table.col2", new Column(ColumnType.INTEGER));
         ColumnManager.getInstance().addColumn("db.table.col3", new Column(ColumnType.INTEGER));
         ColumnManager.getInstance().addColumn("db.table.col4", new Column(ColumnType.INTEGER));
-        parser.setAnalyzer(new TidbAnalyzer());
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method")

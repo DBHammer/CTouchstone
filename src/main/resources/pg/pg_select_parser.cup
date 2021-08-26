@@ -11,7 +11,6 @@ import ecnu.db.generator.constraintchain.arithmetic.value.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
 import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
-import ecnu.db.analyzer.online.AbstractAnalyzer;
 import java.io.StringReader;
 import ecnu.db.schema.Schema;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -22,13 +21,10 @@ import ecnu.db.schema.ColumnManager;
 /* define how to connect to the scanner! */
 parser code {:
   private AndNode root = new AndNode();
-  private AbstractAnalyzer analyzer;
+  private int parameterId = 0;
   private List<Parameter> parameters;
   private Set<String> columns;
   private String tableName;
-  public void setAnalyzer(AbstractAnalyzer analyzer) {
-    this.analyzer = analyzer;
-  }
   public SelectResult parseSelectOperatorInfo(String operatorInfo) throws Exception {
     this.parameters = new ArrayList<>();
     this.columns = new HashSet<>();
@@ -172,7 +168,7 @@ uni_compare_expr ::=
                                                                                                     } else {
                                                                                                         operation = new MultiVarFilterOperation(op, e1);
                                                                                                     }
-                                                                                                    Parameter parameter = new Parameter(analyzer.getParameterId(), e1.toString(), constant);
+                                                                                                    Parameter parameter = new Parameter(parameterId++, e1.toString(), constant);
                                                                                                     operation.addParameter(parameter);
                                                                                                     parameters.add(parameter);
                                                                                                     RESULT = operation;
@@ -203,7 +199,7 @@ in_compare_expr ::=
                                                                                       UniVarFilterOperation operation = new UniVarFilterOperation(col, inornotin);
                                                                                       boolean needQuote = isColumnNeedQuote(col), isDate = isColumnDate(col);
                                                                                       for (String argument: arguments) {
-                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), col, argument);
+                                                                                        Parameter parameter = new Parameter(parameterId++, col, argument);
                                                                                         operation.addParameter(parameter);
                                                                                         parameters.add(parameter);
                                                                                       }
@@ -248,7 +244,7 @@ like_compare_expr ::=
                                                                                             String tableName = getCanonicalTableName(col);
                                                                                             verifyTableName(tableName);
                                                                                             UniVarFilterOperation operation = new UniVarFilterOperation(col, likeornot);
-                                                                                            Parameter parameter = new Parameter(analyzer.getParameterId(), col, str);
+                                                                                            Parameter parameter = new Parameter(parameterId++, col, str);
                                                                                             operation.addParameter(parameter);
                                                                                             parameters.add(parameter);
                                                                                             columns.add(col);

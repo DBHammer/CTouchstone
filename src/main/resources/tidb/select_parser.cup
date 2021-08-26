@@ -13,7 +13,6 @@ import ecnu.db.generator.constraintchain.arithmetic.value.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
 import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
-import ecnu.db.analyzer.online.AbstractAnalyzer;
 import java.io.StringReader;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnType;
@@ -21,14 +20,11 @@ import ecnu.db.schema.ColumnType;
 /* define how to connect to the scanner! */
 parser code {:
   private final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
+  private static int parameterId = 0;
   private AndNode root = new AndNode();
-  private AbstractAnalyzer analyzer;
   private List<Parameter> parameters;
   private Set<String> columns;
   private String tableName;
-  public void setAnalyzer(AbstractAnalyzer analyzer) {
-    this.analyzer = analyzer;
-  }
   public SelectResult parseSelectOperatorInfo(String operatorInfo) throws Exception {
     this.parameters = new ArrayList<>();
     this.columns = new HashSet<>();
@@ -154,7 +150,7 @@ uni_compare_expr ::=
                                                                                                     } else {
                                                                                                         operation = new MultiVarFilterOperation(op, e1);
                                                                                                     }
-                                                                                                    Parameter parameter = new Parameter(analyzer.getParameterId(), e1.toString(), constant);
+                                                                                                    Parameter parameter = new Parameter(parameterId++, e1.toString(), constant);
                                                                                                     operation.addParameter(parameter);
                                                                                                     parameters.add(parameter);
                                                                                                     RESULT = operation;
@@ -169,7 +165,7 @@ uni_compare_expr ::=
                                                                                                         } else {
                                                                                                             operation = new MultiVarFilterOperation(op, e1);
                                                                                                         }
-                                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), e1.toString(), ((NumericNode) e2).toString());
+                                                                                                        Parameter parameter = new Parameter(parameterId++, e1.toString(), ((NumericNode) e2).toString());
                                                                                                         operation.addParameter(parameter);
                                                                                                         parameters.add(parameter);
                                                                                                         RESULT = operation;
@@ -187,7 +183,7 @@ uni_compare_expr ::=
                                                                                                         e.setLeftNode(e1);
                                                                                                         e.setRightNode(e2);
                                                                                                         operation = new MultiVarFilterOperation(op, e);
-                                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), e.toString(), "0");
+                                                                                                        Parameter parameter = new Parameter(parameterId++, e.toString(), "0");
                                                                                                         operation.addParameter(parameter);
                                                                                                         parameters.add(parameter);
                                                                                                         RESULT = operation;
@@ -216,7 +212,7 @@ in_compare_expr ::=
                                                                                       verifyTableName(tableName);
                                                                                       UniVarFilterOperation operation = new UniVarFilterOperation(col, in);
                                                                                       for (String argument: arguments) {
-                                                                                        Parameter parameter = new Parameter(analyzer.getParameterId(), col, argument);
+                                                                                        Parameter parameter = new Parameter(parameterId++, col, argument);
                                                                                         operation.addParameter(parameter);
                                                                                         parameters.add(parameter);
                                                                                       }
@@ -254,7 +250,7 @@ like_compare_expr ::=
                                                                                       String tableName = getCanonicalTableName(col);
                                                                                       verifyTableName(tableName);
                                                                                       UniVarFilterOperation operation = new UniVarFilterOperation(col, like);
-                                                                                      Parameter parameter = new Parameter(analyzer.getParameterId(), col, str);
+                                                                                      Parameter parameter = new Parameter(parameterId++, col, str);
                                                                                       operation.addParameter(parameter);
                                                                                       parameters.add(parameter);
                                                                                       columns.add(col);
