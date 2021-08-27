@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static ecnu.db.utils.CommonUtils.convertTableName2CanonicalTableName;
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
 /**
@@ -152,15 +153,7 @@ public class QueryReader {
          * @return 转换后的表名
          */
         public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
-            List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
-            if (matches.size() == 1 && matches.get(0).get(0).length() == tableName.length()) {
-                return tableName;
-            } else {
-                if (defaultDatabaseName == null) {
-                    throw new IllegalQueryTableNameException();
-                }
-                return String.format("%s.%s", defaultDatabaseName, tableName);
-            }
+            return convertTableName2CanonicalTableName(tableName, CANONICAL_TBL_NAME, defaultDatabaseName);
         }
     }
 

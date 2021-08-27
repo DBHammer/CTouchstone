@@ -1,30 +1,20 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.Multimap;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
-import ecnu.db.analyzer.online.AbstractAnalyzer;
+import ecnu.db.analyzer.online.adapter.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.generator.constraintchain.filter.SelectResult;
-import ecnu.db.dbconnector.DatabaseConnectorInterface;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
-import ecnu.db.utils.exception.analyze.UnsupportedSelect;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
-import ecnu.db.schema.Schema;
-import ecnu.db.utils.DatabaseConnectorConfig;
-import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.TaskConfiguratorConfig;
 import java_cup.runtime.ComplexSymbolFactory;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
@@ -39,7 +29,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    protected String extractOriginTableName(String operatorInfo) throws IllegalQueryTableNameException {
+    public String extractOriginTableName(String operatorInfo) throws IllegalQueryTableNameException {
         return null;
     }
 
@@ -66,13 +56,13 @@ public class PgAnalyzer extends AbstractAnalyzer {
             NodeType = rc.read(NodeTypePath);
         }
         ExecutionNode node = getExecutionNode(queryPlan, Path);
-        Stack<Pair<String, ExecutionNode>> stack = new Stack<>();
-        Stack<Pair<String, ExecutionNode>> rootStack = new Stack<>();//存放根节点
-        rootStack.push(Pair.of(Path, node));
-        stack.push(Pair.of(Path, node));
+        Stack<Map.Entry<String, ExecutionNode>> stack = new Stack<>();
+        Stack<Map.Entry<String, ExecutionNode>> rootStack = new Stack<>();//存放根节点
+        rootStack.push(new AbstractMap.SimpleEntry<>(Path, node));
+        stack.push(new AbstractMap.SimpleEntry<>(Path, node));
         String currentPath;
         while (!stack.empty()) {
-            Pair<String, ExecutionNode> pair = stack.pop();
+            Map.Entry<String, ExecutionNode> pair = stack.pop();
             Path = pair.getKey();
             node = pair.getValue();
             Map<String, String> allKeys = getKeys(queryPlan, Path);
@@ -86,18 +76,18 @@ public class PgAnalyzer extends AbstractAnalyzer {
                     }
                     ExecutionNode currentNode = getExecutionNode(queryPlan, currentPath);
                     node.rightNode = currentNode;
-                    stack.push(Pair.of(currentPath, currentNode));
+                    stack.push(new AbstractMap.SimpleEntry<>(currentPath, currentNode));
                     plansCount--;
                 }
                 if (hasChildPlan(allKeys) && plansCount == 1) {
                     currentPath = Path + "['Plans'][0]";
                     ExecutionNode currentNode = getExecutionNode(queryPlan, currentPath);
                     node.leftNode = currentNode;
-                    stack.push(Pair.of(currentPath, currentNode));
+                    stack.push(new AbstractMap.SimpleEntry<>(currentPath, currentNode));
                 }
             }
         }
-        Pair<String, ExecutionNode> rootPair = rootStack.pop();
+        Map.Entry<String, ExecutionNode> rootPair = rootStack.pop();
         ExecutionNode rootNode = rootPair.getValue();
         return rootNode;
     }
@@ -115,13 +105,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
             if (hasFilterInfo(allKeys)) {
                 String filterInfo = rc.read(Path + "['Filter']");
                 String tableName = rc.read(Path + "['Relation Name']");
-                tableName = extractTableName(tableName);
                 String filterInfoTrans = transFilterInfo(filterInfo, tableName);
                 node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.filter, rowCount, filterInfoTrans);
                 return node;
             } else {
                 String tableName = rc.read(Path + "['Relation Name']");
-                tableName = extractTableName(tableName);
                 node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.scan, rowCount, "table:" + tableName);
                 return node;
             }
@@ -148,13 +136,13 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return null;
     }
 
-    private Map<String, String> getKeys(String queryPlan, String Path) throws TouchstoneException {
+    private Map<String, String> getKeys(String queryPlan, String Path) {
         ReadContext rc = JsonPath.parse(queryPlan);
         Map<String, String> allKeys = rc.read(Path);
         return allKeys;
     }
 
-    private boolean hasChildPlan(Map<String, String> allKeys) throws TouchstoneException {
+    private boolean hasChildPlan(Map<String, String> allKeys) {
         for (String key : allKeys.keySet()) {
             if (key.equals("Plans")) {
                 return true;
@@ -163,7 +151,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return false;
     }
 
-    private boolean hasFilterInfo(Map<String, String> allKeys) throws TouchstoneException {
+    private boolean hasFilterInfo(Map<String, String> allKeys) {
         for (String key : allKeys.keySet()) {
             if (key.equals("Filter")) {
                 return true;
@@ -172,7 +160,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return false;
     }
 
-    private boolean hasJoinFilter(Map<String, String> allKeys) throws TouchstoneException {
+    private boolean hasJoinFilter(Map<String, String> allKeys) {
         for (String key : allKeys.keySet()) {
             if (key.equals("Join Filter")) {
                 return true;
@@ -182,7 +170,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     public String transFilterInfo(String filterInfo, String tableName) throws TouchstoneException {
-        Pattern COLNAME = Pattern.compile("[a-zA-Z]+\\_[a-zA-Z]+");
+        Pattern COLNAME = Pattern.compile("[a-zA-Z]+_[a-zA-Z]+");
         Matcher m = COLNAME.matcher(filterInfo);
         StringBuffer info = new StringBuffer();
         while (m.find()) {
@@ -194,7 +182,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     public String transIndexCondInfo(String indexCond, String tableName) throws TouchstoneException {
-        Pattern COLNAME = Pattern.compile("[a-zA-Z]+\\_[a-zA-Z]+");
+        Pattern COLNAME = Pattern.compile("[a-zA-Z]+_[a-zA-Z]+");
         Matcher m = COLNAME.matcher(indexCond);
         m.find();
         String colName = m.group(0);
@@ -202,7 +190,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    protected String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException {
+    public String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException {
         if (joinInfo.contains("other cond:")) {
             throw new TouchstoneException("join中包含其他条件,暂不支持");
         }
@@ -238,12 +226,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
             result[2] = rightTable;
             result[3] = rightCol;
         }
-        return convertToDbTableName(result);
+        return result;
     }
 
 
     @Override
-    protected SelectResult analyzeSelectOperator(String operatorInfo) throws Exception {
+    public SelectResult analyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
     }
 }

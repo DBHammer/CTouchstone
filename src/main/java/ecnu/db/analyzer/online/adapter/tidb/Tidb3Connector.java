@@ -13,8 +13,8 @@ public class Tidb3Connector extends DbConnector {
     }
 
     @Override
-    public String[] getSqlInfoColumns() {
-        return new String[]{"id", "operator info", "execution info"};
+    public int[] getSqlInfoColumns() {
+        return new int[]{1, 4, 5};
     }
 
     /**

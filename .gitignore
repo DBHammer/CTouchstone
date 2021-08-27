@@ -32,8 +32,7 @@ conf
 dependency-reduced-pom.xml
 
 # ignore jflex generated files
-src/main/java/ecnu/db/analyzer/adapter/tidb/parser
-src/main/java/ecnu/db/analyzer/adapter/pg/parser/
+src/main/java/ecnu/db/analyzer/online/adapter/*/parser
 
 
 # kubernetes config for testing

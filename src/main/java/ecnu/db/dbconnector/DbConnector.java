@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  */
 public abstract class DbConnector {
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
-    private final String[] sqlInfoColumns;
+    private final int[] sqlInfoColumns;
     public DatabaseMetaData databaseMetaData;
     // 数据库连接
     protected Statement stmt;
@@ -49,9 +49,9 @@ public abstract class DbConnector {
     }
 
     /**
-     * @return 获取查询计划的列名
+     * @return 获取查询计划的列索引
      */
-    protected abstract String[] getSqlInfoColumns();
+    protected abstract int[] getSqlInfoColumns();
 
     protected abstract String[] formatQueryPlan(String[] queryPlan);
 

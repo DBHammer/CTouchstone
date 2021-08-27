@@ -14,6 +14,7 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNodeDeserializer;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprNodeDeserializer;
+import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -104,5 +105,19 @@ public class CommonUtils {
                 new File(resultDir + CONSTRAINT_CHAINS_INFO), UTF_8),
                 new TypeReference<Map<String, List<ConstraintChain>>>() {
                 });
+    }
+
+    public static String convertTableName2CanonicalTableName(String canonicalTableName,
+                                                             Pattern canonicalTblName,
+                                                             String defaultDatabase) throws IllegalQueryTableNameException {
+        List<List<String>> matches = matchPattern(canonicalTblName, canonicalTableName);
+        if (matches.size() == 1 && matches.get(0).get(0).length() == canonicalTableName.length()) {
+            return canonicalTableName;
+        } else {
+            if (defaultDatabase == null) {
+                throw new IllegalQueryTableNameException();
+            }
+            return String.format("%s.%s", defaultDatabase, canonicalTableName);
+        }
     }
 }

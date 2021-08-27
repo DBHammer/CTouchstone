@@ -9,8 +9,8 @@ import ecnu.db.utils.exception.TouchstoneException;
  * @author wangqingshuai
  */
 public class Tidb4Connector extends DbConnector {
-    private final static String DB_DRIVER_TYPE = "mysql";
-    private final static String JDBC_PROPERTY = "useSSL=false&allowPublicKeyRetrieval=true";
+    private static final String DB_DRIVER_TYPE = "mysql";
+    private static final String JDBC_PROPERTY = "useSSL=false&allowPublicKeyRetrieval=true";
 
 
     public Tidb4Connector(DatabaseConnectorConfig config) throws TouchstoneException {
@@ -18,8 +18,8 @@ public class Tidb4Connector extends DbConnector {
     }
 
     @Override
-    protected String[] getSqlInfoColumns() {
-        return new String[]{"id", "operator info", "actRows", "access object"};
+    protected int[] getSqlInfoColumns() {
+        return new int[]{1, 7, 3, 5};
     }
 
     /**
