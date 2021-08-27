@@ -12,7 +12,6 @@ import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.UnsupportedJoin;
 import ecnu.db.utils.exception.analyze.UnsupportedSelectionConditionException;
 import java_cup.runtime.ComplexSymbolFactory;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.StringReader;
 import java.util.*;
@@ -223,7 +222,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      * @return 生成好的树
      */
     private RawNode buildRawNodeTree(List<String[]> queryPlan) throws TouchstoneException {
-        Deque<Pair<Integer, RawNode>> pStack = new ArrayDeque<>();
+        Deque<Map.Entry<Integer, RawNode>> pStack = new ArrayDeque<>();
         List<List<String>> matches = matchPattern(PLAN_ID, queryPlan.get(0)[0]);
         String nodeType = matches.get(0).get(0).split("_")[0];
         String[] subQueryPlanInfo = queryPlan.get(0);
@@ -234,7 +233,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         List<List<String>> iterMatches = matchPattern(ITER, executionInfo);
         rowCount = quickFixRowCount(nodeType, rowCount, iterMatches);
         RawNode rawNodeRoot = new RawNode(planId, null, null, nodeType, operatorInfo, rowCount), rawNode;
-        pStack.push(Pair.of(0, rawNodeRoot));
+        pStack.push(new AbstractMap.SimpleEntry<>(0, rawNodeRoot));
         for (String[] subQueryPlan : queryPlan.subList(1, queryPlan.size())) {
             subQueryPlanInfo = subQueryPlan;
             matches = matchPattern(PLAN_ID, subQueryPlanInfo[0]);
@@ -262,7 +261,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             } else {
                 pStack.peek().getValue().left = rawNode;
             }
-            pStack.push(Pair.of(level, rawNode));
+            pStack.push(new AbstractMap.SimpleEntry<>(level, rawNode));
         }
         return rawNodeRoot;
     }
