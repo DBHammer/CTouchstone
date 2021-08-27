@@ -1,15 +1,11 @@
 package ecnu.db.dbconnector;
 
-import com.google.common.collect.Lists;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -60,7 +56,7 @@ public abstract class DbConnector {
         tableMetadata = tableMetadata.substring(tableMetadata.indexOf(System.lineSeparator()) + 1,
                 tableMetadata.lastIndexOf(")"));
         tableMetadata = tableMetadata.replaceAll("`", "");
-        List<String> sqls = Lists.newArrayList(tableMetadata.split(System.lineSeparator()));
+        List<String> sqls = Arrays.stream(tableMetadata.split(System.lineSeparator())).toList();
         return sqls.stream().map(String::trim).filter((str -> !str.startsWith("primary key") && !str.startsWith("key")))
                 .collect(Collectors.toList());
     }

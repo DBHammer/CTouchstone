@@ -1,7 +1,5 @@
 package ecnu.db.analyzer.online;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
 import ecnu.db.analyzer.online.adapter.AbstractAnalyzer;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
@@ -242,23 +240,24 @@ public class QueryAnalyzer {
     /**
      * 将树结构根据叶子节点分割为不同的path
      *
-     * @param root  需要处理的查询树
-     * @param paths 需要返回的路径
+     * @param currentNode 需要处理的查询树节点
+     * @param paths       需要返回的路径
      */
-    private void getPathsIterate(ExecutionNode root, List<List<ExecutionNode>> paths) {
-        if (root.leftNode == null && root.rightNode == null) {
-            List<ExecutionNode> newPath = Lists.newArrayList(root);
+    private void getPathsIterate(ExecutionNode currentNode, List<List<ExecutionNode>> paths) {
+        if (currentNode.leftNode == null && currentNode.rightNode == null) {
+            List<ExecutionNode> newPath = new ArrayList<>();
+            newPath.add(currentNode);
             paths.add(newPath);
             return;
         }
-        if (root.leftNode != null) {
-            getPathsIterate(root.leftNode, paths);
+        if (currentNode.leftNode != null) {
+            getPathsIterate(currentNode.leftNode, paths);
         }
-        if (root.rightNode != null) {
-            getPathsIterate(root.rightNode, paths);
+        if (currentNode.rightNode != null) {
+            getPathsIterate(currentNode.rightNode, paths);
         }
         for (List<ExecutionNode> path : paths) {
-            path.add(root);
+            path.add(currentNode);
         }
     }
 
@@ -301,8 +300,7 @@ public class QueryAnalyzer {
         try {
             return abstractAnalyzer.analyzeSelectOperator(operatorInfo);
         } catch (Exception e) {
-            String stackTrace = Throwables.getStackTraceAsString(e);
-            throw new UnsupportedSelect(operatorInfo, stackTrace);
+            throw new UnsupportedSelect(operatorInfo, e);
         }
     }
 }

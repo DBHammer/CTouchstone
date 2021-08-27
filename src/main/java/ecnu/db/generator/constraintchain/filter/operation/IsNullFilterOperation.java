@@ -14,7 +14,7 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IsNullFilterOperation extends AbstractFilterOperation {
     private String canonicalColumnName;
-    private Boolean hasNot = false;
+    private boolean hasNot = false;
 
     public IsNullFilterOperation() {
         super(CompareOperator.ISNULL);
@@ -48,11 +48,11 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         return String.format("isnull(%s)", this.canonicalColumnName);
     }
 
-    public Boolean getHasNot() {
+    public boolean getHasNot() {
         return hasNot;
     }
 
-    public void setHasNot(Boolean hasNot) {
+    public void setHasNot(boolean hasNot) {
         this.hasNot = hasNot;
     }
 

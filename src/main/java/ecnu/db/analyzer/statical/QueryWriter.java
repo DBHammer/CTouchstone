@@ -4,20 +4,14 @@ import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.parser.Lexer;
 import com.alibaba.druid.sql.parser.Token;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import ecnu.db.generator.constraintchain.filter.Parameter;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author alan
@@ -45,7 +39,7 @@ public class QueryWriter {
      */
     public String templatizeSql(String queryCanonicalName, String query, List<Parameter> parameters) {
         Lexer lexer = new Lexer(query, null, dbType);
-        Multimap<String, Pair<Integer, Integer>> literalMap = ArrayListMultimap.create();
+        Map<String, Collection<Map.Entry<Integer, Integer>>> literalMap = new HashMap<>();
         int lastPos = 0, pos;
         while (!lexer.isEOF()) {
             lexer.nextToken();
@@ -53,46 +47,52 @@ public class QueryWriter {
             pos = lexer.pos();
             if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS) {
                 String str = query.substring(lastPos, pos).trim();
-                literalMap.put(str, Pair.of(pos - str.length(), pos));
+                if (!literalMap.containsKey(str)) {
+                    literalMap.put(str, new ArrayList<>());
+                }
+                literalMap.get(str).add(new AbstractMap.SimpleEntry<>(pos - str.length(), pos));
             }
             lastPos = pos;
         }
 
         // replacement
         List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
-        TreeMap<Integer, Pair<Parameter, Pair<Integer, Integer>>> replaceParams = new TreeMap<>();
+        TreeMap<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> replaceParams = new TreeMap<>();
         for (Parameter parameter : parameters) {
             String data = parameter.getDataValue();
-            Collection<Pair<Integer, Integer>> matches = literalMap.get(data);
-            matches.addAll(literalMap.get("'" + data + "'"));
-            if (matches.size() == 0) {
+            Collection<Map.Entry<Integer, Integer>> matches = literalMap.getOrDefault(data, new ArrayList<>());
+            if (literalMap.containsKey("'" + data + "'")) {
+                matches.addAll(literalMap.get("'" + data + "'"));
+            }
+
+            if (matches.isEmpty()) {
                 cannotFindArgs.add(parameter);
             } else if (matches.size() > 1) {
                 conflictArgs.add(parameter);
             } else {
-                Pair<Integer, Integer> pair = matches.stream().findFirst().get();
-                int startPos = pair.getLeft();
-                replaceParams.put(startPos, Pair.of(parameter, pair));
+                Map.Entry<Integer, Integer> pair = matches.stream().findFirst().get();
+                int startPos = pair.getKey();
+                replaceParams.put(startPos, new AbstractMap.SimpleEntry<>(parameter, pair));
             }
         }
         StringBuilder fragments = new StringBuilder();
         int currentPos = 0;
         while (!replaceParams.isEmpty()) {
-            Map.Entry<Integer, Pair<Parameter, Pair<Integer, Integer>>> entry = replaceParams.pollFirstEntry();
-            Pair<Parameter, Pair<Integer, Integer>> pair = entry.getValue();
+            Map.Entry<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> entry = replaceParams.pollFirstEntry();
+            Map.Entry<Parameter, Map.Entry<Integer, Integer>> pair = entry.getValue();
             Parameter parameter = pair.getKey();
-            int startPos = pair.getValue().getLeft(), endPos = pair.getValue().getRight();
+            int startPos = pair.getValue().getKey(), endPos = pair.getValue().getValue();
             fragments.append(query, currentPos, startPos).append(String.format("'%s'", parameter.getId()));
             currentPos = endPos;
         }
         fragments.append(query.substring(currentPos));
         query = fragments.toString();
         if (cannotFindArgs.size() > 0) {
-            logger.warn(String.format("请注意%s中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName));
+            logger.warn("请注意{}中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName);
             query = appendArgs("cannotFindArgs", cannotFindArgs) + query;
         }
         if (conflictArgs.size() > 0) {
-            logger.warn(String.format("请注意%s中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName));
+            logger.warn("请注意{}中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName);
             query = appendArgs("conflictArgs", conflictArgs) + query;
         }
 
@@ -120,6 +120,6 @@ public class QueryWriter {
 
     public void writeQuery(String queryFileName, String query) throws IOException {
         String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-        FileUtils.writeStringToFile(new File(queryDir + queryFileName), formatQuery, UTF_8);
+        CommonUtils.writeFile(queryDir + queryFileName, formatQuery);
     }
 }

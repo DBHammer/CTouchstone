@@ -15,10 +15,8 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChainNodeDeserializer;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprNodeDeserializer;
 import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.math.MathContext;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -31,25 +29,23 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * @author xuechao.lian
  */
 public class CommonUtils {
-    public final static int stepSize = 100000;
-    public final static MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
-    public final static String DUMP_FILE_POSTFIX = "dump";
-    public final static String SQL_FILE_POSTFIX = ".sql";
-    public final static String QUERY_DIR = "/queries/";
-    public final static String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
-    public final static String SCHEMA_MANAGE_INFO = "/schema.json";
-    public final static String COLUMN_MANAGE_INFO = "/distribution.json";
-    public final static String CANONICAL_NAME_CONTACT_SYMBOL = ".";
-    public final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
-    public final static int SampleDoublePrecision = (int) 1E6;
-    public final static int SINGLE_THREAD_TUPLE_SIZE = 100;
-    public final static int INIT_HASHMAP_SIZE = 16;
+    public static final int stepSize = 100000;
+    public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
+    public static final String DUMP_FILE_POSTFIX = "dump";
+    public static final String SQL_FILE_POSTFIX = ".sql";
+    public static final String QUERY_DIR = "/queries/";
+    public static final String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
+    public static final String SCHEMA_MANAGE_INFO = "/schema.json";
+    public static final String COLUMN_MANAGE_INFO = "/distribution.json";
+    public static final String CANONICAL_NAME_CONTACT_SYMBOL = ".";
+    public static final String CANONICAL_NAME_SPLIT_REGEX = "\\.";
+    public static final int SampleDoublePrecision = (int) 1E6;
+    public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
+    public static final int INIT_HASHMAP_SIZE = 16;
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
             .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
             .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
@@ -101,10 +97,15 @@ public class CommonUtils {
     }
 
     public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
-        return CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
-                        new File(resultDir + CONSTRAINT_CHAINS_INFO), UTF_8),
-                new TypeReference<Map<String, List<ConstraintChain>>>() {
-                });
+        BufferedReader reader = new BufferedReader(new FileReader(resultDir + CONSTRAINT_CHAINS_INFO));
+        StringBuilder fileContent = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            fileContent.append(line);
+        }
+        reader.close();
+        return CommonUtils.MAPPER.readValue(fileContent.toString(), new TypeReference<>() {
+        });
     }
 
     public static String convertTableName2CanonicalTableName(String canonicalTableName,
@@ -119,5 +120,22 @@ public class CommonUtils {
             }
             return String.format("%s.%s", defaultDatabase, canonicalTableName);
         }
+    }
+
+    public static String readFile(String path) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(path));
+        StringBuilder fileContent = new StringBuilder();
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            fileContent.append(line);
+        }
+        bufferedReader.close();
+        return fileContent.toString();
+    }
+
+    public static void writeFile(String path, String content) throws IOException {
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path));
+        bufferedWriter.write(content);
+        bufferedWriter.close();
     }
 }

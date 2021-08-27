@@ -2,8 +2,6 @@ package ecnu.db.generator.constraintchain;
 
 import ch.obermuhlner.math.big.BigDecimalMath;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
@@ -13,13 +11,11 @@ import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperatio
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
-import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -31,7 +27,7 @@ import java.util.stream.IntStream;
 
 import static ecnu.db.analyzer.TaskConfigurator.queryInstantiation;
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static ecnu.db.utils.CommonUtils.readFile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -43,16 +39,14 @@ class QueryInstantiationBasicTest {
     @BeforeEach
     public void setUp() throws IOException {
         ParameterResolver.ITEMS.clear();
-        query2chains = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
-                new File("src/test/resources/data/query-instantiation/basic/constraintChain.json"), UTF_8),
-                new TypeReference<Map<String, List<ConstraintChain>>>() {
-                });
+        String content = readFile("src/test/resources/data/query-instantiation/basic/constraintChain.json");
+        query2chains = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        });
     }
 
-
     @Test
-    public void getOperationsTest() throws Exception {
-        Multimap<String, AbstractFilterOperation> query2operations = ArrayListMultimap.create();
+    void getOperationsTest() {
+        Map<String, List<AbstractFilterOperation>> query2operations = new HashMap<>();
         for (String query : query2chains.keySet()) {
             List<ConstraintChain> chains = query2chains.get(query);
             for (ConstraintChain chain : chains) {
@@ -60,31 +54,34 @@ class QueryInstantiationBasicTest {
                 for (ConstraintChainNode node : chain.getNodes()) {
                     if (node instanceof ConstraintChainFilterNode) {
                         List<AbstractFilterOperation> operations = ((ConstraintChainFilterNode) node).pushDownProbability();
-                        query2operations.putAll(query + "_" + tableName, operations);
+                        String key = query + "_" + tableName;
+                        if (!query2operations.containsKey(key)) {
+                            query2operations.put(key, new ArrayList<>());
+                        }
+                        query2operations.get(key).addAll(operations);
                     }
                 }
             }
         }
         List<AbstractFilterOperation> operations;
-        operations = new ArrayList<>(query2operations.get("2_1.sql_tpch.part"));
-        assertEquals(0, operations.size());
+        operations = query2operations.get("2_1.sql_tpch.part");
+        assertEquals(null, operations);
 
-        operations = new ArrayList<>(query2operations.get("3_1.sql_tpch.customer"));
+        operations = query2operations.get("3_1.sql_tpch.customer");
         assertEquals(1, operations.size());
         assertThat(BigDecimal.valueOf(0.1983466667), Matchers.comparesEqualTo(operations.get(0).getProbability()));
-        operations = new ArrayList<>(query2operations.get("3_1.sql_tpch.orders"));
+        operations = query2operations.get("3_1.sql_tpch.orders");
         assertEquals(1, operations.size());
         assertThat(BigDecimal.valueOf(0.4838209734), Matchers.comparesEqualTo(operations.get(0).getProbability()));
 
-        operations = new ArrayList<>(query2operations.get("1_1.sql_tpch.lineitem"));
+        operations = query2operations.get("1_1.sql_tpch.lineitem");
         assertEquals(1, operations.size());
         assertThat(BigDecimal.valueOf(0.9797396027), Matchers.comparesEqualTo(operations.get(0).getProbability()));
 
         //todo check 
-        operations = new ArrayList<>(query2operations.get("6_1.sql_tpch.lineitem"));
+        operations = query2operations.get("6_1.sql_tpch.lineitem");
         assertEquals(3, operations.size());
         assertThat(BigDecimalMath.pow(BigDecimal.valueOf(0.01902281455), BigDecimal.ONE.divide(BigDecimal.valueOf(3), BIG_DECIMAL_DEFAULT_PRECISION), BIG_DECIMAL_DEFAULT_PRECISION), Matchers.comparesEqualTo(operations.get(0).getProbability()));
-
     }
 
     @Disabled

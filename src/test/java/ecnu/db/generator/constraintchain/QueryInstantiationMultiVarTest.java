@@ -10,22 +10,19 @@ import ecnu.db.generator.constraintchain.filter.ParameterResolver;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static ecnu.db.analyzer.TaskConfigurator.queryInstantiation;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class QueryInstantiationMultiVarTest {
+class QueryInstantiationMultiVarTest {
     Map<String, List<ConstraintChain>> query2chains;
     private final static int samplingSize = 10_000;
 
@@ -33,17 +30,16 @@ public class QueryInstantiationMultiVarTest {
     public void setUp() throws IOException {
         ArithmeticNode.setSize(samplingSize);
         ParameterResolver.ITEMS.clear();
-        query2chains = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
-                new File("src/test/resources/data/query-instantiation/multi-var-test/constraintChain.json"), UTF_8),
-                new TypeReference<Map<String, List<ConstraintChain>>>() {
-                });
+        String fileContent = CommonUtils.readFile("src/test/resources/data/query-instantiation/multi-var-test/constraintChain.json");
+        query2chains = CommonUtils.MAPPER.readValue(fileContent, new TypeReference<>() {
+        });
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/multi-var-test");
         ColumnManager.getInstance().loadColumnDistribution();
     }
 
     @Disabled
     @Test
-    public void computeMultiVarTest() throws Exception {
+    void computeMultiVarTest() throws Exception {
 
         // *********************************
         // *    test query instantiation   *

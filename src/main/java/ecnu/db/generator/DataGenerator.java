@@ -1,7 +1,5 @@
 package ecnu.db.generator;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.joininfo.JoinInfoTable;
 import ecnu.db.generator.joininfo.JoinInfoTableManager;
@@ -42,11 +40,14 @@ public class DataGenerator implements Callable<Integer> {
     @CommandLine.Option(names = {"-n", "--num"}, description = "size of generators")
     private int generatorNum;
 
-    private static Multimap<String, ConstraintChain> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
-        Multimap<String, ConstraintChain> schema2chains = ArrayListMultimap.create();
+    private static Map<String, Collection<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
+        Map<String, Collection<ConstraintChain>> schema2chains = new HashMap<>();
         for (List<ConstraintChain> chains : query2chains.values()) {
             for (ConstraintChain chain : chains) {
-                schema2chains.put(chain.getTableName(), chain);
+                if (!schema2chains.containsKey(chain.getTableName())) {
+                    schema2chains.put(chain.getTableName(), new ArrayList<>());
+                }
+                schema2chains.get(chain.getTableName()).add(chain);
             }
         }
         return schema2chains;
@@ -61,7 +62,7 @@ public class DataGenerator implements Callable<Integer> {
         JoinInfoTableManager.getInstance().setJoinInfoTablePath(configPath);
         Map<String, List<ConstraintChain>> query2chains = CommonUtils.loadConstrainChainResult(configPath);
         int stepRange = stepSize * generatorNum;
-        Multimap<String, ConstraintChain> schema2chains = getSchema2Chains(query2chains);
+        Map<String, Collection<ConstraintChain>> schema2chains = getSchema2Chains(query2chains);
         for (String schemaName : SchemaManager.getInstance().createTopologicalOrder()) {
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             logger.info("开始输出表数据" + schemaName);

@@ -24,7 +24,6 @@ import ecnu.db.schema.SchemaManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -38,7 +37,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author alan
@@ -64,15 +62,15 @@ public class TaskConfigurator implements Callable<Integer> {
     public static Map<Integer, Parameter> queryInstantiation(List<ConstraintChain> constraintChains, int samplingSize) {
         List<AbstractFilterOperation> filterOperations = constraintChains.stream()
                 .map(constraintChain -> constraintChain.getNodes().stream()
-                        .filter(node -> node instanceof ConstraintChainFilterNode)
+                        .filter(ConstraintChainFilterNode.class::isInstance)
                         .map(node -> ((ConstraintChainFilterNode) node).pushDownProbability())
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList()))
                 .flatMap(Collection::stream).collect(Collectors.toList());
 
         // uni-var operation
-        filterOperations.stream().filter((f) -> f instanceof UniVarFilterOperation)
-                .map(f -> (UniVarFilterOperation) f).forEach(UniVarFilterOperation::instantiateParameter);
+        filterOperations.stream().filter(f -> f instanceof UniVarFilterOperation)
+                .map(UniVarFilterOperation.class::cast).forEach(UniVarFilterOperation::instantiateParameter);
 
         // init eq params
         ColumnManager.getInstance().initAllEqParameter();
@@ -97,8 +95,8 @@ public class TaskConfigurator implements Callable<Integer> {
     public Integer call() throws Exception {
         ecnu.db.utils.TaskConfiguratorConfig config;
         if (taskConfiguratorConfig.othersConfig.fileConfigInfo != null) {
-            config = MAPPER.readValue(FileUtils.readFileToString(
-                    new File(taskConfiguratorConfig.othersConfig.fileConfigInfo.configPath), UTF_8), ecnu.db.utils.TaskConfiguratorConfig.class);
+            config = MAPPER.readValue(CommonUtils.readFile(taskConfiguratorConfig.othersConfig.fileConfigInfo.configPath),
+                    ecnu.db.utils.TaskConfiguratorConfig.class);
         } else {
             CliConfigInfo cliConfigInfo = taskConfiguratorConfig.othersConfig.cliConfigInfo;
             config = new ecnu.db.utils.TaskConfiguratorConfig();
@@ -206,10 +204,10 @@ public class TaskConfigurator implements Callable<Integer> {
         logger.info("持久化数据分布信息成功");
         logger.info("开始持久化查询计划");
         String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
-        FileUtils.writeStringToFile(new File(resultDir + CONSTRAINT_CHAINS_INFO), allConstraintChainsContent, UTF_8);
+        CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
-            FileUtils.writeStringToFile(new File(resultDir + "/pic/" + stringListEntry.getKey() + ".gv"),
-                    ConstraintChainManager.presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()), UTF_8);
+            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".gv",
+                    ConstraintChainManager.presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()));
         }
         logger.info("持久化查询计划完成");
         logger.info("开始填充查询模版");

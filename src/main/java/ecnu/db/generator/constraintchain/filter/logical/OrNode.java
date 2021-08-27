@@ -1,8 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.logical;
 
 import ch.obermuhlner.math.big.BigDecimalMath;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
@@ -61,8 +59,8 @@ public class OrNode implements BoolExprNode {
         }
 
         List<BoolExprNode> otherNodes = new LinkedList<>();
-        Multimap<String, UniVarFilterOperation> lessCol2UniFilters = ArrayListMultimap.create();
-        Multimap<String, UniVarFilterOperation> greaterCol2UniFilters = ArrayListMultimap.create();
+        Map<String, Collection<UniVarFilterOperation>> lessCol2UniFilters = new HashMap<>();
+        Map<String, Collection<UniVarFilterOperation>> greaterCol2UniFilters = new HashMap<>();
         for (BoolExprNode child : Arrays.asList(leftNode, rightNode)) {
             switch (child.getType()) {
                 case AND:
@@ -75,11 +73,17 @@ public class OrNode implements BoolExprNode {
                     switch (operation.getOperator()) {
                         case GE:
                         case GT:
-                            greaterCol2UniFilters.put(operation.getCanonicalColumnName(), operation);
+                            if (!greaterCol2UniFilters.containsKey(operation.getCanonicalColumnName())) {
+                                greaterCol2UniFilters.put(operation.getCanonicalColumnName(), new ArrayList<>());
+                            }
+                            greaterCol2UniFilters.get(operation.getCanonicalColumnName()).add(operation);
                             break;
                         case LE:
                         case LT:
-                            lessCol2UniFilters.put(operation.getCanonicalColumnName(), operation);
+                            if (!lessCol2UniFilters.containsKey(operation.getCanonicalColumnName())) {
+                                lessCol2UniFilters.put(operation.getCanonicalColumnName(), new ArrayList<>());
+                            }
+                            lessCol2UniFilters.get(operation.getCanonicalColumnName()).add(operation);
                             break;
                         case EQ:
                         case LIKE:

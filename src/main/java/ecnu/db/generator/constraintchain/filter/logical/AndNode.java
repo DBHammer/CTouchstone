@@ -1,8 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.logical;
 
 import ch.obermuhlner.math.big.BigDecimalMath;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
@@ -46,11 +44,11 @@ public class AndNode implements BoolExprNode {
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
-            logger.info(String.format("'%s'的概率为0", this));
+            logger.info("{}的概率为0", this);
             return new ArrayList<>();
         }
         List<BoolExprNode> otherNodes = new LinkedList<>();
-        Multimap<String, UniVarFilterOperation> col2uniFilters = ArrayListMultimap.create();
+        Map<String, Collection<UniVarFilterOperation>> col2uniFilters = new HashMap<>();
         for (BoolExprNode child : children) {
             switch (child.getType()) {
                 case AND:
@@ -59,13 +57,17 @@ public class AndNode implements BoolExprNode {
                     otherNodes.add(child);
                     break;
                 case UNI_FILTER_OPERATION:
-                    CompareOperator operator = ((UniVarFilterOperation) child).getOperator();
+                    UniVarFilterOperation uvfChild = (UniVarFilterOperation) child;
+                    CompareOperator operator = uvfChild.getOperator();
                     switch (operator) {
                         case GE:
                         case GT:
                         case LE:
                         case LT:
-                            col2uniFilters.put(((UniVarFilterOperation) child).getCanonicalColumnName(), (UniVarFilterOperation) child);
+                            if (!col2uniFilters.containsKey(uvfChild.getCanonicalColumnName())) {
+                                col2uniFilters.put(uvfChild.getCanonicalColumnName(), new ArrayList<>());
+                            }
+                            col2uniFilters.get((uvfChild.getCanonicalColumnName())).add(uvfChild);
                             break;
                         case EQ:
                         case LIKE:

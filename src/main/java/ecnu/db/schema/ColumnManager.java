@@ -5,7 +5,6 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
-import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
@@ -83,13 +81,13 @@ public class ColumnManager {
 
     public void storeColumnDistribution() throws IOException {
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columns);
-        FileUtils.writeStringToFile(distributionInfoPath, content, UTF_8);
+        CommonUtils.writeFile(distributionInfoPath.getPath(), content);
     }
 
     public void loadColumnDistribution() throws IOException {
-        columns = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(distributionInfoPath, UTF_8),
-                new TypeReference<LinkedHashMap<String, Column>>() {
-                });
+        String fileContent = CommonUtils.readFile(distributionInfoPath.getPath());
+        columns = CommonUtils.MAPPER.readValue(fileContent, new TypeReference<>() {
+        });
     }
 
     public void initAllEqParameter() {

@@ -48,8 +48,8 @@ public class QueryReader {
                 .map(Arrays::asList)
                 .orElse(new ArrayList<>())
                 .stream()
-                .filter((file) -> file.isFile() && file.getName().endsWith(".sql"))
-                .collect(Collectors.toList());
+                .filter(file -> file.isFile() && file.getName().endsWith(".sql"))
+                .toList();
     }
 
     public List<String> getQueriesFromFile(String file) throws IOException {
@@ -58,10 +58,8 @@ public class QueryReader {
         String line;
         while ((line = reader.readLine()) != null) {
             line = line.trim();
-            if (line.length() > 0) {
-                if (!line.startsWith("--")) {
-                    fileContents.append(line).append(System.lineSeparator());
-                }
+            if (line.length() > 0 && !line.startsWith("--")) {
+                fileContents.append(line).append(System.lineSeparator());
             }
         }
         List<SQLStatement> statementList = SQLUtils.parseStatements(fileContents.toString(), dbType, false);
