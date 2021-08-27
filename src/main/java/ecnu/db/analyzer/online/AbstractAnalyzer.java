@@ -1,21 +1,18 @@
 package ecnu.db.analyzer.online;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import ecnu.db.analyzer.statical.QueryAliasParser;
-import ecnu.db.constraintchain.chain.ConstraintChain;
-import ecnu.db.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.constraintchain.chain.ConstraintChainFkJoinNode;
-import ecnu.db.constraintchain.chain.ConstraintChainPkJoinNode;
-import ecnu.db.constraintchain.filter.SelectResult;
-import ecnu.db.dbconnector.DatabaseConnectorInterface;
-import ecnu.db.exception.schema.CannotFindSchemaException;
-import ecnu.db.exception.TouchstoneException;
-import ecnu.db.exception.analyze.UnsupportedDBTypeException;
-import ecnu.db.schema.Schema;
-import ecnu.db.utils.AbstractDatabaseInfo;
-import ecnu.db.utils.config.PrepareConfig;
-import ecnu.db.utils.TouchstoneSupportedDatabaseVersion;
+import ecnu.db.generator.constraintchain.chain.ConstraintChain;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
+import ecnu.db.generator.constraintchain.filter.SelectResult;
+import ecnu.db.dbconnector.DbConnector;
+import ecnu.db.schema.ColumnManager;
+import ecnu.db.schema.SchemaManager;
+import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
+import ecnu.db.utils.exception.analyze.UnsupportedSelect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,49 +22,35 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
+import static ecnu.db.utils.CommonUtils.*;
 
 /**
  * @author wangqingshuai
  */
 public abstract class AbstractAnalyzer {
 
+    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAnalyzer.class);
-    protected final QueryAliasParser queryAliasParser = new QueryAliasParser();
-    protected DatabaseConnectorInterface dbConnector;
-    protected Map<String, String> aliasDic = new HashMap<>();
-    protected Map<String, Schema> schemas;
-    protected int parameterId = 0;
     protected NodeTypeTool nodeTypeRef;
-    protected PrepareConfig config;
-    protected Multimap<String, String> tblName2CanonicalTblName;
-    protected TouchstoneSupportedDatabaseVersion analyzerSupportedDatabaseVersion;
-    protected AbstractDatabaseInfo databaseInfo;
+    protected double skipNodeThreshold = 0.01;
+    protected String defaultDatabase;
+    private DbConnector dbConnector;
+    private Map<String, String> aliasDic = new HashMap<>();
 
-    protected AbstractAnalyzer(PrepareConfig config, DatabaseConnectorInterface dbConnector,
-                               AbstractDatabaseInfo databaseInfo, Map<String, Schema> schemas,
-                               Multimap<String, String> tblName2CanonicalTblName) {
-        analyzerSupportedDatabaseVersion = config.getDatabaseVersion();
-        this.dbConnector = dbConnector;
-        this.schemas = schemas;
-        this.config = config;
-        this.tblName2CanonicalTblName = tblName2CanonicalTblName;
-        this.databaseInfo = databaseInfo;
+    public void setAliasDic(Map<String, String> aliasDic) {
+        this.aliasDic = aliasDic;
     }
 
-    public AbstractAnalyzer check() throws TouchstoneException {
-        if (databaseInfo == null || databaseInfo.getSupportedDatabaseVersions() == null || databaseInfo.getSupportedDatabaseVersions().size() == 0) {
-            throw new TouchstoneException("未制定分析器配置信息");
-        } else if (!databaseInfo.getSupportedDatabaseVersions().contains(analyzerSupportedDatabaseVersion)) {
-            throw new UnsupportedDBTypeException(config.getDatabaseVersion());
-        } else if (nodeTypeRef == null) {
-            throw new TouchstoneException("未初始化node映射");
-        } else {
-            return this;
-        }
+    public void setDefaultDatabase(String defaultDatabase) {
+        this.defaultDatabase = defaultDatabase;
     }
 
+    public void setSkipNodeThreshold(double skipNodeThreshold) {
+        this.skipNodeThreshold = skipNodeThreshold;
+    }
 
     /**
      * 从operator_info里提取tableName
@@ -75,7 +58,7 @@ public abstract class AbstractAnalyzer {
      * @param operatorInfo 需要处理的operator_info
      * @return 提取的表名
      */
-    protected abstract String extractTableName(String operatorInfo);
+    protected abstract String extractOriginTableName(String operatorInfo) throws IllegalQueryTableNameException;
 
     /**
      * 查询树的解析
@@ -102,37 +85,43 @@ public abstract class AbstractAnalyzer {
      * @return SelectResult
      * @throws TouchstoneException 分析失败
      */
-    protected abstract SelectResult analyzeSelectInfo(String operatorInfo) throws TouchstoneException;
-
-    public List<String[]> getQueryPlan(String queryCanonicalName, String sql, AbstractDatabaseInfo databaseInfo) throws SQLException, TouchstoneException {
-        aliasDic = queryAliasParser.getTableAlias(config.isCrossMultiDatabase(), config.getDatabaseName(), sql, databaseInfo.getStaticalDbVersion());
-        return dbConnector.explainQuery(queryCanonicalName, sql, databaseInfo.getSqlInfoColumns());
+    public SelectResult analyzeSelectInfo(String operatorInfo) throws TouchstoneException{
+        try {
+            return analyzeSelectOperator(operatorInfo);
+        } catch (Exception e) {
+            String stackTrace = Throwables.getStackTraceAsString(e);
+            throw new UnsupportedSelect(operatorInfo, stackTrace);
+        }
     }
+
+    protected abstract SelectResult analyzeSelectOperator(String operatorInfo) throws Exception;
+
 
     /**
      * 获取查询树的约束链信息和表信息
      *
-     * @param queryCanonicalName query的标准名称
-     * @param root               查询树
+     * @param query 查询语句
      * @return 该查询树结构出的约束链信息和表信息
      */
-    public List<ConstraintChain> extractQueryInfos(String queryCanonicalName, ExecutionNode root) throws SQLException {
+    public List<ConstraintChain> extractQuery(String query) throws SQLException {
         List<ConstraintChain> constraintChains = new ArrayList<>();
-        List<List<ExecutionNode>> paths = getPaths(root);
-        for (List<ExecutionNode> path : paths) {
-            ConstraintChain constraintChain = null;
-            try {
-                constraintChain = extractConstraintChain(path);
-            } catch (TouchstoneException e) {
-                logger.error(String.format("提取'%s'的一个约束链失败", queryCanonicalName), e);
+        List<String[]> queryPlan = dbConnector.explainQuery(query);
+        try {
+            ExecutionNode executionTree = getExecutionTree(queryPlan);
+            for (List<ExecutionNode> path : getPaths(executionTree)) {
+                constraintChains.add(extractConstraintChain(path));
             }
-            if (constraintChain == null) {
-                break;
+        } catch (TouchstoneException | SQLException e) {
+            if (queryPlan != null && !queryPlan.isEmpty()) {
+                String queryPlanContent = queryPlan.stream().map((strs) -> String.join(";", strs))
+                        .collect(Collectors.joining(System.lineSeparator()));
+                logger.error(queryPlanContent, e);
             }
-            constraintChains.add(constraintChain);
         }
+        logger.info("Status:获取完成");
         return constraintChains;
     }
+
 
     /**
      * 获取查询树的所有路径
@@ -175,7 +164,7 @@ public abstract class AbstractAnalyzer {
      * @param path 需要处理的路径
      * @return 获取的约束链
      * @throws TouchstoneException 无法处理路径
-     * @throws SQLException                 无法处理路径
+     * @throws SQLException        无法采集多列主键的ndv
      */
     private ConstraintChain extractConstraintChain(List<ExecutionNode> path) throws TouchstoneException, SQLException {
         if (path == null || path.size() == 0) {
@@ -189,8 +178,8 @@ public abstract class AbstractAnalyzer {
             SelectResult result = analyzeSelectInfo(node.getInfo());
             tableName = result.getTableName();
             constraintChain = new ConstraintChain(tableName);
-            BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(getSchema(tableName).getTableSize()), BIG_DECIMAL_DEFAULT_PRECISION);
-            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(tableName, ratio, result.getCondition(), result.getColumns());
+            BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(SchemaManager.getInstance().getTableSize(tableName)), BIG_DECIMAL_DEFAULT_PRECISION);
+            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result.getCondition(), result.getColumns());
             constraintChain.addNode(filterNode);
             constraintChain.addParameters(result.getParameters());
             lastNodeLineCount = node.getOutputRows();
@@ -207,7 +196,7 @@ public abstract class AbstractAnalyzer {
                 lastNodeLineCount = analyzeNode(node, constraintChain, tableName, lastNodeLineCount);
             } catch (TouchstoneException e) {
                 // 小于设置的阈值以后略去后续的节点
-                if (node.getOutputRows() * 1.0 / getSchema(tableName).getTableSize() < config.getSkipNodeThreshold()) {
+                if (node.getOutputRows() * 1.0 / SchemaManager.getInstance().getTableSize(tableName) < skipNodeThreshold) {
                     logger.error("提取约束链失败", e);
                     logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), node));
                     break;
@@ -229,7 +218,7 @@ public abstract class AbstractAnalyzer {
      * @param tableName       表名
      * @return 节点行数，小于0代表停止继续向上分析
      * @throws TouchstoneException 节点分析出错
-     * @throws SQLException                 节点分析出错
+     * @throws SQLException        无法收集多列主键的ndv
      */
     private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, String tableName, int lastNodeLineCount) throws TouchstoneException, SQLException {
         if (node.getType() == ExecutionNode.ExecutionNodeType.scan) {
@@ -238,9 +227,9 @@ public abstract class AbstractAnalyzer {
         if (node.getType() == ExecutionNode.ExecutionNodeType.filter) {
             SelectResult result = analyzeSelectInfo(node.getInfo());
             if (!tableName.equals(result.getTableName())) {
-                throw new TouchstoneException("select表名不匹配");
+                return -1;
             }
-            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(tableName, BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount), result.getCondition(), result.getColumns());
+            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount), result.getCondition(), result.getColumns());
             lastNodeLineCount = node.getOutputRows();
             constraintChain.addNode(filterNode);
             constraintChain.addParameters(result.getParameters());
@@ -263,27 +252,29 @@ public abstract class AbstractAnalyzer {
             //根据主外键分别设置约束链输出信息
             if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(getSchema(localTable).getJoinTag());
+                    node.setJoinTag(SchemaManager.getInstance().getJoinTag(localTable));
                 }
-                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(localTable, node.getJoinTag(), localCol.split(","));
+                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(node.getJoinTag(), localCol.split(","));
                 constraintChain.addNode(pkJoinNode);
                 //设置主键
-                getSchema(localTable).setPrimaryKeys(localCol);
+                SchemaManager.getInstance().setPrimaryKeys(localTable, localCol);
                 return -1; // 主键的情况下停止继续遍历
             } else {
                 if (node.getJoinTag() < 0) {
-                    node.setJoinTag(getSchema(localTable).getJoinTag());
+                    node.setJoinTag(SchemaManager.getInstance().getJoinTag(localTable));
                 }
                 BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
-                //设置外键
-                logger.info("table:" + localTable + ".column:" + localCol + " -ref- table:" +
-                        externalCol + ".column:" + externalTable);
-                getSchema(localTable).addForeignKey(localCol, externalTable, externalCol);
-                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable, externalTable, node.getJoinTag(), externalCol, localCol, probability);
+                SchemaManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
+                ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, node.getJoinTag(), probability);
                 constraintChain.addNode(fkJoinNode);
+                lastNodeLineCount = node.getOutputRows();
             }
         }
         return lastNodeLineCount;
+    }
+
+    public void setDbConnector(DbConnector dbConnector) {
+        this.dbConnector = dbConnector;
     }
 
     /**
@@ -295,42 +286,68 @@ public abstract class AbstractAnalyzer {
      * @param fkCol   外键
      * @return 该列是否为主键
      * @throws TouchstoneException 由于逻辑错误无法判断是否为主键的异常
-     * @throws SQLException                 无法通过数据库SQL查询获得多列属性的ndv
+     * @throws SQLException        无法通过数据库SQL查询获得多列属性的ndv
      */
-    private boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneException, SQLException {
-        if (String.format("%s.%s", pkTable, pkCol).equals(getSchema(fkTable).getMetaDataFks().get(fkCol))) {
+    public boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneException, SQLException {
+        if (SchemaManager.getInstance().isRefTable(fkTable, fkCol, pkTable + "." + pkCol)) {
             return true;
         }
-        if (String.format("%s.%s", fkTable, fkCol).equals(getSchema(pkTable).getMetaDataFks().get(pkCol))) {
+        if (SchemaManager.getInstance().isRefTable(pkTable, pkCol, fkTable + "." + fkCol)) {
             return false;
         }
         if (!pkCol.contains(",")) {
-            if (getSchema(pkTable).getNdv(pkCol) == getSchema(fkTable).getNdv(fkCol)) {
-                return getSchema(pkTable).getTableSize() < getSchema(fkTable).getTableSize();
+            if (ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol) ==
+                    ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol)) {
+                return SchemaManager.getInstance().getTableSize(pkTable) < SchemaManager.getInstance().getTableSize(fkTable);
             } else {
-                return getSchema(pkTable).getNdv(pkCol) > getSchema(fkTable).getNdv(fkCol);
+                int pkTableNdv = ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol);
+                int fkTableNdv = ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
+                return pkTableNdv > fkTableNdv;
             }
         } else {
             int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
             int rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
             if (leftTableNdv == rightTableNdv) {
-                return getSchema(pkTable).getTableSize() < getSchema(fkTable).getTableSize();
+                return SchemaManager.getInstance().getTableSize(pkTable) < SchemaManager.getInstance().getTableSize(fkTable);
             } else {
                 return leftTableNdv > rightTableNdv;
             }
         }
     }
 
-    public int getParameterId() {
-        return parameterId++;
-    }
-
-    public Schema getSchema(String tableName) throws CannotFindSchemaException {
-        Schema schema = schemas.get(tableName);
-        if (schema == null) {
-            throw new CannotFindSchemaException(tableName);
+    protected String[] convertToDbTableName(String[] result) {
+        if (aliasDic.containsKey(result[0])) {
+            result[0] = aliasDic.get(result[0]);
         }
-        return schema;
+        if (aliasDic.containsKey(result[2])) {
+            result[2] = aliasDic.get(result[2]);
+        }
+        return result;
     }
 
+    protected String extractTableName(String operatorInfo) throws IllegalQueryTableNameException {
+        String canonicalTableName = extractOriginTableName(operatorInfo);
+        if (aliasDic.containsKey(canonicalTableName)) {
+            return aliasDic.get(canonicalTableName);
+        }
+        return addDatabaseNamePrefix(canonicalTableName);
+    }
+
+    /**
+     * 单个数据库时把表转换为<database>.<table>的形式
+     *
+     * @param tableName 表名
+     * @return 转换后的表名
+     */
+    public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
+        List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
+        if (matches.size() == 1 && matches.get(0).get(0).length() == tableName.length()) {
+            return tableName;
+        } else {
+            if (defaultDatabase == null) {
+                throw new IllegalQueryTableNameException();
+            }
+            return String.format("%s.%s", defaultDatabase, tableName);
+        }
+    }
 }

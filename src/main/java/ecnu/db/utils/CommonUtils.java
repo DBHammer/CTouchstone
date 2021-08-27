@@ -1,21 +1,83 @@
 package ecnu.db.utils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNode;
+import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeDeserializer;
+import ecnu.db.generator.constraintchain.chain.ConstraintChain;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainNodeDeserializer;
+import ecnu.db.generator.constraintchain.filter.BoolExprNode;
+import ecnu.db.generator.constraintchain.filter.BoolExprNodeDeserializer;
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
 import java.math.MathContext;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author xuechao.lian
  */
 public class CommonUtils {
-    public static final int INIT_HASHMAP_SIZE = 16;
-    public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
-    public static final String DUMP_FILE_POSTFIX = "dump";
-    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
-    public static final String SQL_FILE_POSTFIX = ".sql";
+    public final static int stepSize = 100000;
+    public final static MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
+    public final static String DUMP_FILE_POSTFIX = "dump";
+    public final static String SQL_FILE_POSTFIX = ".sql";
+    public final static String QUERY_DIR = "/queries/";
+    public final static String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
+    public final static String SCHEMA_MANAGE_INFO = "/schema.json";
+    public final static String COLUMN_MANAGE_INFO = "/distribution.json";
+    public final static String CANONICAL_NAME_CONTACT_SYMBOL = ".";
+    public final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
+    public final static int SampleDoublePrecision = (int) 1E6;
+    public final static int SINGLE_THREAD_TUPLE_SIZE = 100;
+    public final static int INIT_HASHMAP_SIZE = 16;
+    private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
+                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter())
+            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
+            .toFormatter();
+
+    private static final SimpleModule touchStoneJsonModule = new SimpleModule()
+            .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
+            .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
+            .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
+
+    private static final DefaultPrettyPrinter dpf = new DefaultPrettyPrinter();
+    public static final ObjectMapper MAPPER = new ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+            .setDefaultPrettyPrinter(dpf)
+            .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
+
+    static {
+        dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
+    }
+
+    public static long getUnixTimeStamp(String timeValue) {
+        return LocalDateTime.parse(timeValue, CommonUtils.FMT).toEpochSecond(ZoneOffset.UTC) * 1000;
+    }
+
 
     /**
      * 获取正则表达式的匹配
@@ -34,94 +96,13 @@ public class CommonUtils {
             }
             ret.add(groups);
         }
-
         return ret;
     }
 
-    /**
-     * 单个数据库时把表转换为<database>.<table>的形式
-     *
-     * @param databaseName 未跨数据库情况下数据库名称
-     * @param name         表名
-     * @return 转换后的表名
-     */
-    public static String addDatabaseNamePrefix(String databaseName, String name) {
-        if (!isCanonicalTableName(name)) {
-            name = String.format("%s.%s", databaseName, name);
-        }
-        return name;
-    }
-
-    /**
-     * 是否为<database>.<table>的形式的表名
-     *
-     * @param tableName 表名
-     * @return true or false
-     */
-    public static boolean isCanonicalTableName(String tableName) {
-        List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
-        return matches.size() == 1 && matches.get(0).get(0).length() == tableName.length();
-    }
-
-    public static boolean isInteger(String str) {
-        try {
-            int val = Integer.parseInt(str);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean isFloat(String str) {
-        try {
-            float val = Float.parseFloat(str);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static String extractSimpleColumnName(String canonicalColumnName) {
-        return canonicalColumnName.split("\\.")[2];
-    }
-
-    public static void shuffle(int size, ThreadLocalRandom rand, int[] tupleData) {
-        int tmp;
-        for (int i = size; i > 1; i--) {
-            int idx = rand.nextInt(i);
-            tmp = tupleData[i - 1];
-            tupleData[i - 1] = tupleData[idx];
-            tupleData[idx] = tmp;
-        }
-    }
-
-    public static void shuffle(int size, ThreadLocalRandom rand, double[] tupleData) {
-        double tmp;
-        for (int i = size; i > 1; i--) {
-            int idx = rand.nextInt(i);
-            tmp = tupleData[i - 1];
-            tupleData[i - 1] = tupleData[idx];
-            tupleData[idx] = tmp;
-        }
-    }
-
-    public static void shuffle(int size, ThreadLocalRandom rand, long[] tupleData) {
-        long tmp;
-        for (int i = size; i > 1; i--) {
-            int idx = rand.nextInt(i);
-            tmp = tupleData[i - 1];
-            tupleData[i - 1] = tupleData[idx];
-            tupleData[idx] = tmp;
-        }
-    }
-
-    public static double min(int[] ret) {
-        double min = ret[0];
-        for (int value : ret) {
-            if (min >= value) {
-                min = value;
-            }
-        }
-        return min;
+    public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
+        return CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
+                new File(resultDir + CONSTRAINT_CHAINS_INFO), UTF_8),
+                new TypeReference<Map<String, List<ConstraintChain>>>() {
+                });
     }
 }

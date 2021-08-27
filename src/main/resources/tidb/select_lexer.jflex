@@ -1,17 +1,17 @@
-package ecnu.db.tidb.parser;
+package ecnu.db.analyzer.online.adapter.tidb.parser;
 
-import ecnu.db.exception.analyze.IllegalCharacterException;
-import ecnu.db.tidb.Token;
+import ecnu.db.utils.exception.analyze.IllegalCharacterException;
+import ecnu.db.analyzer.online.adapter.tidb.Token;
 import java_cup.runtime.*;
-import ecnu.db.constraintchain.arithmetic.ArithmeticNodeType;
-import ecnu.db.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeType;
+import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 %%
 
 %public
 %class TidbSelectOperatorInfoLexer
 /* throws TouchstoneException */
 %yylexthrow{
-ecnu.db.exception.TouchstoneException
+ecnu.db.utils.exception.TouchstoneException
 %yylexthrow}
 
 %{
@@ -22,10 +22,6 @@ ecnu.db.exception.TouchstoneException
 
   private Symbol symbol(int type, Object value) {
     return new Token(type, yycolumn+1, value);
-  }
-
-  public void init() {
-    System.out.println("initialized");
   }
 %}
 

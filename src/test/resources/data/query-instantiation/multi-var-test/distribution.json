@@ -1,0 +1,43 @@
+{
+  "test.test.c3": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "c3",
+    "min": -3,
+    "max": 9,
+    "range": 13
+  },
+  "test.test.c4": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "c4",
+    "min": 0,
+    "max": 10,
+    "ndv": 11
+  },
+  "test.test.new_column": {
+    "columnType": "DATETIME",
+    "nullPercentage": 0.0,
+    "columnName": "new_column",
+    "begin": "2010-05-04 02:11:21.000000",
+    "end": "2021-08-14 16:46:40.000000",
+    "precision": 3,
+    "ndv": -1
+  },
+  "test.test.c1": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "c1",
+    "min": 1,
+    "max": 30147,
+    "ndv": 159
+  },
+  "test.test.c2": {
+    "columnType": "INTEGER",
+    "nullPercentage": 0.0,
+    "columnName": "c2",
+    "min": 2,
+    "max": 23,
+    "ndv": 14
+  }
+}

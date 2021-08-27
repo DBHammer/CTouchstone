@@ -1,6 +1,6 @@
 package ecnu.db.utils;
 
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
@@ -11,10 +11,7 @@ import io.kubernetes.client.util.KubeConfig;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author youshuhong
@@ -47,65 +44,38 @@ public class KubernetesClient {
 
     //todo check join table
     private static boolean checkJoinTableVolume(CoreV1Api coreV1Api) {
-        
+
         return true;
     }
 
     private static V1ConfigMap getConfigMap(String podPrefixName, String schemaConfig, String constraintChainConfig) {
-        return new V1ConfigMapBuilder()
-                .withNewMetadata()
-                .withName(podPrefixName + "-config")
-                .endMetadata()
-                .withData(new HashMap<String, String>() {{
-                    put("table_config", schemaConfig);
-                    put("constraint_chain", constraintChainConfig);
-                }})
-                .build();
+        Map<String, String> configData = new HashMap<>();
+        configData.put("table_config", schemaConfig);
+        configData.put("constraint_chain", constraintChainConfig);
+        return new V1ConfigMap().metadata(new V1ObjectMeta().name(podPrefixName + "-config")).data(configData);
     }
 
 
     private static V1Job getJobConfig(String podPrefixName) {
-        return new V1JobBuilder()
-                .withNewMetadata()
-                .withLabels(Collections.singletonMap("jobgroup", podPrefixName))
-                .endMetadata()
-                .withNewSpec()
-                .withNewTemplate()
-                .withNewMetadata()
-                .withName(podPrefixName)
-                .withLabels(Collections.singletonMap("jobgroup", podPrefixName))
-                .endMetadata()
-                .withNewSpec()
-                .withContainers(Collections.singletonList(
-                        new V1ContainerBuilder()
-                                .withName("touchstone-generator")
-                                .withImage("dbhammer/touchstone:latest")
-                                .withImagePullPolicy("Always")
-                                .withVolumeMounts(
-                                        new V1VolumeMountBuilder()
-                                                .withName("join_table_pv")
-                                                .withMountPath("/join_table").build())
-                                .withEnv(Arrays.asList(
-                                        new V1EnvVarBuilder().withName("TABLE_CONFIG")
-                                                .withNewValueFrom()
-                                                .withNewConfigMapKeyRef()
-                                                .withName(podPrefixName + "-config")
-                                                .withKey("table_config")
-                                                .endConfigMapKeyRef()
-                                                .endValueFrom()
-                                                .build(),
-                                        new V1EnvVarBuilder().withName("CONSTRAINT_CHAIN")
-                                                .withNewValueFrom()
-                                                .withNewConfigMapKeyRef()
-                                                .withName(podPrefixName + "-config")
-                                                .withKey("constraint_chain")
-                                                .endConfigMapKeyRef()
-                                                .endValueFrom()
-                                                .build()))
-                                .build()))
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-                .build();
+        var label = new V1ObjectMeta().labels(Collections.singletonMap("jobGroup", podPrefixName));
+
+        // join information location
+        var joinTableMount = new V1VolumeMount().name("join_table_pv").mountPath("/join_table");
+        // table config location
+        var tableConfig = new V1EnvVar().name("TABLE_CONFIG").valueFrom(new V1EnvVarSource()
+                .configMapKeyRef(new V1ConfigMapKeySelector().name(podPrefixName + "-config").key("table_config")));
+        // constraint chain location
+        var constraintChain = new V1EnvVar().name("CONSTRAINT_CHAIN").valueFrom(new V1EnvVarSource()
+                .configMapKeyRef(new V1ConfigMapKeySelector().name(podPrefixName + "-config").key("constraint_chain")));
+
+        var podContainer = new V1Container().name("touchstone-generator")
+                .image("dbhammer/touchstone:latest").imagePullPolicy("Always")
+                .volumeMounts(Collections.singletonList(joinTableMount))
+                .env(Arrays.asList(tableConfig, constraintChain));
+        var podSpec = new V1PodSpec().containers(Collections.singletonList(podContainer));
+
+        var podTemplateSpec = new V1PodTemplateSpec().metadata(label).spec(podSpec);
+
+        return new V1Job().metadata(label).spec(new V1JobSpec().template(podTemplateSpec));
     }
 }

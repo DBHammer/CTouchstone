@@ -1,6 +1,6 @@
 package ecnu.db.dbconnector;
 
-import ecnu.db.exception.TouchstoneException;
+import ecnu.db.utils.exception.TouchstoneException;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -17,7 +17,7 @@ public interface DatabaseConnectorInterface {
      * @param sql                对应query的sql
      * @param sqlInfoColumns     需要提取的col
      * @return 查询计划
-     * @throws SQLException                 无法从数据库连接中获取查询计划
+     * @throws SQLException        无法从数据库连接中获取查询计划
      * @throws TouchstoneException 无法从文件中获取查询计划
      */
     List<String[]> explainQuery(String queryCanonicalName, String sql, String[] sqlInfoColumns) throws SQLException, TouchstoneException;
@@ -28,7 +28,7 @@ public interface DatabaseConnectorInterface {
      * @param canonicalTableName 需要查询的表的标准名
      * @param columns            需要查询的col组合(','组合)
      * @return 多个col组合的cardinality
-     * @throws SQLException                 无法从数据库连接中获取多列属性的ndv
+     * @throws SQLException        无法从数据库连接中获取多列属性的ndv
      * @throws TouchstoneException 无法从文件中获取多列属性的ndv
      */
     int getMultiColNdv(String canonicalTableName, String columns) throws SQLException, TouchstoneException;
