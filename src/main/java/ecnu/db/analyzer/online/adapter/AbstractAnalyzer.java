@@ -1,33 +1,12 @@
 package ecnu.db.analyzer.online.adapter;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
 import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.analyzer.online.NodeTypeTool;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
 import ecnu.db.generator.constraintchain.filter.SelectResult;
-import ecnu.db.dbconnector.DbConnector;
-import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.SchemaManager;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
-import ecnu.db.utils.exception.analyze.UnsupportedSelect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static ecnu.db.utils.CommonUtils.*;
 
 /**
  * @author wangqingshuai

@@ -46,7 +46,7 @@ public class AndNode implements BoolExprNode {
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
-            logger.info(String.format("'%s'的概率为0", toString()));
+            logger.info(String.format("'%s'的概率为0", this));
             return new ArrayList<>();
         }
         List<BoolExprNode> otherNodes = new LinkedList<>();
@@ -88,7 +88,7 @@ public class AndNode implements BoolExprNode {
                         BigDecimal nullProbability = ((IsNullFilterOperation) child).getProbability();
                         BigDecimal toDivide = hasNot ? BigDecimal.ONE.subtract(nullProbability) : nullProbability;
                         if (toDivide.compareTo(BigDecimal.ZERO) == 0) {
-                            throw new UnsupportedOperationException(String.format("'%s'的概率为0而and总概率不为0", child.toString()));
+                            throw new UnsupportedOperationException(String.format("'%s'的概率为0而and总概率不为0", child));
                         } else {
                             probability = probability.divide(toDivide, BIG_DECIMAL_DEFAULT_PRECISION);
                         }

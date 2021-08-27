@@ -1,18 +1,15 @@
 package ecnu.db.dbconnector;
 
-import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
-import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Schema;
-import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**

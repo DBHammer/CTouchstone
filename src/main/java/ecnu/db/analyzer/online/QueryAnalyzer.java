@@ -30,13 +30,13 @@ import static ecnu.db.utils.CommonUtils.*;
 
 public class QueryAnalyzer {
 
-    private AbstractAnalyzer abstractAnalyzer;
     protected static final Logger logger = LoggerFactory.getLogger(QueryAnalyzer.class);
     private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
-    private Map<String, String> aliasDic = new HashMap<>();
+    private final AbstractAnalyzer abstractAnalyzer;
+    private final DbConnector dbConnector;
     protected String defaultDatabase;
-    private DbConnector dbConnector;
     protected double skipNodeThreshold = 0.01;
+    private Map<String, String> aliasDic = new HashMap<>();
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector, String defaultDatabase) {
         this.abstractAnalyzer = abstractAnalyzer;

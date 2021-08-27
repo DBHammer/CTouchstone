@@ -1,9 +1,9 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
-import java_cup.runtime.ComplexSymbolFactory;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectSymbol;
+import java_cup.runtime.ComplexSymbolFactory;
 
-public class Token extends ComplexSymbolFactory.ComplexSymbol{
+public class Token extends ComplexSymbolFactory.ComplexSymbol {
     /**
      * token所在的第一个字符的位置，从当前行开始计数
      */

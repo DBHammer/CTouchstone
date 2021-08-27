@@ -108,12 +108,12 @@ public class QueryWriter {
      */
     public String appendArgs(String title, List<Parameter> params) {
         String argsString = params.stream().map(
-                (parameter) ->
-                        String.format("{id:%s,data:%s,operand:%s}",
-                                parameter.getId(),
-                                "'" + parameter.getDataValue() + "'",
-                                parameter.getOperand()
-                        ))
+                        (parameter) ->
+                                String.format("{id:%s,data:%s,operand:%s}",
+                                        parameter.getId(),
+                                        "'" + parameter.getDataValue() + "'",
+                                        parameter.getOperand()
+                                ))
                 .collect(Collectors.joining(","));
         return String.format("-- %s:%s%s", title, argsString, System.lineSeparator());
     }

@@ -2,16 +2,16 @@ package ecnu.db.analyzer.online.adapter.pg;
 
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
-import ecnu.db.analyzer.online.adapter.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
+import ecnu.db.analyzer.online.adapter.AbstractAnalyzer;
+import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
+import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
 import ecnu.db.generator.constraintchain.filter.SelectResult;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
-import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
-import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
 import java_cup.runtime.ComplexSymbolFactory;
 
-import java.io.*;
+import java.io.StringReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,9 +19,9 @@ import java.util.regex.Pattern;
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
 public class PgAnalyzer extends AbstractAnalyzer {
-    private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
+    private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
 
     public PgAnalyzer() {
         super();

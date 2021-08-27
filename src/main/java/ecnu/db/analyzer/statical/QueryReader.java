@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.convertTableName2CanonicalTableName;
-import static ecnu.db.utils.CommonUtils.matchPattern;
 
 /**
  * @author qingshuai.wang

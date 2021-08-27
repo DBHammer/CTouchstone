@@ -21,7 +21,7 @@ public class ConstraintChainManager {
                 double currentProbability = 0;
                 switch (node.constraintChainNodeType) {
                     case FILTER:
-                        currentNodeInfo = "\"" + node.toString() + "\"";
+                        currentNodeInfo = "\"" + node + "\"";
                         currentProbability = ((ConstraintChainFilterNode) node).getProbability().doubleValue();
                         graph.append("\t").append(currentNodeInfo).append(color);
                         break;
@@ -72,7 +72,7 @@ public class ConstraintChainManager {
         for (int size = subGraphs.size() - 1; size >= 0; size--) {
             subGraphInfo.append(subGraphs.get(size));
         }
-        return String.format(GRAPH_TEMPLATE, queryName, subGraphInfo.toString() + graph.toString());
+        return String.format(GRAPH_TEMPLATE, queryName, subGraphInfo.toString() + graph);
     }
 
     private static class SubGraph {
