@@ -14,7 +14,6 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IsNullFilterOperation extends AbstractFilterOperation {
     private String canonicalColumnName;
-    private boolean hasNot = false;
 
     public IsNullFilterOperation() {
         super(CompareOperator.ISNULL);
@@ -42,18 +41,11 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public String toString() {
-        if (hasNot) {
-            return String.format("not(isnull(%s))", this.canonicalColumnName);
-        }
-        return String.format("isnull(%s)", this.canonicalColumnName);
-    }
-
-    public boolean getHasNot() {
-        return hasNot;
-    }
-
-    public void setHasNot(boolean hasNot) {
-        this.hasNot = hasNot;
+        return switch (operator){
+            case ISNULL -> String.format("isnull(%s)", this.canonicalColumnName);
+            case IS_NOT_NULL -> String.format("not_isnull(%s)", this.canonicalColumnName);
+            default -> throw new UnsupportedOperationException();
+        };
     }
 
     public String getColumnName() {
@@ -66,6 +58,6 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public boolean[] evaluate() {
-        return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null, hasNot);
+        return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null);
     }
 }

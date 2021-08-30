@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UniVarFilterOperation extends AbstractFilterOperation {
     protected String canonicalColumnName;
-    private boolean hasNot = false;
 
     public UniVarFilterOperation() {
         super(null);
@@ -61,14 +60,6 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         return BoolExprType.UNI_FILTER_OPERATION;
     }
 
-    public boolean getHasNot() {
-        return hasNot;
-    }
-
-    public void setHasNot(boolean hasNot) {
-        this.hasNot = hasNot;
-    }
-
     public String getCanonicalColumnName() {
         return canonicalColumnName;
     }
@@ -81,9 +72,6 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     public String toString() {
         List<String> content = parameters.stream().map(Parameter::toString).collect(Collectors.toList());
         content.add(0, String.format("%s", canonicalColumnName));
-        if (hasNot) {
-            return String.format("not(%s(%s))", operator.toString().toLowerCase(), String.join(", ", content));
-        }
         return String.format("%s(%s)", operator.toString().toLowerCase(), String.join(", ", content));
     }
 
@@ -91,14 +79,11 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
      * 初始化等值filter的参数
      */
     public void instantiateParameter() {
-        if (hasNot) {
-            probability = BigDecimal.ONE.subtract(probability);
-        }
         ColumnManager.getInstance().insertUniVarProbability(canonicalColumnName, probability, operator, parameters);
     }
 
     @Override
     public boolean[] evaluate() {
-        return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters, hasNot);
+        return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters);
     }
 }

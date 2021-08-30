@@ -4,6 +4,7 @@ import ch.obermuhlner.math.big.BigDecimalMath;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
+import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.generator.constraintchain.filter.operation.IsNullFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
@@ -98,7 +99,7 @@ public class OrNode implements BoolExprNode {
                 case ISNULL_FILTER_OPERATION:
                     IsNullFilterOperation isNullFilterOperation = ((IsNullFilterOperation) child);
                     String columnName = isNullFilterOperation.getColumnName();
-                    boolean hasNot = isNullFilterOperation.getHasNot();
+                    boolean hasNot = isNullFilterOperation.getOperator().equals(CompareOperator.IS_NOT_NULL);
                     if (columns.contains(columnName)) {
                         if (hasNot && !probability.equals(isNullFilterOperation.getProbability())) {
                             throw new UnsupportedOperationException("or中包含了not(isnull(%s))与其他运算, 总概率不等于not isnull的概率");

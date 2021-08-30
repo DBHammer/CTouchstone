@@ -81,7 +81,7 @@ public class AndNode implements BoolExprNode {
                     break;
                 case ISNULL_FILTER_OPERATION:
                     String columnName = ((IsNullFilterOperation) child).getColumnName();
-                    boolean hasNot = ((IsNullFilterOperation) child).getHasNot();
+                    boolean hasNot = ((IsNullFilterOperation) child).getOperator().equals(CompareOperator.IS_NOT_NULL);
                     if (columns.contains(columnName)) {
                         if (!hasNot) {
                             throw new UnsupportedOperationException(String.format("and中包含了isnull(%s)与其他运算, 冲突而总概率不为0", ((IsNullFilterOperation) child).getColumnName()));

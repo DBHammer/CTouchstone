@@ -186,7 +186,7 @@ in_compare_expr ::=
                                                                                       }
                                                                                       columns.add(col);
                                                                                       if(inornotin == CompareOperator.NOT_IN){
-                                                                                        operation.setHasNot(true);
+                                                                                        operation.setOperator(CompareOperator.NOT_IN);
                                                                                       }
                                                                                       RESULT = operation;
                                                                                   :}
@@ -230,7 +230,7 @@ like_compare_expr ::=
                                                                                             parameters.add(parameter);
                                                                                             columns.add(col);
                                                                                             if(likeornot == CompareOperator.NOT_LIKE){
-                                                                                              operation.setHasNot(true);
+                                                                                              operation.setOperator(CompareOperator.NOT_LIKE);
                                                                                             }
                                                                                             RESULT = operation;
                                                                                        :}
@@ -280,7 +280,7 @@ isnull_expr ::=
                                                                                       float nullProbability = ColumnManager.getInstance().getNullPercentage(col);
                                                                                       IsNullFilterOperation operation = new IsNullFilterOperation(col, BigDecimal.valueOf(nullProbability));
                                                                                       if(isornotnull == CompareOperator.IS_NOT_NULL){
-                                                                                        operation.setHasNot(true);
+                                                                                        operation.setOperator(CompareOperator.IS_NOT_NULL);
                                                                                       }
                                                                                       RESULT = operation;
                                                                                   :}

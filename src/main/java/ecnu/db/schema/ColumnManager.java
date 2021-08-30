@@ -52,8 +52,8 @@ public class ColumnManager {
         return columns.get(columnName);
     }
 
-    public boolean[] evaluate(String columnName, CompareOperator operator, List<Parameter> parameters, boolean hasNot) {
-        return columns.get(columnName).evaluate(operator, parameters, hasNot);
+    public boolean[] evaluate(String columnName, CompareOperator operator, List<Parameter> parameters) {
+        return columns.get(columnName).evaluate(operator, parameters);
     }
 
     public float getNullPercentage(String columnName) {

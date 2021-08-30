@@ -16,6 +16,7 @@ import ecnu.db.generator.constraintchain.filter.*;
 import java.io.StringReader;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnType;
+import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 
 /* define how to connect to the scanner! */
 parser code {:
@@ -306,15 +307,15 @@ isnull_expr ::=
 /* not expressions */
 not_expr ::=
         NOT:not LPAREN like_compare_expr:e RPAREN                                 {:
-                                                                                      e.setHasNot(true);
+                                                                                      e.setOperator(CompareOperator.NOT_LIKE);
                                                                                       RESULT = e;
                                                                                   :}
         | NOT:not LPAREN in_compare_expr:e RPAREN                                 {:
-                                                                                      e.setHasNot(true);
+                                                                                      e.setOperator(CompareOperator.NOT_IN);
                                                                                       RESULT = e;
                                                                                   :}
         | NOT:not LPAREN isnull_expr:e RPAREN                                     {:
-                                                                                      e.setHasNot(true);
+                                                                                      e.setOperator(CompareOperator.IS_NOT_NULL);
                                                                                       RESULT = e;
                                                                                   :}
         ;
