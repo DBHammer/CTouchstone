@@ -107,13 +107,13 @@ public class ColumnManager {
             Column column = columns.get(canonicalColumnName);
             long min, range, specialValue;
             switch (column.getColumnType()) {
-                case INTEGER:
+                case INTEGER -> {
                     min = Long.parseLong(sqlResult[index++]);
                     long maxBound = Long.parseLong(sqlResult[index++]);
                     range = Long.parseLong(sqlResult[index++]);
                     specialValue = (int) ((maxBound - min + 1) / range);
-                    break;
-                case VARCHAR:
+                }
+                case VARCHAR -> {
                     StringTemplate stringTemplate = new StringTemplate();
                     stringTemplate.minLength = Integer.parseInt(sqlResult[index++]);
                     stringTemplate.rangeLength = Integer.parseInt(sqlResult[index++]) - stringTemplate.minLength;
@@ -121,22 +121,19 @@ public class ColumnManager {
                     min = 0;
                     range = Integer.parseInt(sqlResult[index++]);
                     specialValue = ThreadLocalRandom.current().nextInt();
-                    break;
-                case DECIMAL:
+                }
+                case DECIMAL -> {
                     int precision = CommonUtils.SampleDoublePrecision;
                     min = (long) (Double.parseDouble(sqlResult[index++]) * precision);
                     range = (long) (Double.parseDouble(sqlResult[index++]) * precision) - min;
                     specialValue = precision;
-                    break;
-                case DATE:
-                case DATETIME:
+                }
+                case DATE, DATETIME -> {
                     min = CommonUtils.getUnixTimeStamp(sqlResult[index++]);
                     range = CommonUtils.getUnixTimeStamp(sqlResult[index++]) - min;
                     specialValue = 0;
-                    break;
-                case BOOL:
-                default:
-                    throw new TouchstoneException("未匹配到的类型");
+                }
+                default -> throw new TouchstoneException("未匹配到的类型");
             }
             column.setMin(min);
             column.setRange(range);

@@ -29,7 +29,7 @@ class QueryWriterTest {
     }
 
     @Test
-    public void testTemplatizeSqlFloat() {
+    void testTemplatizeSqlFloat() {
         String sql = "select * from test where a=1.5";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "1.5"));
@@ -38,7 +38,7 @@ class QueryWriterTest {
     }
 
     @Test
-    public void testTemplatizeSqlStr() {
+    void testTemplatizeSqlStr() {
         String sql = "select * from test where a='5'";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "5"));
@@ -47,7 +47,7 @@ class QueryWriterTest {
     }
 
     @Test
-    public void testTemplatizeSqlDate() {
+    void testTemplatizeSqlDate() {
         String sql = "select * from test where a='1998-12-12 12:00:00.000000'";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "1998-12-12 12:00:00.000000"));
@@ -56,7 +56,7 @@ class QueryWriterTest {
     }
 
     @Test
-    public void testTemplatizeSqlConflicts() {
+    void testTemplatizeSqlConflicts() {
         String sql = "select * from test where a='5' or b='5'";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, "db.test.a", "5"));
@@ -66,7 +66,7 @@ class QueryWriterTest {
     }
 
     @Test
-    public void testTemplatizeSqlCannotFind() {
+    void testTemplatizeSqlCannotFind() {
         String sql = "select * from test where a='5' or b='5'";
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter(0, "db.test.b", "6");

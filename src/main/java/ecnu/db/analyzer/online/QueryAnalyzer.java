@@ -113,19 +113,11 @@ public class QueryAnalyzer {
      * @throws SQLException        无法收集多列主键的ndv
      */
     private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, String tableName, int lastNodeLineCount) throws TouchstoneException, SQLException {
-        switch (node.getType()) {
-            case join:
-                lastNodeLineCount = analyzeJoinNode(node, constraintChain, lastNodeLineCount);
-                break;
-            case filter:
-                lastNodeLineCount = analyzeSelectNode(node, constraintChain, tableName, lastNodeLineCount);
-                break;
-            case scan:
-                throw new TouchstoneException(String.format("中间节点'%s'不为scan", node.getId()));
-            default:
-                throw new UnsupportedOperationException();
-        }
-        return lastNodeLineCount;
+        return switch (node.getType()) {
+            case join -> analyzeJoinNode(node, constraintChain, lastNodeLineCount);
+            case filter -> analyzeSelectNode(node, constraintChain, tableName, lastNodeLineCount);
+            case scan -> throw new TouchstoneException(String.format("中间节点'%s'不为scan", node.getId()));
+        };
     }
 
     private int analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, String tableName, int lastNodeLineCount) throws TouchstoneException {
@@ -136,7 +128,6 @@ public class QueryAnalyzer {
         BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
         ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result.getCondition(), result.getColumns());
         constraintChain.addNode(filterNode);
-        constraintChain.addParameters(result.getParameters());
         return node.getOutputRows();
     }
 
@@ -198,23 +189,21 @@ public class QueryAnalyzer {
         int lastNodeLineCount;
         //分析约束链的第一个node
         switch (node.getType()) {
-            case scan:
+            case scan -> {
                 tableName = extractTableName(node.getInfo());
                 constraintChain = new ConstraintChain(tableName);
                 lastNodeLineCount = node.getOutputRows();
-                break;
-            case filter:
+            }
+            case filter -> {
                 SelectResult result = analyzeSelectInfo(node.getInfo());
                 tableName = extractTableName(result.getTableName());
                 constraintChain = new ConstraintChain(tableName);
                 BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(SchemaManager.getInstance().getTableSize(tableName)), BIG_DECIMAL_DEFAULT_PRECISION);
                 ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result.getCondition(), result.getColumns());
                 constraintChain.addNode(filterNode);
-                constraintChain.addParameters(result.getParameters());
                 lastNodeLineCount = node.getOutputRows();
-                break;
-            default:
-                throw new TouchstoneException(String.format("底层节点 %s 只能为select或者scan", node.getId()));
+            }
+            default -> throw new TouchstoneException(String.format("底层节点 %s 只能为select或者scan", node.getId()));
         }
         for (int i = 1; i < path.size(); i++) {
             node = path.get(i);

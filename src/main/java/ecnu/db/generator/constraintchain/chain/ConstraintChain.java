@@ -1,13 +1,9 @@
 package ecnu.db.generator.constraintchain.chain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.utils.exception.TouchstoneException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
@@ -19,8 +15,6 @@ public class ConstraintChain {
     private final List<ConstraintChainNode> nodes = new ArrayList<>();
 
     private String tableName;
-    @JsonIgnore
-    private List<Parameter> parameters = new ArrayList<>();
 
     public ConstraintChain() {
     }
@@ -45,16 +39,12 @@ public class ConstraintChain {
         this.tableName = tableName;
     }
 
-    public void addParameters(List<Parameter> parameters) {
-        this.parameters.addAll(parameters);
-    }
 
     public List<Parameter> getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(List<Parameter> parameters) {
-        this.parameters = parameters;
+        return nodes.stream().filter(ConstraintChainFilterNode.class::isInstance)
+                .map(ConstraintChainFilterNode.class::cast)
+                .map(ConstraintChainFilterNode::getParameters)
+                .flatMap(Collection::stream).toList();
     }
 
     @Override

@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 import ecnu.db.schema.Schema;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.generator.constraintchain.arithmetic.*;
-import ecnu.db.generator.constraintchain.arithmetic.operator.*;
-import ecnu.db.generator.constraintchain.arithmetic.value.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
 import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;

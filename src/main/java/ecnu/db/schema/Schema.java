@@ -22,7 +22,7 @@ public class Schema {
     }
 
     public Schema(String canonicalTableName, List<String> columnsMetadata) throws TouchstoneException {
-        List<String> canonicalColumnNames = new ArrayList<>();
+        this.canonicalColumnNames = new ArrayList<>();
         for (String columnMetadata : columnsMetadata) {
             String[] attributes = columnMetadata.trim().split(" ");
             String canonicalColumnName = canonicalTableName + '.' + attributes[0];
@@ -31,7 +31,6 @@ public class Schema {
             String dataType = (indexOfBrackets > 0) ? attributes[1].substring(0, indexOfBrackets) : attributes[1];
             ColumnManager.getInstance().addColumn(canonicalColumnName, new Column(ColumnConvert.getColumnType(dataType)));
         }
-        this.canonicalColumnNames = canonicalColumnNames;
         joinTag = 1;
     }
 
@@ -127,7 +126,7 @@ public class Schema {
             Set<String> keys = new HashSet<>(this.primaryKeys);
             if (keys.size() == newKeys.size()) {
                 keys.removeAll(newKeys);
-                if (keys.size() > 0) {
+                if (!keys.isEmpty()) {
                     throw new TouchstoneException("query中使用了多列主键的部分主键");
                 }
             } else {

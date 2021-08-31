@@ -6,8 +6,6 @@ import java.util.Set;
 import java.util.HashSet;
 import java.math.BigDecimal;
 import ecnu.db.generator.constraintchain.arithmetic.*;
-import ecnu.db.generator.constraintchain.arithmetic.operator.*;
-import ecnu.db.generator.constraintchain.arithmetic.value.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
 import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;

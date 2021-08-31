@@ -65,12 +65,12 @@ public class DataGenerator implements Callable<Integer> {
         Map<String, Collection<ConstraintChain>> schema2chains = getSchema2Chains(query2chains);
         for (String schemaName : SchemaManager.getInstance().createTopologicalOrder()) {
             ExecutorService executorService = Executors.newSingleThreadExecutor();
-            logger.info("开始输出表数据" + schemaName);
+            logger.info("开始输出表数据{}", schemaName);
             int resultStart = stepSize * generatorId;
             int tableSize = SchemaManager.getInstance().getTableSize(schemaName);
             List<String> attColumnNames = SchemaManager.getInstance().getColumnNamesNotKey(schemaName);
             List<String> allColumnNames = SchemaManager.getInstance().getColumnNames(schemaName);
-            System.out.println(allColumnNames);
+            logger.info(String.valueOf(allColumnNames));
             String pkName = SchemaManager.getInstance().getPrimaryKeyColumn(schemaName);
             JoinInfoTable joinInfoTable = new JoinInfoTable();
             while (resultStart < tableSize) {
@@ -79,8 +79,7 @@ public class DataGenerator implements Callable<Integer> {
                 computeFksAndPkJoinInfo(joinInfoTable, resultStart, range, schema2chains.get(schemaName));
                 ColumnManager.getInstance().setData(pkName, LongStream.range(resultStart, resultStart + range).toArray());
                 List<List<String>> columnData = allColumnNames.stream().parallel()
-                        .map(attColumnName -> ColumnManager.getInstance().getData(attColumnName))
-                        .collect(Collectors.toList());
+                        .map(attColumnName -> ColumnManager.getInstance().getData(attColumnName)).toList();
                 List<String> rowData = IntStream.range(0, columnData.get(0).size()).parallel()
                         .mapToObj(i -> columnData.stream().map(column -> column.get(i)).collect(Collectors.joining(",")))
                         .collect(Collectors.toList());
@@ -96,7 +95,7 @@ public class DataGenerator implements Callable<Integer> {
             }
             executorService.shutdown();
             if (executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
-                logger.info("输出表数据" + schemaName + "完成");
+                logger.info("输出表数据{}完成", schemaName);
             }
             JoinInfoTableManager.getInstance().putJoinInfoTable(pkName, joinInfoTable);
         }

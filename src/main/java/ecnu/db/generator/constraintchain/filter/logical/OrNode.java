@@ -3,6 +3,7 @@ package ecnu.db.generator.constraintchain.filter.logical;
 import ch.obermuhlner.math.big.BigDecimalMath;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
+import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.generator.constraintchain.filter.operation.IsNullFilterOperation;
@@ -55,7 +56,7 @@ public class OrNode implements BoolExprNode {
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
-            logger.info(String.format("'%s'的概率为0", this));
+            logger.info("{}的概率为0", this);
             return new ArrayList<>();
         }
 
@@ -132,6 +133,13 @@ public class OrNode implements BoolExprNode {
         }
 
         return operations;
+    }
+
+    @Override
+    public List<Parameter> getParameters() {
+        List<Parameter> parameters = leftNode.getParameters();
+        parameters.addAll(rightNode.getParameters());
+        return parameters;
     }
 
     @Override

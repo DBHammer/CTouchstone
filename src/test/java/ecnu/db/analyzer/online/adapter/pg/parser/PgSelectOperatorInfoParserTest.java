@@ -52,7 +52,7 @@ public class PgSelectOperatorInfoParserTest {
     void testParseWithArithmeticOps() throws Exception {
         String testCase = "((db.table.col1 * (db.table.col2 + 3.0)) >= 2)";
         AndNode node = parser.parseSelectOperatorInfo(testCase).getCondition();
-        assertEquals("and(ge(mul(db.table.col1, plus(db.table.col2, 3.0)), {id:0, data:2}))", node.toString());
+        assertEquals("and(ge(MUL(db.table.col1, PLUS(db.table.col2, 3.0)), {id:0, data:2}))", node.toString());
     }
 
     @DisplayName("test PgSelectOperatorInfoParser.parse method with logical ops")

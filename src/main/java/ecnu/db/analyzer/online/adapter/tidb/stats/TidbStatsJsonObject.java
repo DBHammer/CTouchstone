@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author qingshuai.wang
@@ -12,7 +12,7 @@ import java.util.HashMap;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TidbStatsJsonObject {
     int count;
-    HashMap<String, Distribution> columns;
+    Map<String, Distribution> columns;
 
     public int getCount() {
         return count;
@@ -22,11 +22,11 @@ public class TidbStatsJsonObject {
         this.count = count;
     }
 
-    public HashMap<String, Distribution> getColumns() {
+    public Map<String, Distribution> getColumns() {
         return columns;
     }
 
-    public void setColumns(HashMap<String, Distribution> columns) {
+    public void setColumns(Map<String, Distribution> columns) {
         this.columns = columns;
     }
 

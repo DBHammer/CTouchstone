@@ -3,6 +3,7 @@ package ecnu.db.generator.constraintchain.filter.logical;
 import ch.obermuhlner.math.big.BigDecimalMath;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
+import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.generator.constraintchain.filter.operation.IsNullFilterOperation;
@@ -51,35 +52,22 @@ public class AndNode implements BoolExprNode {
         Map<String, Collection<UniVarFilterOperation>> col2uniFilters = new HashMap<>();
         for (BoolExprNode child : children) {
             switch (child.getType()) {
-                case AND:
-                case OR:
-                case MULTI_FILTER_OPERATION:
-                    otherNodes.add(child);
-                    break;
-                case UNI_FILTER_OPERATION:
+                case AND, OR, MULTI_FILTER_OPERATION -> otherNodes.add(child);
+                case UNI_FILTER_OPERATION -> {
                     UniVarFilterOperation uvfChild = (UniVarFilterOperation) child;
                     CompareOperator operator = uvfChild.getOperator();
                     switch (operator) {
-                        case GE:
-                        case GT:
-                        case LE:
-                        case LT:
+                        case GE, GT, LE, LT -> {
                             if (!col2uniFilters.containsKey(uvfChild.getCanonicalColumnName())) {
                                 col2uniFilters.put(uvfChild.getCanonicalColumnName(), new ArrayList<>());
                             }
                             col2uniFilters.get((uvfChild.getCanonicalColumnName())).add(uvfChild);
-                            break;
-                        case EQ:
-                        case LIKE:
-                        case NE:
-                        case IN:
-                            otherNodes.add(child);
-                            break;
-                        default:
-                            throw new UnsupportedOperationException();
+                        }
+                        case EQ, NE, LIKE, NOT_LIKE, IN, NOT_IN -> otherNodes.add(child);
+                        default -> throw new UnsupportedOperationException();
                     }
-                    break;
-                case ISNULL_FILTER_OPERATION:
+                }
+                case ISNULL_FILTER_OPERATION -> {
                     String columnName = ((IsNullFilterOperation) child).getColumnName();
                     boolean hasNot = ((IsNullFilterOperation) child).getOperator().equals(CompareOperator.IS_NOT_NULL);
                     if (columns.contains(columnName)) {
@@ -95,15 +83,14 @@ public class AndNode implements BoolExprNode {
                             probability = probability.divide(toDivide, BIG_DECIMAL_DEFAULT_PRECISION);
                         }
                     }
-                    break;
-                default:
-                    throw new UnsupportedOperationException();
+                }
+                default -> throw new UnsupportedOperationException();
             }
         }
 
         UniVarFilterOperation.merge(otherNodes, col2uniFilters, true);
 
-        if (otherNodes.size() != 0) {
+        if (!otherNodes.isEmpty()) {
             probability = BigDecimalMath.pow(probability, BigDecimal.ONE.divide(BigDecimal.valueOf(otherNodes.size()), BIG_DECIMAL_DEFAULT_PRECISION), BIG_DECIMAL_DEFAULT_PRECISION);
         } else if (probability.compareTo(BigDecimal.ONE) != 0) {
             throw new UnsupportedOperationException(String.format("全部为isnull计算，但去除isnull后的总概率为'%s', 不等于1", probability));
@@ -138,6 +125,11 @@ public class AndNode implements BoolExprNode {
             IntStream.range(0, resultVector.length).parallel().forEach(i -> resultVector[i] &= computeVector[i]);
         }
         return resultVector;
+    }
+
+    @Override
+    public List<Parameter> getParameters() {
+        return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();
     }
 
     public LinkedList<BoolExprNode> getChildren() {

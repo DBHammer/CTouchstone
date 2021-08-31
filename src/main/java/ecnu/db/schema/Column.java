@@ -125,19 +125,15 @@ public class Column {
 
     public void insertUniVarProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         switch (operator) {
-            case NE:
+            case NE, NOT_LIKE, NOT_IN:
                 probability = BigDecimal.ONE.subtract(probability);
-            case EQ:
-            case LIKE:
+            case EQ, LIKE:
                 _insertEqualProbability(probability, parameters.get(0));
                 break;
             case IN:
                 insertEqualProbability(probability, parameters);
                 break;
-            case GT:
-            case LE:
-            case LT:
-            case GE:
+            case GT, LT, GE, LE:
                 insertNonEqProbability(probability, operator, parameters);
                 break;
             default:
@@ -300,20 +296,20 @@ public class Column {
         boolean[] ret = new boolean[columnData.length];
         IntStream indexStream = IntStream.range(0, columnData.length);
         switch (operator) {
-            case EQ, ISNULL -> indexStream.forEach(i -> ret[i] = columnData[i] == value);
-            case NE, IS_NOT_NULL -> indexStream.forEach(i -> ret[i] = columnData[i] != value);
+            case EQ, LIKE, ISNULL -> indexStream.forEach(i -> ret[i] = columnData[i] == value);
+            case NE, NOT_LIKE, IS_NOT_NULL -> indexStream.forEach(i -> ret[i] = columnData[i] != value);
             case LT -> indexStream.forEach(i -> ret[i] = columnData[i] < value);
             case LE -> indexStream.forEach(i -> ret[i] = columnData[i] <= value);
             case GT -> indexStream.forEach(i -> ret[i] = columnData[i] > value);
             case GE -> indexStream.forEach(i -> ret[i] = columnData[i] >= value);
-            case IN, LIKE -> {
+            case IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());
                 }
                 indexStream.forEach(i -> ret[i] = parameterData.contains(columnData[i]));
             }
-            case NOT_IN, NOT_LIKE -> {
+            case NOT_IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());

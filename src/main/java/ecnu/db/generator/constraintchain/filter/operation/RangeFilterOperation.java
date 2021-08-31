@@ -62,7 +62,7 @@ public class RangeFilterOperation extends UniVarFilterOperation {
 
     @Override
     public void instantiateParameter() {
-        if (lessParameters.size() > 0 && greaterParameters.size() > 0) {
+        if (!lessParameters.isEmpty() && !greaterParameters.isEmpty()) {
             ColumnManager.getInstance().insertBetweenProbability(canonicalColumnName, probability,
                     lessOperator, lessParameters, greaterOperator, greaterParameters);
         } else {

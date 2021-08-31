@@ -34,4 +34,11 @@ public interface BoolExprNode {
      * @return evaluate表达式的布尔值
      */
     boolean[] evaluate() throws CannotFindColumnException;
+
+    /**
+     * 获取该filter条件中的所有参数
+     *
+     * @return 所有的参数
+     */
+    List<Parameter> getParameters();
 }

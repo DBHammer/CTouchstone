@@ -5,8 +5,8 @@ import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 
 public class Tidb3Connector extends DbConnector {
-    private final static String DB_DRIVER_TYPE = "mysql";
-    private final static String JDBC_PROPERTY = "useSSL=false&allowPublicKeyRetrieval=true";
+    private static final String DB_DRIVER_TYPE = "mysql";
+    private static final String JDBC_PROPERTY = "useSSL=false&allowPublicKeyRetrieval=true";
 
     public Tidb3Connector(DatabaseConnectorConfig config) throws TouchstoneException {
         super(config, DB_DRIVER_TYPE, JDBC_PROPERTY);

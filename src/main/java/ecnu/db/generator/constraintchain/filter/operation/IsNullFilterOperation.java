@@ -41,7 +41,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public String toString() {
-        return switch (operator){
+        return switch (operator) {
             case ISNULL -> String.format("isnull(%s)", this.canonicalColumnName);
             case IS_NOT_NULL -> String.format("not_isnull(%s)", this.canonicalColumnName);
             default -> throw new UnsupportedOperationException();

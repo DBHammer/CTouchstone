@@ -6,7 +6,6 @@ import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,10 +44,10 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
             RangeFilterOperation newFilter = new RangeFilterOperation(col2uniFilter.getKey());
             newFilter.addLessParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.LE, new ArrayList<>()).stream(),
                             typ2Filter.getOrDefault(CompareOperator.LT, new ArrayList<>()).stream())
-                    .flatMap((filter) -> filter.getParameters().stream()).toList());
+                    .flatMap(filter -> filter.getParameters().stream()).toList());
             newFilter.addGreaterParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.GE, new ArrayList<>()).stream(),
                             typ2Filter.getOrDefault(CompareOperator.GT, new ArrayList<>()).stream())
-                    .flatMap((filter) -> filter.getParameters().stream()).toList());
+                    .flatMap(filter -> filter.getParameters().stream()).toList());
             newFilter.setLessOperator(isAnd, typ2Filter);
             newFilter.setGreaterOperator(isAnd, typ2Filter);
             toMergeNodes.add(newFilter);

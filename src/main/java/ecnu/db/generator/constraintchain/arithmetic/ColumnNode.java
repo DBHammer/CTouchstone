@@ -1,7 +1,5 @@
-package ecnu.db.generator.constraintchain.arithmetic.value;
+package ecnu.db.generator.constraintchain.arithmetic;
 
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNode;
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeType;
 import ecnu.db.schema.ColumnManager;
 
 import java.util.Arrays;

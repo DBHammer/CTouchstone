@@ -9,7 +9,7 @@ public abstract class ArithmeticNode {
     protected ArithmeticNode rightNode;
     protected ArithmeticNodeType type;
 
-    public ArithmeticNode(ArithmeticNodeType type) {
+    protected ArithmeticNode(ArithmeticNodeType type) {
         this.type = type;
     }
 
@@ -46,5 +46,5 @@ public abstract class ArithmeticNode {
      *
      * @return 返回double类型的计算结果
      */
-    abstract public double[] calculate();
+    public abstract double[] calculate();
 }

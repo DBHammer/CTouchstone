@@ -8,6 +8,7 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.ParameterResolver;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
+import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -18,9 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -30,7 +28,7 @@ import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 import static ecnu.db.utils.CommonUtils.readFile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class QueryInstantiationBasicTest {
     Map<String, List<ConstraintChain>> query2chains;
@@ -65,7 +63,7 @@ class QueryInstantiationBasicTest {
         }
         List<AbstractFilterOperation> operations;
         operations = query2operations.get("2_1.sql_tpch.part");
-        assertEquals(null, operations);
+        assertNull(operations);
 
         operations = query2operations.get("3_1.sql_tpch.customer");
         assertEquals(1, operations.size());
@@ -86,7 +84,7 @@ class QueryInstantiationBasicTest {
 
     @Disabled
     @Test
-    public void computeTest() throws Exception {
+    void computeTest() throws Exception {
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
         ColumnManager.getInstance().loadColumnDistribution();
         // **********************************
@@ -98,23 +96,19 @@ class QueryInstantiationBasicTest {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());
             parameters.forEach((param) -> id2Parameter.put(param.getId(), param));
         }
-        // 2.sql_1 simple eq
-        // todo
+//        // 2.sql_1 simple eq
+//        // todo
 //        Column col = ColumnManager.getInstance().getColumn("tpch.part.p_size");
 //        assertTrue(Integer.parseInt(id2Parameter.get(19).getDataValue()) >= col.getMin(),
 //                String.format("'%s' should be greater than or equal to '%d'", id2Parameter.get(19).getData(), col.getMin()));
 //        assertTrue(Integer.parseInt(id2Parameter.get(19).getDataValue()) <= col.getMax(),
 //                String.format("'%s' should be less than '%d'", id2Parameter.get(19).getData(), col.getMax()));
-        assertThat(id2Parameter.get(20).getDataValue(), startsWith("%"));
-        assertEquals(id2Parameter.get(21).getData(), id2Parameter.get(22).getData());
+//        assertThat(id2Parameter.get(20).getDataValue(), startsWith("%"));
+//        assertEquals(id2Parameter.get(21).getData(), id2Parameter.get(22).getData());
         // 6.sql_1 between
-        long left = id2Parameter.get(26).getData();
-        long right = id2Parameter.get(29).getData();
-        Duration wholeDuration = Duration.between(
-                LocalDateTime.parse("1992-01-02 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss")),
-                LocalDateTime.parse("1998-12-01 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss")));
-        double rate = (right - left) * 1.0 / wholeDuration.getSeconds();
-        assertEquals(rate, 0.267, 0.001);
+        long left = id2Parameter.get(0).getData();
+        long right = id2Parameter.get(2).getData();
+        assertEquals(26694, right - left, 0);
 
         // ******************************
         // *    test data generation    *

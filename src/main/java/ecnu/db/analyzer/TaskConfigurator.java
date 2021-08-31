@@ -63,28 +63,34 @@ public class TaskConfigurator implements Callable<Integer> {
         List<AbstractFilterOperation> filterOperations = constraintChains.stream()
                 .map(constraintChain -> constraintChain.getNodes().stream()
                         .filter(ConstraintChainFilterNode.class::isInstance)
-                        .map(node -> ((ConstraintChainFilterNode) node).pushDownProbability())
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toList()))
-                .flatMap(Collection::stream).collect(Collectors.toList());
+                        .map(ConstraintChainFilterNode.class::cast)
+                        .map(ConstraintChainFilterNode::pushDownProbability)
+                        .flatMap(Collection::stream).toList())
+                .flatMap(Collection::stream).toList();
 
         // uni-var operation
-        filterOperations.stream().filter(f -> f instanceof UniVarFilterOperation)
-                .map(UniVarFilterOperation.class::cast).forEach(UniVarFilterOperation::instantiateParameter);
+        filterOperations.stream()
+                .filter(UniVarFilterOperation.class::isInstance)
+                .map(UniVarFilterOperation.class::cast)
+                .forEach(UniVarFilterOperation::instantiateParameter);
 
         // init eq params
         ColumnManager.getInstance().initAllEqParameter();
 
         // multi-var non-eq sampling
         Set<String> prepareSamplingColumnName = filterOperations.parallelStream()
-                .filter((f) -> f instanceof MultiVarFilterOperation)
-                .map(f -> ((MultiVarFilterOperation) f).getAllCanonicalColumnNames())
+                .filter(MultiVarFilterOperation.class::isInstance)
+                .map(MultiVarFilterOperation.class::cast)
+                .map(MultiVarFilterOperation::getAllCanonicalColumnNames)
                 .flatMap(Collection::stream).collect(Collectors.toSet());
+
         ColumnManager.getInstance().prepareGeneration(prepareSamplingColumnName, samplingSize);
+
         filterOperations.parallelStream()
-                .filter((f) -> f instanceof MultiVarFilterOperation)
-                .map(f -> (MultiVarFilterOperation) f)
+                .filter(MultiVarFilterOperation.class::isInstance)
+                .map(MultiVarFilterOperation.class::cast)
                 .forEach(MultiVarFilterOperation::instantiateMultiVarParameter);
+
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         filterOperations.stream().map(AbstractFilterOperation::getParameters).flatMap(Collection::stream)
                 .forEach(parameter -> id2Parameter.put(parameter.getId(), parameter));
@@ -115,19 +121,19 @@ public class TaskConfigurator implements Callable<Integer> {
         DbConnector dbConnector;
         AbstractAnalyzer abstractAnalyzer;
         switch (taskConfiguratorConfig.dbType) {
-            case TiDB3:
+            case TIDB3:
                 dbConnector = new Tidb3Connector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new TidbAnalyzer();
                 queryWriter.setDbType(DbType.mysql);
                 queryReader.setDbType(DbType.mysql);
                 break;
-            case TiDB4:
+            case TIDB4:
                 dbConnector = new Tidb4Connector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new TidbAnalyzer();
                 queryWriter.setDbType(DbType.mysql);
                 queryReader.setDbType(DbType.mysql);
                 break;
-            case PostgreSQL:
+            case POSTGRESQL:
                 dbConnector = new PgConnector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new PgAnalyzer();
                 queryWriter.setDbType(DbType.postgresql);
@@ -184,7 +190,7 @@ public class TaskConfigurator implements Callable<Integer> {
                     logger.info("%-15s Status:开始获取{}", queryCanonicalName);
                     queryAnalyzer.setAliasDic(queryReader.getTableAlias(query));
                     List<ConstraintChain> constraintChains = queryAnalyzer.extractQuery(query);
-                    List<Parameter> parameters = constraintChains.stream().flatMap((c -> c.getParameters().stream())).collect(Collectors.toList());
+                    List<Parameter> parameters = constraintChains.stream().flatMap((c -> c.getParameters().stream())).toList();
                     query2constraintChains.put(queryCanonicalName, constraintChains);
                     String queryTemplate = queryWriter.templatizeSql(queryCanonicalName, query, parameters);
                     queryName2QueryTemplates.put(queryCanonicalName, queryTemplate);
@@ -193,7 +199,7 @@ public class TaskConfigurator implements Callable<Integer> {
         }
         logger.info("获取查询计划完成");
         logger.info("开始实例化查询计划");
-        List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
         Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
         logger.info("实例化查询计划成功, 实例化的参数为{}", id2Parameter.values());
         logger.info("开始持久化表结构信息");

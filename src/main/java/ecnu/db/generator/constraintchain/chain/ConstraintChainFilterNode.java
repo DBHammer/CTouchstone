@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.chain;
 
+import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -29,6 +30,10 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
 
     public List<AbstractFilterOperation> pushDownProbability() {
         return root.pushDownProbability(probability, columns);
+    }
+
+    public List<Parameter> getParameters() {
+        return root.getParameters();
     }
 
     public AndNode getRoot() {

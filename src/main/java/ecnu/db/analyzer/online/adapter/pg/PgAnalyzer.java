@@ -47,25 +47,25 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private ExecutionNode buildExecutionTree(String queryPlan) throws TouchstoneException {
         PgNodeTypeInfo NodeTypeRef = new PgNodeTypeInfo();
         ReadContext rc = JsonPath.parse(queryPlan);
-        String Path = "$.[0]['Plan']";
+        StringBuilder Path = new StringBuilder("$.[0]['Plan']");
         String NodeTypePath = Path + "['Node Type']";
         String NodeType = rc.read(NodeTypePath);
         while (NodeTypeRef.isPassNode(NodeType)) {//找到第一个可以处理的节点
-            Path += "['Plans'][0]";
+            Path.append("['Plans'][0]");
             NodeTypePath = Path + "['Node Type']";
             NodeType = rc.read(NodeTypePath);
         }
-        ExecutionNode node = getExecutionNode(queryPlan, Path);
-        Stack<Map.Entry<String, ExecutionNode>> stack = new Stack<>();
-        Stack<Map.Entry<String, ExecutionNode>> rootStack = new Stack<>();//存放根节点
-        rootStack.push(new AbstractMap.SimpleEntry<>(Path, node));
-        stack.push(new AbstractMap.SimpleEntry<>(Path, node));
+        ExecutionNode node = getExecutionNode(queryPlan, Path.toString());
+        Deque<Map.Entry<String, ExecutionNode>> stack = new ArrayDeque<>();
+        Deque<Map.Entry<String, ExecutionNode>> rootStack = new ArrayDeque<>();//存放根节点
+        rootStack.push(new AbstractMap.SimpleEntry<>(Path.toString(), node));
+        stack.push(new AbstractMap.SimpleEntry<>(Path.toString(), node));
         String currentPath;
-        while (!stack.empty()) {
+        while (!stack.isEmpty()) {
             Map.Entry<String, ExecutionNode> pair = stack.pop();
-            Path = pair.getKey();
+            Path = new StringBuilder(pair.getKey());
             node = pair.getValue();
-            Map<String, String> allKeys = getKeys(queryPlan, Path);
+            Map<String, String> allKeys = getKeys(queryPlan, Path.toString());
             if (hasChildPlan(allKeys)) {
                 int plansCount = rc.read(Path + "['Plans'].length()");
                 if (hasChildPlan(allKeys) && plansCount == 2) {

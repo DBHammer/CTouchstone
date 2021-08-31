@@ -6,12 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import ecnu.db.generator.constraintchain.arithmetic.operator.DivNode;
-import ecnu.db.generator.constraintchain.arithmetic.operator.MinusNode;
-import ecnu.db.generator.constraintchain.arithmetic.operator.MulNode;
-import ecnu.db.generator.constraintchain.arithmetic.operator.PlusNode;
-import ecnu.db.generator.constraintchain.arithmetic.value.ColumnNode;
-import ecnu.db.generator.constraintchain.arithmetic.value.NumericNode;
 
 import java.io.IOException;
 
@@ -35,21 +29,10 @@ public class ArithmeticNodeDeserializer extends StdDeserializer<ArithmeticNode> 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer());
         mapper.registerModule(module);
-        switch (ArithmeticNodeType.valueOf(node.get("type").asText())) {
-            case CONSTANT:
-                return mapper.readValue(node.toString(), NumericNode.class);
-            case MINUS:
-                return mapper.readValue(node.toString(), MinusNode.class);
-            case PLUS:
-                return mapper.readValue(node.toString(), PlusNode.class);
-            case MUL:
-                return mapper.readValue(node.toString(), MulNode.class);
-            case DIV:
-                return mapper.readValue(node.toString(), DivNode.class);
-            case COLUMN:
-                return mapper.readValue(node.toString(), ColumnNode.class);
-            default:
-                throw new IOException(String.format("无法识别的ArithmeticNode数据 %s", node));
-        }
+        return switch (ArithmeticNodeType.valueOf(node.get("type").asText())) {
+            case CONSTANT -> mapper.readValue(node.toString(), NumericNode.class);
+            case MINUS, PLUS, MUL, DIV -> mapper.readValue(node.toString(), MathNode.class);
+            case COLUMN -> mapper.readValue(node.toString(), ColumnNode.class);
+        };
     }
 }
