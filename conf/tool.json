@@ -1,11 +1,12 @@
 {
   "databaseConnectorConfig": {
     "databaseIp": "biui.me",
-    "databaseName": "tpch",
-    "databasePort": "4000",
-    "databasePwd": "",
-    "databaseUser": "root"
+    "databaseName": "tpch1",
+    "databasePort": "5432",
+    "databasePwd": "Biui1227..",
+    "databaseUser": "postgres"
   },
   "queriesDirectory": "conf/sqls",
-  "resultDirectory": "result"
+  "resultDirectory": "result",
+  "defaultSchemaName": "public"
 }

@@ -1,4 +1,3 @@
-import java_cup.runtime.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,10 +9,7 @@ import ecnu.db.generator.constraintchain.filter.operation.*;
 import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
 import java.io.StringReader;
-import ecnu.db.schema.Schema;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.schema.ColumnType;
-import ecnu.db.schema.ColumnManager;
 
 
 /* define how to connect to the scanner! */
@@ -275,8 +271,7 @@ arithmetic_operator ::=
 /* isnull expressions */
 isnull_expr ::=
         LPAREN CANONICAL_COLUMN_NAME:col null_expr:isornotnull RPAREN             {:
-                                                                                      float nullProbability = ColumnManager.getInstance().getNullPercentage(col);
-                                                                                      IsNullFilterOperation operation = new IsNullFilterOperation(col, BigDecimal.valueOf(nullProbability));
+                                                                                      IsNullFilterOperation operation = new IsNullFilterOperation(col);
                                                                                       if(isornotnull == CompareOperator.IS_NOT_NULL){
                                                                                         operation.setOperator(CompareOperator.IS_NOT_NULL);
                                                                                       }

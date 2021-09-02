@@ -4,9 +4,9 @@ import com.alibaba.druid.DbType;
 import ecnu.db.analyzer.online.QueryAnalyzer;
 import ecnu.db.analyzer.online.adapter.AbstractAnalyzer;
 import ecnu.db.analyzer.online.adapter.pg.PgAnalyzer;
-import ecnu.db.analyzer.online.adapter.pg.PgConnector;
-import ecnu.db.analyzer.online.adapter.tidb.Tidb3Connector;
-import ecnu.db.analyzer.online.adapter.tidb.Tidb4Connector;
+import ecnu.db.dbconnector.adapter.PgConnector;
+import ecnu.db.dbconnector.adapter.Tidb3Connector;
+import ecnu.db.dbconnector.adapter.Tidb4Connector;
 import ecnu.db.analyzer.online.adapter.tidb.TidbAnalyzer;
 import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.analyzer.statical.QueryWriter;
@@ -19,8 +19,8 @@ import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperatio
 import ecnu.db.generator.constraintchain.filter.operation.MultiVarFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Schema;
-import ecnu.db.schema.SchemaManager;
+import ecnu.db.schema.Table;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -109,38 +109,37 @@ public class TaskConfigurator implements Callable<Integer> {
             config.setDatabaseConnectorConfig(new DatabaseConnectorConfig(cliConfigInfo.databaseIp, cliConfigInfo.databasePort,
                     cliConfigInfo.databaseUser, cliConfigInfo.databasePwd, cliConfigInfo.databaseName));
         }
-        QueryReader queryReader = new QueryReader(config.getDatabaseConnectorConfig().getDatabaseName(), config.getQueriesDirectory());
+        QueryReader queryReader = new QueryReader(config.getDefaultSchemaName(), config.getQueriesDirectory());
         QueryWriter queryWriter = new QueryWriter(config.getResultDirectory() + QUERY_DIR);
-        SchemaManager.getInstance().setResultDir(config.getResultDirectory());
+        TableManager.getInstance().setResultDir(config.getResultDirectory());
         ColumnManager.getInstance().setResultDir(config.getResultDirectory());
         resultDir = config.getResultDirectory();
         if (taskConfiguratorConfig.isLoad) {
-            SchemaManager.getInstance().loadSchemaInfo();
+            TableManager.getInstance().loadSchemaInfo();
             ColumnManager.getInstance().loadColumnDistribution();
         }
         DbConnector dbConnector;
         AbstractAnalyzer abstractAnalyzer;
         switch (taskConfiguratorConfig.dbType) {
-            case TIDB3:
+            case TIDB3 -> {
                 dbConnector = new Tidb3Connector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new TidbAnalyzer();
                 queryWriter.setDbType(DbType.mysql);
                 queryReader.setDbType(DbType.mysql);
-                break;
-            case TIDB4:
+            }
+            case TIDB4 -> {
                 dbConnector = new Tidb4Connector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new TidbAnalyzer();
                 queryWriter.setDbType(DbType.mysql);
                 queryReader.setDbType(DbType.mysql);
-                break;
-            case POSTGRESQL:
+            }
+            case POSTGRESQL -> {
                 dbConnector = new PgConnector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new PgAnalyzer();
                 queryWriter.setDbType(DbType.postgresql);
                 queryReader.setDbType(DbType.postgresql);
-                break;
-            default:
-                throw new TouchstoneException("不支持的数据库类型");
+            }
+            default -> throw new TouchstoneException("不支持的数据库类型");
         }
         String databaseName = config.getDatabaseConnectorConfig().getDatabaseName();
         QueryAnalyzer analyzer = new QueryAnalyzer(abstractAnalyzer, dbConnector, databaseName);
@@ -155,22 +154,28 @@ public class TaskConfigurator implements Callable<Integer> {
         logger.info("获取表名成功，表名为:{}", tableNames);
         for (String canonicalTableName : tableNames) {
             logger.info("开始获取表{}的列元数据信息", canonicalTableName);
-            if (SchemaManager.getInstance().containSchema(canonicalTableName)) {
+            if (TableManager.getInstance().containSchema(canonicalTableName)) {
                 logger.info("表{}的列元数据信息已经load", canonicalTableName);
             } else {
-                Schema schema = new Schema(canonicalTableName, dbConnector.getColumnMetadata(canonicalTableName));
-                schema.setTableSize(dbConnector.getTableSize(canonicalTableName));
-                schema.setPrimaryKeys(dbConnector.getPrimaryKeys(canonicalTableName));
-                SchemaManager.getInstance().addSchema(canonicalTableName, schema);
+                Table table = new Table(dbConnector.getColumnMetadata(canonicalTableName));
+                table.setTableSize(dbConnector.getTableSize(canonicalTableName));
+                table.setPrimaryKeys(dbConnector.getPrimaryKeys(canonicalTableName));
+                TableManager.getInstance().addSchema(canonicalTableName, table);
                 logger.info("获取表{}的列元数据信息成功", canonicalTableName);
                 logger.info("开始获取表{}的数据分布", canonicalTableName);
-                ColumnManager.getInstance().setDataRangeBySqlResult(schema.getCanonicalColumnNames(),
-                        dbConnector.getDataRange(canonicalTableName, schema.getCanonicalColumnNames()));
+                ColumnManager.getInstance().setDataRangeBySqlResult(table.getCanonicalColumnNames(),
+                        dbConnector.getDataRange(canonicalTableName, table.getCanonicalColumnNames()));
                 logger.info("获取表{}的数据分布成功", canonicalTableName);
             }
 
         }
         logger.info("获取表结构和数据分布成功");
+        logger.info("开始持久化表结构信息");
+        TableManager.getInstance().storeSchemaInfo();
+        logger.info("持久化表结构信息成功");
+        logger.info("开始持久化数据分布信息");
+        ColumnManager.getInstance().storeColumnDistribution();
+        logger.info("持久化数据分布信息成功");
         return queryFiles;
     }
 
@@ -202,15 +207,10 @@ public class TaskConfigurator implements Callable<Integer> {
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
         Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
         logger.info("实例化查询计划成功, 实例化的参数为{}", id2Parameter.values());
-        logger.info("开始持久化表结构信息");
-        SchemaManager.getInstance().storeSchemaInfo();
-        logger.info("持久化表结构信息成功");
-        logger.info("开始持久化数据分布信息");
-        ColumnManager.getInstance().storeColumnDistribution();
-        logger.info("持久化数据分布信息成功");
         logger.info("开始持久化查询计划");
         String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
         CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
+        new File(resultDir + "/pic/").mkdir();
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
             CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".gv",
                     ConstraintChainManager.presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()));

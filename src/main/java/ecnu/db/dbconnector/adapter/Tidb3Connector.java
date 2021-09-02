@@ -1,4 +1,4 @@
-package ecnu.db.analyzer.online.adapter.tidb;
+package ecnu.db.dbconnector.adapter;
 
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.utils.DatabaseConnectorConfig;
@@ -26,5 +26,10 @@ public class Tidb3Connector extends DbConnector {
     @Override
     protected String[] formatQueryPlan(String[] data) {
         return data;
+    }
+
+    @Override
+    protected String getExplainFormat() {
+        return "explain analyze %s";
     }
 }

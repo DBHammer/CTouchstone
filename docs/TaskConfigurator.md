@@ -38,7 +38,7 @@ TouchstoneToolChain采集数据库Schema信息，数据分布信息和负载信�
 
 TouchstoneToolChain采集完成后，会生成3部分配置文件
 
-1. schema.conf
+1. table.conf
 
    该配置文件包含[Touchtone](https://github.com/daseECNU/Touchstone)需要的schema结构信息和数据分布的统计信息，但需要注意三点
 

@@ -1,11 +1,9 @@
-import java_cup.runtime.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 import java.math.BigDecimal;
-import ecnu.db.schema.Schema;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.generator.constraintchain.arithmetic.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
@@ -13,8 +11,6 @@ import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
 import java.io.StringReader;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.schema.ColumnType;
-import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 
 /* define how to connect to the scanner! */
 parser code {:
@@ -296,9 +292,7 @@ isnull_expr ::=
         ISNULL:isnull LPAREN CANONICAL_COLUMN_NAME:canonicalColumnName RPAREN                      {:
                                                                                       String tableName = getCanonicalTableName(canonicalColumnName);
                                                                                       verifyTableName(tableName);
-                                                                                      float nullProbability = ColumnManager.getInstance().getNullPercentage(canonicalColumnName);
-                                                                                      IsNullFilterOperation operation = new IsNullFilterOperation(canonicalColumnName, BigDecimal.valueOf(nullProbability));
-                                                                                      RESULT = operation;
+                                                                                      RESULT = new IsNullFilterOperation(canonicalColumnName);
                                                                                   :}
         ;
 

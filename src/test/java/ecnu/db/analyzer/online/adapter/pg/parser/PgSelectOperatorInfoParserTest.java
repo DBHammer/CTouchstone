@@ -1,14 +1,10 @@
 package ecnu.db.analyzer.online.adapter.pg.parser;
 
-import ecnu.db.analyzer.online.adapter.pg.PgAnalyzer;
-import ecnu.db.analyzer.online.adapter.tidb.TidbAnalyzer;
 import ecnu.db.generator.constraintchain.filter.SelectResult;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.ColumnType;
-import ecnu.db.schema.Schema;
-import ecnu.db.utils.TaskConfiguratorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,10 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Map;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

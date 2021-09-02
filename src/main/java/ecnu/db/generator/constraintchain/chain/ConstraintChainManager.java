@@ -20,12 +20,12 @@ public class ConstraintChainManager {
                 String currentNodeInfo;
                 double currentProbability = 0;
                 switch (node.constraintChainNodeType) {
-                    case FILTER:
+                    case FILTER -> {
                         currentNodeInfo = "\"" + node + "\"";
                         currentProbability = ((ConstraintChainFilterNode) node).getProbability().doubleValue();
                         graph.append("\t").append(currentNodeInfo).append(color);
-                        break;
-                    case FK_JOIN:
+                    }
+                    case FK_JOIN -> {
                         ConstraintChainFkJoinNode fkJoinNode = ((ConstraintChainFkJoinNode) node);
                         long tag = fkJoinNode.getPkTag();
                         String pkCols = fkJoinNode.getRefCols().split("\\.")[2];
@@ -36,8 +36,8 @@ public class ConstraintChainManager {
                             subGraphHashMap.put(subGraphTag, new SubGraph(subGraphTag));
                         }
                         subGraphHashMap.get(subGraphTag).fkInfo = currentNodeInfo + color;
-                        break;
-                    case PK_JOIN:
+                    }
+                    case PK_JOIN -> {
                         ConstraintChainPkJoinNode pkJoinNode = ((ConstraintChainPkJoinNode) node);
                         long pkTag = pkJoinNode.getPkTag();
                         String locPks = pkJoinNode.getPkColumns()[0];
@@ -47,9 +47,8 @@ public class ConstraintChainManager {
                             subGraphHashMap.put(localSubGraph, new SubGraph(localSubGraph));
                         }
                         subGraphHashMap.get(localSubGraph).pkInfo = currentNodeInfo + color;
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
+                    }
+                    default -> throw new UnsupportedOperationException();
                 }
                 if (!"".equals(lastNodeInfo)) {
                     graph.append("\t").append(lastNodeInfo).append("->").append(currentNodeInfo).append("[label=\"")

@@ -19,10 +19,14 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         super(CompareOperator.ISNULL);
     }
 
-    public IsNullFilterOperation(String canonicalColumnName, BigDecimal probability) {
+    public IsNullFilterOperation(String canonicalColumnName) {
         super(CompareOperator.ISNULL);
         this.canonicalColumnName = canonicalColumnName;
-        this.probability = probability;
+    }
+
+    @Override
+    public BigDecimal getProbability() {
+        throw new UnsupportedOperationException();
     }
 
     public void setCanonicalColumnName(String canonicalColumnName) {

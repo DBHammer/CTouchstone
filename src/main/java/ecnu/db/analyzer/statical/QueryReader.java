@@ -17,7 +17,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.convertTableName2CanonicalTableName;
 
@@ -106,11 +105,10 @@ public class QueryReader {
         for (File sqlFile : files) {
             List<String> queries = getQueriesFromFile(sqlFile.getPath());
             for (String query : queries) {
-                Set<String> tableNameRefs = getTableName(query);
-                tableNames.addAll(tableNameRefs);
+                tableNames.addAll(getTableName(query));
             }
         }
-        tableNames = tableNames.stream().distinct().collect(Collectors.toList());
+        tableNames = tableNames.stream().distinct().toList();
         return tableNames;
     }
 

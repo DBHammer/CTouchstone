@@ -21,16 +21,16 @@ import java.util.Map;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
 
-public class SchemaManager {
-    protected static final Logger logger = LoggerFactory.getLogger(SchemaManager.class);
-    private static final SchemaManager INSTANCE = new SchemaManager();
-    private LinkedHashMap<String, Schema> schemas = new LinkedHashMap<>();
+public class TableManager {
+    protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
+    private static final TableManager INSTANCE = new TableManager();
+    private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
     private File schemaInfoPath;
 
-    private SchemaManager() {
+    private TableManager() {
     }
 
-    public static SchemaManager getInstance() {
+    public static TableManager getInstance() {
         return INSTANCE;
     }
 
@@ -48,7 +48,7 @@ public class SchemaManager {
         });
     }
 
-    public void addSchema(String tableName, Schema schema) {
+    public void addSchema(String tableName, Table schema) {
         schemas.put(tableName, schema);
     }
 
@@ -84,7 +84,7 @@ public class SchemaManager {
     public List<String> createTopologicalOrder() {
         Graph<String, DefaultEdge> schemaGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
         schemas.keySet().forEach(schemaGraph::addVertex);
-        for (Map.Entry<String, Schema> schemaName2Schema : schemas.entrySet()) {
+        for (Map.Entry<String, Table> schemaName2Schema : schemas.entrySet()) {
             for (String refColumn : schemaName2Schema.getValue().getForeignKeys().values()) {
                 String[] refInfo = refColumn.split(CANONICAL_NAME_SPLIT_REGEX);
                 schemaGraph.addEdge(refInfo[0] + CANONICAL_NAME_CONTACT_SYMBOL + refInfo[1], schemaName2Schema.getKey());
@@ -110,8 +110,8 @@ public class SchemaManager {
         return getSchema(schemaName).getPrimaryKeys();
     }
 
-    public Schema getSchema(String tableName) throws CannotFindSchemaException {
-        Schema schema = schemas.get(tableName);
+    public Table getSchema(String tableName) throws CannotFindSchemaException {
+        Table schema = schemas.get(tableName);
         if (schema == null) {
             throw new CannotFindSchemaException(tableName);
         }

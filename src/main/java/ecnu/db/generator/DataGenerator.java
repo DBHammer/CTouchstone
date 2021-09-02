@@ -4,7 +4,7 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.joininfo.JoinInfoTable;
 import ecnu.db.generator.joininfo.JoinInfoTableManager;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.SchemaManager;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.slf4j.Logger;
@@ -55,23 +55,23 @@ public class DataGenerator implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        SchemaManager.getInstance().setResultDir(configPath);
-        SchemaManager.getInstance().loadSchemaInfo();
+        TableManager.getInstance().setResultDir(configPath);
+        TableManager.getInstance().loadSchemaInfo();
         ColumnManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnDistribution();
         JoinInfoTableManager.getInstance().setJoinInfoTablePath(configPath);
         Map<String, List<ConstraintChain>> query2chains = CommonUtils.loadConstrainChainResult(configPath);
         int stepRange = stepSize * generatorNum;
         Map<String, Collection<ConstraintChain>> schema2chains = getSchema2Chains(query2chains);
-        for (String schemaName : SchemaManager.getInstance().createTopologicalOrder()) {
+        for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             logger.info("开始输出表数据{}", schemaName);
             int resultStart = stepSize * generatorId;
-            int tableSize = SchemaManager.getInstance().getTableSize(schemaName);
-            List<String> attColumnNames = SchemaManager.getInstance().getColumnNamesNotKey(schemaName);
-            List<String> allColumnNames = SchemaManager.getInstance().getColumnNames(schemaName);
+            int tableSize = TableManager.getInstance().getTableSize(schemaName);
+            List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
+            List<String> allColumnNames = TableManager.getInstance().getColumnNames(schemaName);
             logger.info(String.valueOf(allColumnNames));
-            String pkName = SchemaManager.getInstance().getPrimaryKeyColumn(schemaName);
+            String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
             JoinInfoTable joinInfoTable = new JoinInfoTable();
             while (resultStart < tableSize) {
                 int range = Math.min(resultStart + stepSize, tableSize) - resultStart;

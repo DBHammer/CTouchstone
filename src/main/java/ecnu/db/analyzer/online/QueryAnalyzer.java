@@ -8,7 +8,7 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
 import ecnu.db.generator.constraintchain.filter.SelectResult;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.SchemaManager;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
 import ecnu.db.utils.exception.analyze.UnsupportedSelect;
@@ -76,16 +76,16 @@ public class QueryAnalyzer {
      * @throws SQLException        无法通过数据库SQL查询获得多列属性的ndv
      */
     private boolean isPrimaryKey(String pkTable, String pkCol, String fkTable, String fkCol) throws TouchstoneException, SQLException {
-        if (SchemaManager.getInstance().isRefTable(fkTable, fkCol, pkTable + "." + pkCol)) {
+        if (TableManager.getInstance().isRefTable(fkTable, fkCol, pkTable + "." + pkCol)) {
             return true;
         }
-        if (SchemaManager.getInstance().isRefTable(pkTable, pkCol, fkTable + "." + fkCol)) {
+        if (TableManager.getInstance().isRefTable(pkTable, pkCol, fkTable + "." + fkCol)) {
             return false;
         }
         if (!pkCol.contains(",")) {
             if (ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol) ==
                     ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol)) {
-                return SchemaManager.getInstance().getTableSize(pkTable) < SchemaManager.getInstance().getTableSize(fkTable);
+                return TableManager.getInstance().getTableSize(pkTable) < TableManager.getInstance().getTableSize(fkTable);
             } else {
                 int pkTableNdv = ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol);
                 int fkTableNdv = ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
@@ -95,7 +95,7 @@ public class QueryAnalyzer {
             int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
             int rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
             if (leftTableNdv == rightTableNdv) {
-                return SchemaManager.getInstance().getTableSize(pkTable) < SchemaManager.getInstance().getTableSize(fkTable);
+                return TableManager.getInstance().getTableSize(pkTable) < TableManager.getInstance().getTableSize(fkTable);
             } else {
                 return leftTableNdv > rightTableNdv;
             }
@@ -152,19 +152,19 @@ public class QueryAnalyzer {
         //根据主外键分别设置约束链输出信息
         if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
             if (node.getJoinTag() < 0) {
-                node.setJoinTag(SchemaManager.getInstance().getJoinTag(localTable));
+                node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
             }
             ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(node.getJoinTag(), localCol.split(","));
             constraintChain.addNode(pkJoinNode);
             //设置主键
-            SchemaManager.getInstance().setPrimaryKeys(localTable, localCol);
+            TableManager.getInstance().setPrimaryKeys(localTable, localCol);
             return -1; // 主键的情况下停止继续遍历
         } else {
             if (node.getJoinTag() < 0) {
-                node.setJoinTag(SchemaManager.getInstance().getJoinTag(localTable));
+                node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
             }
             BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
-            SchemaManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
+            TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, node.getJoinTag(), probability);
             constraintChain.addNode(fkJoinNode);
             return node.getOutputRows();
@@ -198,7 +198,7 @@ public class QueryAnalyzer {
                 SelectResult result = analyzeSelectInfo(node.getInfo());
                 tableName = extractTableName(result.getTableName());
                 constraintChain = new ConstraintChain(tableName);
-                BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(SchemaManager.getInstance().getTableSize(tableName)), BIG_DECIMAL_DEFAULT_PRECISION);
+                BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(tableName)), BIG_DECIMAL_DEFAULT_PRECISION);
                 ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result.getCondition(), result.getColumns());
                 constraintChain.addNode(filterNode);
                 lastNodeLineCount = node.getOutputRows();
@@ -211,7 +211,7 @@ public class QueryAnalyzer {
                 lastNodeLineCount = analyzeNode(node, constraintChain, tableName, lastNodeLineCount);
             } catch (TouchstoneException e) {
                 // 小于设置的阈值以后略去后续的节点
-                if (node.getOutputRows() * 1.0 / SchemaManager.getInstance().getTableSize(tableName) < skipNodeThreshold) {
+                if (node.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(tableName) < skipNodeThreshold) {
                     logger.error("提取约束链失败", e);
                     logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), node));
                     return constraintChain;
