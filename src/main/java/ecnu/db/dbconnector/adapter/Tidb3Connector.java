@@ -29,7 +29,12 @@ public class Tidb3Connector extends DbConnector {
     }
 
     @Override
+    protected String[] preExecutionCommands() {
+        return new String[0];
+    }
+
+    @Override
     protected String getExplainFormat() {
-        return "explain analyze %s";
+        return "EXPLAIN ANALYZE %s";
     }
 }

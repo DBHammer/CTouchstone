@@ -1,12 +1,10 @@
 package ecnu.db.generator.constraintchain.filter;
 
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.utils.exception.compute.PushDownProbabilityException;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author wangqingshuai
@@ -17,9 +15,8 @@ public interface BoolExprNode {
      * 计算所有子节点的概率
      *
      * @param probability 当前节点的总概率
-     * @throws PushDownProbabilityException 计算异常
      */
-    List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns);
+    List<AbstractFilterOperation> pushDownProbability(BigDecimal probability);
 
     /**
      * 获得当前布尔表达式节点的类型

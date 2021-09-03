@@ -25,6 +25,7 @@ public class TableManager {
     protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
     private static final TableManager INSTANCE = new TableManager();
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
+    public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     private File schemaInfoPath;
 
     private TableManager() {
@@ -35,7 +36,7 @@ public class TableManager {
     }
 
     public void setResultDir(String resultDir) {
-        this.schemaInfoPath = new File(resultDir + CommonUtils.SCHEMA_MANAGE_INFO);
+        this.schemaInfoPath = new File(resultDir + SCHEMA_MANAGE_INFO);
     }
 
     public void storeSchemaInfo() throws IOException {

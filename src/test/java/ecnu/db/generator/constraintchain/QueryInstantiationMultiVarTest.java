@@ -1,7 +1,7 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNode;
+import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;

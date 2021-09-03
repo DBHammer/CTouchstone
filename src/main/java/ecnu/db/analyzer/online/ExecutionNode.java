@@ -25,6 +25,19 @@ public class ExecutionNode {
      * 指向左节点
      */
     public ExecutionNode leftNode;
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    /**
+     * 表名
+     */
+    private String tableName;
     /**
      * 对应explain analyze的query plan树的节点名称
      */

@@ -1,4 +1,4 @@
-package ecnu.db.analyzer.online;
+package ecnu.db.analyzer.online.adapter.tidb;
 
 /**
  * @author lianxuechao

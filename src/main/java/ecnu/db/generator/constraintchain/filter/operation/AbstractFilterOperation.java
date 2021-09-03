@@ -6,7 +6,6 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author wangqingshuai
@@ -30,15 +29,11 @@ public abstract class AbstractFilterOperation implements BoolExprNode {
     }
 
     @Override
-    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
+    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         this.probability = probability;
         List<AbstractFilterOperation> chain = new ArrayList<>();
         chain.add(this);
         return chain;
-    }
-
-    public void addParameter(Parameter parameter) {
-        parameters.add(parameter);
     }
 
     public List<Parameter> getParameters() {

@@ -1,12 +1,11 @@
 package ecnu.db.analyzer.online;
 
-import ecnu.db.analyzer.online.adapter.AbstractAnalyzer;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
-import ecnu.db.generator.constraintchain.filter.SelectResult;
+import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -50,19 +49,7 @@ public class QueryAnalyzer {
         this.aliasDic = aliasDic;
     }
 
-    /**
-     * 单个数据库时把表转换为<database>.<table>的形式
-     *
-     * @return 转换后的表名
-     */
-    private String extractTableName(String operatorInfo) throws IllegalQueryTableNameException {
-        String canonicalTableName = abstractAnalyzer.extractOriginTableName(operatorInfo);
-        if (aliasDic.containsKey(canonicalTableName)) {
-            return aliasDic.get(canonicalTableName);
-        } else {
-            return convertTableName2CanonicalTableName(canonicalTableName, CANONICAL_TBL_NAME, defaultDatabase);
-        }
-    }
+
 
     /**
      * 根据输入的列名统计非重复值的个数，进而给出该列是否为主键
@@ -107,35 +94,31 @@ public class QueryAnalyzer {
      *
      * @param node            需要分析的节点
      * @param constraintChain 约束链
-     * @param tableName       表名
      * @return 节点行数，小于零代表停止继续向上分析
      * @throws TouchstoneException 节点分析出错
      * @throws SQLException        无法收集多列主键的ndv
      */
-    private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, String tableName, int lastNodeLineCount) throws TouchstoneException, SQLException {
+    private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
         return switch (node.getType()) {
             case join -> analyzeJoinNode(node, constraintChain, lastNodeLineCount);
-            case filter -> analyzeSelectNode(node, constraintChain, tableName, lastNodeLineCount);
+            case filter -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
             case scan -> throw new TouchstoneException(String.format("中间节点'%s'不为scan", node.getId()));
         };
     }
 
-    private int analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, String tableName, int lastNodeLineCount) throws TouchstoneException {
-        SelectResult result = analyzeSelectInfo(node.getInfo());
-        if (!tableName.equals(result.getTableName())) {
-            return -1;
-        }
+    private int analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
+        AndNode root = analyzeSelectInfo(node.getInfo());
         BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
-        ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result.getCondition(), result.getColumns());
+        ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, root);
         constraintChain.addNode(filterNode);
         return node.getOutputRows();
     }
 
     private int analyzeJoinNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
         String[] joinColumnInfos = abstractAnalyzer.analyzeJoinInfo(node.getInfo());
-        String localTable = extractTableName(joinColumnInfos[0]);
+        String localTable = joinColumnInfos[0];
         String localCol = joinColumnInfos[1];
-        String externalTable = extractTableName(joinColumnInfos[2]);
+        String externalTable = joinColumnInfos[2];
         String externalCol = joinColumnInfos[3];
         // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
         if (!localTable.equals(constraintChain.getTableName())
@@ -185,21 +168,18 @@ public class QueryAnalyzer {
         }
         ExecutionNode node = path.get(0);
         ConstraintChain constraintChain;
-        String tableName;
         int lastNodeLineCount;
         //分析约束链的第一个node
         switch (node.getType()) {
             case scan -> {
-                tableName = extractTableName(node.getInfo());
-                constraintChain = new ConstraintChain(tableName);
+                constraintChain = new ConstraintChain(node.getTableName());
                 lastNodeLineCount = node.getOutputRows();
             }
             case filter -> {
-                SelectResult result = analyzeSelectInfo(node.getInfo());
-                tableName = extractTableName(result.getTableName());
-                constraintChain = new ConstraintChain(tableName);
-                BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(tableName)), BIG_DECIMAL_DEFAULT_PRECISION);
-                ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result.getCondition(), result.getColumns());
+                AndNode result = analyzeSelectInfo(node.getInfo());
+                constraintChain = new ConstraintChain(node.getTableName());
+                BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(node.getTableName())), BIG_DECIMAL_DEFAULT_PRECISION);
+                ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result);
                 constraintChain.addNode(filterNode);
                 lastNodeLineCount = node.getOutputRows();
             }
@@ -208,10 +188,10 @@ public class QueryAnalyzer {
         for (int i = 1; i < path.size(); i++) {
             node = path.get(i);
             try {
-                lastNodeLineCount = analyzeNode(node, constraintChain, tableName, lastNodeLineCount);
+                lastNodeLineCount = analyzeNode(node, constraintChain, lastNodeLineCount);
             } catch (TouchstoneException e) {
                 // 小于设置的阈值以后略去后续的节点
-                if (node.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(tableName) < skipNodeThreshold) {
+                if (node.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(node.getTableName()) < skipNodeThreshold) {
                     logger.error("提取约束链失败", e);
                     logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), node));
                     return constraintChain;
@@ -285,7 +265,7 @@ public class QueryAnalyzer {
      * @return 分析查询的逻辑树
      * @throws TouchstoneException 分析失败
      */
-    private SelectResult analyzeSelectInfo(String operatorInfo) throws TouchstoneException {
+    private AndNode analyzeSelectInfo(String operatorInfo) throws TouchstoneException {
         try {
             return abstractAnalyzer.analyzeSelectOperator(operatorInfo);
         } catch (Exception e) {

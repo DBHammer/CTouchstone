@@ -1,4 +1,4 @@
-package ecnu.db.generator.constraintchain.arithmetic;
+package ecnu.db.generator.constraintchain.filter.arithmetic;
 
 /**
  * @author wangqingshuai

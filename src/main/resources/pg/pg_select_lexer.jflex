@@ -1,9 +1,9 @@
 package ecnu.db.analyzer.online.adapter.pg.parser;
 
 import ecnu.db.utils.exception.analyze.IllegalCharacterException;
-import ecnu.db.analyzer.online.adapter.pg.Token;
+import ecnu.db.analyzer.online.adapter.Token;
 import java_cup.runtime.*;
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeType;
+import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 %%
 
@@ -17,11 +17,11 @@ ecnu.db.utils.exception.TouchstoneException
 %{
   private StringBuilder str_buff = new StringBuilder();
   private Symbol symbol(int type) {
-    return new Token(type, yycolumn+1);
+    return new Token(PgSelectSymbol.terminalNames, type, yycolumn+1);
   }
 
   private Symbol symbol(int type, Object value) {
-    return new Token(type, yycolumn+1, value);
+    return new Token(PgSelectSymbol.terminalNames, type, yycolumn+1, value);
   }
 
   public void init() {
@@ -44,9 +44,9 @@ DIGIT=[0-9]
 STRING=[A-Za-z0-9$_]+
 WHITE_SPACE_CHAR=[\n\r\ \t\b\012]
 SCHEMA_NAME_CHAR=[A-Za-z0-9$_]
-CANONICAL_COL_NAME=({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+
 FLOAT=(0|([1-9]({DIGIT}*)))\.({DIGIT}*)
 INTEGER=(0|[1-9]({DIGIT}*))
+CANONICAL_COL_NAME=({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+
 DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT}{6})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}))
 %%
 

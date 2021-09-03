@@ -64,11 +64,11 @@ public class ConstraintChain {
         Arrays.fill(flag, true);
         for (ConstraintChainNode node : nodes) {
             switch (node.getConstraintChainNodeType()) {
-                case FILTER:
+                case FILTER -> {
                     boolean[] evaluateStatus = ((ConstraintChainFilterNode) node).evaluate();
                     IntStream.range(0, pkBitMap.length).parallel().forEach(i -> flag[i] &= evaluateStatus[i]);
-                    break;
-                case FK_JOIN:
+                }
+                case FK_JOIN -> {
                     ConstraintChainFkJoinNode constraintChainFkJoinNode = (ConstraintChainFkJoinNode) node;
                     double probability = constraintChainFkJoinNode.getProbability().doubleValue();
                     long[] fkBitMap = fkBitMaps.computeIfAbsent(constraintChainFkJoinNode.getLocalCols() + ":" +
@@ -81,14 +81,13 @@ public class ConstraintChain {
                                 flag[i] &= ThreadLocalRandom.current().nextDouble() < probability;
                                 fkBitMap[i] += fkTag * (1 + Boolean.compare(flag[i], false));
                             });
-                    break;
-                case PK_JOIN:
+                }
+                case PK_JOIN -> {
                     long pkTag = ((ConstraintChainPkJoinNode) node).getPkTag();
                     IntStream.range(0, flag.length).parallel()
                             .forEach(i -> pkBitMap[i] += pkTag * (1 + Boolean.compare(flag[i], false)));
-                    break;
-                default:
-                    throw new UnsupportedOperationException("不支持的Node类型");
+                }
+                default -> throw new UnsupportedOperationException("不支持的Node类型");
             }
         }
     }

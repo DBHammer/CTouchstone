@@ -1,10 +1,9 @@
 package ecnu.db.analyzer.online.adapter.tidb;
 
-import ecnu.db.analyzer.online.adapter.AbstractAnalyzer;
+import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.analyzer.online.ExecutionNode.ExecutionNodeType;
-import ecnu.db.analyzer.online.RawNode;
-import ecnu.db.generator.constraintchain.filter.SelectResult;
+import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.schema.TableManager;
 import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoParser;
@@ -44,11 +43,6 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     public TidbAnalyzer() {
         super();
         this.nodeTypeRef = new TidbNodeTypeTool();
-    }
-
-    @Override
-    public String extractOriginTableName(String operatorInfo) {
-        return operatorInfo.split(",")[0].substring(6).toLowerCase();
     }
 
     @Override
@@ -121,7 +115,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 String rightOperator = ")".equals(rightRangeMatches.get(0).get(2)) ? "lt" : "le", rightOperand = rightRangeMatches.get(0).get(1);
                 List<List<String>> indexMatches = matchPattern(INDEX_COLUMN, rawNode.operatorInfo);
                 String columnName = TableManager.getInstance().getPrimaryKeys(canonicalTableName);
-                if (indexMatches.size() != 0) {
+                if (!indexMatches.isEmpty()) {
                     columnName = indexMatches.get(0).get(1);
                 }
                 if (leftOperand.contains("inf")) {
@@ -352,7 +346,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    public SelectResult analyzeSelectOperator(String operatorInfo) throws Exception {
+    public AndNode analyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
     }
 }

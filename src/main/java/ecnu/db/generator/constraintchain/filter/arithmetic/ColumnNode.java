@@ -1,6 +1,8 @@
-package ecnu.db.generator.constraintchain.arithmetic;
+package ecnu.db.generator.constraintchain.filter.arithmetic;
 
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.util.Arrays;
 
@@ -18,7 +20,10 @@ public class ColumnNode extends ArithmeticNode {
         return canonicalColumnName;
     }
 
-    public void setCanonicalColumnName(String canonicalColumnName) {
+    public void setCanonicalColumnName(String canonicalColumnName) throws IllegalQueryColumnNameException {
+        if(!CommonUtils.isCanonicalColumnName(canonicalColumnName)){
+            throw new IllegalQueryColumnNameException();
+        }
         this.canonicalColumnName = canonicalColumnName;
     }
 

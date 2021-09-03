@@ -1,4 +1,4 @@
-package ecnu.db.generator.constraintchain.arithmetic;
+package ecnu.db.generator.constraintchain.filter.arithmetic;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;

@@ -54,7 +54,7 @@ public class OrNode implements BoolExprNode {
      * @param probability 当前节点的总概率值
      */
     @Override
-    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
+    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             logger.info("{}的概率为0", this);
             return new ArrayList<>();
@@ -65,47 +65,35 @@ public class OrNode implements BoolExprNode {
         Map<String, Collection<UniVarFilterOperation>> greaterCol2UniFilters = new HashMap<>();
         for (BoolExprNode child : Arrays.asList(leftNode, rightNode)) {
             switch (child.getType()) {
-                case AND:
-                case OR:
-                case MULTI_FILTER_OPERATION:
-                    otherNodes.add(child);
-                    break;
-                case UNI_FILTER_OPERATION:
+                case AND, OR, MULTI_FILTER_OPERATION -> otherNodes.add(child);
+                case UNI_FILTER_OPERATION -> {
                     UniVarFilterOperation operation = (UniVarFilterOperation) child;
                     switch (operation.getOperator()) {
-                        case GE:
-                        case GT:
+                        case GE, GT -> {
                             if (!greaterCol2UniFilters.containsKey(operation.getCanonicalColumnName())) {
                                 greaterCol2UniFilters.put(operation.getCanonicalColumnName(), new ArrayList<>());
                             }
                             greaterCol2UniFilters.get(operation.getCanonicalColumnName()).add(operation);
-                            break;
-                        case LE:
-                        case LT:
+                        }
+                        case LE, LT -> {
                             if (!lessCol2UniFilters.containsKey(operation.getCanonicalColumnName())) {
                                 lessCol2UniFilters.put(operation.getCanonicalColumnName(), new ArrayList<>());
                             }
                             lessCol2UniFilters.get(operation.getCanonicalColumnName()).add(operation);
-                            break;
-                        case EQ:
-                        case LIKE:
-                        case NE:
-                        case IN:
-                            otherNodes.add(child);
-                            break;
-                        default:
-                            throw new UnsupportedOperationException();
+                        }
+                        case EQ, LIKE, NE, IN -> otherNodes.add(child);
+                        default -> throw new UnsupportedOperationException();
                     }
-                    break;
-                case ISNULL_FILTER_OPERATION:
+                }
+                case ISNULL_FILTER_OPERATION -> {
                     IsNullFilterOperation isNullFilterOperation = ((IsNullFilterOperation) child);
                     String columnName = isNullFilterOperation.getColumnName();
                     boolean hasNot = isNullFilterOperation.getOperator().equals(CompareOperator.IS_NOT_NULL);
-                    if (columns.contains(columnName)) {
-                        if (hasNot && !probability.equals(isNullFilterOperation.getProbability())) {
-                            throw new UnsupportedOperationException("or中包含了not(isnull(%s))与其他运算, 总概率不等于not isnull的概率");
-                        }
-                    } else {
+//                    if (columns.contains(columnName)) {
+//                        if (hasNot && !probability.equals(isNullFilterOperation.getProbability())) {
+//                            throw new UnsupportedOperationException("or中包含了not(isnull(%s))与其他运算, 总概率不等于not isnull的概率");
+//                        }
+//                    } else {
                         BigDecimal nullProbability = isNullFilterOperation.getProbability();
                         BigDecimal toDivide = hasNot ? nullProbability : BigDecimal.ONE.subtract(nullProbability);
                         if (toDivide.compareTo(BigDecimal.ZERO) == 0) {
@@ -115,10 +103,9 @@ public class OrNode implements BoolExprNode {
                         } else {
                             probability = BigDecimal.ONE.subtract(BigDecimal.ONE.subtract(probability).divide(toDivide, BIG_DECIMAL_DEFAULT_PRECISION));
                         }
-                    }
-                    break;
-                default:
-                    throw new UnsupportedOperationException();
+//                    }
+                }
+                default -> throw new UnsupportedOperationException();
             }
         }
 
@@ -129,7 +116,7 @@ public class OrNode implements BoolExprNode {
 
         List<AbstractFilterOperation> operations = new LinkedList<>();
         for (BoolExprNode node : otherNodes) {
-            operations.addAll(node.pushDownProbability(BigDecimal.ONE.subtract(probability), columns));
+            operations.addAll(node.pushDownProbability(BigDecimal.ONE.subtract(probability)));
         }
 
         return operations;

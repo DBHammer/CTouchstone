@@ -24,7 +24,7 @@ public class Tidb4Connector extends DbConnector {
 
     @Override
     protected String getExplainFormat() {
-        return "explain analyze %s";
+        return "EXPLAIN ANALYZE %s";
     }
 
     /**
@@ -40,5 +40,10 @@ public class Tidb4Connector extends DbConnector {
         ret[1] = data[3].isEmpty() ? data[1] : String.format("%s,%s", data[3], data[1]);
         ret[2] = "rows:" + data[2];
         return ret;
+    }
+
+    @Override
+    protected String[] preExecutionCommands() {
+        return new String[0];
     }
 }

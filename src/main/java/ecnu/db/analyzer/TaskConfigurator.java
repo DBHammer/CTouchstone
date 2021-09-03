@@ -1,16 +1,16 @@
 package ecnu.db.analyzer;
 
 import com.alibaba.druid.DbType;
+import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.QueryAnalyzer;
-import ecnu.db.analyzer.online.adapter.AbstractAnalyzer;
 import ecnu.db.analyzer.online.adapter.pg.PgAnalyzer;
-import ecnu.db.dbconnector.adapter.PgConnector;
-import ecnu.db.dbconnector.adapter.Tidb3Connector;
-import ecnu.db.dbconnector.adapter.Tidb4Connector;
 import ecnu.db.analyzer.online.adapter.tidb.TidbAnalyzer;
 import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.analyzer.statical.QueryWriter;
 import ecnu.db.dbconnector.DbConnector;
+import ecnu.db.dbconnector.adapter.PgConnector;
+import ecnu.db.dbconnector.adapter.Tidb3Connector;
+import ecnu.db.dbconnector.adapter.Tidb4Connector;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainManager;
@@ -33,10 +33,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static ecnu.db.utils.CommonUtils.*;
+import static ecnu.db.utils.CommonUtils.MAPPER;
 
 /**
  * @author alan
@@ -45,9 +44,8 @@ import static ecnu.db.utils.CommonUtils.*;
 @CommandLine.Command(name = "prepare", description = "get database information, instantiate queries, prepare for data generation",
         mixinStandardHelpOptions = true)
 public class TaskConfigurator implements Callable<Integer> {
-    private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
     private final Logger logger = LoggerFactory.getLogger(TaskConfigurator.class);
-    private String resultDir;
+    public static final String SQL_FILE_POSTFIX = ".sql";
     @CommandLine.ArgGroup(exclusive = false, multiplicity = "1")
     private TaskConfiguratorConfig taskConfiguratorConfig;
 
@@ -110,10 +108,10 @@ public class TaskConfigurator implements Callable<Integer> {
                     cliConfigInfo.databaseUser, cliConfigInfo.databasePwd, cliConfigInfo.databaseName));
         }
         QueryReader queryReader = new QueryReader(config.getDefaultSchemaName(), config.getQueriesDirectory());
-        QueryWriter queryWriter = new QueryWriter(config.getResultDirectory() + QUERY_DIR);
+        QueryWriter queryWriter = new QueryWriter(config.getResultDirectory());
         TableManager.getInstance().setResultDir(config.getResultDirectory());
         ColumnManager.getInstance().setResultDir(config.getResultDirectory());
-        resultDir = config.getResultDirectory();
+        ConstraintChainManager.getInstance().setResultDir(config.getResultDirectory());
         if (taskConfiguratorConfig.isLoad) {
             TableManager.getInstance().loadSchemaInfo();
             ColumnManager.getInstance().loadColumnDistribution();
@@ -157,9 +155,8 @@ public class TaskConfigurator implements Callable<Integer> {
             if (TableManager.getInstance().containSchema(canonicalTableName)) {
                 logger.info("表{}的列元数据信息已经load", canonicalTableName);
             } else {
-                Table table = new Table(dbConnector.getColumnMetadata(canonicalTableName));
-                table.setTableSize(dbConnector.getTableSize(canonicalTableName));
-                table.setPrimaryKeys(dbConnector.getPrimaryKeys(canonicalTableName));
+                Table table = new Table(dbConnector.getColumnMetadata(canonicalTableName),
+                        dbConnector.getTableSize(canonicalTableName), dbConnector.getPrimaryKeyList(canonicalTableName));
                 TableManager.getInstance().addSchema(canonicalTableName, table);
                 logger.info("获取表{}的列元数据信息成功", canonicalTableName);
                 logger.info("开始获取表{}的数据分布", canonicalTableName);
@@ -197,8 +194,7 @@ public class TaskConfigurator implements Callable<Integer> {
                     List<ConstraintChain> constraintChains = queryAnalyzer.extractQuery(query);
                     List<Parameter> parameters = constraintChains.stream().flatMap((c -> c.getParameters().stream())).toList();
                     query2constraintChains.put(queryCanonicalName, constraintChains);
-                    String queryTemplate = queryWriter.templatizeSql(queryCanonicalName, query, parameters);
-                    queryName2QueryTemplates.put(queryCanonicalName, queryTemplate);
+                    queryName2QueryTemplates.put(queryCanonicalName, queryWriter.templatizeSql(queryCanonicalName, query, parameters));
                 }
             }
         }
@@ -208,32 +204,10 @@ public class TaskConfigurator implements Callable<Integer> {
         Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
         logger.info("实例化查询计划成功, 实例化的参数为{}", id2Parameter.values());
         logger.info("开始持久化查询计划");
-        String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
-        CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
-        new File(resultDir + "/pic/").mkdir();
-        for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
-            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".gv",
-                    ConstraintChainManager.presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()));
-        }
+        ConstraintChainManager.getInstance().storeConstraintChain(query2constraintChains);
         logger.info("持久化查询计划完成");
         logger.info("开始填充查询模版");
-        for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
-            String query = queryName2QueryTemplate.getValue();
-            List<List<String>> matches = matchPattern(PATTERN, query);
-            for (List<String> group : matches) {
-                int parameterId = Integer.parseInt(group.get(1));
-                Parameter parameter = id2Parameter.remove(parameterId);
-                if (parameter != null) {
-                    String parameterData = parameter.getDataValue();
-                    try {
-                        query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
-                    } catch (IllegalArgumentException e) {
-                        logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
-                    }
-                }
-                queryWriter.writeQuery(queryName2QueryTemplate.getKey(), query);
-            }
-        }
+        queryWriter.writeQuery(queryName2QueryTemplates, id2Parameter);
         logger.info("填充查询模版完成");
         if (id2Parameter.size() > 0) {
             logger.error("未被成功替换的参数如下{}", id2Parameter.values());

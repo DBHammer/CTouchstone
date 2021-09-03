@@ -1,12 +1,14 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectSymbol;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author alan
@@ -19,8 +21,11 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         super(CompareOperator.ISNULL);
     }
 
-    public IsNullFilterOperation(String canonicalColumnName) {
+    public IsNullFilterOperation(String canonicalColumnName) throws IllegalQueryColumnNameException {
         super(CompareOperator.ISNULL);
+        if(!CommonUtils.isCanonicalColumnName(canonicalColumnName)){
+            throw new IllegalQueryColumnNameException();
+        }
         this.canonicalColumnName = canonicalColumnName;
     }
 
@@ -34,7 +39,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
+    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         throw new UnsupportedOperationException();
     }
 

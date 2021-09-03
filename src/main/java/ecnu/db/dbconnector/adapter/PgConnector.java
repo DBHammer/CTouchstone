@@ -24,7 +24,14 @@ public class PgConnector extends DbConnector {
     }
 
     @Override
-    protected String getExplainFormat() {
-        return "EXPLAIN (ANALYZE, FORMAT JSON) %s";
+    protected String[] preExecutionCommands() {
+        return new String[]{"SET max_parallel_workers_per_gather = 0;"};
     }
+
+    @Override
+    protected String getExplainFormat() {
+        return "EXPLAIN (ANALYZE, VERBOSE, FORMAT JSON) %s";
+    }
+
+
 }

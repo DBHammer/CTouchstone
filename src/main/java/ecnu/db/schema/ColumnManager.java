@@ -9,6 +9,11 @@ import ecnu.db.utils.exception.TouchstoneException;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,9 +24,16 @@ import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
 public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
     private LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
-
-
     private File distributionInfoPath;
+    public static final String COLUMN_MANAGE_INFO = "/distribution.json";
+    private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
+                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter())
+            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
+            .toFormatter();
 
     // Private constructor suppresses
     // default public constructor
@@ -45,10 +57,10 @@ public class ColumnManager {
     }
 
     public void setResultDir(String resultDir) {
-        this.distributionInfoPath = new File(resultDir + CommonUtils.COLUMN_MANAGE_INFO);
+        this.distributionInfoPath = new File(resultDir + COLUMN_MANAGE_INFO);
     }
 
-    public Column getColumn(String columnName) {
+    private Column getColumn(String columnName) {
         return columns.get(columnName);
     }
 
@@ -105,7 +117,9 @@ public class ColumnManager {
         int index = 0;
         for (String canonicalColumnName : canonicalColumnNames) {
             Column column = columns.get(canonicalColumnName);
-            long min, range, specialValue;
+            long min;
+            long range;
+            long specialValue;
             switch (column.getColumnType()) {
                 case INTEGER -> {
                     min = Long.parseLong(sqlResult[index++]);
@@ -123,14 +137,14 @@ public class ColumnManager {
                     specialValue = ThreadLocalRandom.current().nextInt();
                 }
                 case DECIMAL -> {
-                    int precision = CommonUtils.SampleDoublePrecision;
+                    int precision = CommonUtils.SAMPLE_DOUBLE_PRECISION;
                     min = (long) (Double.parseDouble(sqlResult[index++]) * precision);
                     range = (long) (Double.parseDouble(sqlResult[index++]) * precision) - min;
                     specialValue = precision;
                 }
                 case DATE, DATETIME -> {
-                    min = CommonUtils.getUnixTimeStamp(sqlResult[index++]);
-                    range = CommonUtils.getUnixTimeStamp(sqlResult[index++]) - min;
+                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000;
+                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000 - min;
                     specialValue = 0;
                 }
                 default -> throw new TouchstoneException("未匹配到的类型");
@@ -156,4 +170,6 @@ public class ColumnManager {
                                          CompareOperator greaterOperator, List<Parameter> greaterParameters) {
         columns.get(columnName).insertBetweenProbability(probability, lessOperator, lessParameters, greaterOperator, greaterParameters);
     }
+
+
 }

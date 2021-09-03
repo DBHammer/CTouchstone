@@ -41,6 +41,9 @@ public abstract class DbConnector {
         try {
             Connection conn = DriverManager.getConnection(url, user, pass);
             stmt = conn.createStatement();
+            for (String command : preExecutionCommands()) {
+                stmt.execute(command);
+            }
             databaseMetaData = conn.getMetaData();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -57,6 +60,8 @@ public abstract class DbConnector {
     protected abstract String getExplainFormat();
 
     protected abstract String[] formatQueryPlan(String[] queryPlan);
+
+    protected abstract String[] preExecutionCommands();
 
     public List<String> getColumnMetadata(String canonicalTableName) throws SQLException, TouchstoneException {
         String[] schemaAndTable = canonicalTableName.split("\\.");
@@ -79,11 +84,6 @@ public abstract class DbConnector {
             keys.add(canonicalTableName + "." + rs.getString("COLUMN_NAME").toLowerCase());
         }
         return keys;
-    }
-
-    public String getPrimaryKeys(String canonicalTableName) throws SQLException {
-        List<String> keys = getPrimaryKeyList(canonicalTableName);
-        return !keys.isEmpty() ? String.join(",", keys) : null;
     }
 
     public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames)

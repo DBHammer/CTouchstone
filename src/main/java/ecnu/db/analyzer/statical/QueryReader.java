@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static ecnu.db.utils.CommonUtils.convertTableName2CanonicalTableName;
+import static ecnu.db.utils.CommonUtils.matchPattern;
 
 /**
  * @author qingshuai.wang
@@ -52,13 +52,14 @@ public class QueryReader {
     }
 
     public List<String> getQueriesFromFile(String file) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
         StringBuilder fileContents = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            if (line.length() > 0 && !line.startsWith("--")) {
-                fileContents.append(line).append(System.lineSeparator());
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.length() > 0 && !line.startsWith("--")) {
+                    fileContents.append(line).append(System.lineSeparator());
+                }
             }
         }
         List<SQLStatement> statementList = SQLUtils.parseStatements(fileContents.toString(), dbType, false);
@@ -73,7 +74,7 @@ public class QueryReader {
         return sqls;
     }
 
-    public HashSet<String> getTableName(String sql) throws IllegalQueryTableNameException {
+    public Set<String> getTableName(String sql) throws IllegalQueryTableNameException {
         List<SQLStatement> stmtList = SQLUtils.parseStatements(sql, dbType);
         SQLStatement stmt = stmtList.get(0);
         SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(dbType);
@@ -87,10 +88,9 @@ public class QueryReader {
 
     public Map<String, String> getTableAlias(String sql) throws TouchstoneException {
         SQLStatement sqlStatement = SQLUtils.parseStatements(sql, dbType).get(0);
-        if (!(sqlStatement instanceof SQLSelectStatement)) {
+        if (!(sqlStatement instanceof SQLSelectStatement statement)) {
             throw new TouchstoneException("Only support select statement");
         }
-        SQLSelectStatement statement = (SQLSelectStatement) sqlStatement;
         statement.accept(aliasVisitor);
         return aliasVisitor.getAliasMap();
     }
@@ -111,6 +111,7 @@ public class QueryReader {
         tableNames = tableNames.stream().distinct().toList();
         return tableNames;
     }
+
 
     private static class ExportTableAliasVisitor extends MySqlASTVisitorAdapter {
         private final Map<String, String> aliasMap = new HashMap<>();
@@ -148,7 +149,20 @@ public class QueryReader {
          * @return 转换后的表名
          */
         public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
-            return convertTableName2CanonicalTableName(tableName, CANONICAL_TBL_NAME, defaultDatabaseName);
+            return convertTableName2CanonicalTableName(tableName, defaultDatabaseName);
+        }
+
+        private static String convertTableName2CanonicalTableName(String canonicalTableName,
+                                                                  String defaultDatabase) throws IllegalQueryTableNameException {
+            List<List<String>> matches = matchPattern(QueryReader.CANONICAL_TBL_NAME, canonicalTableName);
+            if (matches.size() == 1 && matches.get(0).get(0).length() == canonicalTableName.length()) {
+                return canonicalTableName;
+            } else {
+                if (defaultDatabase == null) {
+                    throw new IllegalQueryTableNameException();
+                }
+                return String.format("%s.%s", defaultDatabase, canonicalTableName);
+            }
         }
     }
 

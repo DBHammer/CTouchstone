@@ -1,11 +1,11 @@
 package ecnu.db.generator;
 
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainManager;
 import ecnu.db.generator.joininfo.JoinInfoTable;
 import ecnu.db.generator.joininfo.JoinInfoTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
-import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import static ecnu.db.utils.CommonUtils.stepSize;
+import static ecnu.db.utils.CommonUtils.STEP_SIZE;
 
 @CommandLine.Command(name = "generate", description = "generate database according to gathered information",
         mixinStandardHelpOptions = true, sortOptions = false)
@@ -59,14 +59,15 @@ public class DataGenerator implements Callable<Integer> {
         TableManager.getInstance().loadSchemaInfo();
         ColumnManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnDistribution();
+        ConstraintChainManager.getInstance().setResultDir(configPath);
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
         JoinInfoTableManager.getInstance().setJoinInfoTablePath(configPath);
-        Map<String, List<ConstraintChain>> query2chains = CommonUtils.loadConstrainChainResult(configPath);
-        int stepRange = stepSize * generatorNum;
+        int stepRange = STEP_SIZE * generatorNum;
         Map<String, Collection<ConstraintChain>> schema2chains = getSchema2Chains(query2chains);
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             logger.info("开始输出表数据{}", schemaName);
-            int resultStart = stepSize * generatorId;
+            int resultStart = STEP_SIZE * generatorId;
             int tableSize = TableManager.getInstance().getTableSize(schemaName);
             List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
             List<String> allColumnNames = TableManager.getInstance().getColumnNames(schemaName);
@@ -74,7 +75,7 @@ public class DataGenerator implements Callable<Integer> {
             String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
             JoinInfoTable joinInfoTable = new JoinInfoTable();
             while (resultStart < tableSize) {
-                int range = Math.min(resultStart + stepSize, tableSize) - resultStart;
+                int range = Math.min(resultStart + STEP_SIZE, tableSize) - resultStart;
                 ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
                 computeFksAndPkJoinInfo(joinInfoTable, resultStart, range, schema2chains.get(schemaName));
                 ColumnManager.getInstance().setData(pkName, LongStream.range(resultStart, resultStart + range).toArray());
@@ -82,7 +83,7 @@ public class DataGenerator implements Callable<Integer> {
                         .map(attColumnName -> ColumnManager.getInstance().getData(attColumnName)).toList();
                 List<String> rowData = IntStream.range(0, columnData.get(0).size()).parallel()
                         .mapToObj(i -> columnData.stream().map(column -> column.get(i)).collect(Collectors.joining(",")))
-                        .collect(Collectors.toList());
+                        .toList();
                 executorService.submit(() -> {
                     try {
                         Files.write(Paths.get(outputPath + "/" + schemaName + generatorId), rowData,

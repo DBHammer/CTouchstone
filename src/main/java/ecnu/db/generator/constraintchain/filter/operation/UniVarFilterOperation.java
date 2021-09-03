@@ -5,6 +5,8 @@ import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,15 +24,22 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         super(null);
     }
 
-    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator) {
+    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator, List<Parameter> parameters)
+            throws IllegalQueryColumnNameException {
         super(operator);
         this.canonicalColumnName = canonicalColumnName;
+        if(!CommonUtils.isCanonicalColumnName(canonicalColumnName)){
+            throw new IllegalQueryColumnNameException();
+        }
+        this.parameters = parameters;
     }
 
     /**
      * merge operation
      */
-    public static void merge(List<BoolExprNode> toMergeNodes, Map<String, Collection<UniVarFilterOperation>> col2uniFilters, boolean isAnd) {
+    public static void merge(List<BoolExprNode> toMergeNodes,
+                             Map<String, Collection<UniVarFilterOperation>> col2uniFilters,
+                             boolean isAnd) {
         for (var col2uniFilter : col2uniFilters.entrySet()) {
             Collection<UniVarFilterOperation> filters = col2uniFilter.getValue();
             Map<CompareOperator, List<UniVarFilterOperation>> typ2Filter = filters.stream()
@@ -41,15 +50,20 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
                 toMergeNodes.addAll(typ2Filter.values().stream().flatMap(Collection::stream).toList());
                 continue;
             }
-            RangeFilterOperation newFilter = new RangeFilterOperation(col2uniFilter.getKey());
-            newFilter.addLessParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.LE, new ArrayList<>()).stream(),
-                            typ2Filter.getOrDefault(CompareOperator.LT, new ArrayList<>()).stream())
-                    .flatMap(filter -> filter.getParameters().stream()).toList());
-            newFilter.addGreaterParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.GE, new ArrayList<>()).stream(),
-                            typ2Filter.getOrDefault(CompareOperator.GT, new ArrayList<>()).stream())
-                    .flatMap(filter -> filter.getParameters().stream()).toList());
-            newFilter.setLessOperator(isAnd, typ2Filter);
-            newFilter.setGreaterOperator(isAnd, typ2Filter);
+            RangeFilterOperation newFilter = null;
+            try {
+                newFilter = new RangeFilterOperation(col2uniFilter.getKey());
+                newFilter.addLessParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.LE, new ArrayList<>()).stream(),
+                                typ2Filter.getOrDefault(CompareOperator.LT, new ArrayList<>()).stream())
+                        .flatMap(filter -> filter.getParameters().stream()).toList());
+                newFilter.addGreaterParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.GE, new ArrayList<>()).stream(),
+                                typ2Filter.getOrDefault(CompareOperator.GT, new ArrayList<>()).stream())
+                        .flatMap(filter -> filter.getParameters().stream()).toList());
+                newFilter.setLessOperator(isAnd, typ2Filter);
+                newFilter.setGreaterOperator(isAnd, typ2Filter);
+            } catch (IllegalQueryColumnNameException e) {
+                e.printStackTrace();
+            }
             toMergeNodes.add(newFilter);
         }
     }

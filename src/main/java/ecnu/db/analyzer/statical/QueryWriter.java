@@ -9,20 +9,28 @@ import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static ecnu.db.utils.CommonUtils.matchPattern;
 
 /**
  * @author alan
  */
 public class QueryWriter {
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
+    private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
+    public static final String QUERY_DIR = "/queries/";
     private final String queryDir;
     private DbType dbType;
 
-    public QueryWriter(String queryDir) {
-        this.queryDir = queryDir;
+    public QueryWriter(String resultDir) {
+        this.queryDir = resultDir + QUERY_DIR;
+        new File(queryDir).mkdir();
     }
 
     public void setDbType(DbType dbType) {
@@ -70,7 +78,7 @@ public class QueryWriter {
             } else if (matches.size() > 1) {
                 conflictArgs.add(parameter);
             } else {
-                Map.Entry<Integer, Integer> pair = matches.stream().findFirst().get();
+                var pair = matches.stream().findFirst().get();
                 int startPos = pair.getKey();
                 replaceParams.put(startPos, new AbstractMap.SimpleEntry<>(parameter, pair));
             }
@@ -87,11 +95,11 @@ public class QueryWriter {
         }
         fragments.append(query.substring(currentPos));
         query = fragments.toString();
-        if (cannotFindArgs.size() > 0) {
+        if (!cannotFindArgs.isEmpty()) {
             logger.warn("请注意{}中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName);
             query = appendArgs("cannotFindArgs", cannotFindArgs) + query;
         }
-        if (conflictArgs.size() > 0) {
+        if (!conflictArgs.isEmpty()) {
             logger.warn("请注意{}中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName);
             query = appendArgs("conflictArgs", conflictArgs) + query;
         }
@@ -107,19 +115,32 @@ public class QueryWriter {
      * @return 添加的参数部分
      */
     public String appendArgs(String title, List<Parameter> params) {
-        String argsString = params.stream().map(
-                        (parameter) ->
-                                String.format("{id:%s,data:%s,operand:%s}",
-                                        parameter.getId(),
-                                        "'" + parameter.getDataValue() + "'",
-                                        parameter.getOperand()
-                                ))
+        String argsString = params.stream().map(parameter -> String.format("{id:%s,data:%s,operand:%s}",
+                        parameter.getId(),
+                        "'" + parameter.getDataValue() + "'",
+                        parameter.getOperand()))
                 .collect(Collectors.joining(","));
         return String.format("-- %s:%s%s", title, argsString, System.lineSeparator());
     }
 
-    public void writeQuery(String queryFileName, String query) throws IOException {
-        String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-        CommonUtils.writeFile(queryDir + queryFileName, formatQuery);
+    public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {
+        for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
+            String query = queryName2QueryTemplate.getValue();
+            List<List<String>> matches = matchPattern(PATTERN, query);
+            for (List<String> group : matches) {
+                int parameterId = Integer.parseInt(group.get(1));
+                Parameter parameter = id2Parameter.remove(parameterId);
+                if (parameter != null) {
+                    String parameterData = parameter.getDataValue();
+                    try {
+                        query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
+                    } catch (IllegalArgumentException e) {
+                        logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
+                    }
+                }
+                String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
+                CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
+            }
+        }
     }
 }

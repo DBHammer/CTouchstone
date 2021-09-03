@@ -3,6 +3,7 @@ package ecnu.db.generator.constraintchain.filter.operation;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,18 +19,13 @@ public class RangeFilterOperation extends UniVarFilterOperation {
     private CompareOperator lessOperator;
     private CompareOperator greaterOperator;
 
-    public RangeFilterOperation(String columnName) {
-        super(columnName, CompareOperator.RANGE);
+    public RangeFilterOperation(String columnName) throws IllegalQueryColumnNameException {
+        super(columnName, CompareOperator.RANGE, null);
     }
 
     @Override
     public BoolExprType getType() {
         return BoolExprType.UNI_FILTER_OPERATION;
-    }
-
-    @Override
-    public void addParameter(Parameter parameter) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

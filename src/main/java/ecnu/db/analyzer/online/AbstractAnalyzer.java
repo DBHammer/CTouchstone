@@ -1,10 +1,7 @@
-package ecnu.db.analyzer.online.adapter;
+package ecnu.db.analyzer.online;
 
-import ecnu.db.analyzer.online.ExecutionNode;
-import ecnu.db.analyzer.online.NodeTypeTool;
-import ecnu.db.generator.constraintchain.filter.SelectResult;
+import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
 
 import java.util.List;
 
@@ -14,14 +11,6 @@ import java.util.List;
 public abstract class AbstractAnalyzer {
 
     protected NodeTypeTool nodeTypeRef;
-
-    /**
-     * 从operator_info里提取tableName
-     *
-     * @param operatorInfo 需要处理的operator_info
-     * @return 提取的表名
-     */
-    public abstract String extractOriginTableName(String operatorInfo) throws IllegalQueryTableNameException;
 
     /**
      * 查询树的解析
@@ -48,5 +37,5 @@ public abstract class AbstractAnalyzer {
      * @return SelectResult 算数抽象语法树
      * @throws Exception 无法分析的Selection条件
      */
-    public abstract SelectResult analyzeSelectOperator(String operatorInfo) throws Exception;
+    public abstract AndNode analyzeSelectOperator(String operatorInfo) throws Exception;
 }

@@ -65,12 +65,7 @@
               }
             ]
           },
-          "probability" : 0.01902281455,
-          "columns" : [
-            "tpch.lineitem.l_discount",
-            "tpch.lineitem.l_quantity",
-            "tpch.lineitem.l_shipdate"
-          ]
+          "probability" : 0.01902281455
         }
       ],
       "tableName" : "tpch.lineitem"
@@ -98,10 +93,7 @@
               }
             ]
           },
-          "probability" : 0.1983466667,
-          "columns" : [
-            "tpch.customer.c_mktsegment"
-          ]
+          "probability" : 0.1983466667
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
@@ -141,10 +133,7 @@
               }
             ]
           },
-          "probability" : 0.4838209733974779,
-          "columns" : [
-            "tpch.orders.o_orderdate"
-          ]
+          "probability" : 0.4838209733974779
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
@@ -184,10 +173,7 @@
               }
             ]
           },
-          "probability" : 0.052624077727276675,
-          "columns" : [
-            "tpch.lineitem.l_shipdate"
-          ]
+          "probability" : 0.052624077727276675
         }
       ],
       "tableName" : "tpch.lineitem"
@@ -215,10 +201,7 @@
               }
             ]
           },
-          "probability" : 0.9797396027,
-          "columns" : [
-            "tpch.lineitem.l_shipdate"
-          ]
+          "probability" : 0.9797396027
         }
       ],
       "tableName" : "tpch.lineitem"
@@ -256,10 +239,7 @@
               }
             ]
           },
-          "probability" : 0.03837122983,
-          "columns" : [
-            "tpch.lineitem.l_shipdate"
-          ]
+          "probability" : 0.03837122983
         }
       ],
       "tableName" : "tpch.lineitem"
@@ -287,10 +267,7 @@
               }
             ]
           },
-          "probability" : 0.989226,
-          "columns" : [
-            "tpch.orders.o_comment"
-          ]
+          "probability" : 0.989226
         },
         {
           "constraintChainNodeType" : "FK_JOIN",

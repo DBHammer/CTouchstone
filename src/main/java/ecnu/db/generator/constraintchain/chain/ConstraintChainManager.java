@@ -1,14 +1,52 @@
 package ecnu.db.generator.constraintchain.chain;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import ecnu.db.utils.CommonUtils;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static ecnu.db.utils.CommonUtils.readFile;
 
 public class ConstraintChainManager {
+    private static final ConstraintChainManager INSTANCE = new ConstraintChainManager();
     private static final String[] COLOR_LIST = {"#FFFFCC", "#CCFFFF", "#FFCCCC"};
     private static final String GRAPH_TEMPLATE = "digraph \"%s\" {rankdir=BT;" + System.lineSeparator() + "%s}";
+    public static final String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
+    private String resultDir;
 
-    public static String presentConstraintChains(String queryName, List<ConstraintChain> constraintChains) {
+    public void setResultDir(String resultDir) {
+        this.resultDir = resultDir;
+    }
+
+
+    private ConstraintChainManager() {
+    }
+
+    public static ConstraintChainManager getInstance() {
+        return INSTANCE;
+    }
+
+    public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
+        return CommonUtils.MAPPER.readValue(readFile(resultDir + CONSTRAINT_CHAINS_INFO), new TypeReference<>() {
+        });
+    }
+
+    public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
+        String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
+        CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
+        new File(resultDir + "/pic/").mkdir();
+        for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
+            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".gv",
+                    presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()));
+        }
+    }
+
+    private String presentConstraintChains(String queryName, List<ConstraintChain> constraintChains) {
         StringBuilder graph = new StringBuilder();
         HashMap<String, SubGraph> subGraphHashMap = new HashMap<>(constraintChains.size());
         for (int i = 0; i < constraintChains.size(); i++) {

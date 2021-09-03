@@ -21,8 +21,10 @@ public class Table {
     public Table() {
     }
 
-    public Table(List<String> canonicalColumnNames) {
+    public Table(List<String> canonicalColumnNames, int tableSize, List<String> primaryKeys) {
         this.canonicalColumnNames = canonicalColumnNames;
+        this.tableSize = tableSize;
+        this.primaryKeys = primaryKeys;
         joinTag = 1;
     }
 

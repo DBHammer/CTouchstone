@@ -1,9 +1,9 @@
 package ecnu.db.analyzer.online.adapter.tidb.parser;
 
 import ecnu.db.utils.exception.analyze.IllegalCharacterException;
-import ecnu.db.analyzer.online.adapter.tidb.Token;
+import ecnu.db.analyzer.online.adapter.Token;
 import java_cup.runtime.*;
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeType;
+import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 %%
 
@@ -17,11 +17,11 @@ ecnu.db.utils.exception.TouchstoneException
 %{
   private StringBuilder str_buff = new StringBuilder();
   private Symbol symbol(int type) {
-    return new Token(type, yycolumn+1);
+    return new Token(TidbSelectSymbol.terminalNames, type, yycolumn+1);
   }
 
   private Symbol symbol(int type, Object value) {
-    return new Token(type, yycolumn+1, value);
+    return new Token(TidbSelectSymbol.terminalNames, type, yycolumn+1, value);
   }
 %}
 
