@@ -1,8 +1,6 @@
-package ecnu.db.generator.constraintchain.arithmetic.value;
+package ecnu.db.generator.constraintchain.filter.arithmetic;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNode;
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeType;
 
 import java.util.Arrays;
 

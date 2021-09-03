@@ -9,6 +9,15 @@ public class TaskConfiguratorConfig {
     private String queriesDirectory;
     private int sampleSize = 10_000;
     private Double skipNodeThreshold = 0.01;
+    private String defaultSchemaName;
+
+    public String getDefaultSchemaName() {
+        return defaultSchemaName;
+    }
+
+    public void setDefaultSchemaName(String defaultSchemaName) {
+        this.defaultSchemaName = defaultSchemaName;
+    }
 
     public DatabaseConnectorConfig getDatabaseConnectorConfig() {
         return databaseConnectorConfig;

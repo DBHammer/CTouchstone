@@ -1,4 +1,4 @@
-package ecnu.db.analyzer.online.adapter.tidb;
+package ecnu.db.dbconnector.adapter;
 
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.utils.DatabaseConnectorConfig;
@@ -9,8 +9,8 @@ import ecnu.db.utils.exception.TouchstoneException;
  * @author wangqingshuai
  */
 public class Tidb4Connector extends DbConnector {
-    private final static String DB_DRIVER_TYPE = "mysql";
-    private final static String JDBC_PROPERTY = "useSSL=false&allowPublicKeyRetrieval=true";
+    private static final String DB_DRIVER_TYPE = "mysql";
+    private static final String JDBC_PROPERTY = "useSSL=false&allowPublicKeyRetrieval=true";
 
 
     public Tidb4Connector(DatabaseConnectorConfig config) throws TouchstoneException {
@@ -18,8 +18,13 @@ public class Tidb4Connector extends DbConnector {
     }
 
     @Override
-    protected String[] getSqlInfoColumns() {
-        return new String[]{"id", "operator info", "actRows", "access object"};
+    protected int[] getSqlInfoColumns() {
+        return new int[]{1, 7, 3, 5};
+    }
+
+    @Override
+    protected String getExplainFormat() {
+        return "EXPLAIN ANALYZE %s";
     }
 
     /**
@@ -35,5 +40,10 @@ public class Tidb4Connector extends DbConnector {
         ret[1] = data[3].isEmpty() ? data[1] : String.format("%s,%s", data[3], data[1]);
         ret[2] = "rows:" + data[2];
         return ret;
+    }
+
+    @Override
+    protected String[] preExecutionCommands() {
+        return new String[0];
     }
 }

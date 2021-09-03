@@ -5,9 +5,9 @@ import ecnu.db.utils.exception.TouchstoneException;
 import java.util.List;
 import java.util.Map;
 
-import static ecnu.db.utils.CommonUtils.DUMP_FILE_POSTFIX;
-
 public class DumpFileConnector implements DatabaseConnectorInterface {
+
+    public static final String DUMP_FILE_POSTFIX = "dump";
 
     private final Map<String, List<String[]>> queryPlanMap;
 

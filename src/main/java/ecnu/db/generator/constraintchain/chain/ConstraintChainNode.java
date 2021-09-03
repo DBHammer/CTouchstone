@@ -6,7 +6,7 @@ package ecnu.db.generator.constraintchain.chain;
 public abstract class ConstraintChainNode {
     protected ConstraintChainNodeType constraintChainNodeType;
 
-    public ConstraintChainNode(ConstraintChainNodeType constraintChainNodeType) {
+    protected ConstraintChainNode(ConstraintChainNodeType constraintChainNodeType) {
         this.constraintChainNodeType = constraintChainNodeType;
     }
 

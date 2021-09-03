@@ -31,20 +31,10 @@ public class ConstraintChainNodeDeserializer extends StdDeserializer<ConstraintC
         SimpleModule module = new SimpleModule();
         module.addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
         mapper.registerModule(module);
-        ConstraintChainNode ret;
-        switch (ConstraintChainNodeType.valueOf(node.get("constraintChainNodeType").asText())) {
-            case FILTER:
-                ret = mapper.readValue(node.toString(), ConstraintChainFilterNode.class);
-                break;
-            case FK_JOIN:
-                ret = mapper.readValue(node.toString(), ConstraintChainFkJoinNode.class);
-                break;
-            case PK_JOIN:
-                ret = mapper.readValue(node.toString(), ConstraintChainPkJoinNode.class);
-                break;
-            default:
-                throw new IOException(String.format("无法识别的ConstraintChain数据 %s", node));
-        }
-        return ret;
+        return switch (ConstraintChainNodeType.valueOf(node.get("constraintChainNodeType").asText())) {
+            case FILTER -> mapper.readValue(node.toString(), ConstraintChainFilterNode.class);
+            case FK_JOIN -> mapper.readValue(node.toString(), ConstraintChainFkJoinNode.class);
+            case PK_JOIN -> mapper.readValue(node.toString(), ConstraintChainPkJoinNode.class);
+        };
     }
 }

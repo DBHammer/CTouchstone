@@ -1,14 +1,52 @@
 package ecnu.db.generator.constraintchain.chain;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import ecnu.db.utils.CommonUtils;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static ecnu.db.utils.CommonUtils.readFile;
 
 public class ConstraintChainManager {
+    private static final ConstraintChainManager INSTANCE = new ConstraintChainManager();
     private static final String[] COLOR_LIST = {"#FFFFCC", "#CCFFFF", "#FFCCCC"};
     private static final String GRAPH_TEMPLATE = "digraph \"%s\" {rankdir=BT;" + System.lineSeparator() + "%s}";
+    public static final String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
+    private String resultDir;
 
-    public static String presentConstraintChains(String queryName, List<ConstraintChain> constraintChains) {
+    public void setResultDir(String resultDir) {
+        this.resultDir = resultDir;
+    }
+
+
+    private ConstraintChainManager() {
+    }
+
+    public static ConstraintChainManager getInstance() {
+        return INSTANCE;
+    }
+
+    public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
+        return CommonUtils.MAPPER.readValue(readFile(resultDir + CONSTRAINT_CHAINS_INFO), new TypeReference<>() {
+        });
+    }
+
+    public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
+        String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
+        CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
+        new File(resultDir + "/pic/").mkdir();
+        for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
+            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".gv",
+                    presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()));
+        }
+    }
+
+    private String presentConstraintChains(String queryName, List<ConstraintChain> constraintChains) {
         StringBuilder graph = new StringBuilder();
         HashMap<String, SubGraph> subGraphHashMap = new HashMap<>(constraintChains.size());
         for (int i = 0; i < constraintChains.size(); i++) {
@@ -20,12 +58,12 @@ public class ConstraintChainManager {
                 String currentNodeInfo;
                 double currentProbability = 0;
                 switch (node.constraintChainNodeType) {
-                    case FILTER:
-                        currentNodeInfo = "\"" + node.toString() + "\"";
+                    case FILTER -> {
+                        currentNodeInfo = "\"" + node + "\"";
                         currentProbability = ((ConstraintChainFilterNode) node).getProbability().doubleValue();
                         graph.append("\t").append(currentNodeInfo).append(color);
-                        break;
-                    case FK_JOIN:
+                    }
+                    case FK_JOIN -> {
                         ConstraintChainFkJoinNode fkJoinNode = ((ConstraintChainFkJoinNode) node);
                         long tag = fkJoinNode.getPkTag();
                         String pkCols = fkJoinNode.getRefCols().split("\\.")[2];
@@ -36,8 +74,8 @@ public class ConstraintChainManager {
                             subGraphHashMap.put(subGraphTag, new SubGraph(subGraphTag));
                         }
                         subGraphHashMap.get(subGraphTag).fkInfo = currentNodeInfo + color;
-                        break;
-                    case PK_JOIN:
+                    }
+                    case PK_JOIN -> {
                         ConstraintChainPkJoinNode pkJoinNode = ((ConstraintChainPkJoinNode) node);
                         long pkTag = pkJoinNode.getPkTag();
                         String locPks = pkJoinNode.getPkColumns()[0];
@@ -47,9 +85,8 @@ public class ConstraintChainManager {
                             subGraphHashMap.put(localSubGraph, new SubGraph(localSubGraph));
                         }
                         subGraphHashMap.get(localSubGraph).pkInfo = currentNodeInfo + color;
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
+                    }
+                    default -> throw new UnsupportedOperationException();
                 }
                 if (!"".equals(lastNodeInfo)) {
                     graph.append("\t").append(lastNodeInfo).append("->").append(currentNodeInfo).append("[label=\"")
@@ -72,7 +109,7 @@ public class ConstraintChainManager {
         for (int size = subGraphs.size() - 1; size >= 0; size--) {
             subGraphInfo.append(subGraphs.get(size));
         }
-        return String.format(GRAPH_TEMPLATE, queryName, subGraphInfo.toString() + graph.toString());
+        return String.format(GRAPH_TEMPLATE, queryName, subGraphInfo.toString() + graph);
     }
 
     private static class SubGraph {

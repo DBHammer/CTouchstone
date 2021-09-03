@@ -1,13 +1,11 @@
 package ecnu.db.generator;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainManager;
 import ecnu.db.generator.joininfo.JoinInfoTable;
 import ecnu.db.generator.joininfo.JoinInfoTableManager;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.SchemaManager;
-import ecnu.db.utils.CommonUtils;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import static ecnu.db.utils.CommonUtils.stepSize;
+import static ecnu.db.utils.CommonUtils.STEP_SIZE;
 
 @CommandLine.Command(name = "generate", description = "generate database according to gathered information",
         mixinStandardHelpOptions = true, sortOptions = false)
@@ -42,11 +40,14 @@ public class DataGenerator implements Callable<Integer> {
     @CommandLine.Option(names = {"-n", "--num"}, description = "size of generators")
     private int generatorNum;
 
-    private static Multimap<String, ConstraintChain> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
-        Multimap<String, ConstraintChain> schema2chains = ArrayListMultimap.create();
+    private static Map<String, Collection<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
+        Map<String, Collection<ConstraintChain>> schema2chains = new HashMap<>();
         for (List<ConstraintChain> chains : query2chains.values()) {
             for (ConstraintChain chain : chains) {
-                schema2chains.put(chain.getTableName(), chain);
+                if (!schema2chains.containsKey(chain.getTableName())) {
+                    schema2chains.put(chain.getTableName(), new ArrayList<>());
+                }
+                schema2chains.get(chain.getTableName()).add(chain);
             }
         }
         return schema2chains;
@@ -54,35 +55,35 @@ public class DataGenerator implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        SchemaManager.getInstance().setResultDir(configPath);
-        SchemaManager.getInstance().loadSchemaInfo();
+        TableManager.getInstance().setResultDir(configPath);
+        TableManager.getInstance().loadSchemaInfo();
         ColumnManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnDistribution();
+        ConstraintChainManager.getInstance().setResultDir(configPath);
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
         JoinInfoTableManager.getInstance().setJoinInfoTablePath(configPath);
-        Map<String, List<ConstraintChain>> query2chains = CommonUtils.loadConstrainChainResult(configPath);
-        int stepRange = stepSize * generatorNum;
-        Multimap<String, ConstraintChain> schema2chains = getSchema2Chains(query2chains);
-        for (String schemaName : SchemaManager.getInstance().createTopologicalOrder()) {
+        int stepRange = STEP_SIZE * generatorNum;
+        Map<String, Collection<ConstraintChain>> schema2chains = getSchema2Chains(query2chains);
+        for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
             ExecutorService executorService = Executors.newSingleThreadExecutor();
-            logger.info("开始输出表数据" + schemaName);
-            int resultStart = stepSize * generatorId;
-            int tableSize = SchemaManager.getInstance().getTableSize(schemaName);
-            List<String> attColumnNames = SchemaManager.getInstance().getColumnNamesNotKey(schemaName);
-            List<String> allColumnNames = SchemaManager.getInstance().getColumnNames(schemaName);
-            System.out.println(allColumnNames);
-            String pkName = SchemaManager.getInstance().getPrimaryKeyColumn(schemaName);
+            logger.info("开始输出表数据{}", schemaName);
+            int resultStart = STEP_SIZE * generatorId;
+            int tableSize = TableManager.getInstance().getTableSize(schemaName);
+            List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
+            List<String> allColumnNames = TableManager.getInstance().getColumnNames(schemaName);
+            logger.info(String.valueOf(allColumnNames));
+            String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
             JoinInfoTable joinInfoTable = new JoinInfoTable();
             while (resultStart < tableSize) {
-                int range = Math.min(resultStart + stepSize, tableSize) - resultStart;
+                int range = Math.min(resultStart + STEP_SIZE, tableSize) - resultStart;
                 ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
                 computeFksAndPkJoinInfo(joinInfoTable, resultStart, range, schema2chains.get(schemaName));
                 ColumnManager.getInstance().setData(pkName, LongStream.range(resultStart, resultStart + range).toArray());
                 List<List<String>> columnData = allColumnNames.stream().parallel()
-                        .map(attColumnName -> ColumnManager.getInstance().getData(attColumnName))
-                        .collect(Collectors.toList());
+                        .map(attColumnName -> ColumnManager.getInstance().getData(attColumnName)).toList();
                 List<String> rowData = IntStream.range(0, columnData.get(0).size()).parallel()
                         .mapToObj(i -> columnData.stream().map(column -> column.get(i)).collect(Collectors.joining(",")))
-                        .collect(Collectors.toList());
+                        .toList();
                 executorService.submit(() -> {
                     try {
                         Files.write(Paths.get(outputPath + "/" + schemaName + generatorId), rowData,
@@ -95,7 +96,7 @@ public class DataGenerator implements Callable<Integer> {
             }
             executorService.shutdown();
             if (executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
-                logger.info("输出表数据" + schemaName + "完成");
+                logger.info("输出表数据{}完成", schemaName);
             }
             JoinInfoTableManager.getInstance().putJoinInfoTable(pkName, joinInfoTable);
         }

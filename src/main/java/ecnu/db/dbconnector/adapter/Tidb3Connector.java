@@ -1,20 +1,20 @@
-package ecnu.db.analyzer.online.adapter.tidb;
+package ecnu.db.dbconnector.adapter;
 
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 
 public class Tidb3Connector extends DbConnector {
-    private final static String DB_DRIVER_TYPE = "mysql";
-    private final static String JDBC_PROPERTY = "useSSL=false&allowPublicKeyRetrieval=true";
+    private static final String DB_DRIVER_TYPE = "mysql";
+    private static final String JDBC_PROPERTY = "useSSL=false&allowPublicKeyRetrieval=true";
 
     public Tidb3Connector(DatabaseConnectorConfig config) throws TouchstoneException {
         super(config, DB_DRIVER_TYPE, JDBC_PROPERTY);
     }
 
     @Override
-    public String[] getSqlInfoColumns() {
-        return new String[]{"id", "operator info", "execution info"};
+    public int[] getSqlInfoColumns() {
+        return new int[]{1, 4, 5};
     }
 
     /**
@@ -26,5 +26,15 @@ public class Tidb3Connector extends DbConnector {
     @Override
     protected String[] formatQueryPlan(String[] data) {
         return data;
+    }
+
+    @Override
+    protected String[] preExecutionCommands() {
+        return new String[0];
+    }
+
+    @Override
+    protected String getExplainFormat() {
+        return "EXPLAIN ANALYZE %s";
     }
 }

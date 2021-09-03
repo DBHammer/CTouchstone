@@ -82,18 +82,11 @@ public class Column {
         if (operator == CompareOperator.LE || operator == CompareOperator.LT) {
             probability = BigDecimal.ONE.subtract(probability);
         }
-        switch (operator) {
-            case LT:
-            case GE:
-                bound = (long) probability.multiply(BigDecimal.valueOf(range)).doubleValue();
-                break;
-            case GT:
-            case LE:
-                bound = probability.multiply(BigDecimal.valueOf(range)).longValue();
-                break;
-            default:
-                throw new UnsupportedOperationException();
-        }
+        bound = switch (operator) {
+            case LT, GE -> (long) probability.multiply(BigDecimal.valueOf(range)).doubleValue();
+            case GT, LE -> probability.multiply(BigDecimal.valueOf(range)).longValue();
+            default -> throw new UnsupportedOperationException();
+        };
         parameters.parallelStream().forEach(parameter -> {
             parameter.setData(bound);
             parameter.setDataValue(transferDataToValue(bound));
@@ -132,19 +125,15 @@ public class Column {
 
     public void insertUniVarProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         switch (operator) {
-            case NE:
+            case NE, NOT_LIKE, NOT_IN:
                 probability = BigDecimal.ONE.subtract(probability);
-            case EQ:
-            case LIKE:
+            case EQ, LIKE:
                 _insertEqualProbability(probability, parameters.get(0));
                 break;
             case IN:
                 insertEqualProbability(probability, parameters);
                 break;
-            case GT:
-            case LE:
-            case LT:
-            case GE:
+            case GT, LT, GE, LE:
                 insertNonEqProbability(probability, operator, parameters);
                 break;
             default:
@@ -295,44 +284,39 @@ public class Column {
      *
      * @param operator   运算操作符
      * @param parameters 待比较的参数
-     * @param hasNot     是否包含not运算符
      * @return 运算结果
      */
-    public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters, boolean hasNot) {
-        long value = parameters.get(0).getData();
+    public boolean[] evaluate(CompareOperator operator, List<Parameter> parameters) {
+        long value;
+        if (operator == CompareOperator.ISNULL) {
+            value = Long.MIN_VALUE;
+        } else {
+            value = parameters.get(0).getData();
+        }
         boolean[] ret = new boolean[columnData.length];
+        IntStream indexStream = IntStream.range(0, columnData.length);
         switch (operator) {
-            case LIKE:
-            case EQ:
-                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = hasNot ^ columnData[index] == value);
-                break;
-            case NE:
-                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = hasNot ^ columnData[index] != value);
-                break;
-            case IN:
+            case EQ, LIKE, ISNULL -> indexStream.forEach(i -> ret[i] = columnData[i] == value);
+            case NE, NOT_LIKE, IS_NOT_NULL -> indexStream.forEach(i -> ret[i] = columnData[i] != value);
+            case LT -> indexStream.forEach(i -> ret[i] = columnData[i] < value);
+            case LE -> indexStream.forEach(i -> ret[i] = columnData[i] <= value);
+            case GT -> indexStream.forEach(i -> ret[i] = columnData[i] > value);
+            case GE -> indexStream.forEach(i -> ret[i] = columnData[i] >= value);
+            case IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());
                 }
-                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = hasNot ^ parameterData.contains(columnData[index]));
-                break;
-            case LT:
-                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = hasNot ^ columnData[index] < value);
-                break;
-            case LE:
-                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = hasNot ^ columnData[index] <= value);
-                break;
-            case GT:
-                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = hasNot ^ columnData[index] > value);
-                break;
-            case GE:
-                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = hasNot ^ columnData[index] >= value);
-                break;
-            case ISNULL:
-                IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = hasNot ^ columnData[index] == Long.MIN_VALUE);
-                break;
-            default:
-                throw new UnsupportedOperationException();
+                indexStream.forEach(i -> ret[i] = parameterData.contains(columnData[i]));
+            }
+            case NOT_IN -> {
+                HashSet<Long> parameterData = new HashSet<>();
+                for (Parameter parameter : parameters) {
+                    parameterData.add(parameter.getData());
+                }
+                indexStream.forEach(i -> ret[i] = !parameterData.contains(columnData[i]));
+            }
+            default -> throw new UnsupportedOperationException();
         }
         return ret;
     }

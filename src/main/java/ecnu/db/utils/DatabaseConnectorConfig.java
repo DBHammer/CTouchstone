@@ -9,6 +9,7 @@ public class DatabaseConnectorConfig {
     private String databaseUser;
     private String databasePwd;
     private String databaseName;
+
     public DatabaseConnectorConfig() {
     }
 

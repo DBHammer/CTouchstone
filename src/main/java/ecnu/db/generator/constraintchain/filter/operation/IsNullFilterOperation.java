@@ -1,12 +1,14 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectSymbol;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author alan
@@ -14,16 +16,22 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IsNullFilterOperation extends AbstractFilterOperation {
     private String canonicalColumnName;
-    private Boolean hasNot = false;
 
     public IsNullFilterOperation() {
         super(CompareOperator.ISNULL);
     }
 
-    public IsNullFilterOperation(String canonicalColumnName, BigDecimal probability) {
+    public IsNullFilterOperation(String canonicalColumnName) throws IllegalQueryColumnNameException {
         super(CompareOperator.ISNULL);
+        if(!CommonUtils.isCanonicalColumnName(canonicalColumnName)){
+            throw new IllegalQueryColumnNameException();
+        }
         this.canonicalColumnName = canonicalColumnName;
-        this.probability = probability;
+    }
+
+    @Override
+    public BigDecimal getProbability() {
+        throw new UnsupportedOperationException();
     }
 
     public void setCanonicalColumnName(String canonicalColumnName) {
@@ -31,7 +39,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability, Set<String> columns) {
+    public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         throw new UnsupportedOperationException();
     }
 
@@ -42,18 +50,11 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public String toString() {
-        if (hasNot) {
-            return String.format("not(isnull(%s))", this.canonicalColumnName);
-        }
-        return String.format("isnull(%s)", this.canonicalColumnName);
-    }
-
-    public Boolean getHasNot() {
-        return hasNot;
-    }
-
-    public void setHasNot(Boolean hasNot) {
-        this.hasNot = hasNot;
+        return switch (operator) {
+            case ISNULL -> String.format("isnull(%s)", this.canonicalColumnName);
+            case IS_NOT_NULL -> String.format("not_isnull(%s)", this.canonicalColumnName);
+            default -> throw new UnsupportedOperationException();
+        };
     }
 
     public String getColumnName() {
@@ -66,6 +67,6 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public boolean[] evaluate() {
-        return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null, hasNot);
+        return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null);
     }
 }

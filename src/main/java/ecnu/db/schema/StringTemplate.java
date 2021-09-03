@@ -17,7 +17,7 @@ class StringTemplate {
         Random random = new Random(specialValue * dataId);
         return random.ints(65, 123)
                 .limit(minLength + random.nextInt(rangeLength + 1)).
-                        collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append);
+                collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append);
     }
 
     public String getLikeValue(long specialValue, long dataId, String originValue) {

@@ -1,22 +1,16 @@
 package ecnu.db.analyzer.online.adapter.tidb;
 
-import com.google.common.base.Throwables;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.analyzer.online.ExecutionNode.ExecutionNodeType;
-import ecnu.db.analyzer.online.RawNode;
-import ecnu.db.generator.constraintchain.filter.SelectResult;
-import ecnu.db.schema.SchemaManager;
+import ecnu.db.generator.constraintchain.filter.logical.AndNode;
+import ecnu.db.schema.TableManager;
 import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoParser;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
 import ecnu.db.utils.exception.analyze.UnsupportedJoin;
-import ecnu.db.utils.exception.analyze.UnsupportedSelect;
-import ecnu.db.analyzer.online.adapter.tidb.TidbNodeTypeTool;
 import ecnu.db.utils.exception.analyze.UnsupportedSelectionConditionException;
 import java_cup.runtime.ComplexSymbolFactory;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.StringReader;
 import java.util.*;
@@ -45,15 +39,10 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     private static final Pattern RIGHT_RANGE_BOUND = Pattern.compile("([0-9.]+|\\+inf|-inf)(]|\\))");
     private static final Pattern INDEX_COLUMN = Pattern.compile("index:.+\\((.+)\\)");
     private static final Pattern RANGE_SCAN_JOIN_PUSHDOWN = Pattern.compile("range: decided by \\[[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+(, [a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)*]");
-    private TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(new TidbSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
+    private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(new TidbSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
     public TidbAnalyzer() {
         super();
         this.nodeTypeRef = new TidbNodeTypeTool();
-    }
-
-    @Override
-    protected String extractOriginTableName(String operatorInfo) {
-        return operatorInfo.split(",")[0].substring(6).toLowerCase();
     }
 
     @Override
@@ -67,7 +56,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      * 合并节点，删除query plan中不需要或者不支持的节点，并根据节点类型提取对应信息
      * 关于join下推到tikv节点的处理:
      * 1. 有selection的下推
-     * ***********************************************************************
+     ************************************************************************
      *           IndexJoin                                       Filter      *
      *           /       \                                         /         *
      *      leftNode    IndexLookup              ===>>>          Join        *
@@ -75,25 +64,25 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      *               RangeScan     Selection              leftNode  Scan     *
      *                              /                                        *
      *                            Scan                                       *
-     * ***********************************************************************
+     ************************************************************************
      * <p>
      * 2. 没有selection的下推(leftNode中有Selection节点)
-     * ***********************************************************************
+     ************************************************************************
      *           IndexJoin                                       Join        *
      *           /       \                                      /    \       *
      *      leftNode    IndexLookup              ===>>>   leftNode   Scan    *
      *                  /        \                                           *
      *          RangeScan       Scan                                         *
-     * ***********************************************************************
+     ************************************************************************
      * <p>
      * 3. 没有selection的下推(leftNode中没有Selection节点，但右边扫描节点上有索引)
-     * ***********************************************************************
+     ************************************************************************
      *          IndexJoin                                        Join        *
      *          /       \                                       /    \       *
      *      leftNode   IndexReader              ===>>>    leftNode   Scan    *
      *                  /                                                    *
      *            RangeScan                                                  *
-     * ***********************************************************************
+     ************************************************************************
      *
      * @param rawNode 需要处理的query plan树
      * @return 处理好的树
@@ -111,8 +100,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         List<List<String>> matches = matchPattern(RANGE_SCAN_JOIN_PUSHDOWN, rawNode.operatorInfo);
         // 处理range scan
         if (nodeTypeRef.isRangeScanNode(nodeType) && matches.isEmpty()) {
-            String canonicalTableName = extractTableName(rawNode.operatorInfo);
-            int tableSize = SchemaManager.getInstance().getTableSize(canonicalTableName);
+            String canonicalTableName = rawNode.operatorInfo;
+            int tableSize = TableManager.getInstance().getTableSize(canonicalTableName);
             // 含有decided by的operator info表示join的index range scan
             if (tableSize != rawNode.rowCount && !rawNode.operatorInfo.contains("decided by")) {
                 String rangeInfo = matchPattern(RANGE, rawNode.operatorInfo).get(0).get(0);
@@ -125,8 +114,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 String leftOperator = "(".equals(leftRangeMatches.get(0).get(1)) ? "gt" : "ge", leftOperand = leftRangeMatches.get(0).get(2);
                 String rightOperator = ")".equals(rightRangeMatches.get(0).get(2)) ? "lt" : "le", rightOperand = rightRangeMatches.get(0).get(1);
                 List<List<String>> indexMatches = matchPattern(INDEX_COLUMN, rawNode.operatorInfo);
-                String columnName = SchemaManager.getInstance().getPrimaryKeys(canonicalTableName);
-                if (indexMatches.size() != 0) {
+                String columnName = TableManager.getInstance().getPrimaryKeys(canonicalTableName);
+                if (!indexMatches.isEmpty()) {
                     columnName = indexMatches.get(0).get(1);
                 }
                 if (leftOperand.contains("inf")) {
@@ -146,13 +135,13 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             }
         }
         else if (nodeTypeRef.isRangeScanNode(nodeType) && !matches.isEmpty()) {
-            String canonicalTableName = extractTableName(rawNode.operatorInfo);
-            int rowCount = SchemaManager.getInstance().getTableSize(canonicalTableName);
+            String canonicalTableName = rawNode.operatorInfo;
+            int rowCount = TableManager.getInstance().getTableSize(canonicalTableName);
             return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rowCount, "table:" + canonicalTableName);
         }
         // 处理底层的TableScan
         else if (nodeTypeRef.isTableScanNode(nodeType)) {
-            String canonicalTableName = extractTableName(rawNode.operatorInfo);
+            String canonicalTableName = rawNode.operatorInfo;
             return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rawNode.rowCount, "table:" + canonicalTableName);
         } else if (nodeTypeRef.isFilterNode(nodeType)) {
             node = new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount, rawNode.operatorInfo);
@@ -174,9 +163,9 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                     && nodeTypeRef.isFilterNode(rawNode.right.right.nodeType)) {
                 node = new ExecutionNode(rawNode.right.right.id, ExecutionNodeType.filter, rawNode.rowCount, rawNode.right.right.operatorInfo);
                 node.leftNode = new ExecutionNode(rawNode.right.left.id, ExecutionNodeType.join, rawNode.right.left.rowCount, rawNode.operatorInfo);
-                String canonicalTblName = extractTableName(rawNode.right.right.left.operatorInfo);
+                String canonicalTblName = rawNode.right.right.left.operatorInfo;
                 node.leftNode.rightNode = new ExecutionNode(rawNode.right.right.left.id, ExecutionNodeType.scan,
-                        SchemaManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName);
+                        TableManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName);
                 node.leftNode.leftNode = buildExecutionTree(rawNode.left);
                 return node;
             }
@@ -186,11 +175,11 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         } else if (nodeTypeRef.isReaderNode(nodeType)) {
             if (rawNode.right != null) {
                 matches = matchPattern(EQ_OPERATOR, rawNode.left.operatorInfo);
-                String canonicalTblName = extractTableName(rawNode.right.operatorInfo);
-                int tableSize = SchemaManager.getInstance().getTableSize(canonicalTblName);
+                String canonicalTblName = rawNode.right.operatorInfo;
+                int tableSize = TableManager.getInstance().getTableSize(canonicalTblName);
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (!matches.isEmpty() && nodeTypeRef.isTableScanNode(rawNode.right.nodeType)) {
-                    node = new ExecutionNode(rawNode.id, ExecutionNodeType.scan, SchemaManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName);
+                    node = new ExecutionNode(rawNode.id, ExecutionNodeType.scan, TableManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName);
                 } else if (rawNode.rowCount == tableSize) { // normal range scan
                     node = buildExecutionTree(rawNode.right);
                 } else if (nodeTypeRef.isTableScanNode(rawNode.right.nodeType)) {
@@ -201,8 +190,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             }
             // 处理IndexReader后接一个IndexScan的情况
             else if (nodeTypeRef.isIndexScanNode(rawNode.left.nodeType)) {
-                String canonicalTblName = extractTableName(rawNode.left.operatorInfo);
-                int tableSize = SchemaManager.getInstance().getTableSize(canonicalTblName);
+                String canonicalTblName = rawNode.left.operatorInfo;
+                int tableSize = TableManager.getInstance().getTableSize(canonicalTblName);
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (rawNode.left.rowCount != tableSize) {
                     node = new ExecutionNode(rawNode.left.id, ExecutionNodeType.scan, tableSize, "table:" + canonicalTblName);
@@ -227,7 +216,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      * @return 生成好的树
      */
     private RawNode buildRawNodeTree(List<String[]> queryPlan) throws TouchstoneException {
-        Deque<Pair<Integer, RawNode>> pStack = new ArrayDeque<>();
+        Deque<Map.Entry<Integer, RawNode>> pStack = new ArrayDeque<>();
         List<List<String>> matches = matchPattern(PLAN_ID, queryPlan.get(0)[0]);
         String nodeType = matches.get(0).get(0).split("_")[0];
         String[] subQueryPlanInfo = queryPlan.get(0);
@@ -238,7 +227,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         List<List<String>> iterMatches = matchPattern(ITER, executionInfo);
         rowCount = quickFixRowCount(nodeType, rowCount, iterMatches);
         RawNode rawNodeRoot = new RawNode(planId, null, null, nodeType, operatorInfo, rowCount), rawNode;
-        pStack.push(Pair.of(0, rawNodeRoot));
+        pStack.push(new AbstractMap.SimpleEntry<>(0, rawNodeRoot));
         for (String[] subQueryPlan : queryPlan.subList(1, queryPlan.size())) {
             subQueryPlanInfo = subQueryPlan;
             matches = matchPattern(PLAN_ID, subQueryPlanInfo[0]);
@@ -266,7 +255,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             } else {
                 pStack.peek().getValue().left = rawNode;
             }
-            pStack.push(Pair.of(level, rawNode));
+            pStack.push(new AbstractMap.SimpleEntry<>(level, rawNode));
         }
         return rawNodeRoot;
     }
@@ -353,11 +342,11 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         if (result[3].contains(")")) {
             result[3] = result[3].substring(0, result[3].indexOf(')'));
         }
-        return convertToDbTableName(result);
+        return result;
     }
 
     @Override
-    protected SelectResult analyzeSelectOperator(String operatorInfo) throws Exception {
+    public AndNode analyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
     }
 }

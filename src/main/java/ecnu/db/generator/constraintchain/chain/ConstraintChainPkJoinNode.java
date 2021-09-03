@@ -38,11 +38,11 @@ public class ConstraintChainPkJoinNode extends ConstraintChainNode {
         return pkColumns;
     }
 
-    public void setPkTag(long pkTag) {
-        this.pkTag = pkTag;
-    }
-
     public long getPkTag() {
         return pkTag;
+    }
+
+    public void setPkTag(long pkTag) {
+        this.pkTag = pkTag;
     }
 }

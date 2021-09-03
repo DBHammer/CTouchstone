@@ -14,9 +14,8 @@
                     "data" : 82028
                   }
                 ],
-                "operator" : "GE",
+                "operator" : "LE",
                 "canonicalColumnName" : "tpch.lineitem.l_discount",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               },
               {
@@ -26,9 +25,8 @@
                     "data" : 86279669
                   }
                 ],
-                "operator" : "GE",
+                "operator" : "LT",
                 "canonicalColumnName" : "tpch.lineitem.l_shipdate",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               },
               {
@@ -38,9 +36,8 @@
                     "data" : 55334
                   }
                 ],
-                "operator" : "LE",
+                "operator" : "GE",
                 "canonicalColumnName" : "tpch.lineitem.l_discount",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               },
               {
@@ -53,7 +50,6 @@
                 "operator" : "LT",
                 "probability" : 0.2669469264,
                 "canonicalColumnName" : "tpch.lineitem.l_quantity",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               },
               {
@@ -63,19 +59,13 @@
                     "data" : 28042527
                   }
                 ],
-                "operator" : "LT",
+                "operator" : "GE",
                 "canonicalColumnName" : "tpch.lineitem.l_shipdate",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability" : 0.01902281455,
-          "columns" : [
-            "tpch.lineitem.l_discount",
-            "tpch.lineitem.l_quantity",
-            "tpch.lineitem.l_shipdate"
-          ]
+          "probability" : 0.01902281455
         }
       ],
       "tableName" : "tpch.lineitem"
@@ -99,15 +89,11 @@
                 "operator" : "EQ",
                 "probability" : 0.1983466667,
                 "canonicalColumnName" : "tpch.customer.c_mktsegment",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability" : 0.1983466667,
-          "columns" : [
-            "tpch.customer.c_mktsegment"
-          ]
+          "probability" : 0.1983466667
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
@@ -143,15 +129,11 @@
                 "operator" : "LT",
                 "probability" : 0.4838209734,
                 "canonicalColumnName" : "tpch.orders.o_orderdate",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability" : 0.4838209733974779,
-          "columns" : [
-            "tpch.orders.o_orderdate"
-          ]
+          "probability" : 0.4838209733974779
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
@@ -187,15 +169,11 @@
                 "operator" : "GT",
                 "probability" : 0.05262407773,
                 "canonicalColumnName" : "tpch.lineitem.l_shipdate",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability" : 0.052624077727276675,
-          "columns" : [
-            "tpch.lineitem.l_shipdate"
-          ]
+          "probability" : 0.052624077727276675
         }
       ],
       "tableName" : "tpch.lineitem"
@@ -219,15 +197,11 @@
                 "operator" : "LE",
                 "probability" : 0.9797396027,
                 "canonicalColumnName" : "tpch.lineitem.l_shipdate",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability" : 0.9797396027,
-          "columns" : [
-            "tpch.lineitem.l_shipdate"
-          ]
+          "probability" : 0.9797396027
         }
       ],
       "tableName" : "tpch.lineitem"
@@ -250,7 +224,6 @@
                 ],
                 "operator" : "GE",
                 "canonicalColumnName" : "tpch.lineitem.l_shipdate",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               },
               {
@@ -262,15 +235,11 @@
                 ],
                 "operator" : "LT",
                 "canonicalColumnName" : "tpch.lineitem.l_shipdate",
-                "hasNot" : false,
                 "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability" : 0.03837122983,
-          "columns" : [
-            "tpch.lineitem.l_shipdate"
-          ]
+          "probability" : 0.03837122983
         }
       ],
       "tableName" : "tpch.lineitem"
@@ -291,18 +260,14 @@
                     "data" : 1482070
                   }
                 ],
-                "operator" : "LIKE",
+                "operator" : "NOT_LIKE",
                 "probability" : 0.010774,
                 "canonicalColumnName" : "tpch.orders.o_comment",
-                "hasNot" : true,
                 "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability" : 0.989226,
-          "columns" : [
-            "tpch.orders.o_comment"
-          ]
+          "probability" : 0.989226
         },
         {
           "constraintChainNodeType" : "FK_JOIN",

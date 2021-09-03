@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.schema.CannotFindSchemaException;
-import org.apache.commons.io.FileUtils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -21,37 +20,36 @@ import java.util.Map;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class SchemaManager {
-    protected static final Logger logger = LoggerFactory.getLogger(SchemaManager.class);
-    private static final SchemaManager INSTANCE = new SchemaManager();
-    private LinkedHashMap<String, Schema> schemas = new LinkedHashMap<>();
+public class TableManager {
+    protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
+    private static final TableManager INSTANCE = new TableManager();
+    private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
+    public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     private File schemaInfoPath;
 
-    private SchemaManager() {
+    private TableManager() {
     }
 
-    public static SchemaManager getInstance() {
+    public static TableManager getInstance() {
         return INSTANCE;
     }
 
     public void setResultDir(String resultDir) {
-        this.schemaInfoPath = new File(resultDir + CommonUtils.SCHEMA_MANAGE_INFO);
+        this.schemaInfoPath = new File(resultDir + SCHEMA_MANAGE_INFO);
     }
 
     public void storeSchemaInfo() throws IOException {
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
-        FileUtils.writeStringToFile(schemaInfoPath, content, UTF_8);
+        CommonUtils.writeFile(schemaInfoPath.getPath(), content);
     }
 
     public void loadSchemaInfo() throws IOException {
-        schemas = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(schemaInfoPath, UTF_8),
-                new TypeReference<LinkedHashMap<String, Schema>>() {
-                });
+        schemas = CommonUtils.MAPPER.readValue(CommonUtils.readFile(schemaInfoPath.getPath()), new TypeReference<>() {
+        });
     }
 
-    public void addSchema(String tableName, Schema schema) {
+    public void addSchema(String tableName, Table schema) {
         schemas.put(tableName, schema);
     }
 
@@ -76,7 +74,7 @@ public class SchemaManager {
     }
 
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
-        logger.info("table:" + localTable + ", column:" + localColumns + " -ref- table:" + refTable + ", column:" + refColumns);
+        logger.info("table:{}, column:{} -ref- table:{}, column:{}", localTable, localColumns, refTable, refColumns);
         getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
     }
 
@@ -87,18 +85,18 @@ public class SchemaManager {
     public List<String> createTopologicalOrder() {
         Graph<String, DefaultEdge> schemaGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
         schemas.keySet().forEach(schemaGraph::addVertex);
-        for (Map.Entry<String, Schema> schemaName2Schema : schemas.entrySet()) {
+        for (Map.Entry<String, Table> schemaName2Schema : schemas.entrySet()) {
             for (String refColumn : schemaName2Schema.getValue().getForeignKeys().values()) {
                 String[] refInfo = refColumn.split(CANONICAL_NAME_SPLIT_REGEX);
                 schemaGraph.addEdge(refInfo[0] + CANONICAL_NAME_CONTACT_SYMBOL + refInfo[1], schemaName2Schema.getKey());
             }
         }
         TopologicalOrderIterator<String, DefaultEdge> topologicalOrderIterator = new TopologicalOrderIterator<>(schemaGraph);
-        List<String> schemas = new LinkedList<>();
+        List<String> orderedSchemas = new LinkedList<>();
         while (topologicalOrderIterator.hasNext()) {
-            schemas.add(topologicalOrderIterator.next());
+            orderedSchemas.add(topologicalOrderIterator.next());
         }
-        return schemas;
+        return orderedSchemas;
     }
 
     public List<String> getColumnNamesNotKey(String schemaName) throws CannotFindSchemaException {
@@ -113,8 +111,8 @@ public class SchemaManager {
         return getSchema(schemaName).getPrimaryKeys();
     }
 
-    public Schema getSchema(String tableName) throws CannotFindSchemaException {
-        Schema schema = schemas.get(tableName);
+    public Table getSchema(String tableName) throws CannotFindSchemaException {
+        Table schema = schemas.get(tableName);
         if (schema == null) {
             throw new CannotFindSchemaException(tableName);
         }

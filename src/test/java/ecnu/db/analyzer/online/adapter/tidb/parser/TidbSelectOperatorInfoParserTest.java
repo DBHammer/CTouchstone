@@ -1,12 +1,10 @@
 package ecnu.db.analyzer.online.adapter.tidb.parser;
 
-import ecnu.db.generator.constraintchain.filter.SelectResult;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnType;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.analyzer.online.adapter.tidb.TidbAnalyzer;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +34,7 @@ public class TidbSelectOperatorInfoParserTest {
     @Test
     void testParse() throws Exception {
         String testCase = "ge(db.table.col1, 2)";
-        AndNode node = parser.parseSelectOperatorInfo(testCase).getCondition();
+        AndNode node = parser.parseSelectOperatorInfo(testCase);
         assertEquals("and(ge(db.table.col1, {id:0, data:2}))", node.toString());
     }
 
@@ -44,15 +42,15 @@ public class TidbSelectOperatorInfoParserTest {
     @Test
     void testParseWithArithmeticOps() throws Exception {
         String testCase = "ge(mul(db.table.col1, plus(db.table.col2, 3)), 2)";
-        AndNode node = parser.parseSelectOperatorInfo(testCase).getCondition();
-        assertEquals("and(ge(mul(db.table.col1, plus(db.table.col2, 3)), {id:0, data:2}))", node.toString());
+        AndNode node = parser.parseSelectOperatorInfo(testCase);
+        assertEquals("and(ge(MUL(db.table.col1, PLUS(db.table.col2, 3)), {id:0, data:2}))", node.toString());
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method with logical ops")
     @Test
     void testParseWithLogicalOps() throws Exception {
         String testCase = "or(ge(db.table.col1, 2), lt(db.table.col4, 3.0))";
-        AndNode node = parser.parseSelectOperatorInfo(testCase).getCondition();
+        AndNode node = parser.parseSelectOperatorInfo(testCase);
         assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), lt(db.table.col4, {id:1, data:3.0})))", node.toString());
     }
 
@@ -69,16 +67,15 @@ public class TidbSelectOperatorInfoParserTest {
     @Test()
     void testParseWithNot() throws Exception {
         String testCase = "or(ge(db.table.col1, 2), not(in(db.table.col3, \"3\", \"2\")))";
-        SelectResult result = parser.parseSelectOperatorInfo(testCase);
-        AndNode node = result.getCondition();
-        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(in(db.table.col3, {id:1, data:3}, {id:2, data:2}))))", node.toString());
+        AndNode node = parser.parseSelectOperatorInfo(testCase);
+        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not_in(db.table.col3, {id:1, data:3}, {id:2, data:2})))", node.toString());
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method with isnull")
     @Test()
     void testParseWithIsnull() throws Exception {
         String testCase = "or(ge(db.table.col1, 2), not(isnull(db.table.col2)))";
-        AndNode node = parser.parseSelectOperatorInfo(testCase).getCondition();
-        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not(isnull(db.table.col2))))", node.toString());
+        AndNode node = parser.parseSelectOperatorInfo(testCase);
+        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not_isnull(db.table.col2)))", node.toString());
     }
 }

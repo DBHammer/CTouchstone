@@ -1,13 +1,14 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
-import com.google.common.collect.Multimap;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author alan
@@ -18,18 +19,13 @@ public class RangeFilterOperation extends UniVarFilterOperation {
     private CompareOperator lessOperator;
     private CompareOperator greaterOperator;
 
-    public RangeFilterOperation(String columnName) {
-        super(columnName, CompareOperator.RANGE);
+    public RangeFilterOperation(String columnName) throws IllegalQueryColumnNameException {
+        super(columnName, CompareOperator.RANGE, null);
     }
 
     @Override
     public BoolExprType getType() {
         return BoolExprType.UNI_FILTER_OPERATION;
-    }
-
-    @Override
-    public void addParameter(Parameter parameter) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -44,11 +40,11 @@ public class RangeFilterOperation extends UniVarFilterOperation {
         throw new UnsupportedOperationException();
     }
 
-    public void setLessOperator(boolean isAnd, Multimap<CompareOperator, UniVarFilterOperation> typ2Filter) {
+    public void setLessOperator(boolean isAnd, Map<CompareOperator, List<UniVarFilterOperation>> typ2Filter) {
         this.lessOperator = (isAnd && (typ2Filter.containsKey(CompareOperator.LT)) ? CompareOperator.LT : CompareOperator.LE);
     }
 
-    public void setGreaterOperator(boolean isAnd, Multimap<CompareOperator, UniVarFilterOperation> typ2Filter) {
+    public void setGreaterOperator(boolean isAnd, Map<CompareOperator, List<UniVarFilterOperation>> typ2Filter) {
         this.greaterOperator = (isAnd && typ2Filter.containsKey(CompareOperator.GT)) ? CompareOperator.GT : CompareOperator.GE;
     }
 
@@ -62,7 +58,7 @@ public class RangeFilterOperation extends UniVarFilterOperation {
 
     @Override
     public void instantiateParameter() {
-        if (lessParameters.size() > 0 && greaterParameters.size() > 0) {
+        if (!lessParameters.isEmpty() && !greaterParameters.isEmpty()) {
             ColumnManager.getInstance().insertBetweenProbability(canonicalColumnName, probability,
                     lessOperator, lessParameters, greaterOperator, greaterParameters);
         } else {

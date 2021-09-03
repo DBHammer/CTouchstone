@@ -1,62 +1,37 @@
 package ecnu.db.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNode;
-import ecnu.db.generator.constraintchain.arithmetic.ArithmeticNodeDeserializer;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNodeDeserializer;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprNodeDeserializer;
-import org.apache.commons.io.FileUtils;
+import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
+import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeDeserializer;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.math.MathContext;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author xuechao.lian
  */
 public class CommonUtils {
-    public final static int stepSize = 100000;
-    public final static MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
-    public final static String DUMP_FILE_POSTFIX = "dump";
-    public final static String SQL_FILE_POSTFIX = ".sql";
-    public final static String QUERY_DIR = "/queries/";
-    public final static String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
-    public final static String SCHEMA_MANAGE_INFO = "/schema.json";
-    public final static String COLUMN_MANAGE_INFO = "/distribution.json";
-    public final static String CANONICAL_NAME_CONTACT_SYMBOL = ".";
-    public final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
-    public final static int SampleDoublePrecision = (int) 1E6;
-    public final static int SINGLE_THREAD_TUPLE_SIZE = 100;
-    public final static int INIT_HASHMAP_SIZE = 16;
-    private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
-            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
-                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
-                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter())
-            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
-            .toFormatter();
+    public static final int STEP_SIZE = 100000;
+    public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
+    public static final String CANONICAL_NAME_CONTACT_SYMBOL = ".";
+    public static final String CANONICAL_NAME_SPLIT_REGEX = "\\.";
+    public static final int SAMPLE_DOUBLE_PRECISION = (int) 1E6;
+    public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
+    public static final int INIT_HASHMAP_SIZE = 16;
+
 
     private static final SimpleModule touchStoneJsonModule = new SimpleModule()
             .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
@@ -64,20 +39,20 @@ public class CommonUtils {
             .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
 
     private static final DefaultPrettyPrinter dpf = new DefaultPrettyPrinter();
+
+    static {
+        dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
+    }
+
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .setDefaultPrettyPrinter(dpf)
             .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
 
-    static {
-        dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
+    public static boolean isCanonicalColumnName(String columnName) {
+        return columnName.split(CANONICAL_NAME_SPLIT_REGEX).length == 3;
     }
-
-    public static long getUnixTimeStamp(String timeValue) {
-        return LocalDateTime.parse(timeValue, CommonUtils.FMT).toEpochSecond(ZoneOffset.UTC) * 1000;
-    }
-
 
     /**
      * 获取正则表达式的匹配
@@ -99,10 +74,20 @@ public class CommonUtils {
         return ret;
     }
 
-    public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
-        return CommonUtils.MAPPER.readValue(FileUtils.readFileToString(
-                new File(resultDir + CONSTRAINT_CHAINS_INFO), UTF_8),
-                new TypeReference<Map<String, List<ConstraintChain>>>() {
-                });
+    public static String readFile(String path) throws IOException {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(path))) {
+            StringBuilder fileContent = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                fileContent.append(line);
+            }
+            return fileContent.toString();
+        }
+    }
+
+    public static void writeFile(String path, String content) throws IOException {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path))) {
+            bufferedWriter.write(content);
+        }
     }
 }

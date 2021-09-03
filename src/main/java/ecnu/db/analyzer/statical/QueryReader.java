@@ -17,7 +17,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
@@ -48,18 +47,17 @@ public class QueryReader {
                 .map(Arrays::asList)
                 .orElse(new ArrayList<>())
                 .stream()
-                .filter((file) -> file.isFile() && file.getName().endsWith(".sql"))
-                .collect(Collectors.toList());
+                .filter(file -> file.isFile() && file.getName().endsWith(".sql"))
+                .toList();
     }
 
     public List<String> getQueriesFromFile(String file) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
         StringBuilder fileContents = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            if (line.length() > 0) {
-                if (!line.startsWith("--")) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.length() > 0 && !line.startsWith("--")) {
                     fileContents.append(line).append(System.lineSeparator());
                 }
             }
@@ -76,7 +74,7 @@ public class QueryReader {
         return sqls;
     }
 
-    public HashSet<String> getTableName(String sql) throws IllegalQueryTableNameException {
+    public Set<String> getTableName(String sql) throws IllegalQueryTableNameException {
         List<SQLStatement> stmtList = SQLUtils.parseStatements(sql, dbType);
         SQLStatement stmt = stmtList.get(0);
         SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(dbType);
@@ -90,10 +88,9 @@ public class QueryReader {
 
     public Map<String, String> getTableAlias(String sql) throws TouchstoneException {
         SQLStatement sqlStatement = SQLUtils.parseStatements(sql, dbType).get(0);
-        if (!(sqlStatement instanceof SQLSelectStatement)) {
+        if (!(sqlStatement instanceof SQLSelectStatement statement)) {
             throw new TouchstoneException("Only support select statement");
         }
-        SQLSelectStatement statement = (SQLSelectStatement) sqlStatement;
         statement.accept(aliasVisitor);
         return aliasVisitor.getAliasMap();
     }
@@ -108,13 +105,13 @@ public class QueryReader {
         for (File sqlFile : files) {
             List<String> queries = getQueriesFromFile(sqlFile.getPath());
             for (String query : queries) {
-                Set<String> tableNameRefs = getTableName(query);
-                tableNames.addAll(tableNameRefs);
+                tableNames.addAll(getTableName(query));
             }
         }
-        tableNames = tableNames.stream().distinct().collect(Collectors.toList());
+        tableNames = tableNames.stream().distinct().toList();
         return tableNames;
     }
+
 
     private static class ExportTableAliasVisitor extends MySqlASTVisitorAdapter {
         private final Map<String, String> aliasMap = new HashMap<>();
@@ -152,14 +149,19 @@ public class QueryReader {
          * @return 转换后的表名
          */
         public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
-            List<List<String>> matches = matchPattern(CANONICAL_TBL_NAME, tableName);
-            if (matches.size() == 1 && matches.get(0).get(0).length() == tableName.length()) {
-                return tableName;
+            return convertTableName2CanonicalTableName(tableName, defaultDatabaseName);
+        }
+
+        private static String convertTableName2CanonicalTableName(String canonicalTableName,
+                                                                  String defaultDatabase) throws IllegalQueryTableNameException {
+            List<List<String>> matches = matchPattern(QueryReader.CANONICAL_TBL_NAME, canonicalTableName);
+            if (matches.size() == 1 && matches.get(0).get(0).length() == canonicalTableName.length()) {
+                return canonicalTableName;
             } else {
-                if (defaultDatabaseName == null) {
+                if (defaultDatabase == null) {
                     throw new IllegalQueryTableNameException();
                 }
-                return String.format("%s.%s", defaultDatabaseName, tableName);
+                return String.format("%s.%s", defaultDatabase, canonicalTableName);
             }
         }
     }

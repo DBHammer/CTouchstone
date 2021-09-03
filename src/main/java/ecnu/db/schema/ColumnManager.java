@@ -5,25 +5,35 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
-import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
     private LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
-
-
     private File distributionInfoPath;
+    public static final String COLUMN_MANAGE_INFO = "/distribution.json";
+    private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
+                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter())
+            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
+            .toFormatter();
 
     // Private constructor suppresses
     // default public constructor
@@ -47,15 +57,15 @@ public class ColumnManager {
     }
 
     public void setResultDir(String resultDir) {
-        this.distributionInfoPath = new File(resultDir + CommonUtils.COLUMN_MANAGE_INFO);
+        this.distributionInfoPath = new File(resultDir + COLUMN_MANAGE_INFO);
     }
 
-    public Column getColumn(String columnName) {
+    private Column getColumn(String columnName) {
         return columns.get(columnName);
     }
 
-    public boolean[] evaluate(String columnName, CompareOperator operator, List<Parameter> parameters, boolean hasNot) {
-        return columns.get(columnName).evaluate(operator, parameters, hasNot);
+    public boolean[] evaluate(String columnName, CompareOperator operator, List<Parameter> parameters) {
+        return columns.get(columnName).evaluate(operator, parameters);
     }
 
     public float getNullPercentage(String columnName) {
@@ -83,13 +93,13 @@ public class ColumnManager {
 
     public void storeColumnDistribution() throws IOException {
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columns);
-        FileUtils.writeStringToFile(distributionInfoPath, content, UTF_8);
+        CommonUtils.writeFile(distributionInfoPath.getPath(), content);
     }
 
     public void loadColumnDistribution() throws IOException {
-        columns = CommonUtils.MAPPER.readValue(FileUtils.readFileToString(distributionInfoPath, UTF_8),
-                new TypeReference<LinkedHashMap<String, Column>>() {
-                });
+        String fileContent = CommonUtils.readFile(distributionInfoPath.getPath());
+        columns = CommonUtils.MAPPER.readValue(fileContent, new TypeReference<>() {
+        });
     }
 
     public void initAllEqParameter() {
@@ -107,15 +117,17 @@ public class ColumnManager {
         int index = 0;
         for (String canonicalColumnName : canonicalColumnNames) {
             Column column = columns.get(canonicalColumnName);
-            long min, range, specialValue;
+            long min;
+            long range;
+            long specialValue;
             switch (column.getColumnType()) {
-                case INTEGER:
+                case INTEGER -> {
                     min = Long.parseLong(sqlResult[index++]);
                     long maxBound = Long.parseLong(sqlResult[index++]);
                     range = Long.parseLong(sqlResult[index++]);
                     specialValue = (int) ((maxBound - min + 1) / range);
-                    break;
-                case VARCHAR:
+                }
+                case VARCHAR -> {
                     StringTemplate stringTemplate = new StringTemplate();
                     stringTemplate.minLength = Integer.parseInt(sqlResult[index++]);
                     stringTemplate.rangeLength = Integer.parseInt(sqlResult[index++]) - stringTemplate.minLength;
@@ -123,22 +135,19 @@ public class ColumnManager {
                     min = 0;
                     range = Integer.parseInt(sqlResult[index++]);
                     specialValue = ThreadLocalRandom.current().nextInt();
-                    break;
-                case DECIMAL:
-                    int precision = CommonUtils.SampleDoublePrecision;
+                }
+                case DECIMAL -> {
+                    int precision = CommonUtils.SAMPLE_DOUBLE_PRECISION;
                     min = (long) (Double.parseDouble(sqlResult[index++]) * precision);
                     range = (long) (Double.parseDouble(sqlResult[index++]) * precision) - min;
                     specialValue = precision;
-                    break;
-                case DATE:
-                case DATETIME:
-                    min = CommonUtils.getUnixTimeStamp(sqlResult[index++]);
-                    range = CommonUtils.getUnixTimeStamp(sqlResult[index++]) - min;
+                }
+                case DATE, DATETIME -> {
+                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000;
+                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000 - min;
                     specialValue = 0;
-                    break;
-                case BOOL:
-                default:
-                    throw new TouchstoneException("未匹配到的类型");
+                }
+                default -> throw new TouchstoneException("未匹配到的类型");
             }
             column.setMin(min);
             column.setRange(range);
@@ -161,4 +170,6 @@ public class ColumnManager {
                                          CompareOperator greaterOperator, List<Parameter> greaterParameters) {
         columns.get(columnName).insertBetweenProbability(probability, lessOperator, lessParameters, greaterOperator, greaterParameters);
     }
+
+
 }

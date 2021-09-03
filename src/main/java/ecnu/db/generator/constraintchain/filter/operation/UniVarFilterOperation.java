@@ -1,16 +1,14 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
-import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,35 +19,51 @@ import java.util.stream.Stream;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UniVarFilterOperation extends AbstractFilterOperation {
     protected String canonicalColumnName;
-    private Boolean hasNot = false;
 
     public UniVarFilterOperation() {
         super(null);
     }
 
-    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator) {
+    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator, List<Parameter> parameters)
+            throws IllegalQueryColumnNameException {
         super(operator);
         this.canonicalColumnName = canonicalColumnName;
+        if(!CommonUtils.isCanonicalColumnName(canonicalColumnName)){
+            throw new IllegalQueryColumnNameException();
+        }
+        this.parameters = parameters;
     }
 
     /**
      * merge operation
      */
-    public static void merge(List<BoolExprNode> toMergeNodes, Multimap<String, UniVarFilterOperation> col2uniFilters, boolean isAnd) {
-        for (String colName : col2uniFilters.keySet()) {
-            Collection<UniVarFilterOperation> filters = col2uniFilters.get(colName);
-            Multimap<CompareOperator, UniVarFilterOperation> typ2Filter = Multimaps.index(filters, AbstractFilterOperation::getOperator);
+    public static void merge(List<BoolExprNode> toMergeNodes,
+                             Map<String, Collection<UniVarFilterOperation>> col2uniFilters,
+                             boolean isAnd) {
+        for (var col2uniFilter : col2uniFilters.entrySet()) {
+            Collection<UniVarFilterOperation> filters = col2uniFilter.getValue();
+            Map<CompareOperator, List<UniVarFilterOperation>> typ2Filter = filters.stream()
+                    .map(filter -> new AbstractMap.SimpleEntry<>(filter.getOperator(), filter))
+                    .collect(Collectors.groupingBy(AbstractMap.SimpleEntry::getKey,
+                            Collectors.mapping(AbstractMap.SimpleEntry::getValue, Collectors.toList())));
             if (typ2Filter.size() == 1) {
-                toMergeNodes.addAll(typ2Filter.values());
+                toMergeNodes.addAll(typ2Filter.values().stream().flatMap(Collection::stream).toList());
                 continue;
             }
-            RangeFilterOperation newFilter = new RangeFilterOperation(colName);
-            newFilter.addLessParameters(Stream.concat(typ2Filter.get(CompareOperator.LE).stream(), typ2Filter.get(CompareOperator.LT).stream())
-                    .flatMap((filter) -> filter.getParameters().stream()).collect(Collectors.toList()));
-            newFilter.addGreaterParameters(Stream.concat(typ2Filter.get(CompareOperator.GE).stream(), typ2Filter.get(CompareOperator.GT).stream())
-                    .flatMap((filter) -> filter.getParameters().stream()).collect(Collectors.toList()));
-            newFilter.setLessOperator(isAnd, typ2Filter);
-            newFilter.setGreaterOperator(isAnd, typ2Filter);
+            RangeFilterOperation newFilter = null;
+            try {
+                newFilter = new RangeFilterOperation(col2uniFilter.getKey());
+                newFilter.addLessParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.LE, new ArrayList<>()).stream(),
+                                typ2Filter.getOrDefault(CompareOperator.LT, new ArrayList<>()).stream())
+                        .flatMap(filter -> filter.getParameters().stream()).toList());
+                newFilter.addGreaterParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.GE, new ArrayList<>()).stream(),
+                                typ2Filter.getOrDefault(CompareOperator.GT, new ArrayList<>()).stream())
+                        .flatMap(filter -> filter.getParameters().stream()).toList());
+                newFilter.setLessOperator(isAnd, typ2Filter);
+                newFilter.setGreaterOperator(isAnd, typ2Filter);
+            } catch (IllegalQueryColumnNameException e) {
+                e.printStackTrace();
+            }
             toMergeNodes.add(newFilter);
         }
     }
@@ -57,14 +71,6 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     @Override
     public BoolExprType getType() {
         return BoolExprType.UNI_FILTER_OPERATION;
-    }
-
-    public Boolean getHasNot() {
-        return hasNot;
-    }
-
-    public void setHasNot(Boolean hasNot) {
-        this.hasNot = hasNot;
     }
 
     public String getCanonicalColumnName() {
@@ -79,9 +85,6 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     public String toString() {
         List<String> content = parameters.stream().map(Parameter::toString).collect(Collectors.toList());
         content.add(0, String.format("%s", canonicalColumnName));
-        if (hasNot) {
-            return String.format("not(%s(%s))", operator.toString().toLowerCase(), String.join(", ", content));
-        }
         return String.format("%s(%s)", operator.toString().toLowerCase(), String.join(", ", content));
     }
 
@@ -89,14 +92,11 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
      * 初始化等值filter的参数
      */
     public void instantiateParameter() {
-        if (hasNot) {
-            probability = BigDecimal.ONE.subtract(probability);
-        }
         ColumnManager.getInstance().insertUniVarProbability(canonicalColumnName, probability, operator, parameters);
     }
 
     @Override
     public boolean[] evaluate() {
-        return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters, hasNot);
+        return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters);
     }
 }

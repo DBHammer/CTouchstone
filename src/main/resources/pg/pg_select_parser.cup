@@ -1,54 +1,21 @@
-import java_cup.runtime.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.HashSet;
-import java.math.BigDecimal;
-import ecnu.db.generator.constraintchain.arithmetic.*;
-import ecnu.db.generator.constraintchain.arithmetic.operator.*;
-import ecnu.db.generator.constraintchain.arithmetic.value.*;
+import java.util.*;
+import ecnu.db.generator.constraintchain.filter.arithmetic.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
 import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
 import java.io.StringReader;
-import ecnu.db.schema.Schema;
-import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.schema.ColumnType;
-import ecnu.db.schema.ColumnManager;
 
 
 /* define how to connect to the scanner! */
 parser code {:
   private AndNode root = new AndNode();
   private int parameterId = 0;
-  private List<Parameter> parameters;
-  private Set<String> columns;
-  private String tableName;
-  public SelectResult parseSelectOperatorInfo(String operatorInfo) throws Exception {
-    this.parameters = new ArrayList<>();
-    this.columns = new HashSet<>();
-    this.tableName = null;
+
+  public AndNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
     this.root = new AndNode();
     ((PgSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
-    this.debug_parse();
-    SelectResult result = new SelectResult();
-    result.setParameters(this.parameters);
-    result.setCondition(this.root);
-    result.setTableName(this.tableName);
-    result.setColumns(this.columns);
-    return result;
-  }
-  private String getCanonicalTableName(String canonicalColumnName) {
-    String[] names = canonicalColumnName.split("\\.");
-    return String.format("%s.%s", names[0], names[1]);
-  }
-  private void verifyTableName(String tableName) throws TouchstoneException {
-    if (this.tableName == null) {
-      this.tableName = tableName;
-    } else if (!this.tableName.equals(tableName)) {
-      throw new TouchstoneException("select表名不一致");
-    }
+    this.parse();
+    return this.root;
   }
 :};
 
@@ -56,7 +23,6 @@ parser code {:
 terminal   ArithmeticNodeType    PLUS, MINUS, DIV, MUL;
 terminal                         LPAREN, RPAREN;
 terminal   CompareOperator       ISNULL;
-terminal                         NOT;
 terminal   CompareOperator       IS_NOT_NULL, NOT_LIKE, NOT_IN;
 terminal                         AND, OR;
 terminal   CompareOperator       LT, GT, LE, GE, NE, EQ, LIKE, IN;
@@ -69,7 +35,6 @@ terminal   Float                 FLOAT;
 
 /* Non terminals */
 non terminal                                    expr;
-non terminal          List<BoolExprNode>        bool_exprs;
 non terminal          BoolExprNode              bool_expr;
 non terminal          BoolExprNode              logical_expr;
 non terminal          List<BoolExprNode>        logical_arguments;
@@ -142,17 +107,13 @@ compare_expr ::=
         ;
 uni_compare_expr ::=
         LPAREN arithmetic_expr:e1 uni_compare_operator:op uni_compare_constant:constant RPAREN  {:
+                                                                                                    Parameter parameter = new Parameter(parameterId++, e1.toString(), constant);
                                                                                                     AbstractFilterOperation operation;
                                                                                                     if (e1.getType() == ArithmeticNodeType.COLUMN) {
-                                                                                                        String canonicalColumnName = ((ColumnNode) e1).getCanonicalColumnName();
-                                                                                                        operation = new UniVarFilterOperation(canonicalColumnName, op);
-                                                                                                        columns.add(canonicalColumnName);
+                                                                                                        operation = new UniVarFilterOperation(((ColumnNode) e1).getCanonicalColumnName(), op, Collections.singletonList(parameter));
                                                                                                     } else {
-                                                                                                        operation = new MultiVarFilterOperation(op, e1);
+                                                                                                        operation = new MultiVarFilterOperation(op, e1, Collections.singletonList(parameter));
                                                                                                     }
-                                                                                                    Parameter parameter = new Parameter(parameterId++, e1.toString(), constant);
-                                                                                                    operation.addParameter(parameter);
-                                                                                                    parameters.add(parameter);
                                                                                                     RESULT = operation;
                                                                                                 :}
         ;
@@ -176,19 +137,16 @@ multi_compare_expr ::=
         ;
 in_compare_expr ::=
         LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
-                                                                                      String tableName = getCanonicalTableName(col);
-                                                                                      verifyTableName(tableName);
-                                                                                      UniVarFilterOperation operation = new UniVarFilterOperation(col, inornotin);
-                                                                                      for (String argument: arguments) {
+                                                                                    List<Parameter> parameterList = new ArrayList<>();
+                                                                                    for (String argument: arguments) {
                                                                                         Parameter parameter = new Parameter(parameterId++, col, argument);
-                                                                                        operation.addParameter(parameter);
-                                                                                        parameters.add(parameter);
-                                                                                      }
-                                                                                      columns.add(col);
-                                                                                      if(inornotin == CompareOperator.NOT_IN){
-                                                                                        operation.setHasNot(true);
-                                                                                      }
-                                                                                      RESULT = operation;
+                                                                                        parameterList.add(parameter);
+                                                                                    }
+                                                                                    UniVarFilterOperation operation = new UniVarFilterOperation(col, inornotin, parameterList);
+                                                                                    if(inornotin == CompareOperator.NOT_IN){
+                                                                                        operation.setOperator(CompareOperator.NOT_IN);
+                                                                                    }
+                                                                                    RESULT = operation;
                                                                                   :}
         ;
 in_expr ::=
@@ -222,15 +180,10 @@ in_arguments ::=
         ;
 like_compare_expr ::=
         LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN like_expr:likeornot STRING:str RPAREN     {:
-                                                                                            String tableName = getCanonicalTableName(col);
-                                                                                            verifyTableName(tableName);
-                                                                                            UniVarFilterOperation operation = new UniVarFilterOperation(col, likeornot);
                                                                                             Parameter parameter = new Parameter(parameterId++, col, str);
-                                                                                            operation.addParameter(parameter);
-                                                                                            parameters.add(parameter);
-                                                                                            columns.add(col);
+                                                                                            UniVarFilterOperation operation = new UniVarFilterOperation(col, likeornot, Collections.singletonList(parameter));
                                                                                             if(likeornot == CompareOperator.NOT_LIKE){
-                                                                                              operation.setHasNot(true);
+                                                                                              operation.setOperator(CompareOperator.NOT_LIKE);
                                                                                             }
                                                                                             RESULT = operation;
                                                                                        :}
@@ -249,11 +202,8 @@ arithmetic_expr ::=
                                                                                                   RESULT = node;
                                                                                               :}
         | CANONICAL_COLUMN_NAME:col                                               {:
-                                                                                      String tableName = getCanonicalTableName(col);
-                                                                                      verifyTableName(tableName);
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
                                                                                       ((ColumnNode) node).setCanonicalColumnName(col);
-                                                                                      columns.add(col);
                                                                                       RESULT = node;
                                                                                   :}
         | INTEGER:num                                                             {:
@@ -277,10 +227,9 @@ arithmetic_operator ::=
 /* isnull expressions */
 isnull_expr ::=
         LPAREN CANONICAL_COLUMN_NAME:col null_expr:isornotnull RPAREN             {:
-                                                                                      float nullProbability = ColumnManager.getInstance().getNullPercentage(col);
-                                                                                      IsNullFilterOperation operation = new IsNullFilterOperation(col, BigDecimal.valueOf(nullProbability));
+                                                                                      IsNullFilterOperation operation = new IsNullFilterOperation(col);
                                                                                       if(isornotnull == CompareOperator.IS_NOT_NULL){
-                                                                                        operation.setHasNot(true);
+                                                                                        operation.setOperator(CompareOperator.IS_NOT_NULL);
                                                                                       }
                                                                                       RESULT = operation;
                                                                                   :}
