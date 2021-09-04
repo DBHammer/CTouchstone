@@ -24,10 +24,6 @@ public class TidbSelectOperatorInfoParserTest {
     @BeforeEach
     void setUp() throws TouchstoneException {
         parser = new TidbSelectOperatorInfoParser(lexer, new ComplexSymbolFactory());
-        ColumnManager.getInstance().addColumn("db.table.col1", new Column(ColumnType.INTEGER));
-        ColumnManager.getInstance().addColumn("db.table.col2", new Column(ColumnType.INTEGER));
-        ColumnManager.getInstance().addColumn("db.table.col3", new Column(ColumnType.INTEGER));
-        ColumnManager.getInstance().addColumn("db.table.col4", new Column(ColumnType.INTEGER));
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method")
