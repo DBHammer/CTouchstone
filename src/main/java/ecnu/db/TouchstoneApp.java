@@ -12,7 +12,6 @@ import picocli.CommandLine.Command;
         description = "tool for generating test database", sortOptions = false,
         subcommands = {TaskConfigurator.class, DataGenerator.class},
         mixinStandardHelpOptions = true,
-        commandListHeading = "Commands:\n",
         header = {
                 "@|green  _____                _         _ |@",
                 "@|green |_   _|__  _   _  ___| |__  ___| |_ ___  _ __   ___ |@",
