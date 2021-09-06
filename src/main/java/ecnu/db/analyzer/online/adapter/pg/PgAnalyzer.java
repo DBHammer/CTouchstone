@@ -20,10 +20,13 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 
 public class PgAnalyzer extends AbstractAnalyzer {
 
-    private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z0-9]+\\.[a-zA-Z0-9]+");
+    private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9]*\\.[a-zA-Z0-9]+");
     private static final HashMap<String, String> ALIAS = new HashMap<>();
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
+    private static final Pattern NUMERIC = Pattern.compile("\'[0-9]+\'::numeric");
+    private static final Pattern DATE = Pattern.compile("\'(([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6})|([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})|([0-9]{4}-[0-9]{2}-[0-9]{2}))\'::date");
+    private static final Pattern TIMESTAMP = Pattern.compile("\'(([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6})|([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})|([0-9]{4}-[0-9]{2}-[0-9]{2}))\'::timestamp without time zone");
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
 
     public PgAnalyzer() {
@@ -174,6 +177,52 @@ public class PgAnalyzer extends AbstractAnalyzer {
         while (m.find()) {
             String[] tableNameAndColName = m.group().split("\\.");
             m.appendReplacement(filter, ALIAS.get(tableNameAndColName[0]) + "." + tableNameAndColName[1]);
+        }
+        m.appendTail(filter);
+        String result = filter.toString();
+        result = removeNumeric(result);
+        result = removeDate(result);
+        result = removeTimestamp(result);
+        return result;
+    }
+
+    public String removeNumeric(String filterInfo){
+        Matcher m = NUMERIC.matcher(filterInfo);
+        StringBuilder filter = new StringBuilder();
+        while (m.find()) {
+            String[] numericName = m.group().split("::");
+            String num = numericName[0];
+            int length = num.length();
+            String numTrans = num.substring(1,length-1);
+            m.appendReplacement(filter, numTrans);
+        }
+        m.appendTail(filter);
+        return filter.toString();
+    }
+
+    public String removeDate(String filterInfo){
+        Matcher m = DATE.matcher(filterInfo);
+        StringBuilder filter = new StringBuilder();
+        while (m.find()) {
+            String[] DateSym = m.group().split("::");
+            String Date = DateSym[0];
+            int length = Date.length();
+            String DateTrans = Date.substring(1,length-1);
+            m.appendReplacement(filter, DateTrans);
+        }
+        m.appendTail(filter);
+        return filter.toString();
+    }
+
+    public String removeTimestamp(String filterInfo){
+        Matcher m = TIMESTAMP.matcher(filterInfo);
+        StringBuilder filter = new StringBuilder();
+        while (m.find()) {
+            String[] DateSym = m.group().split("::");
+            String Date = DateSym[0];
+            int length = Date.length();
+            String DateTrans = Date.substring(1,length-1);
+            m.appendReplacement(filter, DateTrans);
         }
         m.appendTail(filter);
         return filter.toString();

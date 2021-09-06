@@ -93,9 +93,18 @@ logical_expr ::=
                                                                 }
                                                                 RESULT = node;
                                                             :}
+
         ;
 logical_arguments ::=
-        bool_expr:e1 AND:and bool_expr:e2                   {:  RESULT = new ArrayList<>(Arrays.asList(e1, e2));  :}
+        bool_expr:e1 AND:and logical_arguments:exprs                 {:
+                                                                         exprs.add(e1);
+                                                                         RESULT =  exprs;
+                                                                     :}
+        | bool_expr:e2                                               {:
+                                                                         List<BoolExprNode> nodes = new ArrayList<>();
+                                                                         nodes.add(e2);
+                                                                         RESULT = nodes;
+                                                                      :}
         ;
 
 
