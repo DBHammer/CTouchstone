@@ -16,10 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -34,6 +31,7 @@ public class QueryAnalyzer {
     protected String defaultDatabase;
     protected double skipNodeThreshold = 0.01;
     private Map<String, String> aliasDic = new HashMap<>();
+    private List<ExecutionNode> onePath = new ArrayList<>();
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector, String defaultDatabase) {
         this.abstractAnalyzer = abstractAnalyzer;
@@ -213,11 +211,9 @@ public class QueryAnalyzer {
      * @param paths       需要返回的路径
      */
     private void getPathsIterate(ExecutionNode currentNode, List<List<ExecutionNode>> paths) {
+        onePath.add(currentNode);
         if (currentNode.leftNode == null && currentNode.rightNode == null) {
-            List<ExecutionNode> newPath = new ArrayList<>();
-            newPath.add(currentNode);
-            paths.add(newPath);
-            return;
+            paths.add(new ArrayList<ExecutionNode>(onePath));
         }
         if (currentNode.leftNode != null) {
             getPathsIterate(currentNode.leftNode, paths);
@@ -225,9 +221,7 @@ public class QueryAnalyzer {
         if (currentNode.rightNode != null) {
             getPathsIterate(currentNode.rightNode, paths);
         }
-        for (List<ExecutionNode> path : paths) {
-            path.add(currentNode);
-        }
+        onePath.remove(onePath.size() - 1);
     }
 
     /**
@@ -244,6 +238,9 @@ public class QueryAnalyzer {
             //获取查询树的所有路径
             List<List<ExecutionNode>> paths = new ArrayList<>();
             getPathsIterate(executionTree, paths);
+            for(int i = 0; i < paths.size(); i++){
+                Collections.reverse(paths.get(i));
+            }
             for (List<ExecutionNode> path : paths) {
                 constraintChains.add(extractConstraintChain(path));
             }

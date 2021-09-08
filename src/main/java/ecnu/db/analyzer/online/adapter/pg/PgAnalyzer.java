@@ -24,9 +24,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private static final HashMap<String, String> ALIAS = new HashMap<>();
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
-    private static final Pattern NUMERIC = Pattern.compile("\'[0-9]+\'::numeric");
-    private static final Pattern DATE = Pattern.compile("\'(([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6})|([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})|([0-9]{4}-[0-9]{2}-[0-9]{2}))\'::date");
-    private static final Pattern TIMESTAMP = Pattern.compile("\'(([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6})|([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})|([0-9]{4}-[0-9]{2}-[0-9]{2}))\'::timestamp without time zone");
+    private static final String numeric = "\'[0-9]+\'::numeric";
+    private static final String date = "\'(([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6})|([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})|([0-9]{4}-[0-9]{2}-[0-9]{2}))\'::date";
+    private static final String timestamp = "\'(([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6})|([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})|([0-9]{4}-[0-9]{2}-[0-9]{2}))\'::timestamp without time zone";
+    private static final Pattern REDUNDANCY = Pattern.compile(numeric+"|"+date+"|"+timestamp);
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
 
     public PgAnalyzer() {
@@ -73,8 +74,9 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 if (hasChildPlan(allKeys) && plansCount == 2) {
                     currentPath = Path + "['Plans'][1]";
                     String currentNodeType = rc.read(currentPath + "['Node Type']");
-                    if (currentNodeType.equals("Hash")) {
+                    while (!currentNodeType.equals("Seq Scan")) {
                         currentPath += "['Plans'][0]";
+                        currentNodeType = rc.read(currentPath + "['Node Type']");
                     }
                     ExecutionNode currentNode = getExecutionNode(queryPlan, currentPath);
                     node.rightNode = currentNode;
@@ -128,9 +130,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 return node;
             } else if (NodeType.equals("Nested Loop")) {
                 String joinInfo = rc.read(Path + "['Plans'][1]['Index Cond']");
-                String tableName = rc.read(Path + "['Plans'][1]['Relation Name']");
-                String joinInfoTrans = transIndexCondInfo(joinInfo, tableName);
-                joinInfo = "Index Cond: " + joinInfoTrans;
+                joinInfo = "Index Cond: " + joinInfo;
                 node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.join, rowCount, joinInfo);
                 return node;
             }
@@ -180,42 +180,24 @@ public class PgAnalyzer extends AbstractAnalyzer {
         }
         m.appendTail(filter);
         String result = filter.toString();
-        result = removeNumeric(result);
-        result = removeDate(result);
-        result = removeTimestamp(result);
+        result = removeRedundancy(result);
         return result;
     }
 
-    public String removeNumeric(String filterInfo){
-        Matcher m = NUMERIC.matcher(filterInfo);
+    public String transJoinInfo(String joinInfo) {
+        Matcher m = CanonicalColumnName.matcher(joinInfo);
         StringBuilder filter = new StringBuilder();
         while (m.find()) {
-            String[] numericName = m.group().split("::");
-            String num = numericName[0];
-            int length = num.length();
-            String numTrans = num.substring(1,length-1);
-            m.appendReplacement(filter, numTrans);
+            String[] tableNameAndColName = m.group().split("\\.");
+            m.appendReplacement(filter, ALIAS.get(tableNameAndColName[0]) + "." + tableNameAndColName[1]);
         }
         m.appendTail(filter);
-        return filter.toString();
+        String result = filter.toString();
+        return result;
     }
 
-    public String removeDate(String filterInfo){
-        Matcher m = DATE.matcher(filterInfo);
-        StringBuilder filter = new StringBuilder();
-        while (m.find()) {
-            String[] DateSym = m.group().split("::");
-            String Date = DateSym[0];
-            int length = Date.length();
-            String DateTrans = Date.substring(1,length-1);
-            m.appendReplacement(filter, DateTrans);
-        }
-        m.appendTail(filter);
-        return filter.toString();
-    }
-
-    public String removeTimestamp(String filterInfo){
-        Matcher m = TIMESTAMP.matcher(filterInfo);
+    public String removeRedundancy(String filterInfo){
+        Matcher m = REDUNDANCY.matcher(filterInfo);
         StringBuilder filter = new StringBuilder();
         while (m.find()) {
             String[] DateSym = m.group().split("::");
@@ -226,14 +208,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
         }
         m.appendTail(filter);
         return filter.toString();
-    }
-
-    public String transIndexCondInfo(String indexCond, String tableName) throws TouchstoneException {
-        Pattern COLNAME = Pattern.compile("[a-zA-Z]+_[a-zA-Z]+");
-        Matcher m = COLNAME.matcher(indexCond);
-        m.find();
-        String colName = m.group(0);
-        return m.replaceFirst(tableName + "." + colName);
     }
 
     @Override
@@ -241,6 +215,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (joinInfo.contains("other cond:")) {
             throw new TouchstoneException("join中包含其他条件,暂不支持");
         }
+        joinInfo = transJoinInfo(joinInfo);
         String[] result = new String[4];
         String leftTable, leftCol, rightTable, rightCol;
         Matcher eqCondition = JOIN_EQ_OPERATOR.matcher(joinInfo);
