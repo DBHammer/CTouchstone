@@ -3,7 +3,9 @@ package ecnu.db.analyzer.online;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.utils.exception.TouchstoneException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author wangqingshuai
@@ -11,6 +13,7 @@ import java.util.List;
 public abstract class AbstractAnalyzer {
 
     protected NodeTypeTool nodeTypeRef;
+    protected Map<String, String> aliasDic = new HashMap<>();
 
     /**
      * 查询树的解析
@@ -38,4 +41,9 @@ public abstract class AbstractAnalyzer {
      * @throws Exception 无法分析的Selection条件
      */
     public abstract AndNode analyzeSelectOperator(String operatorInfo) throws Exception;
+
+
+    public void setAliasDic(Map<String, String> aliasDic) {
+        this.aliasDic = aliasDic;
+    }
 }
