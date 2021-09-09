@@ -15,10 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
@@ -220,7 +217,7 @@ public class QueryAnalyzer {
         if (currentNode.rightNode != null) {
             getPathsIterate(currentNode.rightNode, paths, currentPath);
         }
-        currentPath.remove(currentPath.size() - 1);
+        currentPath.remove(0);
     }
 
     /**
@@ -236,7 +233,7 @@ public class QueryAnalyzer {
             ExecutionNode executionTree = abstractAnalyzer.getExecutionTree(queryPlan);
             //获取查询树的所有路径
             List<List<ExecutionNode>> paths = new ArrayList<>();
-            getPathsIterate(executionTree, paths, new ArrayList<>());
+            getPathsIterate(executionTree, paths, new LinkedList<>());
             for (List<ExecutionNode> path : paths) {
                 constraintChains.add(extractConstraintChain(path));
             }
