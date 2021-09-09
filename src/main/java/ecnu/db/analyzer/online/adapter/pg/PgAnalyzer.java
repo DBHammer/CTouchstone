@@ -74,9 +74,24 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 if (hasChildPlan(allKeys) && plansCount == 2) {
                     currentPath = Path + "['Plans'][1]";
                     String currentNodeType = rc.read(currentPath + "['Node Type']");
-                    while (!currentNodeType.equals("Seq Scan")) {
+                    if (currentNodeType.equals("Hash")) {
+                        /*currentPath += "['Plans'][0]";
+                        currentNodeType = rc.read(currentPath + "['Node Type']");
+                        Map<String, String> currentNodeAllKeys = getKeys(queryPlan, currentPath);
+                        if(hasChildPlan(currentNodeAllKeys)) {
+                            String currentLeftPath = currentPath + "['Plans'][0]";
+                            String currentLeftNodeType = rc.read(currentLeftPath + "['Node Type']");
+                            if (!(currentLeftNodeType.equals("Seq Scan") || currentLeftNodeType.equals("Hash Join"))) {
+                                currentPath += "['Plans'][0]";
+                                currentNodeType = rc.read(currentPath + "['Node Type']");
+                            }
+                        }*/
                         currentPath += "['Plans'][0]";
                         currentNodeType = rc.read(currentPath + "['Node Type']");
+                        while(!(currentNodeType.equals("Seq Scan") || currentNodeType.equals("Hash Join"))){
+                            currentPath += "['Plans'][0]";
+                            currentNodeType = rc.read(currentPath + "['Node Type']");
+                        }
                     }
                     ExecutionNode currentNode = getExecutionNode(queryPlan, currentPath);
                     node.rightNode = currentNode;
@@ -113,8 +128,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 node.setTableName(tableName);
                 return node;
             } else {
-                String tableName = rc.read(Path + "['Relation Name']");
+                String tableName = rc.read(Path + "['Schema']") + "." + rc.read(Path + "['Relation Name']");
+                ALIAS.put(rc.read(Path + "['Alias']"), tableName);
                 node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.scan, rowCount, "table:" + tableName);
+                node.setTableName(tableName);
                 return node;
             }
         } else if (NodeTypeRef.isJoinNode(NodeType)) {
@@ -186,13 +203,13 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
     public String transJoinInfo(String joinInfo) {
         Matcher m = CanonicalColumnName.matcher(joinInfo);
-        StringBuilder filter = new StringBuilder();
+        StringBuilder join = new StringBuilder();
         while (m.find()) {
             String[] tableNameAndColName = m.group().split("\\.");
-            m.appendReplacement(filter, ALIAS.get(tableNameAndColName[0]) + "." + tableNameAndColName[1]);
+            m.appendReplacement(join, ALIAS.get(tableNameAndColName[0]) + "." + tableNameAndColName[1]);
         }
-        m.appendTail(filter);
-        String result = filter.toString();
+        m.appendTail(join);
+        String result = join.toString();
         return result;
     }
 
@@ -215,6 +232,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (joinInfo.contains("other cond:")) {
             throw new TouchstoneException("join中包含其他条件,暂不支持");
         }
+        System.out.println(joinInfo);
         joinInfo = transJoinInfo(joinInfo);
         String[] result = new String[4];
         String leftTable, leftCol, rightTable, rightCol;
