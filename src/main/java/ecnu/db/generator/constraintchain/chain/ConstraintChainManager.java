@@ -41,7 +41,7 @@ public class ConstraintChainManager {
         CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
         new File(resultDir + "/pic/").mkdir();
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
-            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".gv",
+            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".dot",
                     presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()));
         }
     }

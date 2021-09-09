@@ -62,10 +62,10 @@ public class QueryReader {
                 }
             }
         }
-        List<SQLStatement> statementList = SQLUtils.parseStatements(fileContents.toString(), dbType, false);
+        List<SQLStatement> statementList = SQLUtils.parseStatements(fileContents.toString(), dbType, true);
         List<String> sqls = new ArrayList<>();
         for (SQLStatement sqlStatement : statementList) {
-            String sql = SQLUtils.format(sqlStatement.toString(), dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION);
+            String sql = SQLUtils.format(sqlStatement.toString(), dbType);
             sql = sql.replace(System.lineSeparator(), " ");
             sql = sql.replace('\t', ' ');
             sql = sql.replaceAll(" +", " ");

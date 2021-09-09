@@ -93,9 +93,18 @@ logical_expr ::=
                                                                 }
                                                                 RESULT = node;
                                                             :}
+
         ;
 logical_arguments ::=
-        bool_expr:e1 AND:and bool_expr:e2                   {:  RESULT = new ArrayList<>(Arrays.asList(e1, e2));  :}
+        bool_expr:e1 AND:and logical_arguments:exprs                 {:
+                                                                         exprs.add(e1);
+                                                                         RESULT =  exprs;
+                                                                     :}
+        | bool_expr:e2                                               {:
+                                                                         List<BoolExprNode> nodes = new ArrayList<>();
+                                                                         nodes.add(e2);
+                                                                         RESULT = nodes;
+                                                                      :}
         ;
 
 
@@ -116,6 +125,23 @@ uni_compare_expr ::=
                                                                                                     }
                                                                                                     RESULT = operation;
                                                                                                 :}
+        | LPAREN arithmetic_expr:e1 uni_compare_operator:op arithmetic_expr:e2 RPAREN           {:
+                                                                                                    if (e2.getType() == ArithmeticNodeType.CONSTANT) {
+                                                                                                        Parameter parameter = new Parameter(parameterId++, e1.toString(), ((NumericNode) e2).toString());
+                                                                                                        if (e1.getType() == ArithmeticNodeType.COLUMN) {
+                                                                                                            String canonicalColumnName = ((ColumnNode) e1).getCanonicalColumnName();
+                                                                                                            RESULT = new UniVarFilterOperation(canonicalColumnName, op, Collections.singletonList(parameter));
+                                                                                                        } else {
+                                                                                                            RESULT = new MultiVarFilterOperation(op, e1, Collections.singletonList(parameter));
+                                                                                                        }
+                                                                                                    } else {
+                                                                                                        AbstractFilterOperation operation;
+                                                                                                        ArithmeticNode e = ArithmeticNodeFactory.create(ArithmeticNodeType.MINUS);
+                                                                                                        e.setLeftNode(e1);
+                                                                                                        e.setRightNode(e2);
+                                                                                                        RESULT = new MultiVarFilterOperation(op, e, Collections.singletonList(new Parameter(parameterId++, e.toString(), "0")));
+                                                                                                    }
+                                                                                                :}
         ;
 uni_compare_operator ::=
         LT:lt                                                    {:  RESULT = lt;  :}
@@ -126,9 +152,7 @@ uni_compare_operator ::=
         | NE:ne                                                  {:  RESULT = ne;  :}
         ;
 uni_compare_constant ::=
-        INTEGER:num                                              {:  RESULT = num.toString();  :}
-        | FLOAT:num                                              {:  RESULT = num.toString();  :}
-        | DATE:date                                              {:  RESULT = date;  :}
+        DATE:date                                                {:  RESULT = date;  :}
         | STRING:str                                             {:  RESULT = str; :}
         ;
 multi_compare_expr ::=

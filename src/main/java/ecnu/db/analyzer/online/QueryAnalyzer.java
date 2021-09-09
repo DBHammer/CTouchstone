@@ -9,31 +9,26 @@ import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.exception.TouchstoneException;
-import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
 import ecnu.db.utils.exception.analyze.UnsupportedSelect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static ecnu.db.utils.CommonUtils.*;
+import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
+import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 
 public class QueryAnalyzer {
 
     protected static final Logger logger = LoggerFactory.getLogger(QueryAnalyzer.class);
-    private static final Pattern CANONICAL_TBL_NAME = Pattern.compile("[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+");
     private final AbstractAnalyzer abstractAnalyzer;
     private final DbConnector dbConnector;
     protected String defaultDatabase;
     protected double skipNodeThreshold = 0.01;
-    private Map<String, String> aliasDic = new HashMap<>();
+
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector, String defaultDatabase) {
         this.abstractAnalyzer = abstractAnalyzer;
@@ -46,9 +41,8 @@ public class QueryAnalyzer {
     }
 
     public void setAliasDic(Map<String, String> aliasDic) {
-        this.aliasDic = aliasDic;
+        abstractAnalyzer.setAliasDic(aliasDic);
     }
-
 
 
     /**
@@ -212,22 +206,18 @@ public class QueryAnalyzer {
      * @param currentNode 需要处理的查询树节点
      * @param paths       需要返回的路径
      */
-    private void getPathsIterate(ExecutionNode currentNode, List<List<ExecutionNode>> paths) {
+    private void getPathsIterate(ExecutionNode currentNode, List<List<ExecutionNode>> paths, List<ExecutionNode> currentPath) {
+        currentPath.add(0, currentNode);
         if (currentNode.leftNode == null && currentNode.rightNode == null) {
-            List<ExecutionNode> newPath = new ArrayList<>();
-            newPath.add(currentNode);
-            paths.add(newPath);
-            return;
+            paths.add(new ArrayList<>(currentPath));
         }
         if (currentNode.leftNode != null) {
-            getPathsIterate(currentNode.leftNode, paths);
+            getPathsIterate(currentNode.leftNode, paths, currentPath);
         }
         if (currentNode.rightNode != null) {
-            getPathsIterate(currentNode.rightNode, paths);
+            getPathsIterate(currentNode.rightNode, paths, currentPath);
         }
-        for (List<ExecutionNode> path : paths) {
-            path.add(currentNode);
-        }
+        currentPath.remove(0);
     }
 
     /**
@@ -243,7 +233,7 @@ public class QueryAnalyzer {
             ExecutionNode executionTree = abstractAnalyzer.getExecutionTree(queryPlan);
             //获取查询树的所有路径
             List<List<ExecutionNode>> paths = new ArrayList<>();
-            getPathsIterate(executionTree, paths);
+            getPathsIterate(executionTree, paths, new LinkedList<>());
             for (List<ExecutionNode> path : paths) {
                 constraintChains.add(extractConstraintChain(path));
             }

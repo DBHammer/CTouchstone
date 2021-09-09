@@ -134,8 +134,8 @@ public class TaskConfigurator implements Callable<Integer> {
             case POSTGRESQL -> {
                 dbConnector = new PgConnector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new PgAnalyzer();
-                queryWriter.setDbType(DbType.postgresql);
-                queryReader.setDbType(DbType.postgresql);
+                queryWriter.setDbType(DbType.mysql);
+                queryReader.setDbType(DbType.mysql);
             }
             default -> throw new TouchstoneException("不支持的数据库类型");
         }

@@ -40,6 +40,8 @@ ecnu.db.utils.exception.TouchstoneException
 %cup
 
 /* tokens */
+AND=(and|AND)
+OR=(or|OR)
 DIGIT=[0-9]
 STRING=[A-Za-z0-9$_]+
 WHITE_SPACE_CHAR=[\n\r\ \t\b\012]
@@ -47,15 +49,15 @@ SCHEMA_NAME_CHAR=[A-Za-z0-9$_]
 FLOAT=(0|([1-9]({DIGIT}*)))\.({DIGIT}*)
 INTEGER=(0|[1-9]({DIGIT}*))
 CANONICAL_COL_NAME=({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+
-DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT}{6})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2} {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}))
+DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT}{6})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}))
 %%
 
 <YYINITIAL> {
   /* logical operators */
-  "and" {
+  {AND} {
     return symbol(AND);
   }
-  "or" {
+  {OR} {
     return symbol(OR);
   }
 
