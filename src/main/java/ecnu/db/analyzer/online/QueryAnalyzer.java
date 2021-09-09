@@ -1,13 +1,11 @@
 package ecnu.db.analyzer.online;
 
 import ecnu.db.dbconnector.DbConnector;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
+import ecnu.db.generator.constraintchain.chain.*;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
+import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.UnsupportedSelect;
 import org.slf4j.Logger;
@@ -26,13 +24,13 @@ public class QueryAnalyzer {
     protected static final Logger logger = LoggerFactory.getLogger(QueryAnalyzer.class);
     private final AbstractAnalyzer abstractAnalyzer;
     private final DbConnector dbConnector;
-    protected String defaultDatabase;
     protected double skipNodeThreshold = 0.01;
 
+    private static final int SKIP_CHAIN = -2;
 
-    public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector, String defaultDatabase) {
+
+    public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector) {
         this.abstractAnalyzer = abstractAnalyzer;
-        this.defaultDatabase = defaultDatabase;
         this.dbConnector = dbConnector;
     }
 
@@ -128,9 +126,11 @@ public class QueryAnalyzer {
         }
         //根据主外键分别设置约束链输出信息
         if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
-            if (node.getJoinTag() < 0) {
-                node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
+            if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount) {
+                node.setJoinTag(-1);
+                return SKIP_CHAIN;
             }
+            node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
             ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(node.getJoinTag(), localCol.split(","));
             constraintChain.addNode(pkJoinNode);
             //设置主键
@@ -138,7 +138,8 @@ public class QueryAnalyzer {
             return -1; // 主键的情况下停止继续遍历
         } else {
             if (node.getJoinTag() < 0) {
-                node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
+                logger.info("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
+                return node.getOutputRows();
             }
             BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
@@ -183,6 +184,10 @@ public class QueryAnalyzer {
             node = path.get(i);
             try {
                 lastNodeLineCount = analyzeNode(node, constraintChain, lastNodeLineCount);
+                if (lastNodeLineCount == SKIP_CHAIN || constraintChain.getNodes().stream()
+                        .anyMatch(p -> p.getConstraintChainNodeType() != ConstraintChainNodeType.FILTER)) {
+                    return null;
+                }
             } catch (TouchstoneException e) {
                 // 小于设置的阈值以后略去后续的节点
                 if (node.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(node.getTableName()) < skipNodeThreshold) {
@@ -234,10 +239,17 @@ public class QueryAnalyzer {
             //获取查询树的所有路径
             List<List<ExecutionNode>> paths = new ArrayList<>();
             getPathsIterate(executionTree, paths, new LinkedList<>());
-            for (List<ExecutionNode> path : paths) {
-                constraintChains.add(extractConstraintChain(path));
-            }
-        } catch (TouchstoneException | SQLException e) {
+            CommonUtils.setForkJoinParallelism(paths.size());
+            // 并发处理约束链
+            constraintChains = paths.parallelStream().map(path -> {
+                try {
+                    return extractConstraintChain(path);
+                } catch (TouchstoneException | SQLException e) {
+                    logger.error(path.toString(), e);
+                    return null;
+                }
+            }).filter(Objects::nonNull).toList();
+        } catch (TouchstoneException e) {
             if (queryPlan != null && !queryPlan.isEmpty()) {
                 String queryPlanContent = queryPlan.stream().map(plan -> String.join("\t", plan))
                         .collect(Collectors.joining(System.lineSeparator()));
@@ -255,7 +267,7 @@ public class QueryAnalyzer {
      * @return 分析查询的逻辑树
      * @throws TouchstoneException 分析失败
      */
-    private AndNode analyzeSelectInfo(String operatorInfo) throws TouchstoneException {
+    private synchronized AndNode analyzeSelectInfo(String operatorInfo) throws TouchstoneException {
         try {
             return abstractAnalyzer.analyzeSelectOperator(operatorInfo);
         } catch (Exception e) {

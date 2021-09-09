@@ -21,13 +21,12 @@ public abstract class DbConnector {
     private final Logger logger = LoggerFactory.getLogger(DbConnector.class);
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
     private final int[] sqlInfoColumns;
-    private final DatabaseMetaData databaseMetaData;
-    // 数据库连接
-    protected Statement stmt;
+    private final String url;
+    private final String user;
+    private final String pass;
 
     protected DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig)
             throws TouchstoneException {
-        String url;
         if (config.getDatabaseName() != null) {
             url = String.format("jdbc:%s://%s:%s/%s?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(),
                     config.getDatabaseName(), databaseConnectionConfig);
@@ -36,15 +35,12 @@ public abstract class DbConnector {
                     databaseConnectionConfig);
         }
         // 数据库的用户名与密码
-        String user = config.getDatabaseUser();
-        String pass = config.getDatabasePwd();
-        try {
-            Connection conn = DriverManager.getConnection(url, user, pass);
-            stmt = conn.createStatement();
+        user = config.getDatabaseUser();
+        pass = config.getDatabasePwd();
+        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
             for (String command : preExecutionCommands()) {
                 stmt.execute(command);
             }
-            databaseMetaData = conn.getMetaData();
         } catch (SQLException e) {
             e.printStackTrace();
             throw new TouchstoneException(String.format("无法建立数据库连接,连接信息为: '%s'", url));
@@ -66,61 +62,73 @@ public abstract class DbConnector {
     public List<String> getColumnMetadata(String canonicalTableName) throws SQLException, TouchstoneException {
         String[] schemaAndTable = canonicalTableName.split("\\.");
         List<String> columnNames = new ArrayList<>();
-        ResultSet rs = databaseMetaData.getColumns(null, schemaAndTable[0], schemaAndTable[1], null);
-        while (rs.next()) {
-            String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
-            columnNames.add(canonicalColumnName);
-            ColumnManager.getInstance().addColumn(canonicalColumnName,
-                    new Column(ColumnType.getColumnType(rs.getInt("DATA_TYPE"))));
+        try (Connection conn = DriverManager.getConnection(url, user, pass)) {
+            DatabaseMetaData databaseMetaData = conn.getMetaData();
+            ResultSet rs = databaseMetaData.getColumns(null, schemaAndTable[0], schemaAndTable[1], null);
+            while (rs.next()) {
+                String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
+                columnNames.add(canonicalColumnName);
+                ColumnManager.getInstance().addColumn(canonicalColumnName,
+                        new Column(ColumnType.getColumnType(rs.getInt("DATA_TYPE"))));
+            }
         }
         return columnNames;
     }
 
     public List<String> getPrimaryKeyList(String canonicalTableName) throws SQLException {
         String[] schemaAndTable = canonicalTableName.split("\\.");
-        ResultSet rs = databaseMetaData.getPrimaryKeys(schemaAndTable[0], null, schemaAndTable[1]);
         List<String> keys = new ArrayList<>();
-        while (rs.next()) {
-            keys.add(canonicalTableName + "." + rs.getString("COLUMN_NAME").toLowerCase());
+        try (Connection conn = DriverManager.getConnection(url, user, pass)) {
+            DatabaseMetaData databaseMetaData = conn.getMetaData();
+            ResultSet rs = databaseMetaData.getPrimaryKeys(schemaAndTable[0], null, schemaAndTable[1]);
+            while (rs.next()) {
+                keys.add(canonicalTableName + "." + rs.getString("COLUMN_NAME").toLowerCase());
+            }
         }
         return keys;
     }
 
     public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames)
             throws SQLException, TouchstoneException {
-        ResultSet rs = stmt.executeQuery(String.format("select %s from %s", getColumnDistributionSql(canonicalColumnNames), canonicalTableName));
-        rs.next();
-        String[] infos = new String[rs.getMetaData().getColumnCount()];
-        for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-            try {
-                infos[i - 1] = rs.getString(i).trim().toLowerCase();
-            } catch (NullPointerException e) {
-                logger.error("所查列数据为空");
-                infos[i - 1] = "0";
+        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+            ResultSet rs = stmt.executeQuery(String.format("select %s from %s", getColumnDistributionSql(canonicalColumnNames), canonicalTableName));
+            rs.next();
+            String[] infos = new String[rs.getMetaData().getColumnCount()];
+            for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                try {
+                    infos[i - 1] = rs.getString(i).trim().toLowerCase();
+                } catch (NullPointerException e) {
+                    logger.error("所查列数据为空");
+                    infos[i - 1] = "0";
+                }
             }
+            return infos;
         }
-        return infos;
     }
 
     public List<String[]> explainQuery(String sql) throws SQLException {
-        ResultSet rs = stmt.executeQuery(String.format(getExplainFormat(), sql));
-        ArrayList<String[]> result = new ArrayList<>();
-        while (rs.next()) {
-            String[] infos = new String[sqlInfoColumns.length];
-            for (int i = 0; i < sqlInfoColumns.length; i++) {
-                infos[i] = rs.getString(sqlInfoColumns[i]);
+        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+            ResultSet rs = stmt.executeQuery(String.format(getExplainFormat(), sql));
+            ArrayList<String[]> result = new ArrayList<>();
+            while (rs.next()) {
+                String[] infos = new String[sqlInfoColumns.length];
+                for (int i = 0; i < sqlInfoColumns.length; i++) {
+                    infos[i] = rs.getString(sqlInfoColumns[i]);
+                }
+                result.add(formatQueryPlan(infos));
             }
-            result.add(formatQueryPlan(infos));
+            return result;
         }
-        return result;
     }
 
     public int getMultiColNdv(String canonicalTableName, String columns) throws SQLException {
-        ResultSet rs = stmt.executeQuery(String.format("select count(distinct %s) as cnt from %s", columns, canonicalTableName));
-        rs.next();
-        int result = rs.getInt("cnt");
-        multiColNdvMap.put(String.format("%s.%s", canonicalTableName, columns), result);
-        return result;
+        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+            ResultSet rs = stmt.executeQuery(String.format("select count(distinct %s) as cnt from %s", columns, canonicalTableName));
+            rs.next();
+            int result = rs.getInt("cnt");
+            multiColNdvMap.put(String.format("%s.%s", canonicalTableName, columns), result);
+            return result;
+        }
     }
 
     public Map<String, Integer> getMultiColNdvMap() {
@@ -128,12 +136,14 @@ public abstract class DbConnector {
     }
 
     public int getTableSize(String canonicalTableName) throws SQLException {
-        String countQuery = String.format("select count(*) as cnt from %s", canonicalTableName);
-        ResultSet rs = stmt.executeQuery(countQuery);
-        if (rs.next()) {
-            return rs.getInt("cnt");
+        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+            String countQuery = String.format("select count(*) as cnt from %s", canonicalTableName);
+            ResultSet rs = stmt.executeQuery(countQuery);
+            if (rs.next()) {
+                return rs.getInt("cnt");
+            }
+            throw new SQLException(String.format("table'%s'的size为0", canonicalTableName));
         }
-        throw new SQLException(String.format("table'%s'的size为0", canonicalTableName));
     }
 
     /**
@@ -143,7 +153,7 @@ public abstract class DbConnector {
      * @return SQL
      * @throws TouchstoneException 获取失败
      */
-    public String getColumnDistributionSql(List<String> canonicalColumnNames) throws TouchstoneException {
+    private String getColumnDistributionSql(List<String> canonicalColumnNames) throws TouchstoneException {
         StringBuilder sql = new StringBuilder();
         for (String canonicalColumnName : canonicalColumnNames) {
             switch (ColumnManager.getInstance().getColumnType(canonicalColumnName)) {

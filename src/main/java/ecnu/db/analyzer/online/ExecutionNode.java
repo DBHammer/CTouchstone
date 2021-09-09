@@ -1,6 +1,8 @@
 package ecnu.db.analyzer.online;
 
 
+import java.util.concurrent.CountDownLatch;
+
 /**
  * @author wangqingshuai
  */
@@ -25,6 +27,8 @@ public class ExecutionNode {
      * 指向左节点
      */
     public ExecutionNode leftNode;
+
+    private CountDownLatch waitSetJoinTag = new CountDownLatch(1);
 
     public String getTableName() {
         return tableName;
@@ -67,10 +71,16 @@ public class ExecutionNode {
      * @return 当前表最新的join tag
      */
     public long getJoinTag() {
+        try {
+            waitSetJoinTag.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return joinTag;
     }
 
     public void setJoinTag(long joinTag) {
+        waitSetJoinTag.countDown();
         this.joinTag = joinTag;
     }
 
