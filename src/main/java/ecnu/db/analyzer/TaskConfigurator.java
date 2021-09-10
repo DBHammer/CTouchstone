@@ -139,8 +139,7 @@ public class TaskConfigurator implements Callable<Integer> {
             }
             default -> throw new TouchstoneException("不支持的数据库类型");
         }
-        String databaseName = config.getDatabaseConnectorConfig().getDatabaseName();
-        QueryAnalyzer analyzer = new QueryAnalyzer(abstractAnalyzer, dbConnector, databaseName);
+        QueryAnalyzer analyzer = new QueryAnalyzer(abstractAnalyzer, dbConnector);
         extract(dbConnector, analyzer, queryReader, queryWriter, config.getSampleSize());
         return 0;
     }

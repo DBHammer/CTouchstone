@@ -194,9 +194,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0]) + "." + tableNameAndColName[1]);
         }
         m.appendTail(filter);
-        String result = filter.toString();
-        result = removeRedundancy(result);
-        return result;
+        return removeRedundancy(filter.toString());
     }
 
     public String transJoinInfo(String joinInfo) {
@@ -207,8 +205,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             m.appendReplacement(join, aliasDic.get(tableNameAndColName[0]) + "." + tableNameAndColName[1]);
         }
         m.appendTail(join);
-        String result = join.toString();
-        return result;
+        return join.toString();
     }
 
     public String removeRedundancy(String filterInfo){
@@ -230,7 +227,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (joinInfo.contains("other cond:")) {
             throw new TouchstoneException("join中包含其他条件,暂不支持");
         }
-        System.out.println(joinInfo);
         joinInfo = transJoinInfo(joinInfo);
         String[] result = new String[4];
         String leftTable, leftCol, rightTable, rightCol;
