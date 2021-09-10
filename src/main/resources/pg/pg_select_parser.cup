@@ -160,7 +160,7 @@ multi_compare_expr ::=
         | like_compare_expr:e                                    {:  RESULT=e;  :}
         ;
 in_compare_expr ::=
-        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
+        LPAREN CANONICAL_COLUMN_NAME:col in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
                                                                                     List<Parameter> parameterList = new ArrayList<>();
                                                                                     for (String argument: arguments) {
                                                                                         Parameter parameter = new Parameter(parameterId++, col, argument);

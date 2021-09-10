@@ -37,7 +37,7 @@ class PgSelectOperatorInfoParserTest {
                     "and(like(db1.table.col3, {id:0, data:STRING}))",
             "(db1.table.col3 IS NULL);" +
                     "and(isnull(db1.table.col3))",
-            "((db1.table.col3) = ANY ('{\"dasd\", dasd}'));" +
+            "(db1.table.col3 = ANY ('{\"dasd\", dasd}'));" +
                     " and(in(db1.table.col3, {id:0, data:dasd}, {id:1, data:dasd}))"
     })
     void testPgParse(String input, String output) throws Exception {

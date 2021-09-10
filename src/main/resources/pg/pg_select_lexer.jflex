@@ -140,6 +140,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
 
   /* type */
   "::text" {}
+  "::bpchar[]" {}
   "::bpchar" {}
   "::integer[]" {}
   "::date" {}
