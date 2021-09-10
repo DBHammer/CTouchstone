@@ -47,10 +47,6 @@ public class ConstraintChain {
                 .flatMap(Collection::stream).toList();
     }
 
-    public boolean canSkipChain() {
-        return nodes.isEmpty() || nodes.stream().anyMatch(p -> p.getConstraintChainNodeType() != ConstraintChainNodeType.FILTER);
-    }
-
     @Override
     public String toString() {
         return "{tableName:" + tableName + ",nodes:" + nodes + "}";

@@ -187,7 +187,7 @@ public class QueryAnalyzer {
             node = path.get(i);
             try {
                 lastNodeLineCount = analyzeNode(node, constraintChain, lastNodeLineCount);
-                if (lastNodeLineCount == SKIP_CHAIN && constraintChain.canSkipChain()) {
+                if (lastNodeLineCount == SKIP_CHAIN && constraintChain.getNodes().isEmpty()) {
                     return null;
                 }
             } catch (TouchstoneException e) {
