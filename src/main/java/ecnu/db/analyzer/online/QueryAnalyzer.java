@@ -1,6 +1,5 @@
 package ecnu.db.analyzer.online;
 
-import com.fasterxml.jackson.annotation.JsonSetter;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
@@ -188,7 +187,7 @@ public class QueryAnalyzer {
             node = path.get(i);
             try {
                 lastNodeLineCount = analyzeNode(node, constraintChain, lastNodeLineCount);
-                if (lastNodeLineCount == SKIP_CHAIN || constraintChain.canSkipChain()) {
+                if (lastNodeLineCount == SKIP_CHAIN && constraintChain.canSkipChain()) {
                     return null;
                 }
             } catch (TouchstoneException e) {
