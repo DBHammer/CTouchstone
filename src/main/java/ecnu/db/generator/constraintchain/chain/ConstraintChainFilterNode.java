@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.chain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
@@ -29,6 +30,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         return root.pushDownProbability(probability);
     }
 
+    @JsonIgnore
     public List<Parameter> getParameters() {
         return root.getParameters();
     }
