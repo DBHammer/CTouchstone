@@ -27,6 +27,10 @@ public class ExecutionNode {
      * 指向左节点
      */
     public ExecutionNode leftNode;
+    /**
+     * 是否为新生成的节点
+     */
+    public boolean isAdd = false;
 
     private CountDownLatch waitSetJoinTag = new CountDownLatch(1);
 
@@ -114,6 +118,14 @@ public class ExecutionNode {
         /**
          * join 节点，同时具有左右子节点，只能作为非叶子节点
          */
-        join
+        join,
+        /**
+         * outerjoin 节点，同时具有左右子节点，只能作为非叶子节点
+         */
+        outerJoin,
+        /**
+         * antijoin 节点，同时具有左右子节点，只能作为非叶子节点
+         */
+        antiJoin
     }
 }

@@ -66,41 +66,48 @@ public class PgAnalyzer extends AbstractAnalyzer {
             Map.Entry<String, ExecutionNode> pair = stack.pop();
             Path = new StringBuilder(pair.getKey());
             node = pair.getValue();
-            Map<String, String> allKeys = getKeys(queryPlan, Path.toString());
-            if (hasChildPlan(allKeys)) {
-                int plansCount = rc.read(Path + "['Plans'].length()");
-                if (hasChildPlan(allKeys) && plansCount == 2) {
-                    currentPath = Path + "['Plans'][1]";
-                    String currentNodeType = rc.read(currentPath + "['Node Type']");
-                    if (currentNodeType.equals("Hash")) {
-                        /*currentPath += "['Plans'][0]";
-                        currentNodeType = rc.read(currentPath + "['Node Type']");
-                        Map<String, String> currentNodeAllKeys = getKeys(queryPlan, currentPath);
-                        if(hasChildPlan(currentNodeAllKeys)) {
-                            String currentLeftPath = currentPath + "['Plans'][0]";
-                            String currentLeftNodeType = rc.read(currentLeftPath + "['Node Type']");
-                            if (!(currentLeftNodeType.equals("Seq Scan") || currentLeftNodeType.equals("Hash Join"))) {
+            if(node.isAdd == false) {
+                Map<String, String> allKeys = getKeys(queryPlan, Path.toString());
+                if (hasChildPlan(allKeys)) {
+                    int plansCount = rc.read(Path + "['Plans'].length()");
+                    if (hasChildPlan(allKeys) && plansCount == 2) {
+                        currentPath = Path + "['Plans'][1]";
+                        String currentNodeType = rc.read(currentPath + "['Node Type']");
+                        if (currentNodeType.equals("Hash")) {
+                            currentPath += "['Plans'][0]";
+                            currentNodeType = rc.read(currentPath + "['Node Type']");
+                            while (!(currentNodeType.equals("Seq Scan") || currentNodeType.equals("Hash Join") || currentNodeType.equals("Nested Loop"))) {
                                 currentPath += "['Plans'][0]";
                                 currentNodeType = rc.read(currentPath + "['Node Type']");
                             }
-                        }*/
-                        currentPath += "['Plans'][0]";
-                        currentNodeType = rc.read(currentPath + "['Node Type']");
-                        while(!(currentNodeType.equals("Seq Scan") || currentNodeType.equals("Hash Join"))){
-                            currentPath += "['Plans'][0]";
-                            currentNodeType = rc.read(currentPath + "['Node Type']");
                         }
+                        ExecutionNode currentNode = getExecutionNode(queryPlan, currentPath);
+                        node.rightNode = currentNode;
+                        stack.push(new AbstractMap.SimpleEntry<>(currentPath, currentNode));
+                        plansCount--;
                     }
-                    ExecutionNode currentNode = getExecutionNode(queryPlan, currentPath);
-                    node.rightNode = currentNode;
-                    stack.push(new AbstractMap.SimpleEntry<>(currentPath, currentNode));
-                    plansCount--;
-                }
-                if (hasChildPlan(allKeys) && plansCount == 1) {
-                    currentPath = Path + "['Plans'][0]";
-                    ExecutionNode currentNode = getExecutionNode(queryPlan, currentPath);
-                    node.leftNode = currentNode;
-                    stack.push(new AbstractMap.SimpleEntry<>(currentPath, currentNode));
+                    if (hasChildPlan(allKeys) && plansCount == 1) {
+                        currentPath = Path + "['Plans'][0]";
+                        String rightPath = Path + "['Plans'][1]";
+                        if (hasFilterInfo(allKeys)) {
+                            String filterInfo = rc.read(Path + "['Filter']");
+                            if (filterInfo.equals("(NOT (hashed SubPlan 1))")) {
+                                String tableName = rc.read(Path + "['Schema']") + "." + rc.read(Path + "['Relation Name']");
+                                aliasDic.put(rc.read(Path + "['Alias']"), tableName);
+                                int outPutCount = rc.read(Path + "['Actual Rows']");
+                                int removedCount = rc.read(Path + "['Rows Removed by Filter']");
+                                int rowCount = outPutCount + removedCount;
+                                ExecutionNode currentRightNode = new ExecutionNode(rightPath, ExecutionNode.ExecutionNodeType.scan, rowCount, "table:" + tableName);
+                                currentRightNode.setTableName(tableName);
+                                currentRightNode.isAdd = true;
+                                node.rightNode = currentRightNode;
+                                stack.push(new AbstractMap.SimpleEntry<>(rightPath, currentRightNode));
+                            }
+                        }
+                        ExecutionNode currentNode = getExecutionNode(queryPlan, currentPath);
+                        node.leftNode = currentNode;
+                        stack.push(new AbstractMap.SimpleEntry<>(currentPath, currentNode));
+                    }
                 }
             }
         }
@@ -120,11 +127,38 @@ public class PgAnalyzer extends AbstractAnalyzer {
             Map<String, String> allKeys = getKeys(queryPlan, Path);
             if (hasFilterInfo(allKeys)) {
                 String filterInfo = rc.read(Path + "['Filter']");
-                String tableName = rc.read(Path + "['Schema']") + "." + rc.read(Path + "['Relation Name']");
-                aliasDic.put(rc.read(Path + "['Alias']"), tableName);
-                node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.filter, rowCount, transFilterInfo(filterInfo));
-                node.setTableName(tableName);
-                return node;
+                if(filterInfo.equals("(NOT (hashed SubPlan 1))")){
+                    String leftNodePath = Path + "['Plans'][0]";
+                    List<String> leftNodeResult = rc.read(leftNodePath + "['Output']");
+                    List<String> outPut = rc.read(Path + "['Output']");
+                    String antiJoinKey1 = "";
+                    String antiJoinKey2 = "";
+                    String antiJoinTable1 = "";
+                    String antiJoinTable2 = "";
+                    String joinInfo = "";
+                    for (String s : leftNodeResult) {
+                        antiJoinKey1 = s.split("\\.")[1];
+                        antiJoinTable1 = s.split("\\.")[0];
+                        String joinColumn1 =antiJoinKey1.split("_")[1];
+                        for (String value : outPut) {
+                            antiJoinKey2 = value.split("\\.")[1];
+                            antiJoinTable2 = value.split("\\.")[0];
+                            String joinColumn2 = antiJoinKey2.split("_")[1];
+                            if (joinColumn1.equals(joinColumn2)) {
+                                joinInfo = antiJoinTable2+"." + antiJoinKey2 + " = " + antiJoinTable1+"."+antiJoinKey1;
+                            }
+                        }
+                    }
+                    joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
+                    node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.antiJoin, rowCount, joinInfo);
+                    return node;
+                }else {
+                    String tableName = rc.read(Path + "['Schema']") + "." + rc.read(Path + "['Relation Name']");
+                    aliasDic.put(rc.read(Path + "['Alias']"), tableName);
+                    node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.filter, rowCount, transFilterInfo(filterInfo));
+                    node.setTableName(tableName);
+                    return node;
+                }
             } else {
                 String tableName = rc.read(Path + "['Schema']") + "." + rc.read(Path + "['Relation Name']");
                 aliasDic.put(rc.read(Path + "['Alias']"), tableName);

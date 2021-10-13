@@ -95,7 +95,7 @@ public class QueryAnalyzer {
      */
     private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
         return switch (node.getType()) {
-            case join -> analyzeJoinNode(node, constraintChain, lastNodeLineCount);
+            case join, outerJoin, antiJoin -> analyzeJoinNode(node, constraintChain, lastNodeLineCount);
             case filter -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
             case scan -> throw new TouchstoneException(String.format("中间节点'%s'不为scan", node.getId()));
         };
@@ -147,6 +147,9 @@ public class QueryAnalyzer {
             BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, node.getJoinTag(), probability);
+            if(node.getType() == ExecutionNode.ExecutionNodeType.antiJoin){
+                fkJoinNode.setAntiJoin();
+            }
             constraintChain.addNode(fkJoinNode);
             return node.getOutputRows();
         }

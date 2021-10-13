@@ -111,12 +111,21 @@ public class ConstraintChain {
                 }
                 case FK_JOIN -> {
                     ConstraintChainFkJoinNode fkJoinNode = ((ConstraintChainFkJoinNode) node);
+                    String joinLabel = "";
+                    String labelPosition = "";
+                    if(fkJoinNode.getAntiJoin()){
+                        joinLabel = "label=\"anti join\";";
+                        labelPosition = "labelloc=b;";
+                    }else{
+                        joinLabel = "label=\"eq join\";";
+                        labelPosition = "labelloc=b;";
+                    }
                     String pkCols = fkJoinNode.getRefCols().split("\\.")[2];
                     currentNodeInfo = String.format("\"Fk%s%d\"", pkCols, fkJoinNode.getPkTag());
                     String subGraphTag = String.format("cluster%s%d", pkCols, fkJoinNode.getPkTag());
                     currentProbability = fkJoinNode.getProbability().doubleValue();
                     subGraphHashMap.putIfAbsent(subGraphTag, new SubGraph(subGraphTag));
-                    subGraphHashMap.get(subGraphTag).fkInfo = currentNodeInfo + conditionColor;
+                    subGraphHashMap.get(subGraphTag).fkInfo = currentNodeInfo + conditionColor + joinLabel + labelPosition;
                 }
                 case PK_JOIN -> {
                     ConstraintChainPkJoinNode pkJoinNode = ((ConstraintChainPkJoinNode) node);

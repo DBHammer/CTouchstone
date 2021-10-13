@@ -10,6 +10,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String localCols;
     private long pkTag;
     private BigDecimal probability;
+    private boolean antiOrNot = false;
 
 
     public ConstraintChainFkJoinNode() {
@@ -65,4 +66,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     public void setRefCols(String refCols) {
         this.refCols = refCols;
     }
+
+    public void setAntiJoin() { this.antiOrNot = true; }
+    public boolean getAntiJoin() { return this.antiOrNot; }
 }
