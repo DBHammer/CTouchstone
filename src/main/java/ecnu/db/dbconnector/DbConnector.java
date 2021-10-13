@@ -123,9 +123,9 @@ public abstract class DbConnector {
 
     public int getMultiColNdv(String canonicalTableName, String columns) throws SQLException {
         try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
-            ResultSet rs = stmt.executeQuery(String.format("select count(distinct %s) as cnt from %s", columns, canonicalTableName));
+            ResultSet rs = stmt.executeQuery(String.format("select count(*) from (select distinct %S from %S) as a", columns, canonicalTableName));
             rs.next();
-            int result = rs.getInt("cnt");
+            int result = rs.getInt("count");
             multiColNdvMap.put(String.format("%s.%s", canonicalTableName, columns), result);
             return result;
         }
