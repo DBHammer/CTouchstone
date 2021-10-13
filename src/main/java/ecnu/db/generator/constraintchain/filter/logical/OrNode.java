@@ -1,6 +1,7 @@
 package ecnu.db.generator.constraintchain.filter.logical;
 
 import ch.obermuhlner.math.big.BigDecimalMath;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
@@ -24,7 +25,7 @@ import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
  */
 public class OrNode implements BoolExprNode {
     private final Logger logger = LoggerFactory.getLogger(OrNode.class);
-    private final BoolExprType type = BoolExprType.OR;
+    private static final BoolExprType type = BoolExprType.OR;
     private BoolExprNode leftNode;
     private BoolExprNode rightNode;
 
@@ -122,6 +123,7 @@ public class OrNode implements BoolExprNode {
         return operations;
     }
 
+    @JsonIgnore
     @Override
     public List<Parameter> getParameters() {
         List<Parameter> parameters = leftNode.getParameters();
