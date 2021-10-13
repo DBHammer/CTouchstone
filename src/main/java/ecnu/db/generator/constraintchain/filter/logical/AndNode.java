@@ -1,6 +1,8 @@
 package ecnu.db.generator.constraintchain.filter.logical;
 
 import ch.obermuhlner.math.big.BigDecimalMath;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
@@ -25,7 +27,7 @@ import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 public class AndNode implements BoolExprNode {
     private final Logger logger = LoggerFactory.getLogger(AndNode.class);
     private BoolExprType type = BoolExprType.AND;
-    private LinkedList<BoolExprNode> children;
+    private List<BoolExprNode> children;
 
     public AndNode() {
         this.children = new LinkedList<>();
@@ -125,16 +127,17 @@ public class AndNode implements BoolExprNode {
         return resultVector;
     }
 
+    @JsonIgnore
     @Override
     public List<Parameter> getParameters() {
         return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();
     }
 
-    public LinkedList<BoolExprNode> getChildren() {
+    public List<BoolExprNode> getChildren() {
         return children;
     }
 
-    public void setChildren(LinkedList<BoolExprNode> children) {
+    public void setChildren(List<BoolExprNode> children) {
         this.children = children;
     }
 

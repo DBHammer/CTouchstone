@@ -334,20 +334,14 @@ public class Column {
     }
 
     public String transferDataToValue(long data) {
-        switch (columnType) {
-            case INTEGER:
-                return Long.toString((specialValue * data) + min);
-            case DECIMAL:
-                return Double.toString(((double) (data + min)) / specialValue);
-            case VARCHAR:
-                return stringTemplate.transferColumnData2Value(specialValue, data);
-            case DATE:
-                return Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
-            case DATETIME:
-                return Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE);
-            default:
-                throw new UnsupportedOperationException();
-        }
+        return switch (columnType) {
+            case INTEGER -> Long.toString((specialValue * data) + min);
+            case DECIMAL -> Double.toString(((double) (data + min)) / specialValue);
+            case VARCHAR -> stringTemplate.transferColumnData2Value(specialValue, data);
+            case DATE -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
+            case DATETIME -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE);
+            default -> throw new UnsupportedOperationException();
+        };
     }
 
     public void setColumnData(long[] columnData) {

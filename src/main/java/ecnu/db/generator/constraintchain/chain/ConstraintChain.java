@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.chain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.utils.exception.TouchstoneException;
 
@@ -40,6 +41,7 @@ public class ConstraintChain {
     }
 
 
+    @JsonIgnore
     public List<Parameter> getParameters() {
         return nodes.stream().filter(ConstraintChainFilterNode.class::isInstance)
                 .map(ConstraintChainFilterNode.class::cast)
@@ -153,7 +155,11 @@ public class ConstraintChain {
 
         @Override
         public String toString() {
-            return String.format("\tsubgraph \"%s\" { %n \t\t%s \t\t%s\t}%n", joinTag, pkInfo, fkInfo);
+            return String.format("""
+                    subgraph "%s" {
+                            %s
+                            %s
+                    }""".indent(4), joinTag, pkInfo, fkInfo);
         }
     }
 }
