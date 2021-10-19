@@ -5,8 +5,7 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
-import ecnu.db.generator.constraintchain.filter.logical.AndNode;
-import ecnu.db.generator.constraintchain.filter.logical.LogicNode;
+import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
@@ -275,7 +274,7 @@ public class QueryAnalyzer {
      */
     private synchronized LogicNode analyzeSelectInfo(String operatorInfo) throws TouchstoneException {
         try {
-            return abstractAnalyzer.PgAnalyzeSelectOperator(operatorInfo);
+            return abstractAnalyzer.analyzeSelectOperator(operatorInfo);
         } catch (Exception e) {
             throw new UnsupportedSelect(operatorInfo, e);
         }

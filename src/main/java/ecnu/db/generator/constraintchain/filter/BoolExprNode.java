@@ -8,7 +8,6 @@ import java.util.List;
 
 /**
  * @author wangqingshuai
- * todo 当前认为所有的BoolExprNode都是相互独立的
  */
 public interface BoolExprNode {
 

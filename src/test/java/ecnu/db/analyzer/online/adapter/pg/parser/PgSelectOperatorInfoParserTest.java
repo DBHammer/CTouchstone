@@ -1,12 +1,8 @@
 package ecnu.db.analyzer.online.adapter.pg.parser;
 
-import ecnu.db.generator.constraintchain.filter.logical.AndNode;
-import ecnu.db.generator.constraintchain.filter.logical.LogicNode;
-import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.generator.constraintchain.filter.LogicNode;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

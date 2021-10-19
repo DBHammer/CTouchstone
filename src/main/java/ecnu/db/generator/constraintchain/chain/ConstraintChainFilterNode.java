@@ -3,8 +3,7 @@ package ecnu.db.generator.constraintchain.chain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
-import ecnu.db.generator.constraintchain.filter.logical.AndNode;
-import ecnu.db.generator.constraintchain.filter.logical.LogicNode;
+import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.utils.exception.TouchstoneException;
 

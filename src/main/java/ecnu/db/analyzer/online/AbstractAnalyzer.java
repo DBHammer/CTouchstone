@@ -1,7 +1,6 @@
 package ecnu.db.analyzer.online;
 
-import ecnu.db.generator.constraintchain.filter.logical.AndNode;
-import ecnu.db.generator.constraintchain.filter.logical.LogicNode;
+import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 
 import java.util.HashMap;
@@ -41,9 +40,7 @@ public abstract class AbstractAnalyzer {
      * @return SelectResult 算数抽象语法树
      * @throws Exception 无法分析的Selection条件
      */
-    public abstract LogicNode PgAnalyzeSelectOperator(String operatorInfo) throws Exception;
-
-    public abstract AndNode analyzeSelectOperator(String operatorInfo) throws Exception;
+    public abstract LogicNode analyzeSelectOperator(String operatorInfo) throws Exception;
 
 
     public void setAliasDic(Map<String, String> aliasDic) {

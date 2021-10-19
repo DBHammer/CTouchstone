@@ -2,7 +2,6 @@ import java.util.*;
 import java.util.HashSet;
 import ecnu.db.generator.constraintchain.filter.arithmetic.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
-import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
 import java.io.StringReader;
 
@@ -10,10 +9,11 @@ import java.io.StringReader;
 parser code {:
   private final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
   private int parameterId = 0;
-  private AndNode root = new AndNode();
+  private LogicNode root = new LogicNode();
 
-  public AndNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
-    root = new AndNode();
+  public LogicNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
+    root = new LogicNode();
+    root.setType(BoolExprType.AND);
     ((TidbSelectOperatorInfoLexer) getScanner()).yyreset(new StringReader(operatorInfo));
     parse();
     return root;
@@ -84,13 +84,15 @@ bool_expr ::=
 
 logical_expr ::=
         OR:or LPAREN bool_expr:e1 bool_expr:e2 RPAREN      {:
-                                                                OrNode node = new OrNode();
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.OR);
                                                                 node.addChild(e1);
                                                                 node.addChild(e2);
                                                                 RESULT = node;
                                                             :}
         | AND:and LPAREN logical_arguments:children RPAREN  {:
-                                                                AndNode node = new AndNode();
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.AND);
                                                                 for (BoolExprNode child: children) {
                                                                     node.addChild(child);
                                                                 }

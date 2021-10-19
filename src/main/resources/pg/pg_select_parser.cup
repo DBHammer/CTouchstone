@@ -1,9 +1,7 @@
 import java.util.*;
 import ecnu.db.generator.constraintchain.filter.arithmetic.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
-import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
-import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import java.io.StringReader;
 
 

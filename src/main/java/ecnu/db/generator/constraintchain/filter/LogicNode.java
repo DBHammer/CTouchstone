@@ -1,8 +1,5 @@
-package ecnu.db.generator.constraintchain.filter.logical;
+package ecnu.db.generator.constraintchain.filter;
 
-import ecnu.db.generator.constraintchain.filter.BoolExprNode;
-import ecnu.db.generator.constraintchain.filter.BoolExprType;
-import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
@@ -17,7 +14,15 @@ import java.util.stream.IntStream;
 public class LogicNode implements BoolExprNode {
     private final Logger logger = LoggerFactory.getLogger(LogicNode.class);
     private BoolExprType type;
-    private List<BoolExprNode> children = null;
+    private List<BoolExprNode> children;
+
+    public List<BoolExprNode> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<BoolExprNode> children) {
+        this.children = children;
+    }
 
     /**
      * 是否在化简的过程中被reverse过，默认为false
