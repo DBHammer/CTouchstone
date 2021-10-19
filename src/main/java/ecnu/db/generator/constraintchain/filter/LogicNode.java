@@ -11,10 +11,18 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static ecnu.db.generator.constraintchain.filter.BoolExprType.AND;
+import static ecnu.db.generator.constraintchain.filter.BoolExprType.OR;
+
 public class LogicNode implements BoolExprNode {
     private final Logger logger = LoggerFactory.getLogger(LogicNode.class);
     private BoolExprType type;
     private List<BoolExprNode> children;
+
+    /**
+     * 是否在化简的过程中被reverse过，默认为false
+     */
+    public boolean isReverse = false;
 
     public List<BoolExprNode> getChildren() {
         return children;
@@ -24,12 +32,8 @@ public class LogicNode implements BoolExprNode {
         this.children = children;
     }
 
-    /**
-     * 是否在化简的过程中被reverse过，默认为false
-     */
-    public boolean isReverse = false;
-
-    public LogicNode() {
+    public LogicNode(boolean isAnd) {
+        type = isAnd ? AND : OR;
         this.children = new LinkedList<>();
     }
 
@@ -43,12 +47,11 @@ public class LogicNode implements BoolExprNode {
             logger.info("{}的概率为0", this);
             return new ArrayList<>();
         }
-        List<BoolExprNode> simpleExpr = new ArrayList<>();
-        simpleExpr = this.initProbability();
+        List<BoolExprNode> simpleExpr = this.initProbability();
         List<AbstractFilterOperation> result = new ArrayList<>();
         for (BoolExprNode child : simpleExpr) {
             AbstractFilterOperation a = (AbstractFilterOperation) child;
-            if(a.getOperator() == CompareOperator.EQ||a.getOperator() == CompareOperator.IN||a.getOperator() == CompareOperator.LIKE){
+            if (a.getOperator() == CompareOperator.EQ || a.getOperator() == CompareOperator.IN || a.getOperator() == CompareOperator.LIKE) {
                 a.setProbability(probability);
             }
             result.add(a);
@@ -59,11 +62,6 @@ public class LogicNode implements BoolExprNode {
     @Override
     public BoolExprType getType() {
         return this.type;
-    }
-
-    @Override
-    public void setType(BoolExprType type) {
-        this.type = type;
     }
 
     @Override
@@ -87,9 +85,10 @@ public class LogicNode implements BoolExprNode {
 
     @Override
     public void reverse() {
-        switch (type) {
-            case AND, OR -> isReverse = !isReverse;
-            default -> throw new UnsupportedOperationException();
+        if (type == AND || type == OR) {
+            isReverse = !isReverse;
+        } else {
+            throw new UnsupportedOperationException();
         }
         for (BoolExprNode child : children) {
             child.reverse();
@@ -105,21 +104,21 @@ public class LogicNode implements BoolExprNode {
         };
     }
 
-    private BoolExprType getRealType(){
-        BoolExprType currentType = type;
-        if(isReverse){
-            switch (currentType){
-                case AND -> currentType =BoolExprType.OR;
-                case OR -> currentType=BoolExprType.AND;
+    private BoolExprType getRealType() {
+        if (isReverse) {
+            return switch (type) {
+                case AND -> OR;
+                case OR -> AND;
                 default -> throw new UnsupportedOperationException();
-            }
+            };
+        } else {
+            return type;
         }
-        return currentType;
     }
 
     @Override
     public List<BoolExprNode> initProbability() {
-        if (getRealType() == BoolExprType.OR) {
+        if (getRealType() == OR) {
             this.reverse();
         }
         List<BoolExprNode> simpleExpr = new ArrayList<>();
@@ -127,7 +126,7 @@ public class LogicNode implements BoolExprNode {
         for (BoolExprNode child : children) {
             if (!child.isTrue()) {
                 alltrue = false;
-                if (child.getType() != BoolExprType.AND && child.getType() != BoolExprType.OR) {
+                if (child.getType() != AND && child.getType() != OR) {
                     simpleExpr.add(child);
                 } else {
                     simpleExpr.addAll(child.initProbability());
@@ -147,7 +146,7 @@ public class LogicNode implements BoolExprNode {
 
     @Override
     public String toString() {
-        String lowerType = switch (type){
+        String lowerType = switch (type) {
             case AND -> "and";
             case OR -> "or";
             default -> throw new UnsupportedOperationException();

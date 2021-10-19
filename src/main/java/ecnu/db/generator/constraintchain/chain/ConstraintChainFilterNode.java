@@ -23,7 +23,6 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
 
     public ConstraintChainFilterNode(BigDecimal probability, LogicNode root) {
         super(ConstraintChainNodeType.FILTER);
-        root.setType(BoolExprType.AND);
         this.probability = probability;
         this.root = root;
     }
