@@ -1,6 +1,7 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ColumnNode;
@@ -75,6 +76,16 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             default -> throw new UnsupportedOperationException();
         }
         return ret;
+    }
+
+    @Override
+    public List<BoolExprNode> initProbability() {
+        return null;
+    }
+
+    @Override
+    public void setType(BoolExprType type) {
+
     }
 
     @Override

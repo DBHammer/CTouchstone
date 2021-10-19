@@ -85,11 +85,11 @@ bool_expr ::=
 logical_expr ::=
         OR:or LPAREN bool_expr:e1 bool_expr:e2 RPAREN      {:
                                                                 OrNode node = new OrNode();
-                                                                node.setLeftNode(e1);
-                                                                node.setRightNode(e2);
+                                                                node.addChild(e1);
+                                                                node.addChild(e2);
                                                                 RESULT = node;
                                                             :}
-        | AND:and LPAREN logical_arguments:children RPAREN  {:  
+        | AND:and LPAREN logical_arguments:children RPAREN  {:
                                                                 AndNode node = new AndNode();
                                                                 for (BoolExprNode child: children) {
                                                                     node.addChild(child);

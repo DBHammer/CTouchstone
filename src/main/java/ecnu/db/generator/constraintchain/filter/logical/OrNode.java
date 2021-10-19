@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation.merge;
@@ -26,25 +27,15 @@ import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 public class OrNode implements BoolExprNode {
     private final Logger logger = LoggerFactory.getLogger(OrNode.class);
     private static final BoolExprType type = BoolExprType.OR;
-    private BoolExprNode leftNode;
-    private BoolExprNode rightNode;
+    private LinkedList<BoolExprNode> children;
 
-    public BoolExprNode getLeftNode() {
-        return leftNode;
+    public OrNode() {
+        this.children = new LinkedList<>();
     }
 
-    public void setLeftNode(BoolExprNode leftNode) {
-        this.leftNode = leftNode;
+    public void addChild(BoolExprNode logicalNode) {
+        children.add(logicalNode);
     }
-
-    public BoolExprNode getRightNode() {
-        return rightNode;
-    }
-
-    public void setRightNode(BoolExprNode rightNode) {
-        this.rightNode = rightNode;
-    }
-
     /**
      * todo 考虑算子之间的相互依赖
      * todo 考虑or算子中包含isnull算子
@@ -64,7 +55,7 @@ public class OrNode implements BoolExprNode {
         List<BoolExprNode> otherNodes = new LinkedList<>();
         Map<String, Collection<UniVarFilterOperation>> lessCol2UniFilters = new HashMap<>();
         Map<String, Collection<UniVarFilterOperation>> greaterCol2UniFilters = new HashMap<>();
-        for (BoolExprNode child : Arrays.asList(leftNode, rightNode)) {
+        for (BoolExprNode child : children) {
             switch (child.getType()) {
                 case AND, OR, MULTI_FILTER_OPERATION -> otherNodes.add(child);
                 case UNI_FILTER_OPERATION -> {
@@ -126,10 +117,29 @@ public class OrNode implements BoolExprNode {
     @JsonIgnore
     @Override
     public List<Parameter> getParameters() {
-        List<Parameter> parameters = leftNode.getParameters();
-        parameters.addAll(rightNode.getParameters());
-        return parameters;
+        return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();
     }
+
+    @Override
+    public void reverse() {
+
+    }
+
+    @Override
+    public boolean isTrue() {
+        return false;
+    }
+
+    @Override
+    public List<BoolExprNode> initProbability() {
+        return null;
+    }
+
+    @Override
+    public void setType(BoolExprType type) {
+
+    }
+
 
     @Override
     public BoolExprType getType() {
@@ -138,14 +148,25 @@ public class OrNode implements BoolExprNode {
 
     @Override
     public boolean[] evaluate() throws CannotFindColumnException {
-        boolean[] leftValue = leftNode.evaluate(), rightValue = rightNode.evaluate();
-        IntStream.range(0, leftValue.length).parallel().forEach(i -> leftValue[i] |= rightValue[i]);
-        return leftValue;
+        boolean[][] computeVectors = new boolean[children.size()][];
+        for (int i = 0; i < children.size(); i++) {
+            computeVectors[i] = children.get(i).evaluate();
+        }
+        boolean[] resultVector = new boolean[computeVectors[0].length];
+        Arrays.fill(resultVector, true);
+        for (boolean[] computeVector : computeVectors) {
+            IntStream.range(0, resultVector.length).parallel().forEach(i -> resultVector[i] &= computeVector[i]);
+        }
+        return resultVector;
     }
 
 
     @Override
     public String toString() {
-        return String.format("or(%s, %s)", leftNode.toString(), rightNode.toString());
+        if (children.size() > 1) {
+            return String.format("or(%s)", children.stream().map(BoolExprNode::toString).collect(Collectors.joining("," + System.lineSeparator())));
+        } else {
+            return String.format("or(%s)", children.get(0).toString());
+        }
     }
 }

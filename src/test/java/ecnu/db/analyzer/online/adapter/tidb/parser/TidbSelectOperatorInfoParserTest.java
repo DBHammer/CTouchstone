@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.online.adapter.tidb.parser;
 
+import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
 import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnType;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.StringReader;
 
@@ -22,11 +25,11 @@ public class TidbSelectOperatorInfoParserTest {
     private TidbSelectOperatorInfoParser parser;
 
     @BeforeEach
-    void setUp() throws TouchstoneException {
+    void setUp(){
         parser = new TidbSelectOperatorInfoParser(lexer, new ComplexSymbolFactory());
     }
 
-    @DisplayName("test TidbSelectOperatorInfoParser.parse method")
+    /*@DisplayName("test TidbSelectOperatorInfoParser.parse method")
     @Test
     void testParse() throws Exception {
         String testCase = "ge(db.table.col1, 2)";
@@ -64,7 +67,7 @@ public class TidbSelectOperatorInfoParserTest {
     void testParseWithNot() throws Exception {
         String testCase = "or(ge(db.table.col1, 2), not(in(db.table.col3, \"3\", \"2\")))";
         AndNode node = parser.parseSelectOperatorInfo(testCase);
-        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not_in(db.table.col3, {id:1, data:3}, {id:2, data:2})))", node.toString());
+        assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not_in(db.table.col3,  {id:1, data:3}, {id:2, data:2})))", node.toString());
     }
 
     @DisplayName("test TidbSelectOperatorInfoParser.parse method with isnull")
@@ -73,5 +76,22 @@ public class TidbSelectOperatorInfoParserTest {
         String testCase = "or(ge(db.table.col1, 2), not(isnull(db.table.col2)))";
         AndNode node = parser.parseSelectOperatorInfo(testCase);
         assertEquals("and(or(ge(db.table.col1, {id:0, data:2}), not_isnull(db.table.col2)))", node.toString());
+    }*/
+    @ParameterizedTest
+    @CsvSource(delimiter = ';', value ={
+            "ge(db.table.col1, 2);" +
+                    "and(ge(db.table.col1, {id:0, data:2}))",
+            "ge(mul(db.table.col1, plus(db.table.col2, 3)), 2);" +
+                    "and(ge(MUL(db.table.col1, PLUS(db.table.col2, 3)), {id:0, data:2}))",
+            "or(ge(db.table.col1, 2), lt(db.table.col4, 3.0));" +
+                    "and(or(ge(db.table.col1, {id:0, data:2}), lt(db.table.col4, {id:1, data:3.0})))",
+            "or(ge(db.table.col1, 2), not(in(db.table.col3, \"3\", \"2\")));" +
+                    "and(or(ge(db.table.col1, {id:0, data:2}), not_in(db.table.col3, {id:1, data:3}, {id:2, data:2})))",
+            "or(ge(db.table.col1, 2), not(isnull(db.table.col2)));" +
+                    "and(or(ge(db.table.col1, {id:0, data:2}), not_isnull(db.table.col2)))"
+    })
+    void testTidbParse(String input, String output) throws Exception {
+        AndNode node = parser.parseSelectOperatorInfo(input);
+        assertEquals(output, node.toString().replaceAll(System.lineSeparator()," "));
     }
 }

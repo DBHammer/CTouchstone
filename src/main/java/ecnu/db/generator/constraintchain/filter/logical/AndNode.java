@@ -113,6 +113,7 @@ public class AndNode implements BoolExprNode {
         this.type = type;
     }
 
+
     @Override
     public boolean[] evaluate() throws CannotFindColumnException {
         boolean[][] computeVectors = new boolean[children.size()][];
@@ -132,6 +133,23 @@ public class AndNode implements BoolExprNode {
     public List<Parameter> getParameters() {
         return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();
     }
+
+    @Override
+    public void reverse() {
+
+    }
+
+    @Override
+    public boolean isTrue() {
+        return false;
+    }
+
+    @Override
+    public List<BoolExprNode> initProbability() {
+        return null;
+    }
+
+
 
     public List<BoolExprNode> getChildren() {
         return children;

@@ -6,6 +6,7 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
+import ecnu.db.generator.constraintchain.filter.logical.LogicNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
@@ -102,7 +103,7 @@ public class QueryAnalyzer {
     }
 
     private int analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
-        AndNode root = analyzeSelectInfo(node.getInfo());
+        LogicNode root = analyzeSelectInfo(node.getInfo());
         BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
         ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, root);
         constraintChain.addNode(filterNode);
@@ -177,7 +178,7 @@ public class QueryAnalyzer {
                 lastNodeLineCount = node.getOutputRows();
             }
             case filter -> {
-                AndNode result = analyzeSelectInfo(node.getInfo());
+                LogicNode result = analyzeSelectInfo(node.getInfo());
                 constraintChain = new ConstraintChain(node.getTableName());
                 BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(node.getTableName())), BIG_DECIMAL_DEFAULT_PRECISION);
                 ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result);
@@ -272,9 +273,9 @@ public class QueryAnalyzer {
      * @return 分析查询的逻辑树
      * @throws TouchstoneException 分析失败
      */
-    private synchronized AndNode analyzeSelectInfo(String operatorInfo) throws TouchstoneException {
+    private synchronized LogicNode analyzeSelectInfo(String operatorInfo) throws TouchstoneException {
         try {
-            return abstractAnalyzer.analyzeSelectOperator(operatorInfo);
+            return abstractAnalyzer.PgAnalyzeSelectOperator(operatorInfo);
         } catch (Exception e) {
             throw new UnsupportedSelect(operatorInfo, e);
         }

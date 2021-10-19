@@ -1,6 +1,7 @@
 package ecnu.db.analyzer.online.adapter.pg.parser;
 
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
+import ecnu.db.generator.constraintchain.filter.logical.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 import java_cup.runtime.ComplexSymbolFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,20 +39,16 @@ class PgSelectOperatorInfoParserTest {
             "(db1.table.col3 IS NULL);" +
                     "and(isnull(db1.table.col3))",
             "(db1.table.col3 = ANY ('{\"dasd\", dasd}'));" +
-                    " and(in(db1.table.col3, {id:0, data:dasd}, {id:1, data:dasd}))"
+                    " and(in(db1.table.col3, {id:0, data:dasd}, {id:1, data:dasd}))",
+            "(public.part.p_size = ANY ('{42,33,35,6,46,24,15,21}'::integer[]));" +
+                    " and(in(public.part.p_size, {id:0, data:42}, {id:1, data:33}, {id:2, data:35}, {id:3, data:6}, {id:4, data:46}, {id:5, data:24}, {id:6, data:15}, {id:7, data:21}))",
+            "((public.part.p_type)::text !~~ 'STANDARD ANODIZED%'::text);" +
+                    "and(not_like(public.part.p_type, {id:0, data:STANDARD ANODIZED%}))",
+            "((public.part.p_type)::text = 'STANDARD BURNISHED NICKEL'::text);" +
+                    "and(eq(public.part.p_type, {id:0, data:STANDARD BURNISHED NICKEL}))"
     })
     void testPgParse(String input, String output) throws Exception {
-        AndNode node = parser.parseSelectOperatorInfo(input);
-        assertEquals(output, node.toString());
+        LogicNode node = parser.parseSelectOperatorInfo(input);
+        assertEquals(output, node.toString().replaceAll(System.lineSeparator()," "));
     }
-
-    @DisplayName("test PgSelectOperatorInfoParser.parse method with erroneous grammar")
-    @Test()
-    void testParseWithLogicalOpsFailed() {
-        assertThrows(Exception.class, () -> {
-            String testCase = "((table.col1 >= 2) or (table.col2 * 3))";
-            parser.parseSelectOperatorInfo(testCase);
-        });
-    }
-
 }

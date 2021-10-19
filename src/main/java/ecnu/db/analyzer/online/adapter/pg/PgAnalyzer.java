@@ -7,6 +7,7 @@ import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
 import ecnu.db.generator.constraintchain.filter.logical.AndNode;
+import ecnu.db.generator.constraintchain.filter.logical.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 import java_cup.runtime.ComplexSymbolFactory;
 
@@ -299,7 +300,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
 
     @Override
-    public AndNode analyzeSelectOperator(String operatorInfo) throws Exception {
+    public LogicNode PgAnalyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
+    }
+
+    @Override
+    public AndNode analyzeSelectOperator(String operatorInfo) throws Exception {
+        return null;
     }
 }
