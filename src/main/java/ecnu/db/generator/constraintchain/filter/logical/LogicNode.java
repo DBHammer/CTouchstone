@@ -93,6 +93,14 @@ public class LogicNode implements BoolExprNode {
 
     @Override
     public boolean isTrue() {
+        return switch (getRealType()) {
+            case AND -> children.stream().allMatch(BoolExprNode::isTrue);
+            case OR -> children.stream().anyMatch(BoolExprNode::isTrue);
+            default -> throw new UnsupportedOperationException();
+        };
+    }
+
+    private BoolExprType getRealType(){
         BoolExprType currentType = type;
         if(isReverse){
             switch (currentType){
@@ -101,16 +109,12 @@ public class LogicNode implements BoolExprNode {
                 default -> throw new UnsupportedOperationException();
             }
         }
-        return switch (currentType) {
-            case AND -> children.stream().allMatch(BoolExprNode::isTrue);
-            case OR -> children.stream().anyMatch(BoolExprNode::isTrue);
-            default -> throw new UnsupportedOperationException();
-        };
+        return currentType;
     }
 
     @Override
     public List<BoolExprNode> initProbability() {
-        if (type == BoolExprType.OR||(type == BoolExprType.AND && isReverse)) {
+        if (getRealType() == BoolExprType.OR) {
             this.reverse();
         }
         List<BoolExprNode> simpleExpr = new ArrayList<>();
