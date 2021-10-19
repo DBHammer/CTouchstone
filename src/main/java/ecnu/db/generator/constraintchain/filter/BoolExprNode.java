@@ -45,6 +45,4 @@ public interface BoolExprNode {
     boolean isTrue();
 
     List<BoolExprNode>  initProbability();
-
-    void setType(BoolExprType type);
 }

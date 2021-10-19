@@ -76,9 +76,4 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         return null;
     }
 
-    @Override
-    public void setType(BoolExprType type) {
-
-    }
-
 }

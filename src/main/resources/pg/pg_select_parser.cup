@@ -7,12 +7,11 @@ import java.io.StringReader;
 
 /* define how to connect to the scanner! */
 parser code {:
-  private LogicNode root = new LogicNode();
+  private LogicNode root;
   private int parameterId = 0;
 
   public LogicNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
-    this.root = new LogicNode();
-    root.setType(BoolExprType.AND);
+    this.root = new LogicNode(true);
     ((PgSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
     this.parse();
     return this.root;
@@ -82,8 +81,7 @@ bool_expr ::=
 
 logical_expr ::=
         LPAREN bool_expr:e2 or_logical_arguments:children   RPAREN         {:
-                                                                LogicNode node = new LogicNode();
-                                                                node.setType(BoolExprType.OR);
+                                                                LogicNode node = new LogicNode(false);
                                                                 node.addChild(e2);
                                                                 for (BoolExprNode child: children) {
                                                                     node.addChild(child);
@@ -91,8 +89,7 @@ logical_expr ::=
                                                                 RESULT = node;
                                                             :}
         | LPAREN bool_expr:e2 and_logical_arguments:children  RPAREN      {:
-                                                                LogicNode node = new LogicNode();
-                                                                node.setType(BoolExprType.AND);
+                                                                LogicNode node = new LogicNode(true);
                                                                 node.addChild(e2);
                                                                 for (BoolExprNode child: children) {
                                                                     node.addChild(child);

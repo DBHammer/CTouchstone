@@ -84,11 +84,6 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public void setType(BoolExprType type) {
-
-    }
-
-    @Override
     public String toString() {
         return String.format("%s(%s, %s)", operator.toString().toLowerCase(),
                 arithmeticTree.toString(),
