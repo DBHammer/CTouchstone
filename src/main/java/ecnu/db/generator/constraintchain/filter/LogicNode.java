@@ -1,7 +1,6 @@
 package ecnu.db.generator.constraintchain.filter;
 
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,13 +15,21 @@ import static ecnu.db.generator.constraintchain.filter.BoolExprType.OR;
 
 public class LogicNode implements BoolExprNode {
     private final Logger logger = LoggerFactory.getLogger(LogicNode.class);
+
     private BoolExprType type;
     private List<BoolExprNode> children;
 
     /**
      * 是否在化简的过程中被reverse过，默认为false
      */
-    public boolean isReverse = false;
+    private boolean isReverse = false;
+
+    LogicNode() {
+    }
+
+    public void setType(BoolExprType type) {
+        this.type = type;
+    }
 
     public List<BoolExprNode> getChildren() {
         return children;
@@ -43,20 +50,37 @@ public class LogicNode implements BoolExprNode {
 
 
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
+        List<AbstractFilterOperation> operations = new ArrayList<>();
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             logger.info("{}的概率为0", this);
-            return new ArrayList<>();
-        }
-        List<BoolExprNode> simpleExpr = this.initProbability();
-        List<AbstractFilterOperation> result = new ArrayList<>();
-        for (BoolExprNode child : simpleExpr) {
-            AbstractFilterOperation a = (AbstractFilterOperation) child;
-            if (a.getOperator() == CompareOperator.EQ || a.getOperator() == CompareOperator.IN || a.getOperator() == CompareOperator.LIKE) {
-                a.setProbability(probability);
+            return operations;
+        } else if (probability.compareTo(BigDecimal.ONE) == 0) {
+            for (BoolExprNode child : children) {
+                if (child.isTrue()) {
+                    operations.addAll(child.pushDownProbability(BigDecimal.ONE));
+                } else {
+                    operations.addAll(child.pushDownProbability(BigDecimal.ZERO));
+                }
             }
-            result.add(a);
         }
-        return result;
+        if (getRealType() == OR) {
+            this.reverse();
+            probability = BigDecimal.ONE.subtract(probability);
+        }
+        boolean allTrue = true;
+        for (BoolExprNode child : children) {
+            if (child.isTrue()) {
+                operations.addAll(child.pushDownProbability(BigDecimal.ONE));
+            } else {
+                allTrue = false;
+                operations.addAll(child.pushDownProbability(probability));
+            }
+        }
+        if (allTrue) {
+            operations.removeAll(children.get(0).pushDownProbability(BigDecimal.ONE));
+            operations.addAll(0, children.get(0).pushDownProbability(probability));
+        }
+        return operations;
     }
 
     @Override
@@ -116,33 +140,6 @@ public class LogicNode implements BoolExprNode {
         }
     }
 
-    @Override
-    public List<BoolExprNode> initProbability() {
-        if (getRealType() == OR) {
-            this.reverse();
-        }
-        List<BoolExprNode> simpleExpr = new ArrayList<>();
-        boolean alltrue = true;
-        for (BoolExprNode child : children) {
-            if (!child.isTrue()) {
-                alltrue = false;
-                if (child.getType() != AND && child.getType() != OR) {
-                    simpleExpr.add(child);
-                } else {
-                    simpleExpr.addAll(child.initProbability());
-                }
-            }
-        }
-        if (alltrue) {
-            for (BoolExprNode child : children) {
-                if (type == BoolExprType.UNI_FILTER_OPERATION) {
-                    simpleExpr.add(child);
-                }
-            }
-            simpleExpr.addAll(this.children.get(0).initProbability());
-        }
-        return simpleExpr;
-    }
 
     @Override
     public String toString() {

@@ -79,11 +79,6 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public List<BoolExprNode> initProbability() {
-        return null;
-    }
-
-    @Override
     public String toString() {
         return String.format("%s(%s, %s)", operator.toString().toLowerCase(),
                 arithmeticTree.toString(),

@@ -70,18 +70,18 @@ class QueryInstantiationBasicTest {
         assertThat(BigDecimal.valueOf(0.1983466667), Matchers.comparesEqualTo(operations.get(0).getProbability()));
         operations = query2operations.get("3_1.sql_tpch.orders");
         assertEquals(1, operations.size());
-        assertThat(BigDecimal.valueOf(1), Matchers.comparesEqualTo(operations.get(0).getProbability()));
+        //todo check 精确度
+        assertThat(BigDecimal.valueOf(0.4838209733974779), Matchers.comparesEqualTo(operations.get(0).getProbability()));
 
 
         operations = query2operations.get("1_1.sql_tpch.lineitem");
         assertEquals(1, operations.size());
-        assertThat(BigDecimal.valueOf(1), Matchers.comparesEqualTo(operations.get(0).getProbability()));
-
+        assertThat(BigDecimal.valueOf(0.9797396027), Matchers.comparesEqualTo(operations.get(0).getProbability()));
 
         //todo check 
         operations = query2operations.get("6_1.sql_tpch.lineitem");
-        assertEquals(1, operations.size());
-        assertThat(BigDecimal.valueOf(1), Matchers.comparesEqualTo(operations.get(0).getProbability()));
+        assertEquals(5, operations.size());
+        assertThat(BigDecimal.valueOf(0.01902281455), Matchers.comparesEqualTo(operations.get(0).getProbability()));
     }
 
     @Disabled

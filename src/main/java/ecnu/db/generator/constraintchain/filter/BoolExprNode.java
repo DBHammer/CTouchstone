@@ -43,6 +43,4 @@ public interface BoolExprNode {
     void reverse();
 
     boolean isTrue();
-
-    List<BoolExprNode>  initProbability();
 }

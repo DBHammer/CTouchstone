@@ -100,11 +100,4 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters);
     }
 
-    @Override
-    public List<BoolExprNode> initProbability() {
-        List<BoolExprNode> result = new ArrayList<>();
-        result.add(this);
-        return result;
-    }
-
 }

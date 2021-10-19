@@ -71,9 +71,4 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null);
     }
 
-    @Override
-    public List<BoolExprNode> initProbability() {
-        return null;
-    }
-
 }

@@ -1,7 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
-import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 
 import java.math.BigDecimal;
@@ -29,12 +28,16 @@ public abstract class AbstractFilterOperation implements BoolExprNode {
      * 是否在化简的过程中被reverse过，默认为false
      */
     public boolean isReverse = false;
+
     AbstractFilterOperation(CompareOperator operator) {
         this.operator = operator;
     }
 
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
+        if (isReverse) {
+            probability = BigDecimal.ONE.subtract(probability);
+        }
         this.probability = probability;
         List<AbstractFilterOperation> chain = new ArrayList<>();
         chain.add(this);
@@ -48,11 +51,11 @@ public abstract class AbstractFilterOperation implements BoolExprNode {
 
     @Override
     public boolean isTrue() {
-        probability =isReverse? BigDecimal.ZERO:BigDecimal.ONE;
-        return switch (operator){
-            case LE,GE,GT,LT -> true;
+        probability = isReverse ? BigDecimal.ZERO : BigDecimal.ONE;
+        return switch (operator) {
+            case LE, GE, GT, LT -> true;
             case EQ, LIKE, IN -> isReverse;
-            case NE, NOT_LIKE,NOT_IN -> !isReverse;
+            case NE, NOT_LIKE, NOT_IN -> !isReverse;
             case IS_NOT_NULL, ISNULL, RANGE -> throw new UnsupportedOperationException();
         };
     }
