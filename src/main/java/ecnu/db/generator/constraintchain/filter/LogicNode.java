@@ -6,7 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -39,41 +42,38 @@ public class LogicNode implements BoolExprNode {
 
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         List<AbstractFilterOperation> operations = new ArrayList<>();
-        if (probability.compareTo(BigDecimal.ZERO) == 0) {
-            logger.info("{}的概率为0", this);
-            return operations;
-        } else if (probability.compareTo(BigDecimal.ONE) == 0) {
+        // 如果上层要求设置概率为 1， 则不需要处理，直接下推概率1到所有的filter operation中
+        if (probability.compareTo(BigDecimal.ONE) == 0) {
+            for (BoolExprNode child : children) {
+                operations.addAll(child.pushDownProbability(BigDecimal.ONE));
+            }
+        } else {
+            // 如果当前节点为 OR 且 概率不为 1， 则反转该树为AND
+            if (getRealType() == OR) {
+                this.reverse();
+                probability = BigDecimal.ONE.subtract(probability);
+            }
+
+            boolean allTrue = true;
             for (BoolExprNode child : children) {
                 if (child.isTrue()) {
                     operations.addAll(child.pushDownProbability(BigDecimal.ONE));
                 } else {
-                    operations.addAll(child.pushDownProbability(BigDecimal.ZERO));
+                    allTrue = false;
+                    operations.addAll(child.pushDownProbability(probability));
                 }
             }
-        }
-        if (getRealType() == OR) {
-            this.reverse();
-            probability = BigDecimal.ONE.subtract(probability);
-        }
-        boolean allTrue = true;
-        for (BoolExprNode child : children) {
-            if (child.isTrue()) {
-                operations.addAll(child.pushDownProbability(BigDecimal.ONE));
-            } else {
-                allTrue = false;
-                operations.addAll(child.pushDownProbability(probability));
+            if (allTrue) {
+                operations.removeAll(children.get(0).pushDownProbability(BigDecimal.ONE));
+                operations.addAll(0, children.get(0).pushDownProbability(probability));
             }
-        }
-        if (allTrue) {
-            operations.removeAll(children.get(0).pushDownProbability(BigDecimal.ONE));
-            operations.addAll(0, children.get(0).pushDownProbability(probability));
         }
         return operations;
     }
 
     @Override
     public BoolExprType getType() {
-        return this.type;
+        return type;
     }
 
     @Override
@@ -84,8 +84,14 @@ public class LogicNode implements BoolExprNode {
         }
         boolean[] resultVector = new boolean[computeVectors[0].length];
         Arrays.fill(resultVector, true);
-        for (boolean[] computeVector : computeVectors) {
-            IntStream.range(0, resultVector.length).parallel().forEach(i -> resultVector[i] &= computeVector[i]);
+        if (getRealType() == AND) {
+            Arrays.stream(computeVectors).forEach(
+                    computeVector -> IntStream.range(0, resultVector.length)
+                            .forEach(i -> resultVector[i] &= computeVector[i]));
+        } else if (getRealType() == OR) {
+            Arrays.stream(computeVectors).forEach(
+                    computeVector -> IntStream.range(0, resultVector.length)
+                            .forEach(i -> resultVector[i] |= computeVector[i]));
         }
         return resultVector;
     }

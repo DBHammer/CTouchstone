@@ -35,6 +35,9 @@ public abstract class AbstractFilterOperation implements BoolExprNode {
 
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
+        if (probability.compareTo(BigDecimal.ONE) == 0) {
+            probability = BigDecimal.ZERO;
+        }
         if (isReverse) {
             probability = BigDecimal.ONE.subtract(probability);
         }
