@@ -24,10 +24,6 @@ public class LogicNode implements BoolExprNode {
      */
     private boolean isReverse = false;
 
-    public LogicNode() {
-        this.children = new LinkedList<>();
-    }
-
     public void setType(BoolExprType type) {
         this.type = type;
     }
@@ -38,10 +34,6 @@ public class LogicNode implements BoolExprNode {
 
     public void setChildren(List<BoolExprNode> children) {
         this.children = children;
-    }
-
-    public void addChild(BoolExprNode logicalNode) {
-        children.add(logicalNode);
     }
 
 

@@ -60,9 +60,7 @@ start with expr;
 /* The grammar rules */
 /* ================= */
 expr ::= bool_exprs:children                     {:
-                                                     for (BoolExprNode child: children) {
-                                                         root.addChild(child);
-                                                     }
+                                                     root.setChildren(children);
                                                  :}
         ;
 bool_exprs ::=
@@ -86,16 +84,16 @@ logical_expr ::=
         OR:or LPAREN bool_expr:e1 bool_expr:e2 RPAREN      {:
                                                                 LogicNode node = new LogicNode();
                                                                 node.setType(BoolExprType.OR);
-                                                                node.addChild(e1);
-                                                                node.addChild(e2);
+                                                                List<BoolExprNode> children = new LinkedList<>();
+                                                                children.add(e1);
+                                                                children.add(e2);
+                                                                node.setChildren(children);
                                                                 RESULT = node;
                                                             :}
         | AND:and LPAREN logical_arguments:children RPAREN  {:
                                                                 LogicNode node = new LogicNode();
                                                                 node.setType(BoolExprType.AND);
-                                                                for (BoolExprNode child: children) {
-                                                                    node.addChild(child);
-                                                                }
+                                                                node.setChildren(children);
                                                                 RESULT = node;
                                                             :}
         ;

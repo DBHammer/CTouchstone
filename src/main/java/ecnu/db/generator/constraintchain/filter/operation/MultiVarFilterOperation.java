@@ -1,12 +1,11 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import ecnu.db.generator.constraintchain.filter.BoolExprNode;
+import ecnu.db.generator.constraintchain.filter.BoolExprType;
+import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ColumnNode;
-import ecnu.db.generator.constraintchain.filter.BoolExprType;
-import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
@@ -94,16 +93,14 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     }
 
     /**
-     * todo 通过计算树计算概率，暂时不考虑其他FilterOperation对于此操作的阈值影响
      * todo 暂时不考虑null
      */
     public void instantiateMultiVarParameter() {
         switch (operator) {
-            case GE:
-            case GT:
+            case GE, GT:
                 probability = BigDecimal.ONE.subtract(probability);
-            case LE:
-            case LT:
+                break;
+            case LE, LT:
                 break;
             default:
                 throw new UnsupportedOperationException("多变量计算节点仅接受非等值约束");
