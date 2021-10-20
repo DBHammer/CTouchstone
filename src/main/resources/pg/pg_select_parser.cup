@@ -11,7 +11,8 @@ parser code {:
   private int parameterId = 0;
 
   public LogicNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
-    this.root = new LogicNode(true);
+    this.root = new LogicNode();
+    root.setType(BoolExprType.AND);
     ((PgSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
     this.parse();
     return this.root;
@@ -81,7 +82,8 @@ bool_expr ::=
 
 logical_expr ::=
         LPAREN bool_expr:e2 or_logical_arguments:children   RPAREN         {:
-                                                                LogicNode node = new LogicNode(false);
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.OR);
                                                                 node.addChild(e2);
                                                                 for (BoolExprNode child: children) {
                                                                     node.addChild(child);
@@ -89,7 +91,8 @@ logical_expr ::=
                                                                 RESULT = node;
                                                             :}
         | LPAREN bool_expr:e2 and_logical_arguments:children  RPAREN      {:
-                                                                LogicNode node = new LogicNode(true);
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.AND);
                                                                 node.addChild(e2);
                                                                 for (BoolExprNode child: children) {
                                                                     node.addChild(child);

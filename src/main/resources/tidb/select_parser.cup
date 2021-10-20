@@ -12,7 +12,8 @@ parser code {:
   private LogicNode root;
 
   public LogicNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
-    root = new LogicNode(true);
+    root = new LogicNode();
+    root.setType(BoolExprType.AND);
     ((TidbSelectOperatorInfoLexer) getScanner()).yyreset(new StringReader(operatorInfo));
     parse();
     return root;
@@ -83,13 +84,15 @@ bool_expr ::=
 
 logical_expr ::=
         OR:or LPAREN bool_expr:e1 bool_expr:e2 RPAREN      {:
-                                                                LogicNode node = new LogicNode(false);
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.OR);
                                                                 node.addChild(e1);
                                                                 node.addChild(e2);
                                                                 RESULT = node;
                                                             :}
         | AND:and LPAREN logical_arguments:children RPAREN  {:
-                                                                LogicNode node = new LogicNode(true);
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.AND);
                                                                 for (BoolExprNode child: children) {
                                                                     node.addChild(child);
                                                                 }
