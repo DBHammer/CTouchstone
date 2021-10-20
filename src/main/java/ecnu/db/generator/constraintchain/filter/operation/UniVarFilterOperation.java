@@ -28,7 +28,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
             throws IllegalQueryColumnNameException {
         super(operator);
         this.canonicalColumnName = canonicalColumnName;
-        if(!CommonUtils.isCanonicalColumnName(canonicalColumnName)){
+        if (!CommonUtils.isCanonicalColumnName(canonicalColumnName)) {
             throw new IllegalQueryColumnNameException();
         }
         this.parameters = parameters;
@@ -99,4 +99,5 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     public boolean[] evaluate() {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters);
     }
+
 }

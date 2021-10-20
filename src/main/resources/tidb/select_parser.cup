@@ -2,7 +2,6 @@ import java.util.*;
 import java.util.HashSet;
 import ecnu.db.generator.constraintchain.filter.arithmetic.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
-import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
 import java.io.StringReader;
 
@@ -10,10 +9,11 @@ import java.io.StringReader;
 parser code {:
   private final static String CANONICAL_NAME_SPLIT_REGEX = "\\.";
   private int parameterId = 0;
-  private AndNode root = new AndNode();
+  private LogicNode root;
 
-  public AndNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
-    root = new AndNode();
+  public LogicNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
+    root = new LogicNode();
+    root.setType(BoolExprType.AND);
     ((TidbSelectOperatorInfoLexer) getScanner()).yyreset(new StringReader(operatorInfo));
     parse();
     return root;
@@ -60,9 +60,7 @@ start with expr;
 /* The grammar rules */
 /* ================= */
 expr ::= bool_exprs:children                     {:
-                                                     for (BoolExprNode child: children) {
-                                                         root.addChild(child);
-                                                     }
+                                                     root.setChildren(children);
                                                  :}
         ;
 bool_exprs ::=
@@ -84,16 +82,18 @@ bool_expr ::=
 
 logical_expr ::=
         OR:or LPAREN bool_expr:e1 bool_expr:e2 RPAREN      {:
-                                                                OrNode node = new OrNode();
-                                                                node.setLeftNode(e1);
-                                                                node.setRightNode(e2);
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.OR);
+                                                                List<BoolExprNode> children = new LinkedList<>();
+                                                                children.add(e1);
+                                                                children.add(e2);
+                                                                node.setChildren(children);
                                                                 RESULT = node;
                                                             :}
-        | AND:and LPAREN logical_arguments:children RPAREN  {:  
-                                                                AndNode node = new AndNode();
-                                                                for (BoolExprNode child: children) {
-                                                                    node.addChild(child);
-                                                                }
+        | AND:and LPAREN logical_arguments:children RPAREN  {:
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.AND);
+                                                                node.setChildren(children);
                                                                 RESULT = node;
                                                             :}
         ;

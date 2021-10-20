@@ -11,25 +11,25 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  * @author wangqingshuai
  */
 public class Column {
-    @JsonIgnore
-    private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
-    @JsonIgnore
-    private final HashSet<Integer> likeParameterId = new HashSet<>();
     private ColumnType columnType;
     private long min;
     private long range;
     private long specialValue;
     private float nullPercentage;
     private List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace = new LinkedList<>();
-    private HashMap<Long, BigDecimal> eqConstraint2Probability = new HashMap<>();
+    private Map<Long, BigDecimal> eqConstraint2Probability = new HashMap<>();
     private StringTemplate stringTemplate;
+
+    @JsonIgnore
+    private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
+    @JsonIgnore
+    private final HashSet<Integer> likeParameterId = new HashSet<>();
     @JsonIgnore
     private boolean hasBetweenConstraint = false;
     @JsonIgnore
@@ -95,18 +95,11 @@ public class Column {
         this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
     }
 
-    private void _insertEqualProbability(BigDecimal probability, Parameter parameter) {
-        if (!eqRequest2ParameterIds.containsKey(probability)) {
-            eqRequest2ParameterIds.put(probability, new LinkedList<>());
-        }
-        eqRequest2ParameterIds.get(probability).add(parameter);
-    }
-
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
         BigDecimal tempProbability = new BigDecimal(probability.toString());
         TreeSet<BigDecimal> probabilityHistogram = new TreeSet<>(eqRequest2ParameterIds.keySet());
         int index = parameters.size() - 1;
-        while (tempProbability.compareTo(BigDecimal.ZERO) > 0 && probabilityHistogram.size() > 0 && index > 0) {
+        while (tempProbability.compareTo(BigDecimal.ZERO) > 0 && !probabilityHistogram.isEmpty() && index > 0) {
             BigDecimal lowerBound = probabilityHistogram.lower(tempProbability);
             probabilityHistogram.remove(lowerBound);
             tempProbability = tempProbability.subtract(lowerBound);
@@ -115,32 +108,26 @@ public class Column {
         while (index >= 0) {
             if (index > 0) {
                 BigDecimal currentProbability = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(tempProbability.doubleValue()));
-                _insertEqualProbability(currentProbability, parameters.get(index--));
+                eqRequest2ParameterIds.computeIfAbsent(currentProbability, i -> new LinkedList<>()).add(parameters.get(index--));
                 tempProbability = tempProbability.subtract(currentProbability);
             } else {
-                _insertEqualProbability(tempProbability, parameters.get(index--));
+                eqRequest2ParameterIds.computeIfAbsent(tempProbability, i -> new LinkedList<>()).add(parameters.get(index--));
             }
         }
     }
 
     public void insertUniVarProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         switch (operator) {
-            case NE, NOT_LIKE, NOT_IN:
-                probability = BigDecimal.ONE.subtract(probability);
-            case EQ, LIKE:
-                _insertEqualProbability(probability, parameters.get(0));
-                break;
-            case IN:
-                insertEqualProbability(probability, parameters);
-                break;
-            case GT, LT, GE, LE:
-                insertNonEqProbability(probability, operator, parameters);
-                break;
-            default:
-                throw new UnsupportedOperationException();
+            case NE, NOT_LIKE, NOT_IN ->
+                    eqRequest2ParameterIds.computeIfAbsent(BigDecimal.ONE.subtract(probability), i -> new LinkedList<>()).add(parameters.get(0));
+            case EQ, LIKE ->
+                    eqRequest2ParameterIds.computeIfAbsent(probability, i -> new LinkedList<>()).add(parameters.get(0));
+            case IN -> insertEqualProbability(probability, parameters);
+            case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
+            default -> throw new UnsupportedOperationException();
         }
         if (operator == CompareOperator.LIKE) {
-            List<Integer> parameterIds = parameters.stream().mapToInt(Parameter::getId).collect(ArrayList::new, List::add, List::addAll);
+            List<Integer> parameterIds = parameters.stream().mapToInt(Parameter::getId).boxed().toList();
             likeParameterId.addAll(parameterIds);
         }
     }
@@ -177,7 +164,7 @@ public class Column {
             return;
         }
         if (hasBetweenConstraint) {
-            throw new UnsupportedOperationException("不支持为存在between约束的列分配等值");
+            throw new UnsupportedOperationException("当前不支持为存在between约束的列分配等值");
         }
         //初始化每个bucket的剩余容量和等值容量
         Map<Long, AtomicInteger> bucketId2EqNum = new HashMap<>();
@@ -349,7 +336,7 @@ public class Column {
     }
 
     public List<String> output() {
-        return Arrays.stream(columnData).parallel().mapToObj(this::transferDataToValue).collect(Collectors.toList());
+        return Arrays.stream(columnData).parallel().mapToObj(this::transferDataToValue).toList();
     }
 
     public long getMin() {
@@ -376,11 +363,11 @@ public class Column {
         this.bucketBound2FreeSpace = bucketBound2FreeSpace;
     }
 
-    public HashMap<Long, BigDecimal> getEqConstraint2Probability() {
+    public Map<Long, BigDecimal> getEqConstraint2Probability() {
         return eqConstraint2Probability;
     }
 
-    public void setEqConstraint2Probability(HashMap<Long, BigDecimal> eqConstraint2Probability) {
+    public void setEqConstraint2Probability(Map<Long, BigDecimal> eqConstraint2Probability) {
         this.eqConstraint2Probability = eqConstraint2Probability;
     }
 

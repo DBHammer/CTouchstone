@@ -116,7 +116,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
 
   /* not like operators */
   "!~~" {
-    return symbol(NOT_LIKE);
+    return symbol(NOT_LIKE, CompareOperator.NOT_LIKE);
   }
 
   /* canonical column names */
@@ -140,6 +140,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
 
   /* type */
   "::text" {}
+  "::bpchar[]" {}
   "::bpchar" {}
   "::integer[]" {}
   "::date" {}

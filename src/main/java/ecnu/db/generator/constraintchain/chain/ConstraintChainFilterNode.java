@@ -1,8 +1,9 @@
 package ecnu.db.generator.constraintchain.chain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
-import ecnu.db.generator.constraintchain.filter.logical.AndNode;
+import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.utils.exception.TouchstoneException;
 
@@ -13,14 +14,14 @@ import java.util.List;
  * @author wangqingshuai
  */
 public class ConstraintChainFilterNode extends ConstraintChainNode {
-    private AndNode root;
+    private LogicNode root;
     private BigDecimal probability;
 
     public ConstraintChainFilterNode() {
         super(ConstraintChainNodeType.FILTER);
     }
 
-    public ConstraintChainFilterNode(BigDecimal probability, AndNode root) {
+    public ConstraintChainFilterNode(BigDecimal probability, LogicNode root) {
         super(ConstraintChainNodeType.FILTER);
         this.probability = probability;
         this.root = root;
@@ -35,11 +36,11 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         return root.getParameters();
     }
 
-    public AndNode getRoot() {
+    public LogicNode getRoot() {
         return root;
     }
 
-    public void setRoot(AndNode root) {
+    public void setRoot(LogicNode root) {
         this.root = root;
     }
 

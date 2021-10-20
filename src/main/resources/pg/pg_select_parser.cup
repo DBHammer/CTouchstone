@@ -1,18 +1,18 @@
 import java.util.*;
 import ecnu.db.generator.constraintchain.filter.arithmetic.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
-import ecnu.db.generator.constraintchain.filter.logical.*;
 import ecnu.db.generator.constraintchain.filter.*;
 import java.io.StringReader;
 
 
 /* define how to connect to the scanner! */
 parser code {:
-  private AndNode root = new AndNode();
+  private LogicNode root;
   private int parameterId = 0;
 
-  public AndNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
-    this.root = new AndNode();
+  public LogicNode parseSelectOperatorInfo(String operatorInfo) throws Exception {
+    this.root = new LogicNode();
+    root.setType(BoolExprType.AND);
     ((PgSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
     this.parse();
     return this.root;
@@ -37,7 +37,8 @@ terminal   Float                 FLOAT;
 non terminal                                    expr;
 non terminal          BoolExprNode              bool_expr;
 non terminal          BoolExprNode              logical_expr;
-non terminal          List<BoolExprNode>        logical_arguments;
+non terminal          List<BoolExprNode>        and_logical_arguments;
+non terminal          List<BoolExprNode>        or_logical_arguments;
 non terminal          AbstractFilterOperation   compare_expr;
 non terminal          AbstractFilterOperation   uni_compare_expr;
 non terminal          CompareOperator           uni_compare_operator;
@@ -66,7 +67,7 @@ start with expr;
 /* The grammar rules */
 /* ================= */
 expr ::= bool_expr:e                             {:
-                                                         this.parser.root.addChild(e);
+                                                         root.setChildren(Collections.singletonList(e));
                                                  :}
         ;
 
@@ -80,31 +81,43 @@ bool_expr ::=
 /* logical expressions */
 
 logical_expr ::=
-        LPAREN bool_expr:e1 OR:or bool_expr:e2 RPAREN       {:
-                                                                OrNode node = new OrNode();
-                                                                node.setLeftNode(e1);
-                                                                node.setRightNode(e2);
+        LPAREN bool_expr:e2 or_logical_arguments:children   RPAREN         {:
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.OR);
+                                                                children.add(0, e2);
+                                                                node.setChildren(children);
                                                                 RESULT = node;
                                                             :}
-        | LPAREN logical_arguments:children RPAREN          {:
-                                                                AndNode node = new AndNode();
-                                                                for (BoolExprNode child: children) {
-                                                                    node.addChild(child);
-                                                                }
+        | LPAREN bool_expr:e2 and_logical_arguments:children  RPAREN      {:
+                                                                LogicNode node = new LogicNode();
+                                                                node.setType(BoolExprType.AND);
+                                                                children.add(0, e2);
+                                                                node.setChildren(children);
                                                                 RESULT = node;
                                                             :}
 
         ;
-logical_arguments ::=
-        bool_expr:e1 AND:and logical_arguments:exprs                 {:
+and_logical_arguments ::=
+        AND:and bool_expr:e1 and_logical_arguments:exprs             {:
                                                                          exprs.add(e1);
                                                                          RESULT =  exprs;
                                                                      :}
-        | bool_expr:e2                                               {:
-                                                                         List<BoolExprNode> nodes = new ArrayList<>();
-                                                                         nodes.add(e2);
-                                                                         RESULT = nodes;
+        | AND:and bool_expr:e1                                        {:
+                                                                                 List<BoolExprNode> nodes = new ArrayList<>();
+                                                                                 nodes.add(e1);
+                                                                                 RESULT = nodes;
                                                                       :}
+        ;
+or_logical_arguments ::=
+        OR:or bool_expr:e1 or_logical_arguments:exprs                 {:
+                                                                         exprs.add(e1);
+                                                                         RESULT =  exprs;
+                                                                     :}
+        | OR:or bool_expr:e1                                        {:
+                                                                                              List<BoolExprNode> nodes = new ArrayList<>();
+                                                                                              nodes.add(e1);
+                                                                                              RESULT = nodes;
+                                                                     :}
         ;
 
 
@@ -160,7 +173,7 @@ multi_compare_expr ::=
         | like_compare_expr:e                                    {:  RESULT=e;  :}
         ;
 in_compare_expr ::=
-        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
+        LPAREN CANONICAL_COLUMN_NAME:col in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
                                                                                     List<Parameter> parameterList = new ArrayList<>();
                                                                                     for (String argument: arguments) {
                                                                                         Parameter parameter = new Parameter(parameterId++, col, argument);
@@ -203,10 +216,10 @@ in_arguments ::=
                                                                                   :}
         ;
 like_compare_expr ::=
-        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN like_expr:likeornot STRING:str RPAREN     {:
+        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN like_expr:likeop STRING:str RPAREN     {:
                                                                                             Parameter parameter = new Parameter(parameterId++, col, str);
-                                                                                            UniVarFilterOperation operation = new UniVarFilterOperation(col, likeornot, Collections.singletonList(parameter));
-                                                                                            if(likeornot == CompareOperator.NOT_LIKE){
+                                                                                            UniVarFilterOperation operation = new UniVarFilterOperation(col, likeop, Collections.singletonList(parameter));
+                                                                                            if(likeop == CompareOperator.NOT_LIKE){
                                                                                               operation.setOperator(CompareOperator.NOT_LIKE);
                                                                                             }
                                                                                             RESULT = operation;
@@ -226,6 +239,11 @@ arithmetic_expr ::=
                                                                                                   RESULT = node;
                                                                                               :}
         | CANONICAL_COLUMN_NAME:col                                               {:
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
+                                                                                      ((ColumnNode) node).setCanonicalColumnName(col);
+                                                                                      RESULT = node;
+                                                                                  :}
+        | LPAREN CANONICAL_COLUMN_NAME:col RPAREN                                 {:
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
                                                                                       ((ColumnNode) node).setCanonicalColumnName(col);
                                                                                       RESULT = node;

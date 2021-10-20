@@ -1,6 +1,5 @@
 package ecnu.db.generator.constraintchain;
 
-import ch.obermuhlner.math.big.BigDecimalMath;
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
@@ -8,27 +7,22 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.ParameterResolver;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static ecnu.db.analyzer.TaskConfigurator.queryInstantiation;
-import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 import static ecnu.db.utils.CommonUtils.readFile;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class QueryInstantiationBasicTest {
     Map<String, List<ConstraintChain>> query2chains;
@@ -67,19 +61,20 @@ class QueryInstantiationBasicTest {
 
         operations = query2operations.get("3_1.sql_tpch.customer");
         assertEquals(1, operations.size());
-        assertThat(BigDecimal.valueOf(0.1983466667), Matchers.comparesEqualTo(operations.get(0).getProbability()));
+        assertEquals(0.1983466667, operations.get(0).getProbability().doubleValue(), 0.0000001);
         operations = query2operations.get("3_1.sql_tpch.orders");
         assertEquals(1, operations.size());
-        assertThat(BigDecimal.valueOf(0.4838209734), Matchers.comparesEqualTo(operations.get(0).getProbability()));
+        assertEquals(0.4838209734, operations.get(0).getProbability().doubleValue(), 0.0000001);
+
 
         operations = query2operations.get("1_1.sql_tpch.lineitem");
         assertEquals(1, operations.size());
-        assertThat(BigDecimal.valueOf(0.9797396027), Matchers.comparesEqualTo(operations.get(0).getProbability()));
+        assertEquals(0.9797396027, operations.get(0).getProbability().doubleValue(), 0.0000001);
 
-        //todo check 
         operations = query2operations.get("6_1.sql_tpch.lineitem");
-        assertEquals(3, operations.size());
-        assertThat(BigDecimalMath.pow(BigDecimal.valueOf(0.01902281455), BigDecimal.ONE.divide(BigDecimal.valueOf(3), BIG_DECIMAL_DEFAULT_PRECISION), BIG_DECIMAL_DEFAULT_PRECISION), Matchers.comparesEqualTo(operations.get(0).getProbability()));
+        //todo merge uni filter 2 range filter
+        assertEquals(5, operations.size());
+        assertEquals(0.01902281455, operations.get(0).getProbability().doubleValue(), 0.0000001);
     }
 
     @Disabled

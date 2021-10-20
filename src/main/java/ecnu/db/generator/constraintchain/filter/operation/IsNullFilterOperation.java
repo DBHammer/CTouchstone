@@ -2,6 +2,7 @@ package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectSymbol;
+import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
@@ -69,4 +70,5 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     public boolean[] evaluate() {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null);
     }
+
 }

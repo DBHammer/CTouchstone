@@ -8,9 +8,10 @@ import java.util.List;
 
 /**
  * @author wangqingshuai
- * todo 当前认为所有的BoolExprNode都是相互独立的
  */
 public interface BoolExprNode {
+
+
     /**
      * 计算所有子节点的概率
      *
@@ -38,4 +39,8 @@ public interface BoolExprNode {
      * @return 所有的参数
      */
     List<Parameter> getParameters();
+
+    void reverse();
+
+    boolean isTrue();
 }

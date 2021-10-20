@@ -3,7 +3,7 @@ package ecnu.db.analyzer.online.adapter.tidb;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.analyzer.online.ExecutionNode.ExecutionNodeType;
-import ecnu.db.generator.constraintchain.filter.logical.AndNode;
+import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.schema.TableManager;
 import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoParser;
@@ -346,7 +346,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    public AndNode analyzeSelectOperator(String operatorInfo) throws Exception {
+    public LogicNode analyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
     }
 }
