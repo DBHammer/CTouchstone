@@ -1,9 +1,8 @@
 package ecnu.db.generator.constraintchain.filter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -17,8 +16,6 @@ import static ecnu.db.generator.constraintchain.filter.BoolExprType.AND;
 import static ecnu.db.generator.constraintchain.filter.BoolExprType.OR;
 
 public class LogicNode implements BoolExprNode {
-    private final Logger logger = LoggerFactory.getLogger(LogicNode.class);
-
     private BoolExprType type;
     private List<BoolExprNode> children;
 
@@ -96,6 +93,7 @@ public class LogicNode implements BoolExprNode {
         return resultVector;
     }
 
+    @JsonIgnore
     @Override
     public List<Parameter> getParameters() {
         return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();
