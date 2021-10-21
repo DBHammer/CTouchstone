@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author wangqingshuai
  */
-public abstract class AbstractFilterOperation implements BoolExprNode {
+public abstract class AbstractFilterOperation extends BoolExprNode {
     /**
      * 此filter包含的参数
      */
@@ -23,11 +23,6 @@ public abstract class AbstractFilterOperation implements BoolExprNode {
      * 此filter operation的过滤比
      */
     protected BigDecimal probability;
-
-    /**
-     * 是否在化简的过程中被reverse过，默认为false
-     */
-    public boolean isReverse = false;
 
     AbstractFilterOperation(CompareOperator operator) {
         this.operator = operator;

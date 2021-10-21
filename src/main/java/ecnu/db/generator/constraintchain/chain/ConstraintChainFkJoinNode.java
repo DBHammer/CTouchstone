@@ -25,11 +25,6 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         this.probability = probability;
     }
 
-    public ConstraintChainFkJoinNode(String constraintChainInfo) {
-        super(ConstraintChainNodeType.FK_JOIN);
-        //todo 解析constraintChainInfo
-    }
-
     @Override
     public String toString() {
         return String.format("{pkTag:%d,refCols:%s,probability:%s}", pkTag, refCols, probability);
@@ -68,5 +63,8 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     }
 
     public void setAntiJoin() { this.antiOrNot = true; }
+
+    public void setAntiJoin(boolean antiOrNot) { this.antiOrNot = antiOrNot; }
+
     public boolean getAntiJoin() { return this.antiOrNot; }
 }

@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.filter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
@@ -9,38 +10,44 @@ import java.util.List;
 /**
  * @author wangqingshuai
  */
-public interface BoolExprNode {
+public abstract class BoolExprNode {
 
+    /**
+     * 是否在化简的过程中被reverse过，默认为false
+     */
+    @JsonIgnore
+    protected boolean isReverse = false;
 
     /**
      * 计算所有子节点的概率
      *
      * @param probability 当前节点的总概率
      */
-    List<AbstractFilterOperation> pushDownProbability(BigDecimal probability);
+    protected abstract List<AbstractFilterOperation> pushDownProbability(BigDecimal probability);
 
     /**
      * 获得当前布尔表达式节点的类型
      *
      * @return 类型
      */
-    BoolExprType getType();
+    protected abstract BoolExprType getType();
 
     /**
      * 获取生成好column以后，evaluate表达式的布尔值
      *
      * @return evaluate表达式的布尔值
      */
-    boolean[] evaluate() throws CannotFindColumnException;
+    protected abstract boolean[] evaluate() throws CannotFindColumnException;
 
     /**
      * 获取该filter条件中的所有参数
      *
      * @return 所有的参数
      */
-    List<Parameter> getParameters();
+    public abstract List<Parameter> getParameters();
 
-    void reverse();
+    public abstract void reverse();
 
-    boolean isTrue();
+    @JsonIgnore
+    public abstract boolean isTrue();
 }

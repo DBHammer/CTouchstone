@@ -18,17 +18,7 @@ public class ConstraintChainPkJoinNode extends ConstraintChainNode {
         this.pkTag = pkTag;
         this.pkColumns = pkColumns;
     }
-
-    /**
-     * 构建ConstraintChainPkJoinNode对象
-     *
-     * @param constraintChainInfo 获取到的约束链信息
-     */
-    public ConstraintChainPkJoinNode(String constraintChainInfo) {
-        super(ConstraintChainNodeType.PK_JOIN);
-        //todo 解析constraintChainInfo
-    }
-
+    
     @Override
     public String toString() {
         return String.format("{pkTag:%d,pkColumns:%s}", pkTag, Arrays.toString(pkColumns));

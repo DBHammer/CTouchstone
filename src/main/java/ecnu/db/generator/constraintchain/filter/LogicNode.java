@@ -15,14 +15,9 @@ import java.util.stream.IntStream;
 import static ecnu.db.generator.constraintchain.filter.BoolExprType.AND;
 import static ecnu.db.generator.constraintchain.filter.BoolExprType.OR;
 
-public class LogicNode implements BoolExprNode {
+public class LogicNode extends BoolExprNode {
     private BoolExprType type;
     private List<BoolExprNode> children;
-
-    /**
-     * 是否在化简的过程中被reverse过，默认为false
-     */
-    private boolean isReverse = false;
 
     public void setType(BoolExprType type) {
         this.type = type;
@@ -37,6 +32,7 @@ public class LogicNode implements BoolExprNode {
     }
 
 
+    @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         List<AbstractFilterOperation> operations = new ArrayList<>();
         // 如果上层要求设置概率为 1， 则不需要处理，直接下推概率1到所有的filter operation中

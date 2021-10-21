@@ -24,7 +24,7 @@ import static ecnu.db.utils.CommonUtils.readFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class QueryComplexTest {
+class QueryComplexTest {
     Map<String, List<ConstraintChain>> query2chains;
     int samplingSize = 10_000;
 
@@ -56,9 +56,9 @@ public class QueryComplexTest {
             }
         }
         List<AbstractFilterOperation> operations;
-        operations = query2operations.get("19_1.sql_tpch.lineitem");
-        assertEquals(1, operations.size());
-        assertEquals(0.9797396027, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        operations = query2operations.get("19_1.sql_public.lineitem");
+        assertEquals(8, operations.size());
+        assertEquals(0.0235290687, operations.get(0).getProbability().doubleValue(), 0.0000001);
     }
 
 }
