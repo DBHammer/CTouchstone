@@ -38,6 +38,10 @@ public class Column {
     private boolean columnData2ComputeData = false;
     @JsonIgnore
     private double[] computeData;
+    @JsonIgnore
+    private BigDecimal Max = BigDecimal.ONE;
+    @JsonIgnore
+    private BigDecimal Min = new BigDecimal(0.0000000000000001);
 
     public Column() {
     }
@@ -71,7 +75,14 @@ public class Column {
     }
 
     private void dealZeroPb(List<Parameter> parameters){
-        return;
+        for (Parameter parameter : parameters) {
+            parameter.setData(min-1);
+            if (likeParameterId.contains(parameter.getId())) {
+                parameter.setDataValue(stringTemplate.getLikeValue(specialValue, min-1, parameter.getDataValue()));
+            } else {
+                parameter.setDataValue(transferDataToValue(min-1));
+            }
+        }
     }
 
     /**
@@ -83,7 +94,7 @@ public class Column {
      */
     private void insertNonEqProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         long bound;
-        if (operator == CompareOperator.LE || operator == CompareOperator.LT) {
+        if (operator == CompareOperator.GE || operator == CompareOperator.GT) {
             probability = BigDecimal.ONE.subtract(probability);
         }
         bound = switch (operator) {
@@ -118,7 +129,6 @@ public class Column {
                 tempProbability = tempProbability.subtract(lowerBound);
                 eqRequest2ParameterIds.get(tempProbability).add(parameters.get(index--));
             }
-            //
             while (index >= 0) {
                 if (index > 0) {
                     BigDecimal currentProbability = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(tempProbability.doubleValue()));
