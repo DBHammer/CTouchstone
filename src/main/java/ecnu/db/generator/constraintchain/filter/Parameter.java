@@ -1,14 +1,11 @@
 package ecnu.db.generator.constraintchain.filter;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 /**
  * @author alan
  * 代表需要实例化的参数
  */
-//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, resolver = ParameterResolver.class, property = "id", scope = Parameter.class)
 public class Parameter {
 
     /**

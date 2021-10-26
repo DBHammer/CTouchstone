@@ -6,7 +6,6 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
-import ecnu.db.generator.constraintchain.filter.ParameterResolver;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -29,7 +28,6 @@ class QueryInstantiationMultiVarTest {
     @BeforeEach
     public void setUp() throws IOException {
         ArithmeticNode.setSize(samplingSize);
-        ParameterResolver.ITEMS.clear();
         String fileContent = CommonUtils.readFile("src/test/resources/data/query-instantiation/multi-var-test/constraintChain.json");
         query2chains = CommonUtils.MAPPER.readValue(fileContent, new TypeReference<>() {
         });

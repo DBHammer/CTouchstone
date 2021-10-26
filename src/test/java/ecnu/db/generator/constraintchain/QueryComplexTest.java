@@ -4,22 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
-import ecnu.db.generator.constraintchain.filter.Parameter;
-import ecnu.db.generator.constraintchain.filter.ParameterResolver;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static ecnu.db.analyzer.TaskConfigurator.queryInstantiation;
 import static ecnu.db.utils.CommonUtils.readFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -30,7 +22,6 @@ class QueryComplexTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        ParameterResolver.ITEMS.clear();
         String content = readFile("src/test/resources/data/query-instantiation/complex/constraintChain.json");
         query2chains = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
