@@ -1,9 +1,8 @@
 package ecnu.db.generator.constraintchain.filter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -16,16 +15,9 @@ import java.util.stream.IntStream;
 import static ecnu.db.generator.constraintchain.filter.BoolExprType.AND;
 import static ecnu.db.generator.constraintchain.filter.BoolExprType.OR;
 
-public class LogicNode implements BoolExprNode {
-    private final Logger logger = LoggerFactory.getLogger(LogicNode.class);
-
+public class LogicNode extends BoolExprNode {
     private BoolExprType type;
     private List<BoolExprNode> children;
-
-    /**
-     * 是否在化简的过程中被reverse过，默认为false
-     */
-    private boolean isReverse = false;
 
     public void setType(BoolExprType type) {
         this.type = type;
@@ -40,6 +32,7 @@ public class LogicNode implements BoolExprNode {
     }
 
 
+    @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         List<AbstractFilterOperation> operations = new ArrayList<>();
         // 如果上层要求设置概率为 1， 则不需要处理，直接下推概率1到所有的filter operation中
@@ -96,6 +89,7 @@ public class LogicNode implements BoolExprNode {
         return resultVector;
     }
 
+    @JsonIgnore
     @Override
     public List<Parameter> getParameters() {
         return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();

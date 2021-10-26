@@ -54,13 +54,6 @@
             <version>11b-20160615-1</version>
         </dependency>
 
-        <!--compute libs-->
-        <dependency>
-            <groupId>ch.obermuhlner</groupId>
-            <artifactId>big-math</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-
         <!--jdbc libs-->
         <dependency>
             <groupId>mysql</groupId>

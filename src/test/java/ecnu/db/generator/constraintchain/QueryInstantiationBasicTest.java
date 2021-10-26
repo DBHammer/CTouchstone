@@ -5,7 +5,6 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
-import ecnu.db.generator.constraintchain.filter.ParameterResolver;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
@@ -30,7 +29,6 @@ class QueryInstantiationBasicTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        ParameterResolver.ITEMS.clear();
         String content = readFile("src/test/resources/data/query-instantiation/basic/constraintChain.json");
         query2chains = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });

@@ -16,7 +16,7 @@ public class Table {
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new HashMap<>();
     @JsonIgnore
-    private long joinTag;
+    private long joinTag = 1;
 
     public Table() {
     }
@@ -25,7 +25,6 @@ public class Table {
         this.canonicalColumnNames = canonicalColumnNames;
         this.tableSize = tableSize;
         this.primaryKeys = primaryKeys;
-        joinTag = 1;
     }
 
     public List<String> getCanonicalColumnNames() {

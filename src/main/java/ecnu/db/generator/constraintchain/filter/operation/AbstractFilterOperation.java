@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author wangqingshuai
  */
-public abstract class AbstractFilterOperation implements BoolExprNode {
+public abstract class AbstractFilterOperation extends BoolExprNode {
     /**
      * 此filter包含的参数
      */
@@ -24,18 +24,13 @@ public abstract class AbstractFilterOperation implements BoolExprNode {
      */
     protected BigDecimal probability;
 
-    /**
-     * 是否在化简的过程中被reverse过，默认为false
-     */
-    public boolean isReverse = false;
-
     AbstractFilterOperation(CompareOperator operator) {
         this.operator = operator;
     }
 
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
-        if (probability.compareTo(BigDecimal.ONE) == 0) {
+        if (probability.compareTo(BigDecimal.ONE) == 0 && !isTrue()) {
             probability = BigDecimal.ZERO;
         }
         if (isReverse) {
