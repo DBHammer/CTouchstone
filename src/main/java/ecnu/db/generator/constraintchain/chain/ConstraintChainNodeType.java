@@ -17,5 +17,9 @@ public enum ConstraintChainNodeType {
     /**
      * join操作中的外键节点
      */
-    FK_JOIN
+    FK_JOIN,
+    /**
+     * aggregate操作的节点
+     */
+    AGGREGATE
 }

@@ -35,6 +35,7 @@ public class ConstraintChainNodeDeserializer extends StdDeserializer<ConstraintC
             case FILTER -> mapper.readValue(node.toString(), ConstraintChainFilterNode.class);
             case FK_JOIN -> mapper.readValue(node.toString(), ConstraintChainFkJoinNode.class);
             case PK_JOIN -> mapper.readValue(node.toString(), ConstraintChainPkJoinNode.class);
+            case AGGREGATE -> mapper.readValue(node.toString(), ConstraintChainAggregateNode.class);
         };
     }
 }

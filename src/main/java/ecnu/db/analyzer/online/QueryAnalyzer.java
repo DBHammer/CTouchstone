@@ -1,10 +1,7 @@
 package ecnu.db.analyzer.online;
 
 import ecnu.db.dbconnector.DbConnector;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFkJoinNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainPkJoinNode;
+import ecnu.db.generator.constraintchain.chain.*;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
@@ -98,6 +95,7 @@ public class QueryAnalyzer {
             case join, outerJoin, antiJoin -> analyzeJoinNode(node, constraintChain, lastNodeLineCount);
             case filter -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
             case scan -> throw new TouchstoneException(String.format("中间节点'%s'不为scan", node.getId()));
+            case aggregate -> analyzeAggregateNode(node, constraintChain, lastNodeLineCount);
         };
     }
 
@@ -106,6 +104,21 @@ public class QueryAnalyzer {
         BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
         ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, root);
         constraintChain.addNode(filterNode);
+        return node.getOutputRows();
+    }
+
+    private int analyzeAggregateNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
+        if(node.getInfo().length()!=0) {
+            LogicNode root = analyzeSelectInfo(node.getInfo());
+            BigDecimal ratio = BigDecimal.valueOf(node.getRowsAfterFilter()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
+            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, root);
+            constraintChain.addNode(filterNode);
+            ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(node.getGroupKey(),node.getInfo(),node.getOutputRows(), node.getRowsAfterFilter());
+            constraintChain.addNode(aggregateNode);
+        }else{
+            ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(node.getGroupKey(),node.getInfo(),node.getOutputRows(), node.getRowsAfterFilter());
+            constraintChain.addNode(aggregateNode);
+        }
         return node.getOutputRows();
     }
 
@@ -279,4 +292,5 @@ public class QueryAnalyzer {
             throw new UnsupportedSelect(operatorInfo, e);
         }
     }
+
 }

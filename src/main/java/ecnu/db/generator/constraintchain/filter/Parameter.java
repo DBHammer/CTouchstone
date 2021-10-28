@@ -27,6 +27,20 @@ public class Parameter {
     @JsonIgnore
     private String dataValue;
 
+    public boolean isActual() {
+        return isActual;
+    }
+
+    public void setActual(boolean actual) {
+        isActual = actual;
+    }
+
+    /**
+     * 此参数是否为确定的值
+     */
+    @JsonIgnore
+    private boolean isActual = true;
+
     public Parameter() {
     }
 
