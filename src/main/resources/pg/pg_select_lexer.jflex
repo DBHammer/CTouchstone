@@ -40,6 +40,7 @@ ecnu.db.utils.exception.TouchstoneException
 %cup
 
 /* tokens */
+VIRTUALNUM=[$][0-9]
 AND=(and|AND)
 OR=(or|OR)
 DIGIT=[0-9]
@@ -60,7 +61,9 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   {OR} {
     return symbol(OR);
   }
-
+  "\"substring\"" {
+    return symbol(SUBSTRING);
+  }
   /* compare operators */
   "= ANY" {
     return symbol(IN, CompareOperator.IN);
@@ -134,17 +137,22 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   {INTEGER} {
     return symbol(INTEGER, Integer.valueOf(yytext()));
   }
+  {VIRTUALNUM} {
+    return symbol(VIRTUALNUM, yytext());
+  }
 
   /* delimiters */
   ", " {}
 
   /* type */
   "::text" {}
+  "::text[]" {}
   "::bpchar[]" {}
   "::bpchar" {}
   "::integer[]" {}
   "::date" {}
   "::timestamp without time zone" {}
+  "$" {}
 
   /* white spaces */
   {WHITE_SPACE_CHAR}+ {}

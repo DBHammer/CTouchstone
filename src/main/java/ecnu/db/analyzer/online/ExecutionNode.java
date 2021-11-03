@@ -1,6 +1,8 @@
 package ecnu.db.analyzer.online;
 
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -31,6 +33,23 @@ public class ExecutionNode {
      * 是否为新生成的节点
      */
     public boolean isAdd = false;
+    /**
+     * groupKey
+     */
+    private List<String> GroupKey = new ArrayList<>();
+
+    public int getRowsAfterFilter() {
+        return rowsAfterFilter;
+    }
+
+    public void setRowsAfterFilter(int rowsAfterFilter) {
+        this.rowsAfterFilter = rowsAfterFilter;
+    }
+
+    /**
+     * 如果aggregate中含有filter，则记录经过filter之后的行数
+     */
+    private int rowsAfterFilter;
 
     private CountDownLatch waitSetJoinTag = new CountDownLatch(1);
 
@@ -60,6 +79,15 @@ public class ExecutionNode {
         this.info = info;
         this.id = id;
         this.outputRows = outputRows;
+    }
+
+    public ExecutionNode(String id, ExecutionNodeType type, int outputRows, int rowsAfterFilter, String info, List<String> groupKey) {
+        this.type = type;
+        this.info = info;
+        this.id = id;
+        this.outputRows = outputRows;
+        this.GroupKey = groupKey;
+        this.rowsAfterFilter = rowsAfterFilter;
     }
 
 
@@ -106,6 +134,14 @@ public class ExecutionNode {
                 "id='" + id + '}';
     }
 
+    public List<String> getGroupKey() {
+        return GroupKey;
+    }
+
+    public void setGroupKey(List<String> groupKey) {
+        GroupKey = groupKey;
+    }
+
     public enum ExecutionNodeType {
         /**
          * scan 节点，全表遍历，没有任何的过滤条件，只能作为叶子节点
@@ -126,6 +162,10 @@ public class ExecutionNode {
         /**
          * antijoin 节点，同时具有左右子节点，只能作为非叶子节点
          */
-        antiJoin
+        antiJoin,
+        /**
+         * aggregate 节点，有子节点，只能作为非叶子节点
+         */
+        aggregate
     }
 }

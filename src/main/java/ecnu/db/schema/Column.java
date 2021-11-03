@@ -127,7 +127,7 @@ public class Column {
                 BigDecimal lowerBound = probabilityHistogram.lower(tempProbability);
                 probabilityHistogram.remove(lowerBound);
                 tempProbability = tempProbability.subtract(lowerBound);
-                eqRequest2ParameterIds.get(tempProbability).add(parameters.get(index--));
+                eqRequest2ParameterIds.get(lowerBound).add(parameters.get(index--));
             }
             while (index >= 0) {
                 if (index > 0) {

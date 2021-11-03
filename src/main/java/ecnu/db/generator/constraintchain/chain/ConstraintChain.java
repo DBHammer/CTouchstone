@@ -135,6 +135,11 @@ public class ConstraintChain {
                     subGraphHashMap.putIfAbsent(localSubGraph, new SubGraph(localSubGraph));
                     subGraphHashMap.get(localSubGraph).pkInfo = currentNodeInfo + conditionColor;
                 }
+                case AGGREGATE -> {
+                    ConstraintChainAggregateNode aggregateNode = ((ConstraintChainAggregateNode) node);
+                    currentNodeInfo = String.format("\"GroupKey:%s\"", ((ConstraintChainAggregateNode) node).getGroupKey());
+                    graph.append("\t").append(currentNodeInfo).append(conditionColor);
+                }
                 default -> throw new UnsupportedOperationException();
             }
             if (!lastNodeInfo.isBlank()) {

@@ -9,6 +9,9 @@ import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 import java_cup.runtime.ComplexSymbolFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Loggers;
+import org.apache.logging.log4j.spi.LoggerAdapter;
 
 import java.io.StringReader;
 import java.util.*;
@@ -20,7 +23,7 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 
 public class PgAnalyzer extends AbstractAnalyzer {
 
-    private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9]*\\.[a-zA-Z0-9]+");
+    private static final Pattern  CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9]+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private static final String NUMERIC = "'[0-9]+'::numeric";
@@ -28,6 +31,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private static final String TIMESTAMP = "'(([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6})|([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})|([0-9]{4}-[0-9]{2}-[0-9]{2}))'::timestamp without time zone";
     private static final Pattern REDUNDANCY = Pattern.compile(NUMERIC +"|"+ DATE +"|"+ TIMESTAMP);
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
+
 
     public PgAnalyzer() {
         super();
@@ -73,7 +77,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
                     if (hasChildPlan(allKeys) && plansCount == 2) {
                         currentPath = Path + "['Plans'][1]";
                         String currentNodeType = rc.read(currentPath + "['Node Type']");
-                        if (currentNodeType.equals("Hash")) {
+                        if (currentNodeType.equals("Hash")||currentNodeType.equals("Sort")) {
                             currentPath += "['Plans'][0]";
                             currentNodeType = rc.read(currentPath + "['Node Type']");
                             while (!(currentNodeType.equals("Seq Scan") || currentNodeType.equals("Hash Join") || currentNodeType.equals("Nested Loop"))) {
@@ -183,6 +187,22 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.join, rowCount, joinInfo);
                 return node;
             }
+        }else if (NodeTypeRef.isAggregateNode(NodeType)){
+            Map<String, String> allKeys = getKeys(queryPlan, Path);
+            List<String> groupKey = new ArrayList<>();
+            String aggFilterInfo = "";
+            int rowsAfterFilter = 0;
+            if(hasGroupKey(allKeys)){
+                groupKey = rc.read(Path+"['Group Key']");
+            }
+            if(hasFilterInfo(allKeys)){
+                aggFilterInfo = rc.read(Path + "['Filter']");
+                int inputRows = rc.read(Path + "['Plans'][0]['Actual Rows']");
+                int rowsRemovedbyFilter =rc.read(Path + "['Rows Removed by Filter']");
+                rowsAfterFilter = inputRows - rowsRemovedbyFilter;
+            }
+            node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.aggregate,rowCount, rowsAfterFilter, aggFilterInfo, groupKey);
+            return node;
         }
         return null;
     }
@@ -214,6 +234,15 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private boolean hasJoinFilter(Map<String, String> allKeys) {
         for (String key : allKeys.keySet()) {
             if (key.equals("Join Filter")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasGroupKey(Map<String, String> allKeys) {
+        for (String key : allKeys.keySet()) {
+            if (key.equals("Group Key")) {
                 return true;
             }
         }
@@ -282,7 +311,8 @@ public class PgAnalyzer extends AbstractAnalyzer {
                         currRightTable = String.format("%s.%s", rightJoinInfos[0], rightJoinInfos[1]),
                         currRightCol = rightJoinInfos[2];
                 if (!leftTable.equals(currLeftTable) || !rightTable.equals(currRightTable)) {
-                    throw new TouchstoneException("join中包含多个表的约束,暂不支持");
+                    //throw new TouchstoneException("join中包含多个表的约束,暂不支持");
+                    break;
                 }
                 leftCols.add(currLeftCol);
                 rightCols.add(currRightCol);
@@ -302,4 +332,5 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public LogicNode analyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
     }
+
 }

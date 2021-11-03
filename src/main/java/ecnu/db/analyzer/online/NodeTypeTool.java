@@ -60,4 +60,12 @@ public interface NodeTypeTool {
      * @return 返回true或者false
      */
     boolean isRangeScanNode(String nodeType);
+
+    /**
+     * 是否为Aggregate类型节点
+     *
+     * @param nodeType 表示节点类型的str
+     * @return 返回true或者false
+     */
+    boolean isAggregateNode(String nodeType);
 }
