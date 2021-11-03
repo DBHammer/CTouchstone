@@ -46,8 +46,16 @@ public abstract class BoolExprNode {
      */
     public abstract List<Parameter> getParameters();
 
+    /**
+     * 对逻辑表达树取反
+     *
+     */
     public abstract void reverse();
 
+    /**
+     * 判定子树是否可以标记为True
+     * @return 子树可以标记为True
+     */
     @JsonIgnore
     public abstract boolean isTrue();
 }
