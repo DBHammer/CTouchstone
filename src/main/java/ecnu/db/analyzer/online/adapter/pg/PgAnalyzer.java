@@ -327,6 +327,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return result;
     }
 
+    @Override
+    public List<List<String[]>> splitQueryPlan(List<String[]> queryPlan) {
+        return null;
+    }
+
 
     @Override
     public LogicNode analyzeSelectOperator(String operatorInfo) throws Exception {

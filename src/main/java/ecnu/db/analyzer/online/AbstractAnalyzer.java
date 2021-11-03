@@ -33,6 +33,14 @@ public abstract class AbstractAnalyzer {
      */
     public abstract String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException;
 
+
+    /**
+     * 分割查询plan
+     * @param queryPlan 原始的查询plan
+     * @return 分割后的多个查询plan
+     */
+    public abstract List<List<String[]>> splitQueryPlan(List<String[]> queryPlan);
+
     /**
      * 分析join信息
      *

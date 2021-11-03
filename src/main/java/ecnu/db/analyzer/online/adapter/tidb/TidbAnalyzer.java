@@ -346,6 +346,11 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
+    public List<List<String[]>> splitQueryPlan(List<String[]> queryPlan) {
+        return null;
+    }
+
+    @Override
     public LogicNode analyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
     }
