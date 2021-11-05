@@ -4,16 +4,18 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
+import ecnu.db.analyzer.online.QueryAnalyzer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 import java_cup.runtime.ComplexSymbolFactory;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Loggers;
-import org.apache.logging.log4j.spi.LoggerAdapter;
+import net.minidev.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.StringReader;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,7 +25,7 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 
 public class PgAnalyzer extends AbstractAnalyzer {
 
-    private static final Pattern  CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9]+");
+    private static final Pattern  CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9_]+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private static final String NUMERIC = "'[0-9]+'::numeric";
@@ -31,7 +33,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private static final String TIMESTAMP = "'(([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6})|([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})|([0-9]{4}-[0-9]{2}-[0-9]{2}))'::timestamp without time zone";
     private static final Pattern REDUNDANCY = Pattern.compile(NUMERIC +"|"+ DATE +"|"+ TIMESTAMP);
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
-
+    protected static final Logger logger = LoggerFactory.getLogger(PgAnalyzer.class);
 
     public PgAnalyzer() {
         super();
@@ -70,7 +72,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             Map.Entry<String, ExecutionNode> pair = stack.pop();
             Path = new StringBuilder(pair.getKey());
             node = pair.getValue();
-            if(node.isAdd == false) {
+            if(!node.isAdd) {
                 Map<String, String> allKeys = getKeys(queryPlan, Path.toString());
                 if (hasChildPlan(allKeys)) {
                     int plansCount = rc.read(Path + "['Plans'].length()");
@@ -80,7 +82,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
                         if (currentNodeType.equals("Hash")||currentNodeType.equals("Sort")) {
                             currentPath += "['Plans'][0]";
                             currentNodeType = rc.read(currentPath + "['Node Type']");
-                            while (!(currentNodeType.equals("Seq Scan") || currentNodeType.equals("Hash Join") || currentNodeType.equals("Nested Loop"))) {
+                            while (!(currentNodeType.equals("Seq Scan") || currentNodeType.equals("Hash Join") || currentNodeType.equals("Nested Loop")||currentNodeType.equals("Aggregate"))) {
                                 currentPath += "['Plans'][0]";
                                 currentNodeType = rc.read(currentPath + "['Node Type']");
                             }
@@ -92,6 +94,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
                     }
                     if (hasChildPlan(allKeys) && plansCount == 1) {
                         currentPath = Path + "['Plans'][0]";
+                        String currentNodeType = rc.read(currentPath + "['Node Type']");
+                        while (NodeTypeRef.isPassNode(currentNodeType)) {//找到第一个可以处理的节点
+                            currentPath = currentPath + "['Plans'][0]";
+                            NodeTypePath = currentPath + "['Node Type']";
+                            currentNodeType = rc.read(NodeTypePath);
+                        }
                         String rightPath = Path + "['Plans'][1]";
                         if (hasFilterInfo(allKeys)) {
                             String filterInfo = rc.read(Path + "['Filter']");
@@ -192,16 +200,25 @@ public class PgAnalyzer extends AbstractAnalyzer {
             List<String> groupKey = new ArrayList<>();
             String aggFilterInfo = "";
             int rowsAfterFilter = 0;
+            String tableName = "";
             if(hasGroupKey(allKeys)){
                 groupKey = rc.read(Path+"['Group Key']");
             }
             if(hasFilterInfo(allKeys)){
+                groupKey = rc.read(Path+"['Group Key']");
+                tableName = groupKey.get(0).split("\\.")[0];
+                String wholetableName = "public." + tableName;
+                aliasDic.put(tableName, wholetableName);
+                tableName = wholetableName;
+                /*tableName = rc.read(Path + "['Plans'][0]"+ "['Schema']") + "." + rc.read(Path + "['Plans'][0]" +"['Relation Name']");
+                aliasDic.put(rc.read(Path + "['Plans'][0]" +"['Alias']"), tableName);*/
                 aggFilterInfo = rc.read(Path + "['Filter']");
                 int inputRows = rc.read(Path + "['Plans'][0]['Actual Rows']");
                 int rowsRemovedbyFilter =rc.read(Path + "['Rows Removed by Filter']");
                 rowsAfterFilter = inputRows - rowsRemovedbyFilter;
             }
-            node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.aggregate,rowCount, rowsAfterFilter, aggFilterInfo, groupKey);
+            node = new ExecutionNode(planId, ExecutionNode.ExecutionNodeType.aggregate,rowCount, rowsAfterFilter, transFilterInfo(aggFilterInfo), groupKey);
+            node.setTableName(tableName);
             return node;
         }
         return null;
@@ -243,6 +260,15 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private boolean hasGroupKey(Map<String, String> allKeys) {
         for (String key : allKeys.keySet()) {
             if (key.equals("Group Key")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasInitPlan(Map<String, String> allKeys) {
+        for (String key : allKeys.keySet()) {
+            if (key.equals("Subplan Name")) {
                 return true;
             }
         }
@@ -312,6 +338,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
                         currRightCol = rightJoinInfos[2];
                 if (!leftTable.equals(currLeftTable) || !rightTable.equals(currRightTable)) {
                     //throw new TouchstoneException("join中包含多个表的约束,暂不支持");
+                    logger.info("join中包含多个表的约束,暂不支持");
                     break;
                 }
                 leftCols.add(currLeftCol);
@@ -329,7 +356,50 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
     @Override
     public List<List<String[]>> splitQueryPlan(List<String[]> queryPlan) {
-        return null;
+        String queryPlanString = queryPlanToString(queryPlan);
+        ReadContext rc = JsonPath.parse(queryPlanString);
+        StringBuilder Path = new StringBuilder("$.[0]['Plan']");
+        Map<String, String> allKeys = getKeys(queryPlanString, Path.toString());
+        String currentPath = "";
+        while(!hasInitPlan(allKeys)){
+            currentPath = Path.toString();
+            if(hasChildPlan(allKeys)) {
+                Path.append("['Plans'][0]");
+                allKeys = getKeys(queryPlanString, Path.toString());
+            }else{
+                List<List<String[]>> result = new LinkedList<>();
+                result.add(queryPlan);
+                return result;
+            }
+        }
+        String subplanName = rc.read(Path + "['Subplan Name']");
+        if(subplanName.contains("SubPlan")){
+            List<List<String[]>> result = new LinkedList<>();
+            result.add(queryPlan);
+            return result;
+        }
+        List<List<String[]>> queryPlans = new ArrayList<>();
+        int plansCount = rc.read(currentPath + "['Plans'].length()");
+        for(int i=0; i<plansCount; i++){
+            LinkedHashMap data = rc.read(currentPath + "['Plans'][" + i + "]");
+            String subPlan = JSONObject.toJSONString(data);
+            subPlan ="[{Plan:" + subPlan + "}]";
+            List<String[]> subPlanList = new ArrayList<>();
+            String[] subQueryPlan = new String[1];
+            subQueryPlan[0] = subPlan;
+            subPlanList.add(subQueryPlan);
+            queryPlans.add(subPlanList);
+        }
+        return queryPlans;
+    }
+
+    private String queryPlanToString(List<String[]> queryPlan) {
+        StringBuilder myQueryPlan = new StringBuilder();
+        for (String[] strings : queryPlan) {
+            myQueryPlan.append(strings[0]);
+        }
+        String queryPlanToString = myQueryPlan.toString();
+        return queryPlanToString;
     }
 
 
@@ -337,5 +407,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public LogicNode analyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
     }
+
 
 }

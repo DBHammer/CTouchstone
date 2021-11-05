@@ -249,24 +249,29 @@ public class QueryAnalyzer {
      * @param query 查询语句
      * @return 该查询树结构出的约束链信息和表信息
      */
-    public List<ConstraintChain> extractQuery(String query) throws SQLException {
-        List<ConstraintChain> constraintChains = new ArrayList<>();
+    public List<List<ConstraintChain>> extractQuery(String query) throws SQLException, TouchstoneException {
+        List<List<ConstraintChain>> constraintChains = new ArrayList<>();
         List<String[]> queryPlan = dbConnector.explainQuery(query);
+        List<List<String[]>> queryPlans = abstractAnalyzer.splitQueryPlan(queryPlan);
         try {
-            ExecutionNode executionTree = abstractAnalyzer.getExecutionTree(queryPlan);
-            //获取查询树的所有路径
-            List<List<ExecutionNode>> paths = new ArrayList<>();
-            getPathsIterate(executionTree, paths, new LinkedList<>());
-            CommonUtils.setForkJoinParallelism(paths.size());
-            // 并发处理约束链
-            constraintChains = paths.parallelStream().map(path -> {
-                try {
-                    return extractConstraintChain(path);
-                } catch (TouchstoneException | SQLException e) {
-                    logger.error(path.toString(), e);
-                    return null;
-                }
-            }).filter(Objects::nonNull).toList();
+            for (List<String[]> plan : queryPlans) {
+                List<ConstraintChain> currentConstraintChains = new ArrayList<>();
+                ExecutionNode executionTree = abstractAnalyzer.getExecutionTree(plan);
+                //获取查询树的所有路径
+                List<List<ExecutionNode>> paths = new ArrayList<>();
+                getPathsIterate(executionTree, paths, new LinkedList<>());
+                CommonUtils.setForkJoinParallelism(paths.size());
+                // 并发处理约束链
+                currentConstraintChains.addAll(paths.parallelStream().map(path -> {
+                    try {
+                        return extractConstraintChain(path);
+                    } catch (TouchstoneException | SQLException e) {
+                        logger.error(path.toString(), e);
+                        return null;
+                    }
+                }).filter(Objects::nonNull).toList());
+                constraintChains.add(currentConstraintChains);
+            }
         } catch (TouchstoneException e) {
             if (queryPlan != null && !queryPlan.isEmpty()) {
                 String queryPlanContent = queryPlan.stream().map(plan -> String.join("\t", plan))

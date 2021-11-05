@@ -64,6 +64,9 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   "\"substring\"" {
     return symbol(SUBSTRING);
   }
+  "sum" {
+      return symbol(SUM);
+  }
   /* compare operators */
   "= ANY" {
     return symbol(IN, CompareOperator.IN);
@@ -152,6 +155,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   "::integer[]" {}
   "::date" {}
   "::timestamp without time zone" {}
+  "::numeric" {}
   "$" {}
 
   /* white spaces */

@@ -66,6 +66,9 @@ public class TaskConfigurator implements Callable<Integer> {
                         .flatMap(Collection::stream).toList())
                 .flatMap(Collection::stream).toList();
 
+        for (AbstractFilterOperation filterOperation : filterOperations) {
+            System.out.println(filterOperation.toString()+filterOperation.getProbability());
+        }
         // uni-var operation
         filterOperations.stream()
                 .filter(UniVarFilterOperation.class::isInstance)
@@ -180,6 +183,8 @@ public class TaskConfigurator implements Callable<Integer> {
         List<File> queryFiles = querySchemaMetadataAndColumnMetadata(queryReader, dbConnector);
         Map<String, String> queryName2QueryTemplates = new HashMap<>();
         Map<String, List<ConstraintChain>> query2constraintChains = new LinkedHashMap<>();
+        List<Map<String, List<ConstraintChain>>> query2constraintChainsList = new ArrayList<>();
+        List<Map<String, String>> queryName2QueryTemplatesList = new ArrayList<>();
         logger.info("开始获取查询计划");
         for (File queryFile : queryFiles) {
             if (queryFile.isFile() && queryFile.getName().endsWith(SQL_FILE_POSTFIX)) {
@@ -190,26 +195,34 @@ public class TaskConfigurator implements Callable<Integer> {
                     String queryCanonicalName = queryFile.getName().replace(SQL_FILE_POSTFIX, "_" + index + SQL_FILE_POSTFIX);
                     logger.info("%-15s Status:开始获取{}", queryCanonicalName);
                     queryAnalyzer.setAliasDic(queryReader.getTableAlias(query));
-                    List<ConstraintChain> constraintChains = queryAnalyzer.extractQuery(query);
-                    List<Parameter> parameters = constraintChains.stream().flatMap((c -> c.getParameters().stream())).toList();
-                    query2constraintChains.put(queryCanonicalName, constraintChains);
-                    queryName2QueryTemplates.put(queryCanonicalName, queryWriter.templatizeSql(queryCanonicalName, query, parameters));
+                    List<List<ConstraintChain>> constraintChains = queryAnalyzer.extractQuery(query);
+                    for (List<ConstraintChain> constraintChain : constraintChains) {
+                        Map<String, String> queryName2QueryTemplates1 = new HashMap<>();
+                        Map<String, List<ConstraintChain>> query2constraintChains1 = new LinkedHashMap<>();
+                        List<Parameter> parameters = constraintChain.stream().flatMap((c -> c.getParameters().stream())).toList();
+                        query2constraintChains1.put(queryCanonicalName, constraintChain);
+                        queryName2QueryTemplates1.put(queryCanonicalName, queryWriter.templatizeSql(queryCanonicalName, query, parameters));
+                        query2constraintChainsList.add(query2constraintChains1);
+                        queryName2QueryTemplatesList.add(queryName2QueryTemplates1);
+                    }
                 }
             }
         }
-        logger.info("获取查询计划完成");
-        logger.info("开始实例化查询计划");
-        List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
-        Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
-        logger.info("实例化查询计划成功, 实例化的参数为{}", id2Parameter.values());
-        logger.info("开始持久化查询计划");
-        ConstraintChainManager.getInstance().storeConstraintChain(query2constraintChains);
-        logger.info("持久化查询计划完成");
-        logger.info("开始填充查询模版");
-        queryWriter.writeQuery(queryName2QueryTemplates, id2Parameter);
-        logger.info("填充查询模版完成");
-        if (id2Parameter.size() > 0) {
-            logger.error("未被成功替换的参数如下{}", id2Parameter.values());
+        for(int i = 0; i < query2constraintChainsList.size(); i++) {
+            logger.info("获取查询计划完成");
+            logger.info("开始实例化查询计划");
+            List<ConstraintChain> allConstraintChains = query2constraintChainsList.get(i).values().stream().flatMap(Collection::stream).toList();
+            Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
+            logger.info("实例化查询计划成功, 实例化的参数为{}", id2Parameter.values());
+            logger.info("开始持久化查询计划");
+            ConstraintChainManager.getInstance().storeConstraintChain(query2constraintChainsList.get(i),i);
+            logger.info("持久化查询计划完成");
+            logger.info("开始填充查询模版");
+            queryWriter.writeQuery(queryName2QueryTemplatesList.get(i), id2Parameter);
+            logger.info("填充查询模版完成");
+            if (id2Parameter.size() > 0) {
+                logger.error("未被成功替换的参数如下{}", id2Parameter.values());
+            }
         }
     }
 
