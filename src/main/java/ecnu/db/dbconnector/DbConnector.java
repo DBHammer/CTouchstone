@@ -55,6 +55,12 @@ public abstract class DbConnector {
 
     protected abstract String getExplainFormat();
 
+    /**
+     * 获取节点上查询计划的信息
+     *
+     * @param queryPlan 需要处理的查询计划
+     * @return 返回格式化后的查询计划
+     */
     protected abstract String[] formatQueryPlan(String[] queryPlan);
 
     protected abstract String[] preExecutionCommands();

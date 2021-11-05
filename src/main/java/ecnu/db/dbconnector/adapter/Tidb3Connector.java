@@ -17,12 +17,6 @@ public class Tidb3Connector extends DbConnector {
         return new int[]{1, 4, 5};
     }
 
-    /**
-     * 获取节点上查询计划的信息
-     *
-     * @param data 需要处理的数据
-     * @return 返回plan_id, operator_info, execution_info
-     */
     @Override
     protected String[] formatQueryPlan(String[] data) {
         return data;
