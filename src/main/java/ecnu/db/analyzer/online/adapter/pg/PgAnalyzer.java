@@ -13,7 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -55,39 +58,30 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public ExecutionNode getExecutionTree(List<String[]> queryPlans) {
         String queryPlan = queryPlans.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
         PgJsonReader.setReadContext(queryPlan);
-        StringBuilder rootPath = new StringBuilder("$.[0]['Plan']");
-        Deque<Map.Entry<String, ExecutionNode>> stack = new ArrayDeque<>();
-        ExecutionNode root = getExecutionNode(PgJsonReader.skipNodes(rootPath));
-        stack.push(new AbstractMap.SimpleEntry<>(rootPath.toString(), root));
-        while (!stack.isEmpty()) {
-            Map.Entry<String, ExecutionNode> pair = stack.pop();
-            StringBuilder currentNodePath = new StringBuilder(pair.getKey());
-            ExecutionNode node = pair.getValue();
-            if (!node.isAdd) {
-                int plansCount = PgJsonReader.readPlansCount(currentNodePath);
-                if (plansCount == 2) {
-                    StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
-                    node.rightNode = getExecutionNode(rightChildPath);
-                    stack.push(new AbstractMap.SimpleEntry<>(rightChildPath.toString(), node.rightNode));
-                    plansCount--;
-                }
-                if (plansCount == 1) {
-                    StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
-                    Map.Entry<String, ExecutionNode> antiJoinNode = transferSubPlan2AntiJoin(leftChildPath);
-                    if (antiJoinNode != null) {
-                        node.rightNode = antiJoinNode.getValue();
-                        stack.push(antiJoinNode);
-                    }
-                    node.leftNode = getExecutionNode(leftChildPath);
-                    stack.push(new AbstractMap.SimpleEntry<>(currentNodePath.toString(), node.leftNode));
-                }
-            }
+        return getExecutionTreeRes(PgJsonReader.skipNodes(new StringBuilder("$.[0]['Plan']")));
+    }
+
+    public ExecutionNode getExecutionTreeRes(StringBuilder currentNodePath) {
+        ExecutionNode leftNode = null;
+        ExecutionNode rightNode = null;
+        int plansCount = PgJsonReader.readPlansCount(currentNodePath);
+        if (plansCount == 2) {
+            StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
+            rightNode = getExecutionTreeRes(rightChildPath);
         }
-        return root;
+        if (plansCount == 1) {
+            StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
+            rightNode = transferSubPlan2AntiJoin(leftChildPath);
+            leftNode = getExecutionTreeRes(leftChildPath);
+        }
+        ExecutionNode node = getExecutionNode(currentNodePath);
+        node.leftNode = leftNode;
+        node.rightNode = rightNode;
+        return node;
     }
 
 
-    private Map.Entry<String, ExecutionNode> transferSubPlan2AntiJoin(StringBuilder path) {
+    private ExecutionNode transferSubPlan2AntiJoin(StringBuilder path) {
         if (nodeTypeRef.isFilterNode(PgJsonReader.readNodeType(path))) {
             String filterInfo = PgJsonReader.readFilterInfo(path);
             //todo multiple subPlans
@@ -101,7 +95,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 ExecutionNode currentRightNode = new ExecutionNode(rightPath.toString(), ExecutionNode.ExecutionNodeType.scan, rowCount, "table:" + tableName);
                 currentRightNode.setTableName(tableName);
                 currentRightNode.isAdd = true;
-                return new AbstractMap.SimpleEntry<>(rightPath.toString(), currentRightNode);
+                return currentRightNode;
             }
         }
         return null;
