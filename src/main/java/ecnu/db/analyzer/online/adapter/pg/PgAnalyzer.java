@@ -164,14 +164,19 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
         int rowsAfterFilter = 0;
         List<String> groupKey = PgJsonReader.readGroupKey(path);
-        String tableName = groupKey.get(0).split("\\.")[0];
         String aggFilterInfo = PgJsonReader.readFilterInfo(path);
         if (aggFilterInfo != null) {
             int inputRows = PgJsonReader.readRowCount(PgJsonReader.move2LeftChild(path));
             rowsAfterFilter = inputRows - PgJsonReader.readRowsRemoved(path);
+        } else {
+            aggFilterInfo = "";
         }
-        ExecutionNode node = new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate, rowCount, rowsAfterFilter, transColumnName(aggFilterInfo), groupKey);
-        node.setTableName(tableName);
+        aggFilterInfo += PgJsonReader.readOutput(path);
+        ExecutionNode node = new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate,
+                rowCount, rowsAfterFilter, transColumnName(aggFilterInfo), groupKey);
+        if (groupKey != null) {
+            node.setTableName(groupKey.get(0).split("\\.")[0]);
+        }
         return node;
     }
 
