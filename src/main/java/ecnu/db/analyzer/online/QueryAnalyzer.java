@@ -108,15 +108,14 @@ public class QueryAnalyzer {
     }
 
     private int analyzeAggregateNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
-        if(node.getInfo().length()!=0) {
-            LogicNode root = analyzeSelectInfo(node.getInfo());
-            BigDecimal ratio = BigDecimal.valueOf(node.getRowsAfterFilter()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
-            ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, root);
-            constraintChain.addNode(filterNode);
-            ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(node.getGroupKey(),node.getInfo(),node.getOutputRows(), node.getRowsAfterFilter());
+        BigDecimal aggProbability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
+        if (node.getInfo().isEmpty()) {
+            ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(node.getGroupKey(), null, aggProbability, BigDecimal.ONE);
             constraintChain.addNode(aggregateNode);
-        }else{
-            ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(node.getGroupKey(),node.getInfo(),node.getOutputRows(), node.getRowsAfterFilter());
+        } else {
+            LogicNode root = analyzeSelectInfo(node.getInfo());
+            BigDecimal filterProbability = BigDecimal.valueOf(node.getRowsAfterFilter()).divide(BigDecimal.valueOf(node.getOutputRows()), BIG_DECIMAL_DEFAULT_PRECISION);
+            ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(node.getGroupKey(), root, aggProbability, filterProbability);
             constraintChain.addNode(aggregateNode);
         }
         return node.getOutputRows();
@@ -160,7 +159,7 @@ public class QueryAnalyzer {
             BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, node.getJoinTag(), probability);
-            if(node.getType() == ExecutionNode.ExecutionNodeType.antiJoin){
+            if (node.getType() == ExecutionNode.ExecutionNodeType.antiJoin) {
                 fkJoinNode.setAntiJoin();
             }
             constraintChain.addNode(fkJoinNode);
@@ -249,20 +248,19 @@ public class QueryAnalyzer {
      * @param query 查询语句
      * @return 该查询树结构出的约束链信息和表信息
      */
-    public List<List<ConstraintChain>> extractQuery(String query) throws SQLException, TouchstoneException {
+    public List<List<ConstraintChain>> extractQuery(String query) throws SQLException {
         List<List<ConstraintChain>> constraintChains = new ArrayList<>();
         List<String[]> queryPlan = dbConnector.explainQuery(query);
         List<List<String[]>> queryPlans = abstractAnalyzer.splitQueryPlan(queryPlan);
         try {
             for (List<String[]> plan : queryPlans) {
-                List<ConstraintChain> currentConstraintChains = new ArrayList<>();
                 ExecutionNode executionTree = abstractAnalyzer.getExecutionTree(plan);
                 //获取查询树的所有路径
                 List<List<ExecutionNode>> paths = new ArrayList<>();
                 getPathsIterate(executionTree, paths, new LinkedList<>());
                 CommonUtils.setForkJoinParallelism(paths.size());
                 // 并发处理约束链
-                currentConstraintChains.addAll(paths.parallelStream().map(path -> {
+                List<ConstraintChain> currentConstraintChains = new ArrayList<>(paths.parallelStream().map(path -> {
                     try {
                         return extractConstraintChain(path);
                     } catch (TouchstoneException | SQLException e) {

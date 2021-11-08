@@ -1,23 +1,28 @@
 package ecnu.db.generator.constraintchain.chain;
 
+import ecnu.db.generator.constraintchain.filter.LogicNode;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 public class ConstraintChainAggregateNode extends ConstraintChainNode {
-    List<String> groupKey;
-    String filter="";
-    int outPutRows;
-    int rowsAfterFilter=0;
-    public ConstraintChainAggregateNode(List<String> groupKeys, String Filter, int outPutRows, int rowsAfterFilter) {
+    private List<String> groupKey;
+    private final LogicNode root;
+    private final BigDecimal aggProbability;
+    private final BigDecimal filterProbability;
+
+    public ConstraintChainAggregateNode(List<String> groupKeys, LogicNode root, BigDecimal aggProbability, BigDecimal filterProbability) {
         super(ConstraintChainNodeType.AGGREGATE);
-        groupKey = groupKeys;
-        filter = Filter;
-        this.outPutRows = outPutRows;
-        this.rowsAfterFilter = rowsAfterFilter;
+        this.groupKey = groupKeys;
+        this.root = root;
+        this.aggProbability = aggProbability;
+        this.filterProbability = filterProbability;
     }
 
     @Override
     public String toString() {
-        return String.format("{GroupKey:%s, Filter:%s, outPutRows:%d, rowsAfterFilter:%d}", groupKey, filter, outPutRows, rowsAfterFilter);
+        return String.format("{GroupKey:%s, Filter:%s, aggProbability:%s, filterProbability:%s}",
+                groupKey, root, aggProbability, filterProbability);
     }
 
     public List<String> getGroupKey() {
