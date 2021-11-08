@@ -42,7 +42,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9_]+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final String EQ_COLUMN = "([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)";
-    private static final Pattern EQ_OPERATOR = Pattern.compile(String.format("\\( %1$s = %1$s \\)", EQ_COLUMN));
+    private static final Pattern EQ_OPERATOR = Pattern.compile(String.format("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)"));
 
 
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
@@ -68,6 +68,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (plansCount == 2) {
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
             rightNode = getExecutionTreeRes(rightChildPath);
+            plansCount--;
         }
         if (plansCount == 1) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
