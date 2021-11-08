@@ -34,6 +34,9 @@ public class PgJsonReader {
 
 
     static int readPlansCount(StringBuilder path) {
+        if (readContext.read(path + "['Plans']") == null) {
+            return 0;
+        }
         return readContext.read(path + "['Plans'].length()");
     }
 
