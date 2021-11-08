@@ -1,5 +1,8 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ReadContext;
 import net.minidev.json.JSONObject;
 
@@ -14,8 +17,9 @@ public class PgJsonReader {
 
 
 
-    static void setReadContext(ReadContext readContext) {
-        PgJsonReader.readContext = readContext;
+    static void setReadContext(String plan) {
+        Configuration conf = Configuration.defaultConfiguration().addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL);
+        PgJsonReader.readContext = JsonPath.using(conf).parse(plan);
     }
 
     static StringBuilder skipNodes(StringBuilder path) {

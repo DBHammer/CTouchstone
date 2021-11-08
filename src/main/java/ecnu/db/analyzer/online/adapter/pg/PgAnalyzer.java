@@ -1,6 +1,5 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
-import com.jayway.jsonpath.JsonPath;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.analyzer.online.ExecutionNode.ExecutionNodeType;
@@ -55,7 +54,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     @Override
     public ExecutionNode getExecutionTree(List<String[]> queryPlans) {
         String queryPlan = queryPlans.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
-        PgJsonReader.setReadContext(JsonPath.parse(queryPlan));
+        PgJsonReader.setReadContext(queryPlan);
         StringBuilder rootPath = new StringBuilder("$.[0]['Plan']");
         Deque<Map.Entry<String, ExecutionNode>> stack = new ArrayDeque<>();
         ExecutionNode root = getExecutionNode(PgJsonReader.skipNodes(rootPath));
@@ -259,7 +258,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     @Override
     public List<List<String[]>> splitQueryPlan(List<String[]> queryPlan) {
         String queryPlanString = queryPlan.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
-        PgJsonReader.setReadContext(JsonPath.parse(queryPlanString));
+        PgJsonReader.setReadContext(queryPlanString);
         StringBuilder path = new StringBuilder("$.[0]['Plan']");
         if (PgJsonReader.hasInitPlan(path)) {
             List<List<String[]>> queryPlans = new LinkedList<>();
