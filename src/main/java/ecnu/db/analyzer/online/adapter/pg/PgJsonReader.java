@@ -16,7 +16,6 @@ public class PgJsonReader {
     private static ReadContext readContext;
 
 
-
     static void setReadContext(String plan) {
         Configuration conf = Configuration.defaultConfiguration().addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL);
         PgJsonReader.readContext = JsonPath.using(conf).parse(plan);
@@ -39,7 +38,7 @@ public class PgJsonReader {
     }
 
     static boolean hasInitPlan(StringBuilder path) {
-        List<String> subPlanTags = readContext.read(path + "['Plans'][*].['Subplan Name']");
+        List<String> subPlanTags = readContext.read(path + "['Plans'][*]['Subplan Name']");
         if (!subPlanTags.isEmpty()) {
             return subPlanTags.stream().anyMatch(subPlanTag -> subPlanTags.contains("InitPlan"));
         }
@@ -56,11 +55,7 @@ public class PgJsonReader {
     }
 
     static String readFilterInfo(StringBuilder path) {
-        if ((int) readContext.read(path + "['Filter'].length()") > 0) {
-            return readContext.read(path + "['Filter']");
-        } else {
-            return null;
-        }
+        return readContext.read(path + "['Filter']");
     }
 
     static String readIndexJoin(StringBuilder path) {
@@ -69,8 +64,9 @@ public class PgJsonReader {
 
     static String readHashJoin(StringBuilder path) {
         StringBuilder joinInfo = new StringBuilder("Hash Cond: ").append((String) readContext.read(path + "['Hash Cond']"));
-        if ((int) readContext.read(path + "['Join Filter'].length()") > 0) {
-            joinInfo.append(" Join Filter: ").append((String) readContext.read(path + "['Join Filter']"));
+        String joinFilter;
+        if ((joinFilter = readContext.read(path + "['Join Filter']")) != null) {
+            joinInfo.append(" Join Filter: ").append(joinFilter);
         }
         return joinInfo.toString();
     }
