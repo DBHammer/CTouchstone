@@ -66,14 +66,14 @@ public class PgAnalyzer extends AbstractAnalyzer {
         ExecutionNode rightNode = null;
         int plansCount = PgJsonReader.readPlansCount(currentNodePath);
         if (plansCount == 2) {
+            StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
+            leftNode = getExecutionTreeRes(leftChildPath);
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
             rightNode = getExecutionTreeRes(rightChildPath);
-            plansCount--;
-        }
-        if (plansCount == 1) {
+        }else if (plansCount == 1) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
-            rightNode = transferSubPlan2AntiJoin(leftChildPath);
             leftNode = getExecutionTreeRes(leftChildPath);
+            rightNode = transferSubPlan2AntiJoin(leftChildPath);
         }
         ExecutionNode node = getExecutionNode(currentNodePath);
         node.leftNode = leftNode;
