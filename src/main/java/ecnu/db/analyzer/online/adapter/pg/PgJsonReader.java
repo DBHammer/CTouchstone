@@ -23,7 +23,7 @@ public class PgJsonReader {
 
     static StringBuilder skipNodes(StringBuilder path) {
         while (new PgNodeTypeInfo().isPassNode(readNodeType(path))) {//找到第一个可以处理的节点
-            move2LeftChild(path);
+            path = move2LeftChild(path);
         }
         return path;
     }
@@ -79,11 +79,11 @@ public class PgJsonReader {
     }
 
     static StringBuilder move2LeftChild(StringBuilder path) {
-        return path.append("['Plans'][0]");
+        return new StringBuilder(path).append("['Plans'][0]");
     }
 
     static StringBuilder move2RightChild(StringBuilder path) {
-        return path.append("['Plans'][1]");
+        return new StringBuilder(path).append("['Plans'][1]");
     }
 
     static int readRowCount(StringBuilder path) {
