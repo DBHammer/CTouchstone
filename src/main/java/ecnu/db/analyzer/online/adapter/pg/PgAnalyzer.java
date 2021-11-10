@@ -73,7 +73,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         }else if (plansCount == 1) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
             leftNode = getExecutionTreeRes(leftChildPath);
-            rightNode = transferSubPlan2AntiJoin(leftChildPath);
+            rightNode = transferSubPlan2AntiJoin(currentNodePath);
         }
         ExecutionNode node = getExecutionNode(currentNodePath);
         node.leftNode = leftNode;

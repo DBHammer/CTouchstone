@@ -34,7 +34,8 @@ terminal   Float                 FLOAT;
 terminal                         SUBSTRING;
 terminal                         SUM;
 terminal   String                VIRTUALNUM;
-
+terminal                         FROM;
+terminal                         FOR;
 /* Non terminals */
 non terminal                                    expr;
 non terminal          BoolExprNode              bool_expr;
@@ -195,7 +196,7 @@ in_compare_expr ::=
         ;
 column_expr ::=
         CANONICAL_COLUMN_NAME:col                                {:  RESULT=col; :}
-        |SUBSTRING LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN INTEGER INTEGER RPAREN  {:  RESULT=col; :}
+        |SUBSTRING LPAREN CANONICAL_COLUMN_NAME:col INTEGER INTEGER RPAREN  {:  RESULT=col; :}
         |SUM LPAREN CANONICAL_COLUMN_NAME:col RPAREN  {:  RESULT=col; :}
         ;
 in_expr ::=

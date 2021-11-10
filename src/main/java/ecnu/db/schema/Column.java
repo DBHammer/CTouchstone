@@ -270,7 +270,14 @@ public class Column {
             }
             try {
                 //todo
-                long[] randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, lastBound = bucket2Probability.getKey()).toArray();
+                long[] randomData;
+                long bound = bucket2Probability.getKey();
+                if(bound == lastBound){
+                    randomData = new long[randomSize];
+                }else {
+                    randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
+                }
+                lastBound = bound;
                 System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);
             } catch (Exception e) {
                 e.printStackTrace();

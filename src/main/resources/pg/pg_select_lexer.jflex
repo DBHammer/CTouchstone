@@ -61,7 +61,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   {OR} {
     return symbol(OR);
   }
-  "\"substring\"" {
+  "SUBSTRING" {
     return symbol(SUBSTRING);
   }
   "sum" {
@@ -157,6 +157,8 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   "::timestamp without time zone" {}
   "::numeric" {}
   "$" {}
+  "FROM" {}
+  "FOR" {}
 
   /* white spaces */
   {WHITE_SPACE_CHAR}+ {}
