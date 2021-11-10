@@ -137,7 +137,8 @@ public class ConstraintChain {
                 }
                 case AGGREGATE -> {
                     ConstraintChainAggregateNode aggregateNode = ((ConstraintChainAggregateNode) node);
-                    currentNodeInfo = String.format("\"GroupKey:%s\"", ((ConstraintChainAggregateNode) node).getGroupKey());
+                    List<String> keys = ((ConstraintChainAggregateNode) node).getGroupKey();
+                    currentNodeInfo = String.format("\"GroupKey:%s\"", keys==null?"":String.join(",", keys));
                     graph.append("\t").append(currentNodeInfo).append(conditionColor);
                 }
                 default -> throw new UnsupportedOperationException();

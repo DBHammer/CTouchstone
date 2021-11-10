@@ -6,8 +6,11 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ReadContext;
 import net.minidev.json.JSONObject;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PgJsonReader {
     private PgJsonReader() {
@@ -40,10 +43,23 @@ public class PgJsonReader {
         return readContext.read(path + "['Plans'].length()");
     }
 
+    static String readSubPlanIndex(StringBuilder path){
+        String subPlanName = readContext.read(path + "['Subplan Name']");
+        if(subPlanName!=null && subPlanName.contains("InitPlan")){
+            Pattern returnRegex = Pattern.compile("returns $[0-9]+");
+            Matcher matcher = returnRegex.matcher(subPlanName);
+            if(matcher.find()){
+                return matcher.group().replaceAll("returns ","");
+            }
+        }
+        return null;
+    }
+
     static boolean hasInitPlan(StringBuilder path) {
         List<String> subPlanTags = readContext.read(path + "['Plans'][*]['Subplan Name']");
+        subPlanTags.removeAll(Collections.singleton(null));
         if (!subPlanTags.isEmpty()) {
-            return subPlanTags.stream().anyMatch(subPlanTag -> subPlanTags.contains("InitPlan"));
+            return subPlanTags.stream().anyMatch(subPlanTag -> subPlanTag.contains("InitPlan"));
         }
         return false;
     }

@@ -158,15 +158,19 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
         int rowsAfterFilter = 0;
-        List<String> groupKey = PgJsonReader.readGroupKey(path);
         String aggFilterInfo = PgJsonReader.readFilterInfo(path);
-        if (aggFilterInfo != null) {
+        if (aggFilterInfo == null) {
+            String subPlanIndex = PgJsonReader.readSubPlanIndex(path);
+            if(subPlanIndex==null) {
+                aggFilterInfo = "";
+            }else {
+                aggFilterInfo = "("+removeRedundancy(PgJsonReader.readOutput(path).get(0))+"="+subPlanIndex+")";
+            }
+        } else {
             int inputRows = PgJsonReader.readRowCount(PgJsonReader.move2LeftChild(path));
             rowsAfterFilter = inputRows - PgJsonReader.readRowsRemoved(path);
-        } else {
-            aggFilterInfo = "";
         }
-        aggFilterInfo += PgJsonReader.readOutput(path);
+        List<String> groupKey = PgJsonReader.readGroupKey(path);
         ExecutionNode node = new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate,
                 rowCount, rowsAfterFilter, transColumnName(aggFilterInfo), groupKey);
         if (groupKey != null) {
