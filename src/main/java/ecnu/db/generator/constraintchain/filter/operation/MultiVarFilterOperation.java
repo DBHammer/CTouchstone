@@ -106,8 +106,13 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
                 throw new UnsupportedOperationException("多变量计算节点仅接受非等值约束");
         }
         double[] vector = arithmeticTree.calculate();
-        int pos = probability.multiply(BigDecimal.valueOf(vector.length)).intValue();
         Arrays.sort(vector);
+        int pos;
+        if (probability.equals(BigDecimal.ONE)) {
+            pos = vector.length - 1;
+        } else {
+            pos = probability.multiply(BigDecimal.valueOf(vector.length)).intValue();
+        }
         long internalValue = (long) (vector[pos] * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         parameters.forEach(param -> param.setData(internalValue));
     }
