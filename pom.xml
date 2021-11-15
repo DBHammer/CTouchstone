@@ -114,6 +114,20 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>2.14.1</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.ortools/ortools-win32-x86-64 -->
+        <dependency>
+            <groupId>com.google.ortools</groupId>
+            <artifactId>ortools-win32-x86-64</artifactId>
+            <version>9.1.9490</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.ortools</groupId>
+            <artifactId>ortools-java</artifactId>
+            <version>9.1.9490</version>
+            <scope>test</scope>
+        </dependency>
+
+
     </dependencies>
 
     <build>

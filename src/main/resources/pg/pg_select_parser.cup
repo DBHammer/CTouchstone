@@ -36,6 +36,7 @@ terminal                         SUM;
 terminal   String                VIRTUALNUM;
 terminal                         FROM;
 terminal                         FOR;
+terminal                         AVG;
 /* Non terminals */
 non terminal                                    expr;
 non terminal          BoolExprNode              bool_expr;
@@ -272,6 +273,11 @@ arithmetic_expr ::=
                                                                                       RESULT = node;
                                                                                   :}
         |SUM LPAREN LPAREN CANONICAL_COLUMN_NAME:col arithmetic_operator LPAREN CANONICAL_COLUMN_NAME:col2 RPAREN RPAREN RPAREN                              {:
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
+                                                                                      ((ColumnNode) node).setCanonicalColumnName(col);
+                                                                                      RESULT = node;
+                                                                                  :}
+        |AVG LPAREN CANONICAL_COLUMN_NAME:col RPAREN                              {:
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
                                                                                       ((ColumnNode) node).setCanonicalColumnName(col);
                                                                                       RESULT = node;

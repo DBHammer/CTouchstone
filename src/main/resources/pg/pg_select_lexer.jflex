@@ -67,6 +67,9 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   "sum" {
       return symbol(SUM);
   }
+  "avg" {
+        return symbol(AVG);
+  }
   /* compare operators */
   "= ANY" {
     return symbol(IN, CompareOperator.IN);

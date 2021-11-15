@@ -25,7 +25,7 @@ public class TableManager {
     public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     private File schemaInfoPath;
 
-    private TableManager() {
+    public TableManager() {
     }
 
     public static TableManager getInstance() {

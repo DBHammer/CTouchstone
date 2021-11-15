@@ -77,8 +77,23 @@ public class PgJsonReader {
         return readContext.read(path + "['Filter']");
     }
 
+    static String readJoinFilter(StringBuilder path) {
+        return readContext.read(path + "['Join Filter']");
+    }
+
+    static  String readJoinCond(StringBuilder path) {
+        return readContext.read(path + "['Hash Cond']");
+    }
     static String readIndexJoin(StringBuilder path) {
-        return "Index Cond: " + readContext.read(path + "['Plans'][1]['Index Cond']");
+        path = skipNodes(path.append("['Plans'][1]"));
+        //String indexCond =  "Index Cond: " + readContext.read(path + "['Index Cond']");
+        String indexCond =  readContext.read(path + "['Index Cond']");
+        if(indexCond == null){
+            indexCond = "Recheck Cond: " + readContext.read(path + "['Recheck Cond']");
+        }else{
+            indexCond = "Index Cond: " + indexCond;
+        }
+        return indexCond;
     }
 
     static String readHashJoin(StringBuilder path) {
@@ -90,8 +105,21 @@ public class PgJsonReader {
         return joinInfo.toString();
     }
 
+    static String readMergeJoin(StringBuilder path) {
+        StringBuilder joinInfo = new StringBuilder("Merge Cond: ").append((String) readContext.read(path + "['Merge Cond']"));
+        String joinFilter;
+        if ((joinFilter = readContext.read(path + "['Join Filter']")) != null) {
+            joinInfo.append(" Join Filter: ").append(joinFilter);
+        }
+        return joinInfo.toString();
+    }
+
     static int readRowsRemoved(StringBuilder path) {
         return readContext.read(path + "['Rows Removed by Filter']");
+    }
+
+    static int readRowsRemovedByJoinFilter(StringBuilder path) {
+        return readContext.read(path + "['Rows Removed by Join Filter']");
     }
 
     static StringBuilder move2LeftChild(StringBuilder path) {
@@ -101,6 +129,8 @@ public class PgJsonReader {
     static StringBuilder move2RightChild(StringBuilder path) {
         return new StringBuilder(path).append("['Plans'][1]");
     }
+
+    static StringBuilder move3ThirdChild(StringBuilder path) { return new StringBuilder(path).append("['Plans'][2]"); }
 
     static int readRowCount(StringBuilder path) {
         return readContext.read(path + "['Actual Rows']");
