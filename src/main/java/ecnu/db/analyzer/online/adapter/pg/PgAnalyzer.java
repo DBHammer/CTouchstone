@@ -226,16 +226,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
             rowCount = PgJsonReader.readRowCount(parentPath);
             rowsAfterFilter = rowCount;
         }else{
-            String aggOutPut = PgJsonReader.readOutput(path).get(0);
-            aggFilterInfo = "";
-            joinCond.replace("(SubPlan 1)", aggOutPut);
-            rowCount = PgJsonReader.readRowCount(parentPath);
-            rowsAfterFilter = rowCount;
+            throw new UnsupportedOperationException();
         }
         StringBuilder scanPath = PgJsonReader.move2LeftChild(path);
         String tableName = PgJsonReader.readTableName(scanPath.toString());
         aliasDic.put(PgJsonReader.readAlias(scanPath.toString()), tableName);
-        ExecutionNode aggTree = getExecutionTreeRes(path);
+        getExecutionTreeRes(path);
         ExecutionNode node = new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate,
                 rowCount, rowsAfterFilter, transColumnName(aggFilterInfo), groupKey);
         return node;
