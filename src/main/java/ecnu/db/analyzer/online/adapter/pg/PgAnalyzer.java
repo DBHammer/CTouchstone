@@ -40,8 +40,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
     private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9_]+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
-    private static final String EQ_COLUMN = "([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)";
-    private static final Pattern EQ_OPERATOR = Pattern.compile(String.format("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)"));
+    private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
 
 
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
@@ -80,7 +79,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             leftNode = getExecutionTreeRes(leftChildPath);
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
             rightNode = getExecutionTreeRes(rightChildPath);
-        }else if (plansCount == 1) {
+        } else if (plansCount == 1) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
             leftNode = getExecutionTreeRes(leftChildPath);
             rightNode = transferSubPlan2AntiJoin(currentNodePath);
@@ -91,7 +90,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             node.rightNode = rightNode;
             return node;
         }else{
-            int rowCount = PgJsonReader.readRowCount(currentNodePath);;
+            int rowCount = PgJsonReader.readRowCount(currentNodePath);
             ExecutionNode node = getJoinNode(currentNodePath,rowCount);
             node.leftNode = leftNode;
             node.rightNode = rightNode;
@@ -102,21 +101,19 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
 
     private ExecutionNode transferSubPlan2AntiJoin(StringBuilder path) {
-        if (nodeTypeRef.isFilterNode(PgJsonReader.readNodeType(path))) {
-            String filterInfo = PgJsonReader.readFilterInfo(path);
-            //todo multiple subPlans
-            if ("(NOT (hashed SubPlan 1))".equals(filterInfo)) {
-                String tableName = PgJsonReader.readTableName(path.toString());
-                aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
-                int outPutCount = PgJsonReader.readRowCount(path);
-                int removedCount = PgJsonReader.readRowsRemoved(path);
-                int rowCount = outPutCount + removedCount;
-                StringBuilder rightPath = PgJsonReader.move2RightChild(path);
-                ExecutionNode currentRightNode = new ExecutionNode(rightPath.toString(), ExecutionNode.ExecutionNodeType.scan, rowCount, "table:" + tableName);
-                currentRightNode.setTableName(tableName);
-                currentRightNode.isAdd = true;
-                return currentRightNode;
-            }
+        //todo multiple subPlans
+        if (nodeTypeRef.isFilterNode(PgJsonReader.readNodeType(path)) &&
+                "(NOT (hashed SubPlan 1))".equals(PgJsonReader.readFilterInfo(path))) {
+            String tableName = PgJsonReader.readTableName(path.toString());
+            aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
+            int outPutCount = PgJsonReader.readRowCount(path);
+            int removedCount = PgJsonReader.readRowsRemoved(path);
+            int rowCount = outPutCount + removedCount;
+            StringBuilder rightPath = PgJsonReader.move2RightChild(path);
+            ExecutionNode currentRightNode = new ExecutionNode(rightPath.toString(), ExecutionNode.ExecutionNodeType.scan, rowCount, "table:" + tableName);
+            currentRightNode.setTableName(tableName);
+            currentRightNode.isAdd = true;
+            return currentRightNode;
         }
         return null;
     }
@@ -141,7 +138,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         } else {
             if(Objects.equals(scanType, "Bitmap Heap Scan")){
-                //rowCount = PgJsonReader.readRowCount(PgJsonReader.move2LeftChild(path));
                 String tableName = PgJsonReader.readTableName(path.toString());
                 rowCount = TableManager.getInstance().getTableSize(tableName);
             }
@@ -194,10 +190,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
         String aggFilterInfo = PgJsonReader.readFilterInfo(path);
         if (aggFilterInfo == null) {
             String subPlanIndex = PgJsonReader.readSubPlanIndex(path);
-            if(subPlanIndex==null) {
+            if (subPlanIndex == null) {
                 aggFilterInfo = "";
-            }else {
-                aggFilterInfo = "("+removeRedundancy(PgJsonReader.readOutput(path).get(0))+"="+subPlanIndex+")";
+            } else {
+                aggFilterInfo = "(" + removeRedundancy(PgJsonReader.readOutput(path).get(0)) + "=" + subPlanIndex + ")";
             }
         } else {
             int inputRows = PgJsonReader.readRowCount(PgJsonReader.move2LeftChild(path));
@@ -213,12 +209,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     private ExecutionNode createParentAggNode(StringBuilder parentPath, StringBuilder path) throws CannotFindSchemaException {
-        int rowCount = 0;
-        int rowsAfterFilter = 0;
+        int rowCount;
+        int rowsAfterFilter;
         String joinCond = PgJsonReader.readJoinCond(parentPath);
         String leftJoinCond = joinCond.split("=")[0];
         List<String> groupKey = new ArrayList<>();
-        groupKey.add(leftJoinCond.substring(1,leftJoinCond.length()));
+        groupKey.add(leftJoinCond.substring(1));
         String aggFilterInfo = PgJsonReader.readJoinFilter(parentPath);
         if(aggFilterInfo!=null) {
             String aggOutPut = PgJsonReader.readOutput(path).get(0);
@@ -232,9 +228,8 @@ public class PgAnalyzer extends AbstractAnalyzer {
         String tableName = PgJsonReader.readTableName(scanPath.toString());
         aliasDic.put(PgJsonReader.readAlias(scanPath.toString()), tableName);
         getExecutionTreeRes(path);
-        ExecutionNode node = new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate,
+        return new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate,
                 rowCount, rowsAfterFilter, transColumnName(aggFilterInfo), groupKey);
-        return node;
     }
 
     private ExecutionNode getExecutionNode(StringBuilder path) throws CannotFindSchemaException {

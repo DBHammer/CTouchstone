@@ -66,9 +66,6 @@ public class TaskConfigurator implements Callable<Integer> {
                         .flatMap(Collection::stream).toList())
                 .flatMap(Collection::stream).toList();
 
-        for (AbstractFilterOperation filterOperation : filterOperations) {
-            System.out.println(filterOperation.toString()+filterOperation.getProbability());
-        }
         // uni-var operation
         filterOperations.stream()
                 .filter(UniVarFilterOperation.class::isInstance)
@@ -181,8 +178,6 @@ public class TaskConfigurator implements Callable<Integer> {
     public void extract(DbConnector dbConnector, QueryAnalyzer queryAnalyzer, QueryReader queryReader,
                         QueryWriter queryWriter, int samplingSize) throws IOException, TouchstoneException, SQLException {
         List<File> queryFiles = querySchemaMetadataAndColumnMetadata(queryReader, dbConnector);
-        Map<String, String> queryName2QueryTemplates = new HashMap<>();
-        Map<String, List<ConstraintChain>> query2constraintChains = new LinkedHashMap<>();
         List<Map<String, List<ConstraintChain>>> query2constraintChainsList = new ArrayList<>();
         List<Map<String, String>> queryName2QueryTemplatesList = new ArrayList<>();
         logger.info("开始获取查询计划");
