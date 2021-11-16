@@ -14,7 +14,10 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
@@ -258,17 +261,24 @@ public class QueryAnalyzer {
                 //获取查询树的所有路径
                 List<List<ExecutionNode>> paths = new ArrayList<>();
                 getPathsIterate(executionTree, paths, new LinkedList<>());
-                CommonUtils.setForkJoinParallelism(paths.size());
-                // 并发处理约束链
-                List<ConstraintChain> currentConstraintChains = new ArrayList<>(paths.parallelStream().map(path -> {
+                Stream<ConstraintChain> constrainChainStream = paths.parallelStream().map(path -> {
                     try {
                         return extractConstraintChain(path);
                     } catch (TouchstoneException | SQLException e) {
                         logger.error(path.toString(), e);
                         return null;
                     }
-                }).filter(Objects::nonNull).toList());
-                constraintChains.add(currentConstraintChains);
+                });
+                // 并发处理约束链
+                ForkJoinPool forkJoinPool = new ForkJoinPool(paths.size());
+                try {
+                    constraintChains.add(forkJoinPool.submit(() ->
+                            constrainChainStream.filter(Objects::nonNull).toList()).get());
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    forkJoinPool.shutdown();
+                }
             }
         } catch (TouchstoneException e) {
             if (queryPlan != null && !queryPlan.isEmpty()) {

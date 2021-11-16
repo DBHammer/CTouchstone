@@ -39,14 +39,14 @@ public class ConstraintChainManager {
         });
     }
 
-    public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains,int i) throws IOException {
+    public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
         String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
         CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
         if(new File(resultDir + "/pic/").mkdir()){
             logger.info("创建约束链的图形化文件夹");
         }
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
-            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + i + ".dot",
+            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".dot",
                     presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()));
         }
     }

@@ -14,7 +14,7 @@ parser code {:
     this.root = new LogicNode();
     root.setType(BoolExprType.AND);
     ((PgSelectOperatorInfoLexer) this.getScanner()).yyreset(new StringReader(operatorInfo));
-    this.debug_parse();
+    this.parse();
     return this.root;
   }
 :};
@@ -37,6 +37,7 @@ terminal   String                VIRTUALNUM;
 terminal                         FROM;
 terminal                         FOR;
 terminal                         AVG;
+terminal                         MIN;
 /* Non terminals */
 non terminal                                    expr;
 non terminal          BoolExprNode              bool_expr;
@@ -278,6 +279,11 @@ arithmetic_expr ::=
                                                                                       RESULT = node;
                                                                                   :}
         |AVG LPAREN CANONICAL_COLUMN_NAME:col RPAREN                              {:
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
+                                                                                      ((ColumnNode) node).setCanonicalColumnName(col);
+                                                                                      RESULT = node;
+                                                                                  :}
+        |MIN LPAREN CANONICAL_COLUMN_NAME:col RPAREN                              {:
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
                                                                                       ((ColumnNode) node).setCanonicalColumnName(col);
                                                                                       RESULT = node;

@@ -70,6 +70,9 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   "avg" {
         return symbol(AVG);
   }
+  "min" {
+        return symbol(MIN);
+  }
   /* compare operators */
   "= ANY" {
     return symbol(IN, CompareOperator.IN);

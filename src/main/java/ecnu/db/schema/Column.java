@@ -266,7 +266,7 @@ public class Column {
             if (++i == bucketBound2FreeSpace.size()) {
                 randomSize = size - currentIndex;
             } else {
-                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue();
+                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue()-currentIndex;
             }
             try {
                 //todo
