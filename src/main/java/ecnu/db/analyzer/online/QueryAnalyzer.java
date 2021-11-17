@@ -5,7 +5,6 @@ import ecnu.db.generator.constraintchain.chain.*;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
-import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.UnsupportedSelect;
 import org.slf4j.Logger;
@@ -17,7 +16,6 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
@@ -29,7 +27,9 @@ public class QueryAnalyzer {
     private final DbConnector dbConnector;
     protected double skipNodeThreshold = 0.01;
 
+    private static final int SKIP_JOIN_TAG = -1;
     private static final int SKIP_CHAIN = -2;
+    private static final int STOP_CONSTRUCT = -3;
 
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector) {
@@ -133,7 +133,7 @@ public class QueryAnalyzer {
         // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
         if (!localTable.equals(constraintChain.getTableName())
                 && !externalTable.equals(constraintChain.getTableName())) {
-            return -1;
+            return STOP_CONSTRUCT;
         }
         //将本表的信息放在前面，交换位置
         if (constraintChain.getTableName().equals(externalTable)) {
@@ -145,7 +145,7 @@ public class QueryAnalyzer {
         //根据主外键分别设置约束链输出信息
         if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
             if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount) {
-                node.setJoinTag(-1);
+                node.setJoinTag(SKIP_JOIN_TAG);
                 return SKIP_CHAIN;
             }
             node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
@@ -153,9 +153,9 @@ public class QueryAnalyzer {
             constraintChain.addNode(pkJoinNode);
             //设置主键
             TableManager.getInstance().setPrimaryKeys(localTable, localCol);
-            return -1; // 主键的情况下停止继续遍历
+            return STOP_CONSTRUCT;
         } else {
-            if (node.getJoinTag() < 0) {
+            if (node.getJoinTag() == SKIP_JOIN_TAG) {
                 logger.info("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
                 return node.getOutputRows();
             }
@@ -175,8 +175,6 @@ public class QueryAnalyzer {
      *
      * @param path 需要处理的路径
      * @return 获取的约束链
-     * @throws TouchstoneException 无法处理路径
-     * @throws SQLException        无法采集多列主键的ndv
      */
     private ConstraintChain extractConstraintChain(List<ExecutionNode> path) throws TouchstoneException, SQLException {
         if (path == null || path.isEmpty()) {
@@ -208,6 +206,9 @@ public class QueryAnalyzer {
                 if (lastNodeLineCount == SKIP_CHAIN && constraintChain.getNodes().isEmpty()) {
                     return null;
                 }
+                if (lastNodeLineCount == STOP_CONSTRUCT) {
+                    return constraintChain;
+                }
             } catch (TouchstoneException e) {
                 // 小于设置的阈值以后略去后续的节点
                 if (node.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(node.getTableName()) < skipNodeThreshold) {
@@ -216,10 +217,6 @@ public class QueryAnalyzer {
                     return constraintChain;
                 }
                 throw e;
-            }
-            if (lastNodeLineCount < 0) {
-                logger.error("约束链中的size不正常");
-                return constraintChain;
             }
         }
         return constraintChain;
@@ -252,39 +249,42 @@ public class QueryAnalyzer {
      * @return 该查询树结构出的约束链信息和表信息
      */
     public List<List<ConstraintChain>> extractQuery(String query) throws SQLException {
-        List<List<ConstraintChain>> constraintChains = new ArrayList<>();
         List<String[]> queryPlan = dbConnector.explainQuery(query);
         List<List<String[]>> queryPlans = abstractAnalyzer.splitQueryPlan(queryPlan);
+        List<ExecutionNode> executionTrees = new LinkedList<>();
         try {
             for (List<String[]> plan : queryPlans) {
-                ExecutionNode executionTree = abstractAnalyzer.getExecutionTree(plan);
-                //获取查询树的所有路径
-                List<List<ExecutionNode>> paths = new ArrayList<>();
-                getPathsIterate(executionTree, paths, new LinkedList<>());
-                Stream<ConstraintChain> constrainChainStream = paths.parallelStream().map(path -> {
+                executionTrees.add(abstractAnalyzer.getExecutionTree(plan));
+            }
+        } catch (TouchstoneException e) {
+            if (queryPlan != null && !queryPlan.isEmpty()) {
+                String queryPlanContent = queryPlan.stream().map(plan -> String.join("\t", plan))
+                        .collect(Collectors.joining(System.lineSeparator()));
+                logger.error("查询树抽取失败");
+                logger.error(queryPlanContent, e);
+            }
+        }
+        List<List<ConstraintChain>> constraintChains = new ArrayList<>();
+        for (ExecutionNode executionTree : executionTrees) {
+            //获取查询树的所有路径
+            List<List<ExecutionNode>> paths = new ArrayList<>();
+            getPathsIterate(executionTree, paths, new LinkedList<>());
+            // 并发处理约束链
+            ForkJoinPool forkJoinPool = new ForkJoinPool(paths.size());
+            try {
+                constraintChains.add(forkJoinPool.submit(() -> paths.parallelStream().map(path -> {
                     try {
                         return extractConstraintChain(path);
                     } catch (TouchstoneException | SQLException e) {
                         logger.error(path.toString(), e);
                         return null;
                     }
-                });
-                // 并发处理约束链
-                ForkJoinPool forkJoinPool = new ForkJoinPool(paths.size());
-                try {
-                    constraintChains.add(forkJoinPool.submit(() ->
-                            constrainChainStream.filter(Objects::nonNull).toList()).get());
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                } finally {
-                    forkJoinPool.shutdown();
-                }
-            }
-        } catch (TouchstoneException e) {
-            if (queryPlan != null && !queryPlan.isEmpty()) {
-                String queryPlanContent = queryPlan.stream().map(plan -> String.join("\t", plan))
-                        .collect(Collectors.joining(System.lineSeparator()));
-                logger.error(queryPlanContent, e);
+                }).filter(Objects::nonNull).toList()).get());
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error("约束链构造失败", e);
+                Thread.currentThread().interrupt();
+            } finally {
+                forkJoinPool.shutdown();
             }
         }
         logger.info("Status:获取完成");
