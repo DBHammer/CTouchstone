@@ -2,15 +2,21 @@ package ecnu.db.generator.constraintchain.chain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.rmi.server.ExportException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.nio.file.Paths;
 
 import static ecnu.db.utils.CommonUtils.readFile;
 
@@ -42,12 +48,28 @@ public class ConstraintChainManager {
     public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
         String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
         CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
-        if(new File(resultDir + "/pic/").mkdir()){
+        if (new File(resultDir + "/pic/").mkdir()) {
             logger.info("创建约束链的图形化文件夹");
         }
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
-            CommonUtils.writeFile(resultDir + "/pic/" + stringListEntry.getKey() + ".dot",
-                    presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue()));
+            String path = resultDir + "/pic/" + stringListEntry.getKey() + ".dot";
+            File file = new File(resultDir + "/pic/");
+            File[] array = file.listFiles();
+            assert array != null;
+            if (!graphIsExists(array, stringListEntry.getKey() + ".dot")) {
+                String graph = presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue());
+                CommonUtils.writeFile(path, graph);
+            } else {
+                String oldGraph = Files.readString(Paths.get(path));
+                String graph = presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue());
+                if (removeData(graph).equals(removeData(oldGraph))) {
+                    CommonUtils.writeFile(path, graph);
+                } else {
+                    String newPath = resultDir + "/pic/" + "new" + stringListEntry.getKey() + ".dot";
+                    CommonUtils.writeFile(newPath + "", graph);
+                    logger.warn("graph is different");
+                }
+            }
         }
     }
 
@@ -63,4 +85,19 @@ public class ConstraintChainManager {
         return String.format(GRAPH_TEMPLATE, queryName, subGraphs + graph);
     }
 
+    private boolean graphIsExists(File[] arrary, String graphName) {
+        for (File file : arrary) {
+            if (file.getName().equals(graphName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String removeData(String graph) {
+        //Pattern data = Pattern.compile(", data:[^}]");
+        String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
+        newGraph = newGraph.replaceAll("key[0-9]+","key");
+        return newGraph;
+    }
 }

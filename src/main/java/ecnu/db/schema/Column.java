@@ -123,7 +123,7 @@ public class Column {
             BigDecimal tempProbability = new BigDecimal(probability.toString());
             TreeSet<BigDecimal> probabilityHistogram = new TreeSet<>(eqRequest2ParameterIds.keySet());
             int index = parameters.size() - 1;
-            while (tempProbability.compareTo(BigDecimal.ZERO) > 0 && !probabilityHistogram.isEmpty() && index > 0) {
+            while (index > 0 && !probabilityHistogram.isEmpty() && tempProbability.compareTo(probabilityHistogram.first()) > 0) {
                 BigDecimal lowerBound = probabilityHistogram.lower(tempProbability);
                 probabilityHistogram.remove(lowerBound);
                 tempProbability = tempProbability.subtract(lowerBound);

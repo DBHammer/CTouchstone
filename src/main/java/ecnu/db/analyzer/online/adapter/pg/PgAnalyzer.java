@@ -1,10 +1,13 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
+import ecnu.db.analyzer.TaskConfigurator;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.ExecutionNode;
 import ecnu.db.analyzer.online.ExecutionNode.ExecutionNodeType;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
+import ecnu.db.dbconnector.DbConnector;
+import ecnu.db.dbconnector.adapter.PgConnector;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -13,12 +16,15 @@ import java_cup.runtime.ComplexSymbolFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.StringReader;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static ecnu.db.utils.CommonUtils.MAPPER;
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
 import ecnu.db.schema.TableManager;
@@ -52,27 +58,27 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    public ExecutionNode getExecutionTree(List<String[]> queryPlans) throws CannotFindSchemaException {
+    public ExecutionNode getExecutionTree(List<String[]> queryPlans) throws TouchstoneException, IOException, SQLException {
         String queryPlan = queryPlans.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
         PgJsonReader.setReadContext(queryPlan);
         return getExecutionTreeRes(PgJsonReader.skipNodes(new StringBuilder("$.[0]['Plan']")));
     }
 
-    public ExecutionNode getExecutionTreeRes(StringBuilder currentNodePath) throws CannotFindSchemaException {
+    public ExecutionNode getExecutionTreeRes(StringBuilder currentNodePath) throws TouchstoneException, IOException, SQLException {
         ExecutionNode leftNode = null;
         ExecutionNode rightNode = null;
         ExecutionNode parentAggNode = null;
         int plansCount = PgJsonReader.readPlansCount(currentNodePath);
-        if(Objects.equals(PgJsonReader.readNodeType(currentNodePath), "Bitmap Heap Scan")){
+        if (Objects.equals(PgJsonReader.readNodeType(currentNodePath), "Bitmap Heap Scan")) {
             plansCount--;
         }
-        if(plansCount == 3){
+        if (plansCount == 3) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
             leftNode = getExecutionTreeRes(leftChildPath);
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
             rightNode = getExecutionTreeRes(rightChildPath);
             StringBuilder thirdChildPath = PgJsonReader.skipNodes(PgJsonReader.move3ThirdChild(currentNodePath));
-            parentAggNode = createParentAggNode(currentNodePath,thirdChildPath);
+            parentAggNode = createParentAggNode(currentNodePath, thirdChildPath);
         }
         if (plansCount == 2) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
@@ -80,18 +86,21 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
             rightNode = getExecutionTreeRes(rightChildPath);
         } else if (plansCount == 1) {
+            if (isOuterJoin(currentNodePath)) {
+                return removeOuterJoin(currentNodePath);
+            }
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
             leftNode = getExecutionTreeRes(leftChildPath);
             rightNode = transferSubPlan2AntiJoin(currentNodePath);
         }
-        if(parentAggNode == null) {
+        if (parentAggNode == null) {
             ExecutionNode node = getExecutionNode(currentNodePath);
             node.leftNode = leftNode;
             node.rightNode = rightNode;
             return node;
-        }else{
+        } else {
             int rowCount = PgJsonReader.readRowCount(currentNodePath);
-            ExecutionNode node = getJoinNode(currentNodePath,rowCount);
+            ExecutionNode node = getJoinNode(currentNodePath, rowCount);
             node.leftNode = leftNode;
             node.rightNode = rightNode;
             parentAggNode.leftNode = node;
@@ -120,7 +129,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
 
     private ExecutionNode getFilterNode(StringBuilder path, int rowCount) throws CannotFindSchemaException {
-        if(PgJsonReader.readJoinFilter(path)!=null){
+        if (PgJsonReader.readJoinFilter(path) != null) {
             rowCount += PgJsonReader.readRowsRemovedByJoinFilter(path);
         }
         String scanType = PgJsonReader.readNodeType(path);
@@ -137,11 +146,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 return node;
             }
         } else {
-            if(Objects.equals(scanType, "Bitmap Heap Scan")){
+            if (Objects.equals(scanType, "Bitmap Heap Scan")) {
                 String tableName = PgJsonReader.readTableName(path.toString());
                 rowCount = TableManager.getInstance().getTableSize(tableName);
             }
-            if(Objects.equals(scanType, "Index Scan")){
+            if (Objects.equals(scanType, "Index Scan")) {
                 rowCount = TableManager.getInstance().getTableSize(PgJsonReader.readTableName(path.toString()));
             }
             String tableName = PgJsonReader.readTableName(path.toString());
@@ -203,12 +212,14 @@ public class PgAnalyzer extends AbstractAnalyzer {
         ExecutionNode node = new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate,
                 rowCount, rowsAfterFilter, transColumnName(aggFilterInfo), groupKey);
         if (groupKey != null) {
-            node.setTableName(groupKey.get(0).split("\\.")[0]);
+            String tableName = groupKey.get(0).split("\\.")[0];
+            tableName = aliasDic.get(tableName);
+            node.setTableName(tableName);
         }
         return node;
     }
 
-    private ExecutionNode createParentAggNode(StringBuilder parentPath, StringBuilder path) throws CannotFindSchemaException {
+    private ExecutionNode createParentAggNode(StringBuilder parentPath, StringBuilder path) throws TouchstoneException, IOException, SQLException {
         int rowCount;
         int rowsAfterFilter;
         String joinCond = PgJsonReader.readJoinCond(parentPath);
@@ -216,20 +227,24 @@ public class PgAnalyzer extends AbstractAnalyzer {
         List<String> groupKey = new ArrayList<>();
         groupKey.add(leftJoinCond.substring(1));
         String aggFilterInfo = PgJsonReader.readJoinFilter(parentPath);
-        if(aggFilterInfo!=null) {
+        if (aggFilterInfo != null) {
             String aggOutPut = PgJsonReader.readOutput(path).get(0);
             aggFilterInfo = aggFilterInfo.replace("(SubPlan 1)", aggOutPut);
             rowCount = PgJsonReader.readRowCount(parentPath);
             rowsAfterFilter = rowCount;
-        }else{
+        } else {
             throw new UnsupportedOperationException();
         }
-        StringBuilder scanPath = PgJsonReader.move2LeftChild(path);
-        String tableName = PgJsonReader.readTableName(scanPath.toString());
-        aliasDic.put(PgJsonReader.readAlias(scanPath.toString()), tableName);
+        String[] outPut = PgJsonReader.readOutput(path).get(0).split("\\.");
+        String tableName = outPut[outPut.length-2];
+        tableName = tableName.replaceAll(".*\\(","");
+        tableName = tableName.split("_")[0];
+        tableName = aliasDic.get(tableName);
         getExecutionTreeRes(path);
-        return new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate,
+        ExecutionNode node = new ExecutionNode(path.toString(), ExecutionNode.ExecutionNodeType.aggregate,
                 rowCount, rowsAfterFilter, transColumnName(aggFilterInfo), groupKey);
+        node.setTableName(tableName);
+        return node;
     }
 
     private ExecutionNode getExecutionNode(StringBuilder path) throws CannotFindSchemaException {

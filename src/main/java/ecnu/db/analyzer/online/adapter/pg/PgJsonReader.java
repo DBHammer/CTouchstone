@@ -55,6 +55,9 @@ public class PgJsonReader {
         return null;
     }
 
+    static String readSubPlanName(StringBuilder path){
+        return readContext.read(path+"['Subplan Name']");
+    }
     static boolean hasInitPlan(StringBuilder path) {
         List<String> subPlanTags = readContext.read(path + "['Plans'][*]['Subplan Name']");
         subPlanTags.removeAll(Collections.singleton(null));

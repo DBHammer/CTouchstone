@@ -183,11 +183,13 @@ public class TaskConfigurator implements Callable<Integer> {
         logger.info("开始获取查询计划");
         queryFiles = queryFiles.stream().filter(File::isFile)
                 .filter(queryFile -> queryFile.getName().endsWith(SQL_FILE_POSTFIX)).toList();
+        queryFiles = new LinkedList<>(queryFiles);
+        queryFiles.sort(Comparator.comparing(File::getName));
         for (File queryFile : queryFiles) {
             List<String> queries = queryReader.getQueriesFromFile(queryFile.getPath());
             for (int i = 0; i < queries.size(); i++) {
                 String query = queries.get(i);
-                String queryCanonicalName = queryFile.getName().replace(SQL_FILE_POSTFIX, "_" + i + SQL_FILE_POSTFIX);
+                String queryCanonicalName = queryFile.getName().replace(SQL_FILE_POSTFIX, "_" + (i + 1) + SQL_FILE_POSTFIX);
                 logger.info("开始获取{}", queryCanonicalName);
                 queryAnalyzer.setAliasDic(queryReader.getTableAlias(query));
                 List<Parameter> parameters = new ArrayList<>();

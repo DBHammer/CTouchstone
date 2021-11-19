@@ -3,6 +3,8 @@ package ecnu.db.analyzer.online;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +24,7 @@ public abstract class AbstractAnalyzer {
      * @return 查询树Node信息
      * @throws TouchstoneException 查询树无法解析
      */
-    public abstract ExecutionNode getExecutionTree(List<String[]> queryPlan) throws TouchstoneException;
+    public abstract ExecutionNode getExecutionTree(List<String[]> queryPlan) throws TouchstoneException, IOException, SQLException;
 
     /**
      * 分析join信息

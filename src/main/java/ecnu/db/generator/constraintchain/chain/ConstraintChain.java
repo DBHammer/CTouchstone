@@ -15,6 +15,17 @@ public class ConstraintChain {
 
     private final List<ConstraintChainNode> nodes = new ArrayList<>();
 
+    @JsonIgnore
+    private final Set<String> joinTables = new HashSet<>();
+
+    public void addJoinTable(String tableName) {
+        joinTables.add(tableName);
+    }
+
+    public boolean canJoin(String tableName) {
+        return !joinTables.contains(tableName);
+    }
+
     private String tableName;
 
     public ConstraintChain() {
@@ -39,7 +50,6 @@ public class ConstraintChain {
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-
 
     @JsonIgnore
     public List<Parameter> getParameters() {
@@ -113,10 +123,10 @@ public class ConstraintChain {
                     ConstraintChainFkJoinNode fkJoinNode = ((ConstraintChainFkJoinNode) node);
                     String joinLabel = "";
                     String labelPosition = "";
-                    if(fkJoinNode.getAntiJoin()){
+                    if (fkJoinNode.getAntiJoin()) {
                         joinLabel = "label=\"anti join\";";
                         labelPosition = "labelloc=b;";
-                    }else{
+                    } else {
                         joinLabel = "label=\"eq join\";";
                         labelPosition = "labelloc=b;";
                     }
@@ -138,7 +148,7 @@ public class ConstraintChain {
                 case AGGREGATE -> {
                     ConstraintChainAggregateNode aggregateNode = ((ConstraintChainAggregateNode) node);
                     List<String> keys = ((ConstraintChainAggregateNode) node).getGroupKey();
-                    currentNodeInfo = String.format("\"GroupKey:%s\"", keys==null?"":String.join(",", keys));
+                    currentNodeInfo = String.format("\"GroupKey:%s\"", keys == null ? "" : String.join(",", keys));
                     graph.append("\t").append(currentNodeInfo).append(conditionColor);
                 }
                 default -> throw new UnsupportedOperationException();

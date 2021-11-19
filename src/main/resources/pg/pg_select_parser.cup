@@ -288,6 +288,11 @@ arithmetic_expr ::=
                                                                                       ((ColumnNode) node).setCanonicalColumnName(col);
                                                                                       RESULT = node;
                                                                                   :}
+        |SUM LPAREN CANONICAL_COLUMN_NAME:col RPAREN                              {:
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
+                                                                                      ((ColumnNode) node).setCanonicalColumnName(col);
+                                                                                      RESULT = node;
+                                                                                  :}
         ;
 arithmetic_operator ::=
         PLUS:plus                                                                 {:  RESULT = plus;  :}
