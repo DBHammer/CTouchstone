@@ -86,9 +86,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
             rightNode = getExecutionTreeRes(rightChildPath);
         } else if (plansCount == 1) {
-            if (isOuterJoin(currentNodePath)) {
-                return removeOuterJoin(currentNodePath);
-            }
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
             leftNode = getExecutionTreeRes(leftChildPath);
             rightNode = transferSubPlan2AntiJoin(currentNodePath);
