@@ -11,9 +11,7 @@ import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.dbconnector.adapter.PgConnector;
 import ecnu.db.dbconnector.adapter.Tidb3Connector;
 import ecnu.db.dbconnector.adapter.Tidb4Connector;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainManager;
+import ecnu.db.generator.constraintchain.chain.*;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.MultiVarFilterOperation;
@@ -175,6 +173,38 @@ public class TaskConfigurator implements Callable<Integer> {
         return queryFiles;
     }
 
+    public Map<String, List<ConstraintChain>> checkQueryConstraintChains(Map<String, List<ConstraintChain>> query2constraintChains) {
+        logger.info("开始清理查询计划");
+        for (Map.Entry<String, List<ConstraintChain>> query2constrainChain: query2constraintChains.entrySet()) {
+            List<ConstraintChain> constraintChains = query2constrainChain.getValue();
+            List<ConstraintChain> reduceConstraintChains = new LinkedList<>();
+            for (ConstraintChain constraintChain : constraintChains) {
+                if (constraintChain.getNodes().stream().filter(ConstraintChainFilterNode.class::isInstance)
+                        .map(ConstraintChainFilterNode.class::cast).anyMatch(ConstraintChainFilterNode::hasKeyColumn)) {
+                    reduceConstraintChains.add(constraintChain);
+                }
+                List<ConstraintChainAggregateNode> aggregateNodes = constraintChain.getNodes().stream()
+                        .filter(ConstraintChainAggregateNode.class::isInstance)
+                        .map(ConstraintChainAggregateNode.class::cast)
+                        .filter(ConstraintChainAggregateNode::removeAgg).toList();
+                if(!aggregateNodes.isEmpty()){
+                    logger.info("{} remove some aggregation node on attributes {}", query2constrainChain.getKey() , aggregateNodes);
+                    constraintChain.getNodes().removeAll(aggregateNodes);
+                }
+            }
+            constraintChains.removeAll(reduceConstraintChains);
+            if(!reduceConstraintChains.isEmpty()){
+                logger.error("remove some chains with filter on keys from {}", query2constrainChain.getKey());
+                for (ConstraintChain reduceConstraintChain : reduceConstraintChains) {
+                    logger.error(reduceConstraintChain.toString());
+                }
+            }
+            constraintChains.removeIf(constraintChain -> constraintChain.getNodes().isEmpty());
+        }
+        logger.info("清理查询计划完成");
+        return query2constraintChains;
+    }
+
     public void extract(DbConnector dbConnector, QueryAnalyzer queryAnalyzer, QueryReader queryReader,
                         QueryWriter queryWriter, int samplingSize) throws IOException, TouchstoneException, SQLException {
         List<File> queryFiles = querySchemaMetadataAndColumnMetadata(queryReader, dbConnector);
@@ -207,6 +237,7 @@ public class TaskConfigurator implements Callable<Integer> {
             }
         }
         logger.info("获取查询计划完成");
+        query2constraintChains = checkQueryConstraintChains(query2constraintChains);
         logger.info("开始实例化查询计划");
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
         Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
@@ -218,7 +249,7 @@ public class TaskConfigurator implements Callable<Integer> {
         queryWriter.writeQuery(queryName2QueryTemplates, id2Parameter);
         logger.info("填充查询模版完成");
         if (id2Parameter.size() > 0) {
-            logger.error("未被成功替换的参数如下{}", id2Parameter.values());
+            logger.info("未被成功替换的参数如下{}", id2Parameter.values());
         }
     }
 

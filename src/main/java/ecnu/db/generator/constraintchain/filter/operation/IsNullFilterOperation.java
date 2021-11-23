@@ -5,6 +5,7 @@ import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectSymbol;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
@@ -24,11 +25,12 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     public IsNullFilterOperation(String canonicalColumnName) throws IllegalQueryColumnNameException {
         super(CompareOperator.ISNULL);
-        if(!CommonUtils.isCanonicalColumnName(canonicalColumnName)){
+        if (!CommonUtils.isCanonicalColumnName(canonicalColumnName)) {
             throw new IllegalQueryColumnNameException();
         }
         this.canonicalColumnName = canonicalColumnName;
     }
+
 
     @Override
     public BigDecimal getProbability() {
@@ -37,6 +39,11 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     public void setCanonicalColumnName(String canonicalColumnName) {
         this.canonicalColumnName = canonicalColumnName;
+    }
+
+    @Override
+    public boolean hasKeyColumn() {
+        return TableManager.getInstance().isPrimaryKeyOrForeignKey(canonicalColumnName);
     }
 
     @Override

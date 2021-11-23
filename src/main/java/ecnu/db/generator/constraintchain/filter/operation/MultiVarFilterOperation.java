@@ -6,6 +6,7 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ColumnNode;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
@@ -49,6 +50,23 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         }
         getCanonicalColumnNamesColNames(node.getLeftNode(), colNames);
         getCanonicalColumnNamesColNames(node.getRightNode(), colNames);
+    }
+
+    @Override
+    public boolean hasKeyColumn() {
+        return hasKeyColumn(arithmeticTree);
+    }
+
+    private boolean hasKeyColumn(ArithmeticNode node) {
+        boolean hasKeyColumn = false;
+        if (node != null) {
+            hasKeyColumn = hasKeyColumn(node.getLeftNode()) || hasKeyColumn(node.getRightNode());
+            if (node.getType() == ArithmeticNodeType.COLUMN) {
+                ColumnNode columnNode = (ColumnNode) node;
+                hasKeyColumn = hasKeyColumn || TableManager.getInstance().isPrimaryKeyOrForeignKey(columnNode.getCanonicalColumnName());
+            }
+        }
+        return hasKeyColumn;
     }
 
     @Override

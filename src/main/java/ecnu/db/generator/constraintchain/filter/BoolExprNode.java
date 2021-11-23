@@ -12,6 +12,9 @@ import java.util.List;
  */
 public abstract class BoolExprNode {
 
+    @JsonIgnore
+    public abstract boolean hasKeyColumn();
+
     /**
      * 是否在化简的过程中被reverse过，默认为false
      */

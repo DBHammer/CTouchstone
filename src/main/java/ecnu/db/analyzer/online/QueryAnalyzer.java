@@ -1,5 +1,9 @@
 package ecnu.db.analyzer.online;
 
+import ecnu.db.analyzer.online.node.AggNode;
+import ecnu.db.analyzer.online.node.ExecutionNode;
+import ecnu.db.analyzer.online.node.ExecutionNodeType;
+import ecnu.db.analyzer.online.node.JoinNode;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.generator.constraintchain.chain.*;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
@@ -14,6 +18,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
@@ -24,14 +29,13 @@ import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 public class QueryAnalyzer {
 
     protected static final Logger logger = LoggerFactory.getLogger(QueryAnalyzer.class);
+    private static final int SKIP_JOIN_TAG = -1;
+    //    private static final int SKIP_CHAIN = -2;
+    private static final int STOP_CONSTRUCT = -3;
+    private static final int SKIP_SELF_JOIN = -4;
     private final AbstractAnalyzer abstractAnalyzer;
     private final DbConnector dbConnector;
     protected double skipNodeThreshold = 0.01;
-
-    private static final int SKIP_JOIN_TAG = -1;
-    private static final int SKIP_CHAIN = -2;
-    private static final int STOP_CONSTRUCT = -3;
-    private static final int SKIP_SELF_JOIN = -4;
 
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector) {
@@ -97,10 +101,9 @@ public class QueryAnalyzer {
      */
     private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
         return switch (node.getType()) {
-            case join, outerJoin, antiJoin -> analyzeJoinNode(node, constraintChain, lastNodeLineCount);
+            case join -> analyzeJoinNode((JoinNode) node, constraintChain, lastNodeLineCount);
             case filter -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
-            case scan -> throw new TouchstoneException(String.format("中间节点'%s'不为scan", node.getId()));
-            case aggregate -> analyzeAggregateNode(node, constraintChain, lastNodeLineCount);
+            case aggregate -> analyzeAggregateNode((AggNode) node, constraintChain, lastNodeLineCount);
         };
     }
 
@@ -112,36 +115,43 @@ public class QueryAnalyzer {
         return node.getOutputRows();
     }
 
-    private int analyzeAggregateNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
+    private int analyzeAggregateNode(AggNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
+        // multiple aggregation
         if (!constraintChain.getTableName().equals(node.getTableName())) {
-            return SKIP_CHAIN;
+            return STOP_CONSTRUCT;
+        }
+
+        List<String> groupKeys = null;
+        if (node.getInfo() != null) {
+            groupKeys = Arrays.stream(node.getInfo().trim().split(";")).toList();
         }
         BigDecimal aggProbability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
-        if (node.getInfo().isEmpty()) {
-            ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(node.getGroupKey(), null, aggProbability, BigDecimal.ONE);
-            constraintChain.addNode(aggregateNode);
-        } else {
-            LogicNode root = analyzeSelectInfo(node.getInfo());
-            BigDecimal filterProbability = BigDecimal.valueOf(node.getRowsAfterFilter()).divide(BigDecimal.valueOf(node.getOutputRows()), BIG_DECIMAL_DEFAULT_PRECISION);
-            ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(node.getGroupKey(), root, aggProbability, filterProbability);
-            constraintChain.addNode(aggregateNode);
+        ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(groupKeys, aggProbability);
+
+        if (node.getAggFilter() != null) {
+            ExecutionNode aggNode = node.getAggFilter();
+            LogicNode root = analyzeSelectInfo(aggNode.getInfo());
+            BigDecimal filterProbability = BigDecimal.valueOf(aggNode.getOutputRows()).divide(BigDecimal.valueOf(node.getOutputRows()), BIG_DECIMAL_DEFAULT_PRECISION);
+            aggregateNode.setAggFilter(new ConstraintChainFilterNode(filterProbability, root));
         }
+        constraintChain.addNode(aggregateNode);
         return node.getOutputRows();
     }
 
-    private int analyzeJoinNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
+    private int analyzeJoinNode(JoinNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
         String[] joinColumnInfos = abstractAnalyzer.analyzeJoinInfo(node.getInfo());
         String localTable = joinColumnInfos[0];
         String localCol = joinColumnInfos[1];
         String externalTable = joinColumnInfos[2];
         String externalCol = joinColumnInfos[3];
         // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
-        if (!localTable.equals(constraintChain.getTableName())
-                && !externalTable.equals(constraintChain.getTableName())) {
+        if (!localTable.equals(constraintChain.getTableName()) && !externalTable.equals(constraintChain.getTableName())) {
             return STOP_CONSTRUCT;
         }
         if (localTable.equals(externalTable)) {
             node.setJoinTag(SKIP_SELF_JOIN);
+            logger.error("skip node {} due to self join", node.getInfo());
+            return STOP_CONSTRUCT;
         }
         //将本表的信息放在前面，交换位置
         if (constraintChain.getTableName().equals(externalTable)) {
@@ -152,34 +162,36 @@ public class QueryAnalyzer {
         }
         //根据主外键分别设置约束链输出信息
         if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
+            //设置主键
             if (!constraintChain.canJoin(externalTable)) {
+                logger.error("由于self join，跳过节点{}", node.getInfo());
                 node.setJoinTag(SKIP_SELF_JOIN);
-                return SKIP_SELF_JOIN;
+                return STOP_CONSTRUCT;
             } else {
                 constraintChain.addJoinTable(externalTable);
             }
             if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount) {
                 node.setJoinTag(SKIP_JOIN_TAG);
-                return SKIP_CHAIN;
+            } else {
+                node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
+                ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(node.getJoinTag(), localCol.split(","));
+                constraintChain.addNode(pkJoinNode);
+                TableManager.getInstance().setPrimaryKeys(localTable, localCol);
             }
-            node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
-            ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(node.getJoinTag(), localCol.split(","));
-            constraintChain.addNode(pkJoinNode);
-            //设置主键
-            TableManager.getInstance().setPrimaryKeys(localTable, localCol);
-            return STOP_CONSTRUCT;
+            return lastNodeLineCount;
         } else {
-            if (node.getJoinTag() == SKIP_JOIN_TAG) {
+            TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
+            long fkJoinTag = node.getJoinTag();
+            if (fkJoinTag == SKIP_JOIN_TAG) {
                 logger.info("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
                 return node.getOutputRows();
-            } else if (node.getJoinTag() == SKIP_SELF_JOIN) {
-                logger.info("由于self join，跳过节点{}", node.getInfo());
-                return SKIP_SELF_JOIN;
+            } else if (fkJoinTag == SKIP_SELF_JOIN) {
+                logger.error("由于self join，跳过节点{}", node.getInfo());
+                return STOP_CONSTRUCT;
             }
             BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
-            TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
-            ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, node.getJoinTag(), probability);
-            if (node.getType() == ExecutionNode.ExecutionNodeType.antiJoin) {
+            ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
+            if (node.isAntiJoin()) {
                 fkJoinNode.setAntiJoin();
             }
             constraintChain.addNode(fkJoinNode);
@@ -193,56 +205,46 @@ public class QueryAnalyzer {
      * @param path 需要处理的路径
      * @return 获取的约束链
      */
-    private ConstraintChain extractConstraintChain(List<ExecutionNode> path) throws TouchstoneException, SQLException {
+    private ConstraintChain extractConstraintChain(List<ExecutionNode> path, Set<ExecutionNode> inputNodes) throws TouchstoneException, SQLException {
         if (path == null || path.isEmpty()) {
             throw new TouchstoneException(String.format("非法的path输入 '%s'", path));
         }
-        ExecutionNode node = path.get(0);
+        ExecutionNode headNode = path.get(0);
         ConstraintChain constraintChain;
         int lastNodeLineCount;
         //分析约束链的第一个node
-        switch (node.getType()) {
-            case scan -> {
-                constraintChain = new ConstraintChain(node.getTableName());
-                lastNodeLineCount = node.getOutputRows();
+        if (headNode.getType() == ExecutionNodeType.filter) {
+            constraintChain = new ConstraintChain(headNode.getTableName());
+            lastNodeLineCount = headNode.getOutputRows();
+            if (headNode.getInfo() != null) {
+                LogicNode result = analyzeSelectInfo(headNode.getInfo());
+                BigDecimal ratio = BigDecimal.valueOf(headNode.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(headNode.getTableName())), BIG_DECIMAL_DEFAULT_PRECISION);
+                constraintChain.addNode(new ConstraintChainFilterNode(ratio, result));
             }
-            case filter -> {
-                LogicNode result = analyzeSelectInfo(node.getInfo());
-                constraintChain = new ConstraintChain(node.getTableName());
-                BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(node.getTableName())), BIG_DECIMAL_DEFAULT_PRECISION);
-                ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, result);
-                constraintChain.addNode(filterNode);
-                lastNodeLineCount = node.getOutputRows();
-            }
-            default -> throw new TouchstoneException(String.format("底层节点 %s 只能为select或者scan", node.getId()));
+        } else {
+            throw new TouchstoneException(String.format("底层节点 %s 只能为select或者scan", headNode.getId()));
         }
-        for (int i = 1; i < path.size(); i++) {
-            node = path.get(i);
+        inputNodes.add(headNode);
+        for (ExecutionNode executionNode : path.subList(1, path.size())) {
             try {
-                lastNodeLineCount = analyzeNode(node, constraintChain, lastNodeLineCount);
-                if (lastNodeLineCount == SKIP_CHAIN && constraintChain.getNodes().isEmpty()) {
-                    return null;
-                }else if (lastNodeLineCount == STOP_CONSTRUCT || lastNodeLineCount == SKIP_SELF_JOIN) {
-                    break;
+                lastNodeLineCount = analyzeNode(executionNode, constraintChain, lastNodeLineCount);
+                inputNodes.add(executionNode);
+                if (lastNodeLineCount == STOP_CONSTRUCT) {
+                    if (constraintChain.getNodes().isEmpty()) {
+                        return null;
+                    } else {
+                        break;
+                    }
+                } else if (lastNodeLineCount < 0) {
+                    throw new UnsupportedOperationException();
                 }
             } catch (TouchstoneException e) {
+                e.printStackTrace();
                 // 小于设置的阈值以后略去后续的节点
-                if (node.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(node.getTableName()) < skipNodeThreshold) {
+                if (executionNode.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(executionNode.getTableName()) < skipNodeThreshold) {
                     logger.error("提取约束链失败", e);
-                    logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), node));
+                    logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), executionNode));
                     return constraintChain;
-                }
-                throw e;
-            }
-        }
-        if (lastNodeLineCount == SKIP_SELF_JOIN) {
-            for (int i = constraintChain.getNodes().size() - 1; i >= 0; i--){
-                if(constraintChain.getNodes().get(i).getConstraintChainNodeType() == ConstraintChainNodeType.FILTER||
-                        constraintChain.getNodes().get(i).getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE){
-                    constraintChain.getNodes().remove(i);
-                }else if(constraintChain.getNodes().get(i).getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN ||
-                        constraintChain.getNodes().get(i).getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN ){
-                    break;
                 }
             }
         }
@@ -258,14 +260,14 @@ public class QueryAnalyzer {
      */
     private void getPathsIterate(ExecutionNode currentNode, List<List<ExecutionNode>> paths, List<ExecutionNode> currentPath) {
         currentPath.add(0, currentNode);
-        if (currentNode.leftNode == null && currentNode.rightNode == null) {
+        if (currentNode.getLeftNode() == null && currentNode.getRightNode() == null) {
             paths.add(new ArrayList<>(currentPath));
         }
-        if (currentNode.leftNode != null) {
-            getPathsIterate(currentNode.leftNode, paths, currentPath);
+        if (currentNode.getLeftNode() != null) {
+            getPathsIterate(currentNode.getLeftNode(), paths, currentPath);
         }
-        if (currentNode.rightNode != null) {
-            getPathsIterate(currentNode.rightNode, paths, currentPath);
+        if (currentNode.getRightNode() != null) {
+            getPathsIterate(currentNode.getRightNode(), paths, currentPath);
         }
         currentPath.remove(0);
     }
@@ -298,21 +300,30 @@ public class QueryAnalyzer {
             List<List<ExecutionNode>> paths = new ArrayList<>();
             getPathsIterate(executionTree, paths, new LinkedList<>());
             // 并发处理约束链
+            HashSet<ExecutionNode> allNodes = new HashSet<>();
+            paths.forEach(allNodes::addAll);
+            Set<ExecutionNode> inputNodes = ConcurrentHashMap.newKeySet();
             ForkJoinPool forkJoinPool = new ForkJoinPool(paths.size());
             try {
-                constraintChains.add(forkJoinPool.submit(() -> paths.parallelStream().map(path -> {
+                constraintChains.add(new ArrayList<>(forkJoinPool.submit(() -> paths.parallelStream().map(path -> {
                     try {
-                        return extractConstraintChain(path);
+                        return extractConstraintChain(path, inputNodes);
                     } catch (TouchstoneException | SQLException e) {
                         logger.error(path.toString(), e);
                         return null;
                     }
-                }).filter(Objects::nonNull).toList()).get());
+                }).filter(Objects::nonNull).toList()).get()));
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("约束链构造失败", e);
                 Thread.currentThread().interrupt();
             } finally {
                 forkJoinPool.shutdown();
+            }
+            allNodes.removeAll(inputNodes);
+            if (!allNodes.isEmpty()) {
+                for (ExecutionNode node : allNodes) {
+                    logger.error("can not input " + node);
+                }
             }
         }
         logger.info("Status:获取完成");

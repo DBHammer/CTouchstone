@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.rmi.server.ExportException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,7 @@ public class ConstraintChainManager {
                 } else {
                     String newPath = resultDir + "/pic/" + "new" + stringListEntry.getKey() + ".dot";
                     CommonUtils.writeFile(newPath + "", graph);
-                    logger.warn("graph is different");
+                    logger.warn("graph {} is different", stringListEntry.getKey());
                 }
             }
         }
@@ -85,13 +86,8 @@ public class ConstraintChainManager {
         return String.format(GRAPH_TEMPLATE, queryName, subGraphs + graph);
     }
 
-    private boolean graphIsExists(File[] arrary, String graphName) {
-        for (File file : arrary) {
-            if (file.getName().equals(graphName)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean graphIsExists(File[] array, String graphName) {
+        return Arrays.stream(array).map(File::getName).anyMatch(fileName->fileName.equals(graphName));
     }
 
     private String removeData(String graph) {

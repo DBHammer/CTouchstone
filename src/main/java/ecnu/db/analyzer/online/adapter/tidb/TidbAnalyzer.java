@@ -1,8 +1,10 @@
 package ecnu.db.analyzer.online.adapter.tidb;
 
 import ecnu.db.analyzer.online.AbstractAnalyzer;
-import ecnu.db.analyzer.online.ExecutionNode;
-import ecnu.db.analyzer.online.ExecutionNode.ExecutionNodeType;
+import ecnu.db.analyzer.online.node.ExecutionNode;
+import ecnu.db.analyzer.online.node.ExecutionNodeType;
+import ecnu.db.analyzer.online.node.FilterNode;
+import ecnu.db.analyzer.online.node.JoinNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.schema.TableManager;
 import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoLexer;
@@ -119,13 +121,13 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                     columnName = indexMatches.get(0).get(1);
                 }
                 if (leftOperand.contains("inf")) {
-                    return new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount,
+                    return new FilterNode(rawNode.id, rawNode.rowCount,
                             String.format("%s(%s.%s, %s)", rightOperator, canonicalTableName, columnName, rightOperand));
                 } else if (rightOperand.contains("inf")) {
-                    return new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount,
+                    return new FilterNode(rawNode.id, rawNode.rowCount,
                             String.format("%s(%s.%s, %s)", leftOperator, canonicalTableName, columnName, leftOperand));
                 } else {
-                    return new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount,
+                    return new FilterNode(rawNode.id, rawNode.rowCount,
                             String.format("and(%s(%s.%s, %s), %s(%s.%s, %s))",
                                     leftOperator, canonicalTableName, columnName, leftOperand,
                                     rightOperator, canonicalTableName, columnName, rightOperand));
@@ -137,14 +139,18 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         else if (nodeTypeRef.isRangeScanNode(nodeType) && !matches.isEmpty()) {
             String canonicalTableName = rawNode.operatorInfo;
             int rowCount = TableManager.getInstance().getTableSize(canonicalTableName);
-            return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rowCount, "table:" + canonicalTableName);
+            ExecutionNode scanNode = new FilterNode(rawNode.id, rowCount, null);
+            scanNode.setTableName(canonicalTableName);
+            return scanNode;
         }
         // 处理底层的TableScan
         else if (nodeTypeRef.isTableScanNode(nodeType)) {
             String canonicalTableName = rawNode.operatorInfo;
-            return new ExecutionNode(rawNode.id, ExecutionNodeType.scan, rawNode.rowCount, "table:" + canonicalTableName);
+            ExecutionNode scanNode = new FilterNode(rawNode.id, rawNode.rowCount, null);
+            scanNode.setTableName(canonicalTableName);
+            return scanNode;
         } else if (nodeTypeRef.isFilterNode(nodeType)) {
-            node = new ExecutionNode(rawNode.id, ExecutionNodeType.filter, rawNode.rowCount, rawNode.operatorInfo);
+            node = new FilterNode(rawNode.id, rawNode.rowCount, rawNode.operatorInfo);
             // 跳过底部的TableScan
             if (rawNode.left != null && nodeTypeRef.isTableScanNode(rawNode.left.nodeType)) {
                 return node;
@@ -154,24 +160,24 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                     return node;
                 }
             }
-            node.leftNode = rawNode.left == null ? null : buildExecutionTree(rawNode.left);
-            node.rightNode = rawNode.right == null ? null : buildExecutionTree(rawNode.right);
+            node.setLeftNode(rawNode.left == null ? null : buildExecutionTree(rawNode.left));
+            node.setRightNode(rawNode.right == null ? null : buildExecutionTree(rawNode.right));
         } else if (nodeTypeRef.isJoinNode(nodeType)) {
             // 处理IndexJoin有selection的下推到tikv情况
             if (nodeTypeRef.isReaderNode(rawNode.right.nodeType) && rawNode.right.right != null
                     && nodeTypeRef.isIndexScanNode(rawNode.right.left.nodeType)
                     && nodeTypeRef.isFilterNode(rawNode.right.right.nodeType)) {
-                node = new ExecutionNode(rawNode.right.right.id, ExecutionNodeType.filter, rawNode.rowCount, rawNode.right.right.operatorInfo);
-                node.leftNode = new ExecutionNode(rawNode.right.left.id, ExecutionNodeType.join, rawNode.right.left.rowCount, rawNode.operatorInfo);
+                node = new FilterNode(rawNode.right.right.id, rawNode.rowCount, rawNode.right.right.operatorInfo);
+                node.setLeftNode(new JoinNode(rawNode.right.left.id, rawNode.right.left.rowCount, rawNode.operatorInfo,false));
                 String canonicalTblName = rawNode.right.right.left.operatorInfo;
-                node.leftNode.rightNode = new ExecutionNode(rawNode.right.right.left.id, ExecutionNodeType.scan,
-                        TableManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName);
-                node.leftNode.leftNode = buildExecutionTree(rawNode.left);
+                node.getLeftNode().setRightNode(new FilterNode(rawNode.right.right.left.id,
+                        TableManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName));
+                node.getLeftNode().setLeftNode(buildExecutionTree(rawNode.left));
                 return node;
             }
-            node = new ExecutionNode(rawNode.id, ExecutionNodeType.join, rawNode.rowCount, rawNode.operatorInfo);
-            node.leftNode = rawNode.left == null ? null : buildExecutionTree(rawNode.left);
-            node.rightNode = rawNode.right == null ? null : buildExecutionTree(rawNode.right);
+            node = new JoinNode(rawNode.id, rawNode.rowCount, rawNode.operatorInfo,false);
+            node.setLeftNode(rawNode.left == null ? null : buildExecutionTree(rawNode.left));
+            node.setRightNode(rawNode.right == null ? null : buildExecutionTree(rawNode.right));
         } else if (nodeTypeRef.isReaderNode(nodeType)) {
             if (rawNode.right != null) {
                 matches = matchPattern(EQ_OPERATOR, rawNode.left.operatorInfo);
@@ -179,7 +185,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 int tableSize = TableManager.getInstance().getTableSize(canonicalTblName);
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (!matches.isEmpty() && nodeTypeRef.isTableScanNode(rawNode.right.nodeType)) {
-                    node = new ExecutionNode(rawNode.id, ExecutionNodeType.scan, TableManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName);
+                    node = new FilterNode(rawNode.id, TableManager.getInstance().getTableSize(canonicalTblName), null);
+                    node.setTableName(canonicalTblName);
                 } else if (rawNode.rowCount == tableSize) { // normal range scan
                     node = buildExecutionTree(rawNode.right);
                 } else if (nodeTypeRef.isTableScanNode(rawNode.right.nodeType)) {
@@ -194,10 +201,12 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                 int tableSize = TableManager.getInstance().getTableSize(canonicalTblName);
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (rawNode.left.rowCount != tableSize) {
-                    node = new ExecutionNode(rawNode.left.id, ExecutionNodeType.scan, tableSize, "table:" + canonicalTblName);
+                    node = new FilterNode(rawNode.left.id, tableSize, null);
+                    node.setTableName(canonicalTblName);
                     // 正常情况
                 } else {
-                    node = new ExecutionNode(rawNode.left.id, ExecutionNodeType.scan, rawNode.left.rowCount, "table:" + canonicalTblName);
+                    node = new FilterNode(rawNode.left.id, rawNode.left.rowCount, null);
+                    node.setTableName(canonicalTblName);
                 }
             } else {
                 node = buildExecutionTree(rawNode.left);

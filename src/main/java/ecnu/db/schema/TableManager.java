@@ -54,6 +54,16 @@ public class TableManager {
         return getSchema(tableName).getPrimaryKeys();
     }
 
+    public boolean isPrimaryKeyOrForeignKey(String canonicalColumnName) {
+        String[] nameArray = canonicalColumnName.split("\\.");
+        String tableName = nameArray[0] + "." + nameArray[1];
+        Table table = schemas.get(tableName);
+        if (table == null) {
+            return false;
+        }
+        return table.getPrimaryKeys().contains(canonicalColumnName) || table.getForeignKeys().containsKey(canonicalColumnName);
+    }
+
     public boolean containSchema(String tableName) {
         return schemas.containsKey(tableName);
     }
@@ -69,6 +79,7 @@ public class TableManager {
     public void setPrimaryKeys(String tableName, String primaryKeys) throws TouchstoneException {
         getSchema(tableName).setPrimaryKeys(tableName + "." + primaryKeys);
     }
+
 
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
         logger.info("table:{}, column:{} -ref- table:{}, column:{}", localTable, localColumns, refTable, refColumns);

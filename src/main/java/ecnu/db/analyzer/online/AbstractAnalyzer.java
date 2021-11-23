@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.online;
 
+import ecnu.db.analyzer.online.node.ExecutionNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 

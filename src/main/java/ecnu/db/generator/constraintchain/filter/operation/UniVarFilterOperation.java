@@ -5,6 +5,7 @@ import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
@@ -33,6 +34,8 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         }
         this.parameters = parameters;
     }
+
+
 
     /**
      * merge operation
@@ -66,6 +69,11 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
             }
             toMergeNodes.add(newFilter);
         }
+    }
+
+    @Override
+    public boolean hasKeyColumn() {
+        return TableManager.getInstance().isPrimaryKeyOrForeignKey(canonicalColumnName);
     }
 
     @Override

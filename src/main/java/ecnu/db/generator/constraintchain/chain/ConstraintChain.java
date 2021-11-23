@@ -121,8 +121,8 @@ public class ConstraintChain {
                 }
                 case FK_JOIN -> {
                     ConstraintChainFkJoinNode fkJoinNode = ((ConstraintChainFkJoinNode) node);
-                    String joinLabel = "";
-                    String labelPosition = "";
+                    String joinLabel;
+                    String labelPosition;
                     if (fkJoinNode.getAntiJoin()) {
                         joinLabel = "label=\"anti join\";";
                         labelPosition = "labelloc=b;";
@@ -147,9 +147,24 @@ public class ConstraintChain {
                 }
                 case AGGREGATE -> {
                     ConstraintChainAggregateNode aggregateNode = ((ConstraintChainAggregateNode) node);
-                    List<String> keys = ((ConstraintChainAggregateNode) node).getGroupKey();
+                    List<String> keys = aggregateNode.getGroupKey();
+                    currentProbability = aggregateNode.getAggProbability().doubleValue();
                     currentNodeInfo = String.format("\"GroupKey:%s\"", keys == null ? "" : String.join(",", keys));
                     graph.append("\t").append(currentNodeInfo).append(conditionColor);
+                    if(aggregateNode.getAggFilter() != null){
+                        if (!lastNodeInfo.isBlank()) {
+                            graph.append(String.format("\t%s->%s[label=\"%3$,.4f\"];%n", lastNodeInfo, currentNodeInfo, lastProbability));
+                        } else {
+                            graph.append(String.format("\t\"%s\"%s", tableName, tableColor));
+                            graph.append(String.format("\t\"%s\"->%s[label=\"1.0\"]%n", tableName, currentNodeInfo));
+                        }
+                        lastNodeInfo = currentNodeInfo;
+                        lastProbability = currentProbability;
+                        ConstraintChainFilterNode aggFilter = aggregateNode.getAggFilter();
+                        currentNodeInfo = String.format("\"%s\"",aggFilter);
+                        graph.append("\t").append(currentNodeInfo).append(conditionColor);
+                        currentProbability = aggFilter.getProbability().doubleValue();
+                    }
                 }
                 default -> throw new UnsupportedOperationException();
             }

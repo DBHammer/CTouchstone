@@ -33,6 +33,11 @@ public class LogicNode extends BoolExprNode {
 
 
     @Override
+    public boolean hasKeyColumn() {
+        return children.stream().anyMatch(BoolExprNode::hasKeyColumn);
+    }
+
+    @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         List<AbstractFilterOperation> operations = new ArrayList<>();
         // 如果上层要求设置概率为 1， 则不需要处理，直接下推概率1到所有的filter operation中
