@@ -1,15 +1,12 @@
 package ecnu.db.analyzer.online.node;
 
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author wangqingshuai
  */
-public class ExecutionNode{
+public class ExecutionNode {
     /**
      * 节点类型
      */
@@ -96,7 +93,7 @@ public class ExecutionNode{
 
     @Override
     public String toString() {
-        return String.format("node type:%s; table name:%s; node info:%s",type, tableName, info);
+        return String.format("node type:%s; table name:%s; node info:%s", type, tableName, info);
     }
 
     @Override

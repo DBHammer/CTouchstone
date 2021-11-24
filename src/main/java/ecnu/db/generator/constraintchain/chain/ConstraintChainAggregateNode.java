@@ -28,6 +28,9 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
         this.aggProbability = aggProbability;
     }
 
+    public ConstraintChainAggregateNode() {
+        super(ConstraintChainNodeType.AGGREGATE);
+    }
 
     public boolean removeAgg(Set<String> allTables) {
         if (groupKey == null) {

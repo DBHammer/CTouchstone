@@ -62,9 +62,15 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         this.refCols = refCols;
     }
 
-    public void setAntiJoin() { this.antiOrNot = true; }
+    public void setAntiJoin() {
+        this.antiOrNot = true;
+    }
 
-    public void setAntiJoin(boolean antiOrNot) { this.antiOrNot = antiOrNot; }
+    public void setAntiJoin(boolean antiOrNot) {
+        this.antiOrNot = antiOrNot;
+    }
 
-    public boolean getAntiJoin() { return this.antiOrNot; }
+    public boolean getAntiJoin() {
+        return this.antiOrNot;
+    }
 }
