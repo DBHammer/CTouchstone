@@ -171,6 +171,7 @@ public class QueryAnalyzer {
                 constraintChain.addJoinTable(externalTable);
             }
             if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount) {
+                logger.info("由于输入的主键为全集，跳过节点{}", node.getInfo());
                 node.setJoinTag(SKIP_JOIN_TAG);
             } else {
                 node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));

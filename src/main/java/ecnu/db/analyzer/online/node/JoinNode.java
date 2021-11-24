@@ -6,7 +6,7 @@ public class JoinNode extends ExecutionNode{
     /**
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
      */
-    private long joinTag = -1;
+    private long joinTag = Long.MIN_VALUE;
 
     private final boolean antiJoin;
 
@@ -32,8 +32,8 @@ public class JoinNode extends ExecutionNode{
     }
 
     public void setJoinTag(long joinTag) {
-        waitSetJoinTag.countDown();
         this.joinTag = joinTag;
+        waitSetJoinTag.countDown();
     }
 
     public boolean isAntiJoin() {

@@ -40,7 +40,7 @@ public class Table {
         return canonicalColumnNamesNotKey;
     }
 
-    public long getJoinTag() {
+    public synchronized long getJoinTag() {
         long temp = joinTag;
         joinTag *= 4;
         return temp;
@@ -101,7 +101,7 @@ public class Table {
 
     @JsonSetter
     @SuppressWarnings("unused")
-    public void setForeignKeys(Map<String, String> foreignKeys) {
+    public synchronized void setForeignKeys(Map<String, String> foreignKeys) {
         this.foreignKeys = foreignKeys;
     }
 
@@ -111,7 +111,7 @@ public class Table {
         return String.join(",", primaryKeys);
     }
 
-    public void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
+    public synchronized void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
         if (this.primaryKeys == null) {
             this.primaryKeys = Arrays.asList(primaryKeys.split(","));
         } else {
