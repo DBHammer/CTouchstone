@@ -30,7 +30,9 @@ public class QueryWriter {
 
     public QueryWriter(String resultDir) {
         this.queryDir = resultDir + QUERY_DIR;
-        new File(queryDir).mkdir();
+        if(new File(queryDir).mkdir()){
+            logger.info("create query dir for output");
+        }
     }
 
     public void setDbType(DbType dbType) {
@@ -100,7 +102,7 @@ public class QueryWriter {
             query = appendArgs("cannotFindArgs", cannotFindArgs) + query;
         }
         if (!conflictArgs.isEmpty()) {
-            logger.warn("请注意{}中有参数出现多次，无法智能，替换请查看该sql输出，手动替换;", queryCanonicalName);
+            logger.warn("请注意{}中有参数出现多次，无法智能替换，请查看该sql输出，手动替换;", queryCanonicalName);
             query = appendArgs("conflictArgs", conflictArgs) + query;
         }
 
@@ -127,20 +129,25 @@ public class QueryWriter {
         for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
             String query = queryName2QueryTemplate.getValue();
             List<List<String>> matches = matchPattern(PATTERN, query);
-            for (List<String> group : matches) {
-                int parameterId = Integer.parseInt(group.get(1));
-                Parameter parameter = id2Parameter.remove(parameterId);
-                if (parameter != null) {
-                    String parameterData = parameter.getDataValue();
-                    try {
-                        query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
-                    } catch (IllegalArgumentException e) {
-                        logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
-                    }
-                }
+            if(matches.isEmpty()){
                 String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
                 CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
-            }
+            }else {
+                for (List<String> group : matches) {
+                    int parameterId = Integer.parseInt(group.get(1));
+                    Parameter parameter = id2Parameter.remove(parameterId);
+                    if (parameter != null) {
+                        String parameterData = parameter.getDataValue();
+                        try {
+                            query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
+                        } catch (IllegalArgumentException e) {
+                            logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
+                        }
+                    }
+                    String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
+                    CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
+                }
+           }
         }
     }
 }
