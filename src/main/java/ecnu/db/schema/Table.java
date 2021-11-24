@@ -66,6 +66,11 @@ public class Table {
         }
     }
 
+    public boolean isRefTable(String refTable) {
+        return foreignKeys.values().stream().anyMatch(remoteColumn -> remoteColumn.contains(refTable));
+    }
+
+
     public void addForeignKey(String localTable, String localColumnName,
                               String referencingTable, String referencingInfo) throws TouchstoneException {
         String[] columnNames = localColumnName.split(",");
@@ -93,6 +98,10 @@ public class Table {
 
     public void setTableSize(int tableSize) {
         this.tableSize = tableSize;
+    }
+
+    public void setPrimaryKeys(List<String> primaryKeys) {
+        this.primaryKeys = primaryKeys;
     }
 
     public Map<String, String> getForeignKeys() {

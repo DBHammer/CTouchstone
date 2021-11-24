@@ -90,6 +90,11 @@ public class TableManager {
         return getSchema(locTable).isRefTable(locTable + "." + locColumn, remoteColumn);
     }
 
+    public boolean isRefTable(String locTable, String remoteTable) {
+        return schemas.get(locTable).isRefTable(remoteTable);
+    }
+
+
     public List<String> createTopologicalOrder() {
         Graph<String, DefaultEdge> schemaGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
         schemas.keySet().forEach(schemaGraph::addVertex);

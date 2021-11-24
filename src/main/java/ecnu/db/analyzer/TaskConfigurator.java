@@ -178,15 +178,17 @@ public class TaskConfigurator implements Callable<Integer> {
         for (Map.Entry<String, List<ConstraintChain>> query2constrainChain: query2constraintChains.entrySet()) {
             List<ConstraintChain> constraintChains = query2constrainChain.getValue();
             List<ConstraintChain> reduceConstraintChains = new LinkedList<>();
+            Set<String> allTables = constraintChains.stream().map(ConstraintChain::getTableName).collect(Collectors.toSet());
             for (ConstraintChain constraintChain : constraintChains) {
                 if (constraintChain.getNodes().stream().filter(ConstraintChainFilterNode.class::isInstance)
                         .map(ConstraintChainFilterNode.class::cast).anyMatch(ConstraintChainFilterNode::hasKeyColumn)) {
                     reduceConstraintChains.add(constraintChain);
                 }
+
                 List<ConstraintChainAggregateNode> aggregateNodes = constraintChain.getNodes().stream()
                         .filter(ConstraintChainAggregateNode.class::isInstance)
                         .map(ConstraintChainAggregateNode.class::cast)
-                        .filter(ConstraintChainAggregateNode::removeAgg).toList();
+                        .filter(constraintChainAggregateNode -> constraintChainAggregateNode.removeAgg(allTables)).toList();
                 if(!aggregateNodes.isEmpty()){
                     logger.info("{} remove some aggregation node on attributes {}", query2constrainChain.getKey() , aggregateNodes);
                     constraintChain.getNodes().removeAll(aggregateNodes);
@@ -237,6 +239,9 @@ public class TaskConfigurator implements Callable<Integer> {
             }
         }
         logger.info("获取查询计划完成");
+        logger.info("开始持久化表参照信息");
+        TableManager.getInstance().storeSchemaInfo();
+        logger.info("持久化表参照信息成功");
         query2constraintChains = checkQueryConstraintChains(query2constraintChains);
         logger.info("开始实例化查询计划");
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();

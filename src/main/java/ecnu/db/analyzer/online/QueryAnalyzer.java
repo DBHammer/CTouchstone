@@ -123,7 +123,7 @@ public class QueryAnalyzer {
 
         List<String> groupKeys = null;
         if (node.getInfo() != null) {
-            groupKeys = Arrays.stream(node.getInfo().trim().split(";")).toList();
+            groupKeys = new ArrayList<>(Arrays.stream(node.getInfo().trim().split(";")).toList());
         }
         BigDecimal aggProbability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
         ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(groupKeys, aggProbability);
