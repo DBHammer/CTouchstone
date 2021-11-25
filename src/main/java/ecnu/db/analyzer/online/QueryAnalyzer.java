@@ -286,6 +286,12 @@ public class QueryAnalyzer {
         try {
             for (List<String[]> plan : queryPlans) {
                 executionTrees.add(abstractAnalyzer.getExecutionTree(plan));
+                List<Map.Entry<String, String>> tableNameAndFilterInfos = abstractAnalyzer.splitQueryPlanForMultipleAggregate();
+                if (tableNameAndFilterInfos != null) {
+                    for (Map.Entry<String, String> tableNameAndFilterInfo : tableNameAndFilterInfos) {
+                        executionTrees.add(abstractAnalyzer.getExecutionTree(dbConnector.explainQuery(tableNameAndFilterInfo))) ;
+                    }
+                }
             }
         } catch (TouchstoneException | IOException e) {
             if (queryPlan != null && !queryPlan.isEmpty()) {

@@ -112,6 +112,11 @@ public abstract class DbConnector {
         }
     }
 
+    public List<String[]> explainQuery(Map.Entry<String, String> tableNameAndFilterInfo) throws SQLException {
+        return explainQuery(String.format("SELECT COUNT(*) FROM %s WHERE %s;",
+                tableNameAndFilterInfo.getKey(), tableNameAndFilterInfo.getValue()));
+    }
+
     public List<String[]> explainQuery(String sql) throws SQLException {
         try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
             ResultSet rs = stmt.executeQuery(String.format(getExplainFormat(), sql));

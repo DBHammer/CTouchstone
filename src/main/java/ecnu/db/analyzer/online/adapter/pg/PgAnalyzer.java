@@ -1,10 +1,14 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
 import ecnu.db.analyzer.online.AbstractAnalyzer;
-import ecnu.db.analyzer.online.node.*;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
+import ecnu.db.analyzer.online.node.AggNode;
+import ecnu.db.analyzer.online.node.ExecutionNode;
+import ecnu.db.analyzer.online.node.FilterNode;
+import ecnu.db.analyzer.online.node.JoinNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.schema.CannotFindSchemaException;
@@ -21,8 +25,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.matchPattern;
-
-import ecnu.db.schema.TableManager;
 
 public class PgAnalyzer extends AbstractAnalyzer {
 
@@ -47,6 +49,8 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
     protected static final Logger logger = LoggerFactory.getLogger(PgAnalyzer.class);
 
+    public StringBuilder pathForSplit = null;
+
     public PgAnalyzer() {
         super();
         this.nodeTypeRef = new PgNodeTypeInfo();
@@ -62,42 +66,50 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public ExecutionNode getExecutionTreeRes(StringBuilder currentNodePath) throws TouchstoneException, IOException, SQLException {
         ExecutionNode leftNode = null;
         ExecutionNode rightNode = null;
-        ExecutionNode parentAggNode = null;
         int plansCount = PgJsonReader.readPlansCount(currentNodePath);
-        if (Objects.equals(PgJsonReader.readNodeType(currentNodePath), "Bitmap Heap Scan")) {
-            plansCount--;
-        }
-        if (plansCount == 3) {
-            StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
-            leftNode = getExecutionTreeRes(leftChildPath);
-            StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
-            rightNode = getExecutionTreeRes(rightChildPath);
-            StringBuilder thirdChildPath = PgJsonReader.skipNodes(PgJsonReader.move3ThirdChild(currentNodePath));
-            parentAggNode = createParentAggNode(currentNodePath, thirdChildPath);
-        }
-        if (plansCount == 2) {
+        if (plansCount >= 2) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
             leftNode = getExecutionTreeRes(leftChildPath);
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath));
             rightNode = getExecutionTreeRes(rightChildPath);
         } else if (plansCount == 1) {
+            //todo fix only for query 20
+            if (canNotDeal(currentNodePath)) {
+                pathForSplit = currentNodePath;
+                String tableName = PgJsonReader.readTableName(currentNodePath.toString());
+                int tableSize = TableManager.getInstance().getTableSize(tableName);
+                aliasDic.put(PgJsonReader.readAlias(currentNodePath.toString()), tableName);
+                ExecutionNode subNode = new FilterNode(currentNodePath.toString(), tableSize, null);
+                subNode.setTableName(tableName);
+                return subNode;
+            }
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNodePath));
             leftNode = getExecutionTreeRes(leftChildPath);
             rightNode = transferSubPlan2AntiJoin(currentNodePath);
         }
-        if (parentAggNode == null) {
-            ExecutionNode node = getExecutionNode(currentNodePath);
-            node.setLeftNode(leftNode);
-            node.setRightNode(rightNode);
-            return node;
-        } else {
-            int rowCount = PgJsonReader.readRowCount(currentNodePath) + PgJsonReader.readRowsRemovedByJoinFilter(currentNodePath);
-            ExecutionNode node = getJoinNode(currentNodePath, rowCount);
-            node.setLeftNode(leftNode);
-            node.setRightNode(rightNode);
-            parentAggNode.setLeftNode(node);
-            return parentAggNode;
+        ExecutionNode node = getExecutionNode(currentNodePath);
+        if (node == null) {
+            return null;
         }
+        node.setLeftNode(leftNode);
+        node.setRightNode(rightNode);
+        //create agg node
+        if (plansCount == 3) {
+            StringBuilder thirdChildPath = PgJsonReader.skipNodes(PgJsonReader.move3ThirdChild(currentNodePath));
+            ExecutionNode parentAggNode = createParentAggNode(currentNodePath, thirdChildPath);
+            int rowCount = PgJsonReader.readRowCount(currentNodePath) + PgJsonReader.readRowsRemovedByJoinFilter(currentNodePath);
+            node.setOutputRows(rowCount);
+            parentAggNode.setLeftNode(node);
+            node = parentAggNode;
+        }
+        //todo fix only for query 20
+        if (pathForSplit != null) {
+            if (PgJsonReader.move2LeftChild(currentNodePath).toString().equals(pathForSplit.toString()) ||
+                    PgJsonReader.move2RightChild(currentNodePath).toString().equals(pathForSplit.toString())) {
+                node.setOutputRows(PgJsonReader.readActualLoops(PgJsonReader.move2LeftChild(pathForSplit)));
+            }
+        }
+        return node;
     }
 
 
@@ -125,6 +137,9 @@ public class PgAnalyzer extends AbstractAnalyzer {
             rowCount += PgJsonReader.readRowsRemovedByJoinFilter(path);
         }
         String scanType = PgJsonReader.readNodeType(path);
+        if (scanType.equals("Bitmap Index Scan")) {
+            return null;
+        }
         String planId = path.toString();
         String filterInfo = PgJsonReader.readFilterInfo(path);
         if (filterInfo != null) {
@@ -138,14 +153,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 return node;
             }
         } else {
-            if (Objects.equals(scanType, "Bitmap Heap Scan")) {
-                String tableName = PgJsonReader.readTableName(path.toString());
+            String tableName = PgJsonReader.readTableName(path.toString());
+            if (scanType.equals("Bitmap Heap Scan") || scanType.equals("Index Scan")) {
                 rowCount = TableManager.getInstance().getTableSize(tableName);
             }
-            if (Objects.equals(scanType, "Index Scan")) {
-                rowCount = TableManager.getInstance().getTableSize(PgJsonReader.readTableName(path.toString()));
-            }
-            String tableName = PgJsonReader.readTableName(path.toString());
             aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
             ExecutionNode node = new FilterNode(planId, rowCount, null);
             node.setTableName(tableName);
@@ -191,7 +202,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (aggFilterInfo == null) {
             String subPlanIndex = PgJsonReader.readSubPlanIndex(path);
             if (subPlanIndex != null) {
-                aggFilterInfo = "(" + removeRedundancy(PgJsonReader.readOutput(path).get(0)) + "=" + subPlanIndex + ")";
+                aggFilterInfo = "(" + removeRedundancy(PgJsonReader.readOutput(path).get(0), false) + "=" + subPlanIndex + ")";
                 aggFilter = new FilterNode(path.toString(), 1, transColumnName(aggFilterInfo));
             }
         } else {
@@ -201,16 +212,18 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
         List<String> groupKey = PgJsonReader.readGroupKey(path);
         String groupKeyInfo = null;
+        String tableName = null;
         if (groupKey != null) {
+            //todo multiple table name
             groupKeyInfo = groupKey.stream().map(this::transColumnName).collect(Collectors.joining(";"));
+            tableName = aliasDic.get(groupKey.get(0).split("\\.")[0]);
+        } else if (aggFilter == null) {
+            logger.info("skip the empty aggregation");
+        } else {
+            tableName = getTableNameFromOutput(path);
         }
         AggNode node = new AggNode(path.toString(), rowCount, groupKeyInfo);
-        if (groupKey != null) {
-            node.setTableName(aliasDic.get(groupKey.get(0).split("\\.")[0]));
-        } else {
-            StringBuilder leftChildPath = PgJsonReader.move2LeftChild(path);
-            node.setTableName(PgJsonReader.readTableName(leftChildPath.toString()));
-        }
+        node.setTableName(tableName);
         node.setAggFilter(aggFilter);
         return node;
     }
@@ -267,15 +280,16 @@ public class PgAnalyzer extends AbstractAnalyzer {
             m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0]) + "." + tableNameAndColName[1]);
         }
         m.appendTail(filter);
-        return removeRedundancy(filter.toString());
+        return removeRedundancy(filter.toString(), false);
     }
 
-    public String removeRedundancy(String filterInfo) {
+    public String removeRedundancy(String filterInfo, boolean keepQuotes) {
+        int filterLocation = keepQuotes ? 0 : 1;
         Matcher m = REDUNDANCY.matcher(filterInfo);
         StringBuilder filter = new StringBuilder();
         while (m.find()) {
             String date = m.group().split("::")[0];
-            m.appendReplacement(filter, date.substring(1, date.length() - 1));
+            m.appendReplacement(filter, date.substring(filterLocation, date.length() - filterLocation));
         }
         m.appendTail(filter);
         return filter.toString();
@@ -338,6 +352,47 @@ public class PgAnalyzer extends AbstractAnalyzer {
             return queryPlans;
         } else {
             return Collections.singletonList(queryPlan);
+        }
+    }
+
+    @Override
+    public List<Map.Entry<String, String>> splitQueryPlanForMultipleAggregate() {
+        if (pathForSplit == null) {
+            return null;
+        } else {
+            List<Map.Entry<String, String>> tableNameAndFilterInfo = new LinkedList<>();
+            StringBuilder path = PgJsonReader.move2LeftChild(PgJsonReader.move2LeftChild(pathForSplit));
+            String tableName = PgJsonReader.readTableName(path.toString()).split("\\.")[1];
+            String filterInfo = removeRedundancy(PgJsonReader.readFilterInfo(path), true);
+            tableNameAndFilterInfo.add(new AbstractMap.SimpleEntry<>(tableName, filterInfo));
+            pathForSplit = null;
+            return tableNameAndFilterInfo;
+        }
+    }
+
+    public boolean canNotDeal(StringBuilder path) throws SQLException, TouchstoneException, IOException {
+        String nodeType = PgJsonReader.readNodeType(path);
+        StringBuilder leftPath = PgJsonReader.move2LeftChild(path);
+        String leftNodeType = PgJsonReader.readNodeType(leftPath);
+        String tableName = PgJsonReader.readTableName(path.toString()).split("\\.")[1];
+        if (nodeTypeRef.isAggregateNode(leftNodeType) && nodeTypeRef.isIndexScanNode(nodeType)) {
+            logger.error("cannot deal with " + path);
+            getExecutionTreeRes(PgJsonReader.move2LeftChild(leftPath));
+            return !tableName.equals(getTableNameFromOutput(leftPath));
+        } else {
+            return false;
+        }
+    }
+
+    private String getTableNameFromOutput(StringBuilder path) {
+        String outPut = PgJsonReader.readOutput(path).get(0);
+        Set<String> tableNames = aliasDic.keySet().stream().filter(outPut::contains)
+                .map(alias -> aliasDic.get(alias)).collect(Collectors.toSet());
+        if (tableNames.size() > 1) {
+            logger.error("不能识别多表");
+            return null;
+        } else {
+            return tableNames.iterator().next();
         }
     }
 

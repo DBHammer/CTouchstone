@@ -44,6 +44,14 @@ public abstract class AbstractAnalyzer {
      */
     public abstract List<List<String[]>> splitQueryPlan(List<String[]> queryPlan);
 
+
+    /**
+     * 分割aggregate下不能识别的plan，返回识别的表和过滤条件，不再处理join和agg等算子
+     *
+     * @return 识别的表和过滤条件
+     */
+    public abstract List<Map.Entry<String, String>>  splitQueryPlanForMultipleAggregate() throws IOException, TouchstoneException, SQLException;
+
     /**
      * 分析join信息
      *

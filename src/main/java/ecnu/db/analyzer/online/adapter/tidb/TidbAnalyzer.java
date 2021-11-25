@@ -37,8 +37,8 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     private static final Pattern EQ_OPERATOR = Pattern.compile("eq\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+), ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private static final Pattern INNER_JOIN = Pattern.compile("(inner join)|(semi join)");
     private static final Pattern RANGE = Pattern.compile("range.+(?=, keep order)");
-    private static final Pattern LEFT_RANGE_BOUND = Pattern.compile("(\\[|\\()([0-9.]+|\\+inf|-inf)");
-    private static final Pattern RIGHT_RANGE_BOUND = Pattern.compile("([0-9.]+|\\+inf|-inf)(]|\\))");
+    private static final Pattern LEFT_RANGE_BOUND = Pattern.compile("([\\[(])([0-9.]+|\\+inf|-inf)");
+    private static final Pattern RIGHT_RANGE_BOUND = Pattern.compile("([0-9.]+|\\+inf|-inf)([])])");
     private static final Pattern INDEX_COLUMN = Pattern.compile("index:.+\\((.+)\\)");
     private static final Pattern RANGE_SCAN_JOIN_PUSHDOWN = Pattern.compile("range: decided by \\[[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+(, [a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)*]");
     private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(new TidbSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
@@ -356,6 +356,11 @@ public class TidbAnalyzer extends AbstractAnalyzer {
 
     @Override
     public List<List<String[]>> splitQueryPlan(List<String[]> queryPlan) {
+        return null;
+    }
+
+    @Override
+    public List<Map.Entry<String, String>> splitQueryPlanForMultipleAggregate() {
         return null;
     }
 

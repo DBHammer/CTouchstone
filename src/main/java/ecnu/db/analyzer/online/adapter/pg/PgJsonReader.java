@@ -71,6 +71,10 @@ public class PgJsonReader {
         return readContext.read(path + "['Output']");
     }
 
+    static int readActualLoops(StringBuilder path){
+        return readContext.read(path + "['Actual Loops']");
+    }
+
     static String readPlan(StringBuilder path, int index) {
         LinkedHashMap<String, Object> data = readContext.read(path + "['Plans'][" + index + "]");
         return JSONObject.toJSONString(data);
@@ -88,7 +92,7 @@ public class PgJsonReader {
         return readContext.read(path + "['Hash Cond']");
     }
     static String readIndexJoin(StringBuilder path) {
-        path = skipNodes(path.append("['Plans'][1]"));
+        path = skipNodes(move2RightChild(path));
         //String indexCond =  "Index Cond: " + readContext.read(path + "['Index Cond']");
         String indexCond =  readContext.read(path + "['Index Cond']");
         if(indexCond == null){

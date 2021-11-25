@@ -17,10 +17,15 @@ public class ExecutionNode {
      * join node -> join condition
      */
     private final String info;
+
+    public void setOutputRows(int outputRows) {
+        this.outputRows = outputRows;
+    }
+
     /**
      * 节点输出的数据量
      */
-    private final int outputRows;
+    private int outputRows;
     /**
      * 指向右节点
      */

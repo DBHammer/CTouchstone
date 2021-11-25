@@ -2,22 +2,18 @@ package ecnu.db.generator.constraintchain.chain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.TouchstoneException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.rmi.server.ExportException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.nio.file.Paths;
 
 import static ecnu.db.utils.CommonUtils.readFile;
 
@@ -66,7 +62,7 @@ public class ConstraintChainManager {
                 if (removeData(graph).equals(removeData(oldGraph))) {
                     CommonUtils.writeFile(path, graph);
                 } else {
-                    String newPath = resultDir + "/pic/" + "new" + stringListEntry.getKey() + ".dot";
+                    String newPath = resultDir + "/pic/" + "new" + System.currentTimeMillis() + stringListEntry.getKey() + ".dot";
                     CommonUtils.writeFile(newPath + "", graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());
                 }
@@ -87,13 +83,13 @@ public class ConstraintChainManager {
     }
 
     private boolean graphIsExists(File[] array, String graphName) {
-        return Arrays.stream(array).map(File::getName).anyMatch(fileName->fileName.equals(graphName));
+        return Arrays.stream(array).map(File::getName).anyMatch(fileName -> fileName.equals(graphName));
     }
 
     private String removeData(String graph) {
         //Pattern data = Pattern.compile(", data:[^}]");
         String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
-        newGraph = newGraph.replaceAll("key[0-9]+","key");
+        newGraph = newGraph.replaceAll("key[0-9]+", "key");
         return newGraph;
     }
 }

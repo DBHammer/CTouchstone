@@ -54,25 +54,25 @@ class QueryInstantiationBasicTest {
             }
         }
         List<AbstractFilterOperation> operations;
-        operations = query2operations.get("2_1.sql_tpch.part");
+        operations = query2operations.get("2_1.sql_public.part");
         assertNull(operations);
 
-        operations = query2operations.get("3_1.sql_tpch.customer");
+        operations = query2operations.get("3_1.sql_public.customer");
         assertEquals(1, operations.size());
-        assertEquals(0.1983466667, operations.get(0).getProbability().doubleValue(), 0.0000001);
-        operations = query2operations.get("3_1.sql_tpch.orders");
+        assertEquals(0.1997866667, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        operations = query2operations.get("3_1.sql_public.orders");
         assertEquals(1, operations.size());
-        assertEquals(0.4838209734, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.4827473333, operations.get(0).getProbability().doubleValue(), 0.0000001);
 
 
-        operations = query2operations.get("1_1.sql_tpch.lineitem");
+        operations = query2operations.get("1_1.sql_public.lineitem");
         assertEquals(1, operations.size());
-        assertEquals(0.9797396027, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.9928309517, operations.get(0).getProbability().doubleValue(), 0.0000001);
 
-        operations = query2operations.get("6_1.sql_tpch.lineitem");
+        operations = query2operations.get("6_1.sql_public.lineitem");
         //todo merge uni filter 2 range filter
         assertEquals(5, operations.size());
-        assertEquals(0.01902281455, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.01904131080, operations.get(0).getProbability().doubleValue(), 0.0000001);
     }
 
     @Disabled
