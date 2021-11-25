@@ -171,7 +171,7 @@ public class QueryAnalyzer {
                 constraintChain.addJoinTable(externalTable);
             }
             if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount) {
-                logger.info("由于输入的主键为全集，跳过节点{}", node.getInfo());
+                logger.debug("由于输入的主键为全集，跳过节点{}", node.getInfo());
                 node.setJoinTag(SKIP_JOIN_TAG);
             } else {
                 node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
@@ -184,7 +184,7 @@ public class QueryAnalyzer {
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             long fkJoinTag = node.getJoinTag();
             if (fkJoinTag == SKIP_JOIN_TAG) {
-                logger.info("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
+                logger.debug("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
                 return node.getOutputRows();
             } else if (fkJoinTag == SKIP_SELF_JOIN) {
                 logger.error("由于self join，跳过节点{}", node.getInfo());

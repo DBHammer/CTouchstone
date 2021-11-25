@@ -82,7 +82,7 @@ public class TableManager {
 
 
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
-        logger.info("table:{}, column:{} -ref- table:{}, column:{}", localTable, localColumns, refTable, refColumns);
+        logger.debug("添加参照依赖： {}.{} 参照 {}.{}", localTable, localColumns, refTable, refColumns);
         getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
     }
 

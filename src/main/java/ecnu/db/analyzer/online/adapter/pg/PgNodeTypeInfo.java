@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Set;
 
 public class PgNodeTypeInfo implements NodeTypeTool {
-    protected static final Set<String> PASS_NODE_TYPES = new HashSet<>(Arrays.asList("Sort", "Hash", "Gather", "Limit", "Gather Merge", "Materialize", "Incremental Sort", "Memoize"));
+    protected static final Set<String> PASS_NODE_TYPES = new HashSet<>(Arrays.asList("Sort", "Hash", "Gather", "Limit", "Gather Merge", "Materialize", "Incremental Sort", "Bitmap Index Scan", "Memoize"));
     protected static final Set<String> JOIN_NODE_TYPES = new HashSet<>(Arrays.asList("Hash Join", "Nested Loop", "Merge Join"));
-    protected static final Set<String> FILTER_NODE_TYPES = new HashSet<>(Arrays.asList("Seq Scan", "Index Scan", "Bitmap Heap Scan", "Bitmap Index Scan"));
+    protected static final Set<String> FILTER_NODE_TYPES = new HashSet<>(Arrays.asList("Seq Scan", "Index Scan", "Bitmap Heap Scan"));
     protected static final Set<String> AGG_NODE_TYPES = new HashSet<>(List.of("Aggregate"));
-    protected static final Set<String> INDEX_SCAN_NODE_TYPES = new HashSet<>(List.of("Index Scan"));
+    protected static final Set<String> INDEX_SCAN_NODE_TYPES = new HashSet<>(List.of("Index Scan", "Bitmap Heap Scan"));
 
     @Override
     public boolean isReaderNode(String nodeType) {

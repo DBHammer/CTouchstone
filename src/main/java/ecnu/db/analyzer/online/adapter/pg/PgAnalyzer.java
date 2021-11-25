@@ -136,10 +136,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (PgJsonReader.readJoinFilter(path) != null) {
             rowCount += PgJsonReader.readRowsRemovedByJoinFilter(path);
         }
-        String scanType = PgJsonReader.readNodeType(path);
-        if (scanType.equals("Bitmap Index Scan")) {
-            return null;
-        }
         String planId = path.toString();
         String filterInfo = PgJsonReader.readFilterInfo(path);
         if (filterInfo != null) {
@@ -154,7 +150,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         } else {
             String tableName = PgJsonReader.readTableName(path.toString());
-            if (scanType.equals("Bitmap Heap Scan") || scanType.equals("Index Scan")) {
+            if (nodeTypeRef.isIndexScanNode(PgJsonReader.readNodeType(path))) {
                 rowCount = TableManager.getInstance().getTableSize(tableName);
             }
             aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
@@ -218,7 +214,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             groupKeyInfo = groupKey.stream().map(this::transColumnName).collect(Collectors.joining(";"));
             tableName = aliasDic.get(groupKey.get(0).split("\\.")[0]);
         } else if (aggFilter == null) {
-            logger.info("skip the empty aggregation");
+            logger.debug("跳过无Group Key和过滤条件的聚集算子");
         } else {
             tableName = getTableNameFromOutput(path);
         }
@@ -258,8 +254,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     private ExecutionNode getExecutionNode(StringBuilder path) throws CannotFindSchemaException {
-        PgNodeTypeInfo nodeTypeRef = new PgNodeTypeInfo();
         String nodeType = PgJsonReader.readNodeType(path);
+        if (nodeType == null) {
+            return null;
+        }
         int rowCount = PgJsonReader.readRowCount(path);
         if (nodeTypeRef.isFilterNode(nodeType)) {
             return getFilterNode(path, rowCount);

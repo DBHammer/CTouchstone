@@ -47,7 +47,7 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
             } else {
                 if (table2keys.size() == 1 &&
                         allTables.stream().anyMatch(tableName -> TableManager.getInstance().isRefTable(tableName, table2keys.firstKey()))) {
-                    logger.error("can not support the aggregation {} on the middle of the query plan", this);
+                    logger.error("不能在查询中支持聚集算子 {}", this);
                     return true;
                 } else {
                     return false;

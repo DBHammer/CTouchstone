@@ -20,7 +20,9 @@ public class PgJsonReader {
 
 
     static void setReadContext(String plan) {
-        Configuration conf = Configuration.defaultConfiguration().addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL);
+        Configuration conf = Configuration.defaultConfiguration()
+                .addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL)
+                .addOptions(Option.SUPPRESS_EXCEPTIONS);
         PgJsonReader.readContext = JsonPath.using(conf).parse(plan);
     }
 
