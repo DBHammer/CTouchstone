@@ -32,7 +32,7 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
         super(ConstraintChainNodeType.AGGREGATE);
     }
 
-    public boolean removeAgg(Set<String> allTables) {
+    public boolean removeAgg() {
         if (groupKey == null) {
             if (aggFilter == null) {
                 return true;
@@ -40,39 +40,33 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
                 return aggFilter.getParameters().stream().allMatch(Parameter::isActual);
             }
         } else {
-            TreeMap<String, List<String>> table2keys = cleanGroupKeys();
+            cleanGroupKeys();
             //todo deal with fk and attributes
-            if (groupKey.stream().noneMatch(key -> TableManager.getInstance().isPrimaryKeyOrForeignKey(key))) {
+            if (groupKey.stream().anyMatch(key -> TableManager.getInstance().isPrimaryKey(key))) {
+                logger.error("不能在查询中支持聚集算子 {}", this);
                 return true;
-            } else {
-                if (table2keys.size() == 1 &&
-                        allTables.stream().anyMatch(tableName -> TableManager.getInstance().isRefTable(tableName, table2keys.firstKey()))) {
-                    logger.error("不能在查询中支持聚集算子 {}", this);
-                    return true;
-                } else {
-                    return false;
-                }
             }
+            return groupKey.stream().noneMatch(key -> TableManager.getInstance().isForeignKey(key));
         }
     }
 
 
-    private TreeMap<String, List<String>> cleanGroupKeys() {
+    private void cleanGroupKeys() {
         TreeMap<String, List<String>> table2keys = mapGroupKeys();
         if (table2keys.size() > 1) {
             List<String> topologicalOrder = TableManager.getInstance().createTopologicalOrder();
+            Collections.reverse(topologicalOrder);
+            // 从参照表到被参照表进行访问
             for (String tableName : topologicalOrder) {
                 List<String> keys = table2keys.get(tableName);
                 // clean attributes of primary table
                 if (keys != null) {
                     // if the first group attribute is fk, remove all its referenced table
-                    if (keys.size() == 1 && TableManager.getInstance().isPrimaryKeyOrForeignKey(keys.get(0))) {
-                        Iterator<String> keysIterator = groupKey.iterator();
-                        while (keysIterator.hasNext()) {
-                            String[] remoteArray = keysIterator.next().split("\\.");
-                            String remoteTable = remoteArray[0] + "." + remoteArray[1];
-                            if (TableManager.getInstance().isRefTable(tableName, remoteTable)) {
-                                keysIterator.remove();
+                    if (keys.stream().anyMatch(key -> TableManager.getInstance().isForeignKey(key))) {
+                        for (Map.Entry<String, List<String>> table2keyList : table2keys.entrySet()) {
+                            if (TableManager.getInstance().isRefTable(tableName, table2keyList.getKey())) {
+                                logger.debug("remove invalid group key {} from node {}", table2keyList.getValue(), this);
+                                groupKey.removeAll(table2keyList.getValue());
                             }
                         }
                     }
@@ -80,9 +74,13 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
                 }
             }
         }
-        return mapGroupKeys();
     }
 
+    /**
+     * 按表聚集
+     *
+     * @return 表和对应的group key
+     */
     private TreeMap<String, List<String>> mapGroupKeys() {
         TreeMap<String, List<String>> table2keys = new TreeMap<>();
         for (String key : groupKey) {

@@ -121,21 +121,19 @@ public class ConstraintChain {
                 }
                 case FK_JOIN -> {
                     ConstraintChainFkJoinNode fkJoinNode = ((ConstraintChainFkJoinNode) node);
-                    String joinLabel;
-                    String labelPosition;
-                    if (fkJoinNode.getAntiJoin()) {
-                        joinLabel = "label=\"anti join\";";
-                        labelPosition = "labelloc=b;";
-                    } else {
-                        joinLabel = "label=\"eq join\";";
-                        labelPosition = "labelloc=b;";
-                    }
                     String pkCols = fkJoinNode.getRefCols().split("\\.")[2];
                     currentNodeInfo = String.format("\"Fk%s%d\"", pkCols, fkJoinNode.getPkTag());
                     String subGraphTag = String.format("cluster%s%d", pkCols, fkJoinNode.getPkTag());
                     currentProbability = fkJoinNode.getProbability().doubleValue();
                     subGraphHashMap.putIfAbsent(subGraphTag, new SubGraph(subGraphTag));
-                    subGraphHashMap.get(subGraphTag).fkInfo = currentNodeInfo + conditionColor + joinLabel + labelPosition;
+                    subGraphHashMap.get(subGraphTag).fkInfo = currentNodeInfo + conditionColor;
+                    if (fkJoinNode.getAntiJoin()) {
+                        subGraphHashMap.get(subGraphTag).joinLabel = "anti join";
+                    } else if (fkJoinNode.getPkDistinctProbability() == 0) {
+                        subGraphHashMap.get(subGraphTag).joinLabel = "eq join";
+                    } else {
+                        subGraphHashMap.get(subGraphTag).joinLabel = "outer join: " + fkJoinNode.getPkDistinctProbability();
+                    }
                 }
                 case PK_JOIN -> {
                     ConstraintChainPkJoinNode pkJoinNode = ((ConstraintChainPkJoinNode) node);
@@ -151,7 +149,7 @@ public class ConstraintChain {
                     currentProbability = aggregateNode.getAggProbability().doubleValue();
                     currentNodeInfo = String.format("\"GroupKey:%s\"", keys == null ? "" : String.join(",", keys));
                     graph.append("\t").append(currentNodeInfo).append(conditionColor);
-                    if(aggregateNode.getAggFilter() != null){
+                    if (aggregateNode.getAggFilter() != null) {
                         if (!lastNodeInfo.isBlank()) {
                             graph.append(String.format("\t%s->%s[label=\"%3$,.4f\"];%n", lastNodeInfo, currentNodeInfo, lastProbability));
                         } else {
@@ -161,7 +159,7 @@ public class ConstraintChain {
                         lastNodeInfo = currentNodeInfo;
                         lastProbability = currentProbability;
                         ConstraintChainFilterNode aggFilter = aggregateNode.getAggFilter();
-                        currentNodeInfo = String.format("\"%s\"",aggFilter);
+                        currentNodeInfo = String.format("\"%s\"", aggFilter);
                         graph.append("\t").append(currentNodeInfo).append(conditionColor);
                         currentProbability = aggFilter.getProbability().doubleValue();
                     }
@@ -188,6 +186,7 @@ public class ConstraintChain {
         private final String joinTag;
         String pkInfo;
         String fkInfo;
+        String joinLabel;
 
         public SubGraph(String joinTag) {
             this.joinTag = joinTag;
@@ -198,8 +197,8 @@ public class ConstraintChain {
             return String.format("""
                     subgraph "%s" {
                             %s
-                            %s
-                    }""".indent(4), joinTag, pkInfo, fkInfo);
+                            %slabel="%s";labelloc=b;
+                    }""".indent(4), joinTag, pkInfo, fkInfo, joinLabel);
         }
     }
 }

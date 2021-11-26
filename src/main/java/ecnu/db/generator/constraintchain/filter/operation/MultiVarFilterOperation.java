@@ -63,7 +63,9 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             hasKeyColumn = hasKeyColumn(node.getLeftNode()) || hasKeyColumn(node.getRightNode());
             if (node.getType() == ArithmeticNodeType.COLUMN) {
                 ColumnNode columnNode = (ColumnNode) node;
-                hasKeyColumn = hasKeyColumn || TableManager.getInstance().isPrimaryKeyOrForeignKey(columnNode.getCanonicalColumnName());
+                hasKeyColumn = hasKeyColumn ||
+                        TableManager.getInstance().isPrimaryKey(columnNode.getCanonicalColumnName()) ||
+                        TableManager.getInstance().isForeignKey(columnNode.getCanonicalColumnName());
             }
         }
         return hasKeyColumn;

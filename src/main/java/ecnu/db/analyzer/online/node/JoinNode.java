@@ -2,7 +2,7 @@ package ecnu.db.analyzer.online.node;
 
 import java.util.concurrent.CountDownLatch;
 
-public class JoinNode extends ExecutionNode{
+public class JoinNode extends ExecutionNode {
     /**
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
      */
@@ -10,13 +10,14 @@ public class JoinNode extends ExecutionNode{
 
     private final boolean antiJoin;
 
-    private int pkDistinctSize;
+    private double pkDistinctProbability;
 
     private final CountDownLatch waitSetJoinTag = new CountDownLatch(1);
 
-    public JoinNode(String id, int outputRows, String info, boolean antiJoin) {
+    public JoinNode(String id, int outputRows, String info, boolean antiJoin, double pkDistinctSize) {
         super(id, ExecutionNodeType.join, outputRows, info);
         this.antiJoin = antiJoin;
+        this.pkDistinctProbability = pkDistinctSize;
     }
 
     /**
@@ -40,11 +41,11 @@ public class JoinNode extends ExecutionNode{
         return antiJoin;
     }
 
-    public int getPkDistinctSize() {
-        return pkDistinctSize;
+    public double getPkDistinctSize() {
+        return pkDistinctProbability;
     }
 
     public void setPkDistinctSize(int pkDistinctSize) {
-        this.pkDistinctSize = pkDistinctSize;
+        this.pkDistinctProbability = pkDistinctSize;
     }
 }

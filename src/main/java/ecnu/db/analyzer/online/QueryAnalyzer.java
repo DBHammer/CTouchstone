@@ -175,7 +175,7 @@ public class QueryAnalyzer {
             } else {
                 constraintChain.addJoinTable(externalTable);
             }
-            if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount) {
+            if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount && node.getPkDistinctSize() == 0) {
                 logger.debug("由于输入的主键为全集，跳过节点{}", node.getInfo());
                 node.setJoinTag(SKIP_JOIN_TAG);
             } else {
@@ -203,6 +203,7 @@ public class QueryAnalyzer {
             if (node.isAntiJoin()) {
                 fkJoinNode.setAntiJoin();
             }
+            fkJoinNode.setPkDistinctProbability(node.getPkDistinctSize());
             constraintChain.addNode(fkJoinNode);
             return node.getOutputRows();
         }

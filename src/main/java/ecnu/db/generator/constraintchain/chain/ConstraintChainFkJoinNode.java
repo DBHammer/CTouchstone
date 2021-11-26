@@ -12,6 +12,15 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private BigDecimal probability;
     private boolean antiOrNot = false;
 
+    public double getPkDistinctProbability() {
+        return pkDistinctProbability;
+    }
+
+    public void setPkDistinctProbability(double pkDistinctProbability) {
+        this.pkDistinctProbability = pkDistinctProbability;
+    }
+
+    private double pkDistinctProbability;
 
     public ConstraintChainFkJoinNode() {
         super(ConstraintChainNodeType.FK_JOIN);
@@ -27,7 +36,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     @Override
     public String toString() {
-        return String.format("{pkTag:%d,refCols:%s,probability:%s}", pkTag, refCols, probability);
+        return String.format("{pkTag:%d,refCols:%s,probability:%s,pkDistinctProbability:%f}", pkTag, refCols, probability, pkDistinctProbability);
     }
 
     public long getPkTag() {

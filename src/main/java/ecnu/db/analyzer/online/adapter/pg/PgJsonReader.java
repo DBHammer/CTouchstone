@@ -164,4 +164,8 @@ public class PgJsonReader {
     static String readAlias(String path) {
         return readContext.read(path + "['Alias']");
     }
+
+    static boolean isOutJoin(StringBuilder path){
+        return readContext.read(path + "['Join Type']").equals("Right") || readContext.read(path + "['Join Type']").equals("Left");
+    }
 }

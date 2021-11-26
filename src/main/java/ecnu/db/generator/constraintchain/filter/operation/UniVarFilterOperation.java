@@ -73,7 +73,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
 
     @Override
     public boolean hasKeyColumn() {
-        return TableManager.getInstance().isPrimaryKeyOrForeignKey(canonicalColumnName);
+        return TableManager.getInstance().isPrimaryKey(canonicalColumnName) || TableManager.getInstance().isForeignKey(canonicalColumnName);
     }
 
     @Override

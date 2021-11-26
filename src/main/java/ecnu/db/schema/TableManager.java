@@ -13,7 +13,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
@@ -54,14 +57,25 @@ public class TableManager {
         return getSchema(tableName).getPrimaryKeys();
     }
 
-    public boolean isPrimaryKeyOrForeignKey(String canonicalColumnName) {
+
+    public boolean isPrimaryKey(String canonicalColumnName) {
         String[] nameArray = canonicalColumnName.split("\\.");
         String tableName = nameArray[0] + "." + nameArray[1];
         Table table = schemas.get(tableName);
         if (table == null) {
             return false;
         }
-        return table.getPrimaryKeys().contains(canonicalColumnName) || table.getForeignKeys().containsKey(canonicalColumnName);
+        return table.getPrimaryKeys().contains(canonicalColumnName);
+    }
+
+    public boolean isForeignKey(String canonicalColumnName) {
+        String[] nameArray = canonicalColumnName.split("\\.");
+        String tableName = nameArray[0] + "." + nameArray[1];
+        Table table = schemas.get(tableName);
+        if (table == null) {
+            return false;
+        }
+        return table.getForeignKeys().containsKey(canonicalColumnName);
     }
 
     public boolean containSchema(String tableName) {
@@ -95,6 +109,11 @@ public class TableManager {
     }
 
 
+    /**
+     * 根据join的连接顺序，排列表名。顺序从被参照表到参照表。
+     *
+     * @return 从被参照表到参照表排序的表名。
+     */
     public List<String> createTopologicalOrder() {
         Graph<String, DefaultEdge> schemaGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
         schemas.keySet().forEach(schemaGraph::addVertex);
@@ -109,7 +128,6 @@ public class TableManager {
         while (topologicalOrderIterator.hasNext()) {
             orderedSchemas.add(topologicalOrderIterator.next());
         }
-        Collections.reverse(orderedSchemas);
         return orderedSchemas;
     }
 

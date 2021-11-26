@@ -3,10 +3,7 @@ package ecnu.db.analyzer.online.adapter.pg;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
-import ecnu.db.analyzer.online.node.AggNode;
-import ecnu.db.analyzer.online.node.ExecutionNode;
-import ecnu.db.analyzer.online.node.FilterNode;
-import ecnu.db.analyzer.online.node.JoinNode;
+import ecnu.db.analyzer.online.node.*;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
@@ -90,6 +87,15 @@ public class PgAnalyzer extends AbstractAnalyzer {
         ExecutionNode node = getExecutionNode(currentNodePath);
         if (node == null) {
             return null;
+        }
+        // todo 不一定是主键
+        if (node.getType() == ExecutionNodeType.aggregate) {
+            assert leftNode != null;
+            if (leftNode.getType() == ExecutionNodeType.join &&
+                    ((JoinNode) leftNode).getPkDistinctSize() > 0) {
+                logger.debug("跳过外连接后的主键聚集");
+                node.setInfo(null);
+            }
         }
         node.setLeftNode(leftNode);
         node.setRightNode(rightNode);
@@ -179,7 +185,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         }
         joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
-        return new JoinNode(path.toString(), rowCount, joinInfo, true);
+        return new JoinNode(path.toString(), rowCount, joinInfo, true, 0);
     }
 
     private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
@@ -189,7 +195,18 @@ public class PgAnalyzer extends AbstractAnalyzer {
             case "Merge Join" -> PgJsonReader.readMergeJoin(path);
             default -> throw new UnsupportedOperationException();
         };
-        return new JoinNode(path.toString(), rowCount, joinInfo, false);
+        //ExecutionNode joinNode = new JoinNode(path.toString(), rowCount, joinInfo, false);
+        double pkDistinctProbability = 0;
+        if (PgJsonReader.isOutJoin(path)) {
+            StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
+            StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
+            int joinRowCount = PgJsonReader.readRowCount(path);
+            int pkRowCount = PgJsonReader.readRowCount(rightChildPath);
+            int fkRowCount = PgJsonReader.readRowCount(leftChildPath);
+            rowCount = fkRowCount;
+            pkDistinctProbability = ((double) joinRowCount - (double) fkRowCount) / (double) pkRowCount;
+        }
+        return new JoinNode(path.toString(), rowCount, joinInfo, false, pkDistinctProbability);
     }
 
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {

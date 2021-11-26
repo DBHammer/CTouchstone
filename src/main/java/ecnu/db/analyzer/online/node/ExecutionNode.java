@@ -11,12 +11,17 @@ public class ExecutionNode {
      * 节点类型
      */
     private final ExecutionNodeType type;
+
+    public void setInfo(String info) {
+        this.info = info;
+    }
+
     /**
      * 节点额外信息
      * filter node -> filter info
      * join node -> join condition
      */
-    private final String info;
+    private String info;
 
     public void setOutputRows(int outputRows) {
         this.outputRows = outputRows;

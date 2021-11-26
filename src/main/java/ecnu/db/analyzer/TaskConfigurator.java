@@ -11,7 +11,10 @@ import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.dbconnector.adapter.PgConnector;
 import ecnu.db.dbconnector.adapter.Tidb3Connector;
 import ecnu.db.dbconnector.adapter.Tidb4Connector;
-import ecnu.db.generator.constraintchain.chain.*;
+import ecnu.db.generator.constraintchain.chain.ConstraintChain;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainAggregateNode;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
+import ecnu.db.generator.constraintchain.chain.ConstraintChainManager;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.MultiVarFilterOperation;
@@ -175,27 +178,29 @@ public class TaskConfigurator implements Callable<Integer> {
 
     public Map<String, List<ConstraintChain>> checkQueryConstraintChains(Map<String, List<ConstraintChain>> query2constraintChains) {
         logger.info("开始清理查询计划");
-        for (Map.Entry<String, List<ConstraintChain>> query2constrainChain: query2constraintChains.entrySet()) {
+        for (Map.Entry<String, List<ConstraintChain>> query2constrainChain : query2constraintChains.entrySet()) {
             List<ConstraintChain> constraintChains = query2constrainChain.getValue();
             List<ConstraintChain> reduceConstraintChains = new LinkedList<>();
-            Set<String> allTables = constraintChains.stream().map(ConstraintChain::getTableName).collect(Collectors.toSet());
             for (ConstraintChain constraintChain : constraintChains) {
-                if (constraintChain.getNodes().stream().filter(ConstraintChainFilterNode.class::isInstance)
-                        .map(ConstraintChainFilterNode.class::cast).anyMatch(ConstraintChainFilterNode::hasKeyColumn)) {
+                // 移除带有键值的过滤条件
+                if (constraintChain.getNodes().stream()
+                        .filter(ConstraintChainFilterNode.class::isInstance)
+                        .map(ConstraintChainFilterNode.class::cast)
+                        .anyMatch(ConstraintChainFilterNode::hasKeyColumn)) {
                     reduceConstraintChains.add(constraintChain);
-                }
-
-                List<ConstraintChainAggregateNode> aggregateNodes = constraintChain.getNodes().stream()
-                        .filter(ConstraintChainAggregateNode.class::isInstance)
-                        .map(ConstraintChainAggregateNode.class::cast)
-                        .filter(constraintChainAggregateNode -> constraintChainAggregateNode.removeAgg(allTables)).toList();
-                if(!aggregateNodes.isEmpty()){
-                    logger.info("{} remove some aggregation node on attributes {}", query2constrainChain.getKey() , aggregateNodes);
-                    constraintChain.getNodes().removeAll(aggregateNodes);
+                } else {
+                    List<ConstraintChainAggregateNode> aggregateNodes = constraintChain.getNodes().stream()
+                            .filter(ConstraintChainAggregateNode.class::isInstance)
+                            .map(ConstraintChainAggregateNode.class::cast)
+                            .filter(ConstraintChainAggregateNode::removeAgg).toList();
+                    if (!aggregateNodes.isEmpty()) {
+                        logger.info("{} remove some aggregation node on attributes {}", query2constrainChain.getKey(), aggregateNodes);
+                        constraintChain.getNodes().removeAll(aggregateNodes);
+                    }
                 }
             }
             constraintChains.removeAll(reduceConstraintChains);
-            if(!reduceConstraintChains.isEmpty()){
+            if (!reduceConstraintChains.isEmpty()) {
                 logger.error("remove some chains with filter on keys from {}", query2constrainChain.getKey());
                 for (ConstraintChain reduceConstraintChain : reduceConstraintChains) {
                     logger.error(reduceConstraintChain.toString());

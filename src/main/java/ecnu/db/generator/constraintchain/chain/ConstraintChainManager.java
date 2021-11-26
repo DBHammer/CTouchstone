@@ -9,10 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.readFile;
@@ -73,6 +70,7 @@ public class ConstraintChainManager {
     private String presentConstraintChains(String queryName, List<ConstraintChain> constraintChains) {
         StringBuilder graph = new StringBuilder();
         HashMap<String, ConstraintChain.SubGraph> subGraphHashMap = new HashMap<>(constraintChains.size());
+        constraintChains.sort(Comparator.comparing(ConstraintChain::getTableName));
         for (int i = 0; i < constraintChains.size(); i++) {
             graph.append(constraintChains.get(i).presentConstraintChains(subGraphHashMap, COLOR_LIST[i % COLOR_LIST.length]));
         }

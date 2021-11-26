@@ -1,8 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectSymbol;
-import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
@@ -43,7 +41,8 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public boolean hasKeyColumn() {
-        return TableManager.getInstance().isPrimaryKeyOrForeignKey(canonicalColumnName);
+        return TableManager.getInstance().isPrimaryKey(canonicalColumnName) ||
+                TableManager.getInstance().isForeignKey(canonicalColumnName);
     }
 
     @Override
