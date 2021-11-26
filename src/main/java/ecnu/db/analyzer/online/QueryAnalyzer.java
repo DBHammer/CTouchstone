@@ -145,8 +145,13 @@ public class QueryAnalyzer {
         String externalTable = joinColumnInfos[2];
         String externalCol = joinColumnInfos[3];
         // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
-        if (!localTable.equals(constraintChain.getTableName()) && !externalTable.equals(constraintChain.getTableName())) {
-            return STOP_CONSTRUCT;
+        Set<String> currentJoinTables = new HashSet<>(List.of(localTable, externalTable));
+        if (!currentJoinTables.contains(constraintChain.getTableName())) {
+            if(currentJoinTables.removeAll(constraintChain.getJoinTables()) && node.getJoinTag() == SKIP_JOIN_TAG){
+                return lastNodeLineCount;
+            }else {
+                return STOP_CONSTRUCT;
+            }
         }
         if (localTable.equals(externalTable)) {
             node.setJoinTag(SKIP_SELF_JOIN);
@@ -163,7 +168,7 @@ public class QueryAnalyzer {
         //根据主外键分别设置约束链输出信息
         if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
             //设置主键
-            if (!constraintChain.canJoin(externalTable)) {
+            if (constraintChain.getJoinTables().contains(externalTable)) {
                 logger.error("由于self join，跳过节点{}", node.getInfo());
                 node.setJoinTag(SKIP_SELF_JOIN);
                 return STOP_CONSTRUCT;
@@ -181,8 +186,10 @@ public class QueryAnalyzer {
             }
             return lastNodeLineCount;
         } else {
-            TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
+            constraintChain.addJoinTable(externalTable);
+            logger.debug("{} wait join tag", node.getInfo());
             long fkJoinTag = node.getJoinTag();
+            logger.debug("{} get join tag", node.getInfo());
             if (fkJoinTag == SKIP_JOIN_TAG) {
                 logger.debug("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
                 return node.getOutputRows();
@@ -190,6 +197,7 @@ public class QueryAnalyzer {
                 logger.error("由于self join，跳过节点{}", node.getInfo());
                 return STOP_CONSTRUCT;
             }
+            TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
             if (node.isAntiJoin()) {
@@ -289,7 +297,7 @@ public class QueryAnalyzer {
                 List<Map.Entry<String, String>> tableNameAndFilterInfos = abstractAnalyzer.splitQueryPlanForMultipleAggregate();
                 if (tableNameAndFilterInfos != null) {
                     for (Map.Entry<String, String> tableNameAndFilterInfo : tableNameAndFilterInfos) {
-                        executionTrees.add(abstractAnalyzer.getExecutionTree(dbConnector.explainQuery(tableNameAndFilterInfo))) ;
+                        executionTrees.add(abstractAnalyzer.getExecutionTree(dbConnector.explainQuery(tableNameAndFilterInfo)));
                     }
                 }
             }

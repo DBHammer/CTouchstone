@@ -22,8 +22,8 @@ public class ConstraintChain {
         joinTables.add(tableName);
     }
 
-    public boolean canJoin(String tableName) {
-        return !joinTables.contains(tableName);
+    public Set<String> getJoinTables() {
+        return joinTables;
     }
 
     private String tableName;

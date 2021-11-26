@@ -45,9 +45,9 @@ public class PgJsonReader {
         return readContext.read(path + "['Plans'].length()");
     }
 
-    static String readSubPlanIndex(StringBuilder path){
+    static String readSubPlanIndex(StringBuilder path) {
         String subPlanName = readContext.read(path + "['Subplan Name']");
-        if(subPlanName!=null && subPlanName.contains("InitPlan")){
+        if (subPlanName != null && subPlanName.contains("InitPlan")) {
             Pattern returnRegex = Pattern.compile("returns \\$[0-9]+");
             Matcher matcher = returnRegex.matcher(subPlanName);
             if(matcher.find()){
@@ -57,9 +57,7 @@ public class PgJsonReader {
         return null;
     }
 
-    static String readSubPlanName(StringBuilder path){
-        return readContext.read(path+"['Subplan Name']");
-    }
+
     static boolean hasInitPlan(StringBuilder path) {
         List<String> subPlanTags = readContext.read(path + "['Plans'][*]['Subplan Name']");
         subPlanTags.removeAll(Collections.singleton(null));
@@ -73,7 +71,7 @@ public class PgJsonReader {
         return readContext.read(path + "['Output']");
     }
 
-    static int readActualLoops(StringBuilder path){
+    static int readActualLoops(StringBuilder path) {
         return readContext.read(path + "['Actual Loops']");
     }
 
@@ -90,15 +88,23 @@ public class PgJsonReader {
         return readContext.read(path + "['Join Filter']");
     }
 
-    static  String readJoinCond(StringBuilder path) {
+    static String readJoinCond(StringBuilder path) {
         return readContext.read(path + "['Hash Cond']");
     }
+
     static String readIndexJoin(StringBuilder path) {
+        String joinFilter = readContext.read(path + "['Join Filter']");
         path = skipNodes(move2RightChild(path));
-        //String indexCond =  "Index Cond: " + readContext.read(path + "['Index Cond']");
-        String indexCond =  readContext.read(path + "['Index Cond']");
-        if(indexCond == null){
-            indexCond = "Recheck Cond: " + readContext.read(path + "['Recheck Cond']");
+        String indexCond = readContext.read(path + "['Index Cond']");
+        String recheckCond = readContext.read(path + "['Recheck Cond']");
+        if (indexCond == null) {
+            if (recheckCond != null){
+                indexCond = "Recheck Cond: " + recheckCond;
+            }else if(joinFilter!=null){
+                indexCond = "joinFilter Cond: " + joinFilter;
+            }else{
+                throw new UnsupportedOperationException();
+            }
         }else{
             indexCond = "Index Cond: " + indexCond;
         }
@@ -139,7 +145,9 @@ public class PgJsonReader {
         return new StringBuilder(path).append("['Plans'][1]");
     }
 
-    static StringBuilder move3ThirdChild(StringBuilder path) { return new StringBuilder(path).append("['Plans'][2]"); }
+    static StringBuilder move3ThirdChild(StringBuilder path) {
+        return new StringBuilder(path).append("['Plans'][2]");
+    }
 
     static int readRowCount(StringBuilder path) {
         return readContext.read(path + "['Actual Rows']");
