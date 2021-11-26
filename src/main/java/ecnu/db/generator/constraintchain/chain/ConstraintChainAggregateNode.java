@@ -42,11 +42,14 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
         } else {
             cleanGroupKeys();
             //todo deal with fk and attributes
-            if (groupKey.stream().anyMatch(key -> TableManager.getInstance().isPrimaryKey(key))) {
-                logger.error("不能在查询中支持聚集算子 {}", this);
+            if (groupKey.stream().noneMatch(key -> TableManager.getInstance().isForeignKey(key))) {
+                if (groupKey.stream().anyMatch(key -> TableManager.getInstance().isPrimaryKey(key))) {
+                    logger.error("不能在查询中支持聚集算子 {}", this);
+                }
                 return true;
+            } else {
+                return false;
             }
-            return groupKey.stream().noneMatch(key -> TableManager.getInstance().isForeignKey(key));
         }
     }
 

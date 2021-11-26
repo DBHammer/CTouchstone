@@ -75,7 +75,7 @@ public class ConstraintChainManager {
             graph.append(constraintChains.get(i).presentConstraintChains(subGraphHashMap, COLOR_LIST[i % COLOR_LIST.length]));
         }
         String subGraphs = subGraphHashMap.values().stream().
-                map(ConstraintChain.SubGraph::toString).collect(Collectors.joining(""));
+                map(ConstraintChain.SubGraph::toString).sorted().collect(Collectors.joining(""));
 
         return String.format(GRAPH_TEMPLATE, queryName, subGraphs + graph);
     }
@@ -88,6 +88,7 @@ public class ConstraintChainManager {
         //Pattern data = Pattern.compile(", data:[^}]");
         String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
         newGraph = newGraph.replaceAll("key[0-9]+", "key");
+        newGraph = newGraph.replaceAll("color=\"#[F|C]+\"","color");
         return newGraph;
     }
 }
