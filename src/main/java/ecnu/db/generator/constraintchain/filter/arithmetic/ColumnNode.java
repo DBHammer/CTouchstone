@@ -34,6 +34,11 @@ public class ColumnNode extends ArithmeticNode {
     }
 
     @Override
+    public boolean isDifferentTable(String tableName) {
+        return !canonicalColumnName.contains(tableName);
+    }
+
+    @Override
     public String toString() {
         return canonicalColumnName;
     }

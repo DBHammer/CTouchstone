@@ -24,6 +24,11 @@ public class MathNode extends ArithmeticNode {
     }
 
     @Override
+    public boolean isDifferentTable(String tableName) {
+        return leftNode.isDifferentTable(tableName) || rightNode.isDifferentTable(tableName);
+    }
+
+    @Override
     public String toString() {
         if(rightNode == null){
             return String.format("%s(%s)", type, leftNode.toString());

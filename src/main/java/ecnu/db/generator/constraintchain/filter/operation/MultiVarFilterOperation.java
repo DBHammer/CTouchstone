@@ -98,6 +98,11 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
+    public boolean isDifferentTable(String tableName) {
+        return arithmeticTree.isDifferentTable(tableName);
+    }
+
+    @Override
     public String toString() {
         return String.format("%s(%s, %s)", operator.toString().toLowerCase(),
                 arithmeticTree.toString(),

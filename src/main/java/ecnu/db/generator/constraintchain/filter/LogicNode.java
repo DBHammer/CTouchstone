@@ -69,6 +69,19 @@ public class LogicNode extends BoolExprNode {
         return operations;
     }
 
+    public void removeOtherTablesOperation(String tableName) {
+        BoolExprNode root = this.children.get(0);
+        if (root.getType() == AND) {
+            LogicNode andRoot = (LogicNode) root;
+            List<BoolExprNode> prepareForRemove = andRoot.getChildren().stream()
+                    .filter(child -> child.isDifferentTable(tableName)).toList();
+            if (prepareForRemove.size() > 1) {
+                throw new UnsupportedOperationException();
+            }
+            andRoot.getChildren().removeAll(prepareForRemove);
+        }
+    }
+
     @Override
     public BoolExprType getType() {
         return type;
@@ -119,6 +132,11 @@ public class LogicNode extends BoolExprNode {
             case OR -> children.stream().anyMatch(BoolExprNode::isTrue);
             default -> throw new UnsupportedOperationException();
         };
+    }
+
+    @Override
+    public boolean isDifferentTable(String tableName) {
+        return children.stream().anyMatch(child -> child.isDifferentTable(tableName));
     }
 
     private BoolExprType getRealType() {

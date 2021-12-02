@@ -61,4 +61,12 @@ public abstract class BoolExprNode {
      */
     @JsonIgnore
     public abstract boolean isTrue();
+
+    /**
+     * 判定子树是否包含其他的表
+     * @param tableName 表名
+     * @return 是否含有其他的表
+     */
+    @JsonIgnore
+    public abstract boolean isDifferentTable(String tableName);
 }

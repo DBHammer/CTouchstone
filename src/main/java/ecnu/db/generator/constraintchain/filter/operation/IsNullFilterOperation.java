@@ -77,4 +77,9 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null);
     }
 
+    @Override
+    public boolean isDifferentTable(String tableName) {
+        return !canonicalColumnName.contains(tableName);
+    }
+
 }

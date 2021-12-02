@@ -1,5 +1,7 @@
 package ecnu.db.generator.constraintchain.filter.arithmetic;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * @author wangqingshuai
  */
@@ -47,4 +49,13 @@ public abstract class ArithmeticNode {
      * @return 返回double类型的计算结果
      */
     public abstract double[] calculate();
+
+    /**
+     * 判定子树是否包含其他的表
+     *
+     * @param tableName 表名
+     * @return 是否含有其他的表
+     */
+    @JsonIgnore
+    public abstract boolean isDifferentTable(String tableName);
 }

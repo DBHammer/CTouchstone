@@ -43,6 +43,11 @@ public class NumericNode extends ArithmeticNode {
     }
 
     @Override
+    public boolean isDifferentTable(String tableName) {
+        return false;
+    }
+
+    @Override
     public String toString() {
         return strVal;
     }
