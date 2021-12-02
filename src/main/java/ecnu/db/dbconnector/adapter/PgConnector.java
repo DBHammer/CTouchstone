@@ -25,7 +25,7 @@ public class PgConnector extends DbConnector {
 
     @Override
     protected String[] preExecutionCommands() {
-        return new String[]{"SET max_parallel_workers_per_gather = 0;", "LOAD 'pg_hint_plan';"};
+        return new String[]{"SET max_parallel_workers_per_gather = 0;", "SET join_collapse_limit = 1;"};
     }
 
     @Override
