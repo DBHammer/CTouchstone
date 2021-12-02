@@ -1,9 +1,6 @@
 package ecnu.db.analyzer.online;
 
-import ecnu.db.analyzer.online.node.AggNode;
-import ecnu.db.analyzer.online.node.ExecutionNode;
-import ecnu.db.analyzer.online.node.ExecutionNodeType;
-import ecnu.db.analyzer.online.node.JoinNode;
+import ecnu.db.analyzer.online.node.*;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.generator.constraintchain.chain.*;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
@@ -144,19 +141,22 @@ public class QueryAnalyzer {
         String localCol = joinColumnInfos[1];
         String externalTable = joinColumnInfos[2];
         String externalCol = joinColumnInfos[3];
-        // 如果当前的join节点，不属于之前遍历的节点，则停止继续向上访问
-        Set<String> currentJoinTables = new HashSet<>(List.of(localTable, externalTable));
-        if (!currentJoinTables.contains(constraintChain.getTableName())) {
-            if(currentJoinTables.removeAll(constraintChain.getJoinTables()) && node.getJoinTag() == SKIP_JOIN_TAG){
-                return lastNodeLineCount;
-            }else {
-                return STOP_CONSTRUCT;
-            }
-        }
         if (localTable.equals(externalTable)) {
             node.setJoinTag(SKIP_SELF_JOIN);
             logger.error("skip node {} due to self join", node.getInfo());
             return STOP_CONSTRUCT;
+        }
+        // 如果当前的join节点，不属于之前遍历的节点
+        Set<String> currentJoinTables = new HashSet<>(List.of(localTable, externalTable));
+        if (!currentJoinTables.contains(constraintChain.getTableName())) {
+            // 如果与之前join过的表一致，且本次join无效，则继续推进
+            if (currentJoinTables.removeAll(constraintChain.getJoinTables()) && node.getJoinTag() < 0) {
+                return lastNodeLineCount;
+            }
+            // 停止继续向上访问
+            else {
+                return STOP_CONSTRUCT;
+            }
         }
         //将本表的信息放在前面，交换位置
         if (constraintChain.getTableName().equals(externalTable)) {
@@ -198,12 +198,19 @@ public class QueryAnalyzer {
                 return STOP_CONSTRUCT;
             }
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
-            BigDecimal probability = BigDecimal.valueOf((double) node.getOutputRows() / lastNodeLineCount);
+            BigDecimal probability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
             if (node.isAntiJoin()) {
                 fkJoinNode.setAntiJoin();
             }
             fkJoinNode.setPkDistinctProbability(node.getPkDistinctSize());
+            if (node.getRightNode().getType() == ExecutionNodeType.filter && ((FilterNode) node.getRightNode()).isIndexScan()
+                    && node.getIndexJoinFilter() != null && node.getRowsRemoveByFilterAfterJoin() != 0) {
+                int rowsAfterFilter = dbConnector.getRowsAfterFilter(node.getRightNode().getTableName(), node.getIndexJoinFilter());
+                long rowsRemovedByScanFilter = TableManager.getInstance().getTableSize(node.getRightNode().getTableName()) - rowsAfterFilter;
+                BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
+                fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
+            }
             constraintChain.addNode(fkJoinNode);
             return node.getOutputRows();
         }
@@ -225,10 +232,15 @@ public class QueryAnalyzer {
         //分析约束链的第一个node
         if (headNode.getType() == ExecutionNodeType.filter) {
             constraintChain = new ConstraintChain(headNode.getTableName());
-            lastNodeLineCount = headNode.getOutputRows();
-            if (headNode.getInfo() != null) {
-                LogicNode result = analyzeSelectInfo(headNode.getInfo());
-                BigDecimal ratio = BigDecimal.valueOf(headNode.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(headNode.getTableName())), BIG_DECIMAL_DEFAULT_PRECISION);
+            FilterNode filterNode = (FilterNode) headNode;
+            if (filterNode.isIndexScan() && filterNode.getInfo() != null) {
+                int rowsAfterFilter = dbConnector.getRowsAfterFilter(filterNode.getTableName(), filterNode.getFilterInfoWithQuote());
+                filterNode.setOutputRows(rowsAfterFilter);
+            }
+            lastNodeLineCount = filterNode.getOutputRows();
+            if (filterNode.getInfo() != null) {
+                LogicNode result = analyzeSelectInfo(filterNode.getInfo());
+                BigDecimal ratio = BigDecimal.valueOf(filterNode.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(filterNode.getTableName())), BIG_DECIMAL_DEFAULT_PRECISION);
                 constraintChain.addNode(new ConstraintChainFilterNode(ratio, result));
             }
         } else {

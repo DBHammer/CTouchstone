@@ -14,6 +14,26 @@ public class FilterNode extends ExecutionNode{
         isAdd = true;
     }
 
+    private boolean isIndexScan = false;
+
+    private String filterInfoWithQuote;
+
+    public boolean isIndexScan() {
+        return isIndexScan;
+    }
+
+    public void setIndexScan(boolean indexScan) {
+        isIndexScan = indexScan;
+    }
+
+    public String getFilterInfoWithQuote() {
+        return filterInfoWithQuote;
+    }
+
+    public void setFilterInfoWithQuote(String filterInfoWithQuote) {
+        this.filterInfoWithQuote = filterInfoWithQuote;
+    }
+
     public FilterNode(String id, int outputRows, String info) {
         super(id, ExecutionNodeType.filter, outputRows, info);
     }

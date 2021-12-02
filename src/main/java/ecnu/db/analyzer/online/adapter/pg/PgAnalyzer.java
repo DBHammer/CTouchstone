@@ -97,6 +97,15 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 node.setInfo(null);
             }
         }
+        if (node.getType() == ExecutionNodeType.join) {
+            assert rightNode != null;
+            if (rightNode.getType() == ExecutionNodeType.filter && rightNode.getInfo() != null && ((FilterNode) rightNode).isIndexScan()) {
+                long rowsRemoveByFilterAfterJoin = PgJsonReader.readRowsRemoved(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath)));
+                ((JoinNode) node).setRowsRemoveByFilterAfterJoin(rowsRemoveByFilterAfterJoin);
+                String indexJoinFilter = PgJsonReader.readFilterInfo(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath)));
+                ((JoinNode) node).setIndexJoinFilter(removeRedundancy(indexJoinFilter, true));
+            }
+        }
         node.setLeftNode(leftNode);
         node.setRightNode(rightNode);
         //create agg node
@@ -150,8 +159,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
             } else {
                 String tableName = PgJsonReader.readTableName(path.toString());
                 aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
-                ExecutionNode node = new FilterNode(planId, rowCount, transColumnName(filterInfo));
+                FilterNode node = new FilterNode(planId, rowCount, transColumnName(filterInfo));
                 node.setTableName(tableName);
+                if (nodeTypeRef.isIndexScanNode(PgJsonReader.readNodeType(path))) {
+                    node.setIndexScan(true);
+                    node.setFilterInfoWithQuote(transColumnName(removeRedundancy(filterInfo, true)));
+                }
                 return node;
             }
         } else {
@@ -195,7 +208,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
             case "Merge Join" -> PgJsonReader.readMergeJoin(path);
             default -> throw new UnsupportedOperationException();
         };
-        //ExecutionNode joinNode = new JoinNode(path.toString(), rowCount, joinInfo, false);
         double pkDistinctProbability = 0;
         if (PgJsonReader.isOutJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
@@ -270,7 +282,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return node;
     }
 
-    private ExecutionNode getExecutionNode(StringBuilder path) throws CannotFindSchemaException {
+    private ExecutionNode getExecutionNode(StringBuilder path) throws TouchstoneException {
         String nodeType = PgJsonReader.readNodeType(path);
         if (nodeType == null) {
             return null;
