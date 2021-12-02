@@ -48,6 +48,11 @@ public class NumericNode extends ArithmeticNode {
     }
 
     @Override
+    public String toSQL() {
+        return constant.toString();
+    }
+
+    @Override
     public String toString() {
         return strVal;
     }

@@ -39,6 +39,11 @@ public class ColumnNode extends ArithmeticNode {
     }
 
     @Override
+    public String toSQL() {
+        return canonicalColumnName;
+    }
+
+    @Override
     public String toString() {
         return canonicalColumnName;
     }

@@ -36,7 +36,6 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     }
 
 
-
     /**
      * merge operation
      */
@@ -112,5 +111,17 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     public boolean isDifferentTable(String tableName) {
         return !canonicalColumnName.contains(tableName);
     }
+
+    @Override
+    public String toSQL() {
+        String parametersSQL;
+        if (parameters.size() == 1) {
+            parametersSQL = "'" + parameters.get(0).getDataValue() + "'";
+        } else {
+            parametersSQL = "('" + parameters.stream().map(Parameter::getDataValue).collect(Collectors.joining("','")) + "')";
+        }
+        return canonicalColumnName + CompareOperator.toSQL(operator) + parametersSQL;
+    }
+
 
 }

@@ -103,6 +103,11 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
+    public String toSQL() {
+        return arithmeticTree.toSQL() + CompareOperator.toSQL(operator) + parameters.get(0).getDataValue();
+    }
+
+    @Override
     public String toString() {
         return String.format("%s(%s, %s)", operator.toString().toLowerCase(),
                 arithmeticTree.toString(),

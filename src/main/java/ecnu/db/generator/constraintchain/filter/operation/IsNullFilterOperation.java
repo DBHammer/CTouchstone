@@ -82,4 +82,9 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         return !canonicalColumnName.contains(tableName);
     }
 
+    @Override
+    public String toSQL() {
+        return canonicalColumnName + CompareOperator.toSQL(operator);
+    }
+
 }

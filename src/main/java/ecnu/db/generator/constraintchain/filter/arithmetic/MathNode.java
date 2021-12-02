@@ -29,10 +29,26 @@ public class MathNode extends ArithmeticNode {
     }
 
     @Override
+    public String toSQL() {
+        String mathType = switch (type) {
+            case MINUS -> "-";
+            case DIV -> "/";
+            case MUL -> "*";
+            case PLUS -> "+";
+            case MAX -> "max";
+            case MIN -> "min";
+            case AVG -> "avg";
+            case SUM -> "sum";
+            default -> throw new UnsupportedOperationException();
+        };
+        return String.format("%s %s %s", leftNode.toSQL(), mathType, rightNode.toSQL());
+    }
+
+    @Override
     public String toString() {
-        if(rightNode == null){
+        if (rightNode == null) {
             return String.format("%s(%s)", type, leftNode.toString());
-        }else {
+        } else {
             return String.format("%s(%s, %s)", type, leftNode.toString(), rightNode.toString());
         }
     }

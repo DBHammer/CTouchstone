@@ -27,7 +27,6 @@ public class QueryAnalyzer {
 
     protected static final Logger logger = LoggerFactory.getLogger(QueryAnalyzer.class);
     private static final int SKIP_JOIN_TAG = -1;
-    //    private static final int SKIP_CHAIN = -2;
     private static final int STOP_CONSTRUCT = -3;
     private static final int SKIP_SELF_JOIN = -4;
     private final AbstractAnalyzer abstractAnalyzer;
@@ -204,10 +203,10 @@ public class QueryAnalyzer {
                 fkJoinNode.setAntiJoin();
             }
             fkJoinNode.setPkDistinctProbability(node.getPkDistinctSize());
-            if (node.getRightNode().getType() == ExecutionNodeType.filter && ((FilterNode) node.getRightNode()).isIndexScan()
-                    && node.getIndexJoinFilter() != null && node.getRowsRemoveByFilterAfterJoin() != 0) {
-                int rowsAfterFilter = dbConnector.getRowsAfterFilter(node.getRightNode().getTableName(), node.getIndexJoinFilter());
-                long rowsRemovedByScanFilter = TableManager.getInstance().getTableSize(node.getRightNode().getTableName()) - rowsAfterFilter;
+            if (node.getRightNode().getType() == ExecutionNodeType.filter && node.getRightNode().getInfo() != null &&
+                    ((FilterNode) node.getRightNode()).isIndexScan()) {
+                int tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
+                int rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
                 BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
@@ -233,16 +232,18 @@ public class QueryAnalyzer {
         if (headNode.getType() == ExecutionNodeType.filter) {
             constraintChain = new ConstraintChain(headNode.getTableName());
             FilterNode filterNode = (FilterNode) headNode;
-            if (filterNode.isIndexScan() && filterNode.getInfo() != null) {
-                int rowsAfterFilter = dbConnector.getRowsAfterFilter(filterNode.getTableName(), filterNode.getFilterInfoWithQuote());
-                filterNode.setOutputRows(rowsAfterFilter);
-            }
-            lastNodeLineCount = filterNode.getOutputRows();
             if (filterNode.getInfo() != null) {
                 LogicNode result = analyzeSelectInfo(filterNode.getInfo());
-                BigDecimal ratio = BigDecimal.valueOf(filterNode.getOutputRows()).divide(BigDecimal.valueOf(TableManager.getInstance().getTableSize(filterNode.getTableName())), BIG_DECIMAL_DEFAULT_PRECISION);
+                if (filterNode.isIndexScan()) {
+                    result.removeOtherTablesOperation(filterNode.getTableName());
+                    int rowsAfterFilter = dbConnector.getRowsAfterFilter(filterNode.getTableName(), result.toSQL());
+                    filterNode.setOutputRows(rowsAfterFilter);
+                }
+                BigDecimal tableSize = BigDecimal.valueOf(TableManager.getInstance().getTableSize(filterNode.getTableName()));
+                BigDecimal ratio = BigDecimal.valueOf(filterNode.getOutputRows()).divide(tableSize, BIG_DECIMAL_DEFAULT_PRECISION);
                 constraintChain.addNode(new ConstraintChainFilterNode(ratio, result));
             }
+            lastNodeLineCount = filterNode.getOutputRows();
         } else {
             throw new TouchstoneException(String.format("底层节点 %s 只能为select或者scan", headNode.getId()));
         }
@@ -350,7 +351,7 @@ public class QueryAnalyzer {
             allNodes.removeAll(inputNodes);
             if (!allNodes.isEmpty()) {
                 for (ExecutionNode node : allNodes) {
-                    logger.error("can not input " + node);
+                    logger.error("can not input {}", node);
                 }
             }
         }

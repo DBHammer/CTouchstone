@@ -139,6 +139,20 @@ public class LogicNode extends BoolExprNode {
         return children.stream().anyMatch(child -> child.isDifferentTable(tableName));
     }
 
+    @Override
+    public String toSQL() {
+        String lowerType = switch (type) {
+            case AND -> "and";
+            case OR -> "or";
+            default -> throw new UnsupportedOperationException();
+        };
+        if (children.size() > 1) {
+            return "(" + children.stream().map(BoolExprNode::toSQL).collect(Collectors.joining(" " + lowerType + " ")) + ")";
+        } else {
+            return children.get(0).toSQL();
+        }
+    }
+
     private BoolExprType getRealType() {
         if (isReverse) {
             return switch (type) {

@@ -69,4 +69,10 @@ public abstract class BoolExprNode {
      */
     @JsonIgnore
     public abstract boolean isDifferentTable(String tableName);
+
+    /**
+     * 将逻辑树转换为SQL格式
+     * @return sql格式的逻辑树
+     */
+    public abstract String toSQL();
 }
