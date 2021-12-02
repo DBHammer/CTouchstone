@@ -1,6 +1,5 @@
 package ecnu.db.generator.constraintchain.chain;
 
-import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.TableManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,27 +32,29 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
     }
 
     public boolean removeAgg() {
-        if (groupKey == null) {
-            if (aggFilter == null) {
-                return true;
-            } else {
-                return aggFilter.getParameters().stream().allMatch(Parameter::isActual);
-            }
-        } else {
-            cleanGroupKeys();
-            //todo deal with fk and attributes
-            if (groupKey.stream().noneMatch(key -> TableManager.getInstance().isForeignKey(key))) {
-                if (groupKey.stream().anyMatch(key -> TableManager.getInstance().isPrimaryKey(key))) {
-                    logger.error("不能在查询中支持聚集算子 {}", this);
-                }
-                return true;
-            } else {
-                return false;
-            }
+        // 如果filter含有虚参，则不能被约减。其需要参与计算。
+        if (aggFilter != null && aggFilter.getParameters().stream().anyMatch(parameter -> !parameter.isActual())) {
+            return false;
         }
+        // filter不再需要被计算，只需要考虑group key的情况
+        // 如果没有group key 则不需要进行分布控制 无需考虑
+        if (groupKey == null) {
+            return true;
+        }
+        // 清理group key， 如果含有参照表的外键，则clean被参照表的group key
+        cleanGroupKeys();
+        // 如果group key中全部是外键 则需要控制外键分布 不能删减
+        if (groupKey.stream().allMatch(key -> TableManager.getInstance().isForeignKey(key))) {
+            return false;
+        }
+        // 如果group key中包含主键 且无法支持 提示报错
+        if (groupKey.stream().anyMatch(key -> TableManager.getInstance().isPrimaryKey(key))) {
+            logger.error("不能在查询中支持聚集算子 {}", this);
+        }
+        return true;
     }
 
-
+    // todo filter the attributes of the same table
     private void cleanGroupKeys() {
         TreeMap<String, List<String>> table2keys = mapGroupKeys();
         if (table2keys.size() > 1) {
