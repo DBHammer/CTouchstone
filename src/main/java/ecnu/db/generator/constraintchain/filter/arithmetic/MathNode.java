@@ -25,6 +25,10 @@ public class MathNode extends ArithmeticNode {
 
     @Override
     public String toString() {
-        return String.format("%s(%s, %s)", type, leftNode.toString(), rightNode.toString());
+        if(rightNode == null){
+            return String.format("%s(%s)", type, leftNode.toString());
+        }else {
+            return String.format("%s(%s, %s)", type, leftNode.toString(), rightNode.toString());
+        }
     }
 }

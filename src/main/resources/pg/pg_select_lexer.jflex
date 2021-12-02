@@ -65,13 +65,16 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
     return symbol(SUBSTRING);
   }
   "sum" {
-      return symbol(SUM);
+    return symbol(SUM, ArithmeticNodeType.SUM);
   }
   "avg" {
-        return symbol(AVG);
+    return symbol(AVG, ArithmeticNodeType.AVG);
   }
   "min" {
-        return symbol(MIN);
+    return symbol(MIN, ArithmeticNodeType.MIN);
+  }
+  "max" {
+    return symbol(MAX, ArithmeticNodeType.MAX);
   }
   /* compare operators */
   "= ANY" {

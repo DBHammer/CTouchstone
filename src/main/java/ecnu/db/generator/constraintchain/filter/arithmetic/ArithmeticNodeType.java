@@ -27,5 +27,21 @@ public enum ArithmeticNodeType {
     /**
      * 除类型计算节点
      */
-    DIV
+    DIV,
+    /**
+     * SUM类型计算节点
+     */
+    SUM,
+    /**
+     * AVG类型计算节点
+     */
+    AVG,
+    /**
+     * MIN类型计算节点
+     */
+    MIN,
+    /**
+     * MAX类型计算节点
+     */
+    MAX
 }
