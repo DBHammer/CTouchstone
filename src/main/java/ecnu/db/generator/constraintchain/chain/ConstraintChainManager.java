@@ -9,6 +9,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -59,7 +62,8 @@ public class ConstraintChainManager {
                 if (removeData(graph).equals(removeData(oldGraph))) {
                     CommonUtils.writeFile(path, graph);
                 } else {
-                    String newPath = resultDir + "/pic/" + "new" + System.currentTimeMillis() + stringListEntry.getKey() + ".dot";
+                    String currentTime = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME);
+                    String newPath = resultDir + "/pic/" + currentTime + "_" + stringListEntry.getKey() + ".dot";
                     CommonUtils.writeFile(newPath + "", graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());
                 }
@@ -88,7 +92,7 @@ public class ConstraintChainManager {
         //Pattern data = Pattern.compile(", data:[^}]");
         String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
         newGraph = newGraph.replaceAll("key[0-9]+", "key");
-        newGraph = newGraph.replaceAll("color=\"#[F|C]+\"","color");
+        newGraph = newGraph.replaceAll("color=\"#[F|C]+\"", "color");
         return newGraph;
     }
 }
