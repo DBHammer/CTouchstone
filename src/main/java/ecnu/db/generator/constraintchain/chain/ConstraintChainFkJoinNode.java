@@ -10,6 +10,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String localCols;
     private long pkTag;
     private BigDecimal probability;
+    private BigDecimal probabilityWithFailFilter;
     private boolean antiOrNot = false;
 
     public double getPkDistinctProbability() {
@@ -36,7 +37,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     @Override
     public String toString() {
-        return String.format("{pkTag:%d,refCols:%s,probability:%s,pkDistinctProbability:%f}", pkTag, refCols, probability, pkDistinctProbability);
+        return String.format("{pkTag:%d,refCols:%s,probability:%s,pkDistinctProbability:%f,probabilityWithFailFilter:%s}", pkTag, refCols, probability, pkDistinctProbability, probabilityWithFailFilter);
     }
 
     public long getPkTag() {
@@ -81,5 +82,13 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     public boolean getAntiJoin() {
         return this.antiOrNot;
+    }
+
+    public void setProbabilityWithFailFilter(BigDecimal probabilityWithFailFilter) {
+        this.probabilityWithFailFilter = probabilityWithFailFilter;
+    }
+
+    public BigDecimal getProbabilityWithFailFilter() {
+        return probabilityWithFailFilter;
     }
 }

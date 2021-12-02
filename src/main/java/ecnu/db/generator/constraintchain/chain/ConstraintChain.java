@@ -134,6 +134,11 @@ public class ConstraintChain {
                     } else {
                         subGraphHashMap.get(subGraphTag).joinLabel = "outer join: " + fkJoinNode.getPkDistinctProbability();
                     }
+                    if (fkJoinNode.getProbabilityWithFailFilter() != null) {
+                        subGraphHashMap.get(subGraphTag).joinLabel = String.format("%s filterWithCannotJoin: %2$,.4f",
+                                subGraphHashMap.get(subGraphTag).joinLabel,
+                                fkJoinNode.getProbabilityWithFailFilter());
+                    }
                 }
                 case PK_JOIN -> {
                     ConstraintChainPkJoinNode pkJoinNode = ((ConstraintChainPkJoinNode) node);
