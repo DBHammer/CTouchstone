@@ -50,8 +50,8 @@ public class PgJsonReader {
         if (subPlanName != null && subPlanName.contains("InitPlan")) {
             Pattern returnRegex = Pattern.compile("returns \\$[0-9]+");
             Matcher matcher = returnRegex.matcher(subPlanName);
-            if(matcher.find()){
-                return matcher.group().replaceAll("returns ","");
+            if (matcher.find()) {
+                return matcher.group().replaceAll("returns ", "");
             }
         }
         return null;
@@ -98,14 +98,14 @@ public class PgJsonReader {
         String indexCond = readContext.read(path + "['Index Cond']");
         String recheckCond = readContext.read(path + "['Recheck Cond']");
         if (indexCond == null) {
-            if (recheckCond != null){
+            if (recheckCond != null) {
                 indexCond = "Recheck Cond: " + recheckCond;
-            }else if(joinFilter!=null){
+            } else if (joinFilter != null) {
                 indexCond = "joinFilter Cond: " + joinFilter;
-            }else{
+            } else {
                 throw new UnsupportedOperationException();
             }
-        }else{
+        } else {
             indexCond = "Index Cond: " + indexCond;
         }
         return indexCond;
@@ -130,12 +130,17 @@ public class PgJsonReader {
     }
 
     static int readRowsRemoved(StringBuilder path) {
-        return readContext.read(path + "['Rows Removed by Filter']");
+        double actualRows = readContext.read(path + "['Rows Removed by Filter']");
+        int actualLoops = readContext.read(path + "['Actual Loops']");
+        return (int) Math.ceil(actualRows * actualLoops);
     }
 
     static int readRowsRemovedByJoinFilter(StringBuilder path) {
-        return readContext.read(path + "['Rows Removed by Join Filter']");
+        double actualRows = readContext.read(path + "['Rows Removed by Join Filter']");
+        int actualLoops = readContext.read(path + "['Actual Loops']");
+        return (int) Math.ceil(actualRows * actualLoops);
     }
+
 
     static StringBuilder move2LeftChild(StringBuilder path) {
         return new StringBuilder(path).append("['Plans'][0]");
@@ -150,7 +155,9 @@ public class PgJsonReader {
     }
 
     static int readRowCount(StringBuilder path) {
-        return readContext.read(path + "['Actual Rows']");
+        double actualRows = readContext.read(path + "['Actual Rows']");
+        int actualLoops = readContext.read(path + "['Actual Loops']");
+        return (int) Math.ceil(actualRows * actualLoops);
     }
 
     static String readNodeType(StringBuilder path) {
@@ -165,7 +172,7 @@ public class PgJsonReader {
         return readContext.read(path + "['Alias']");
     }
 
-    static boolean isOutJoin(StringBuilder path){
+    static boolean isOutJoin(StringBuilder path) {
         return readContext.read(path + "['Join Type']").equals("Right") || readContext.read(path + "['Join Type']").equals("Left");
     }
 }
