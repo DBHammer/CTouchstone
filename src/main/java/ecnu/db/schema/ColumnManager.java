@@ -60,7 +60,7 @@ public class ColumnManager {
         this.distributionInfoPath = new File(resultDir + COLUMN_MANAGE_INFO);
     }
 
-    private Column getColumn(String columnName) {
+    public Column getColumn(String columnName) {
         return columns.get(columnName);
     }
 
