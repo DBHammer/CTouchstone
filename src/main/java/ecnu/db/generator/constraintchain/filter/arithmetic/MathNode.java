@@ -25,6 +25,10 @@ public class MathNode extends ArithmeticNode {
         return leftValue;
     }
 
+    public MathNode() {
+        super(ArithmeticNodeType.MINUS);
+    }
+
     @JsonIgnore
     @Override
     public boolean isDifferentTable(String tableName) {
