@@ -1,10 +1,10 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectSymbol;
-import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
@@ -24,11 +24,12 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     public IsNullFilterOperation(String canonicalColumnName) throws IllegalQueryColumnNameException {
         super(CompareOperator.ISNULL);
-        if(!CommonUtils.isCanonicalColumnName(canonicalColumnName)){
+        if (!CommonUtils.isCanonicalColumnName(canonicalColumnName)) {
             throw new IllegalQueryColumnNameException();
         }
         this.canonicalColumnName = canonicalColumnName;
     }
+
 
     @Override
     public BigDecimal getProbability() {
@@ -37,6 +38,12 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     public void setCanonicalColumnName(String canonicalColumnName) {
         this.canonicalColumnName = canonicalColumnName;
+    }
+
+    @Override
+    public boolean hasKeyColumn() {
+        return TableManager.getInstance().isPrimaryKey(canonicalColumnName) ||
+                TableManager.getInstance().isForeignKey(canonicalColumnName);
     }
 
     @Override
@@ -69,6 +76,17 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     @Override
     public boolean[] evaluate() {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null);
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isDifferentTable(String tableName) {
+        return !canonicalColumnName.contains(tableName);
+    }
+
+    @Override
+    public String toSQL() {
+        return canonicalColumnName + CompareOperator.toSQL(operator);
     }
 
 }

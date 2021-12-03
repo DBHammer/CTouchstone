@@ -91,7 +91,4 @@ public class CommonUtils {
         }
     }
 
-    public static void setForkJoinParallelism(int threadNum){
-        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", String.valueOf(threadNum));
-    }
 }

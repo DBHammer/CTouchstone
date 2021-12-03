@@ -23,6 +23,9 @@
         </Console>
     </Appenders>
     <Loggers>
+        <Logger name="com.jayway.jsonpath" level="info">
+            <AppenderRef ref="STDOUT"/>
+        </Logger>
         <!--日志输出优先级别：DEBUG < INFO < WARN < ERROR，Root设置的是输出的最低级别的log类型-->
         <Root level="DEBUG">
             <AppenderRef ref="STDOUT"/>

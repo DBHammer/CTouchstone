@@ -12,6 +12,9 @@ import java.util.List;
  */
 public abstract class BoolExprNode {
 
+    @JsonIgnore
+    public abstract boolean hasKeyColumn();
+
     /**
      * 是否在化简的过程中被reverse过，默认为false
      */
@@ -46,8 +49,30 @@ public abstract class BoolExprNode {
      */
     public abstract List<Parameter> getParameters();
 
+    /**
+     * 对逻辑表达树取反
+     *
+     */
     public abstract void reverse();
 
+    /**
+     * 判定子树是否可以标记为True
+     * @return 子树可以标记为True
+     */
     @JsonIgnore
     public abstract boolean isTrue();
+
+    /**
+     * 判定子树是否包含其他的表
+     * @param tableName 表名
+     * @return 是否含有其他的表
+     */
+    @JsonIgnore
+    public abstract boolean isDifferentTable(String tableName);
+
+    /**
+     * 将逻辑树转换为SQL格式
+     * @return sql格式的逻辑树
+     */
+    public abstract String toSQL();
 }

@@ -1,5 +1,7 @@
 package ecnu.db.generator.constraintchain.filter.arithmetic;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.stream.IntStream;
 
 public class MathNode extends ArithmeticNode {
@@ -23,8 +25,38 @@ public class MathNode extends ArithmeticNode {
         return leftValue;
     }
 
+    public MathNode() {
+        super(ArithmeticNodeType.MINUS);
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isDifferentTable(String tableName) {
+        return leftNode.isDifferentTable(tableName) || rightNode.isDifferentTable(tableName);
+    }
+
+    @Override
+    public String toSQL() {
+        String mathType = switch (type) {
+            case MINUS -> "-";
+            case DIV -> "/";
+            case MUL -> "*";
+            case PLUS -> "+";
+            case MAX -> "max";
+            case MIN -> "min";
+            case AVG -> "avg";
+            case SUM -> "sum";
+            default -> throw new UnsupportedOperationException();
+        };
+        return String.format("%s %s %s", leftNode.toSQL(), mathType, rightNode.toSQL());
+    }
+
     @Override
     public String toString() {
-        return String.format("%s(%s, %s)", type, leftNode.toString(), rightNode.toString());
+        if (rightNode == null) {
+            return String.format("%s(%s)", type, leftNode.toString());
+        } else {
+            return String.format("%s(%s, %s)", type, leftNode.toString(), rightNode.toString());
+        }
     }
 }

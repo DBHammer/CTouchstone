@@ -10,8 +10,18 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String localCols;
     private long pkTag;
     private BigDecimal probability;
+    private BigDecimal probabilityWithFailFilter;
     private boolean antiOrNot = false;
 
+    public double getPkDistinctProbability() {
+        return pkDistinctProbability;
+    }
+
+    public void setPkDistinctProbability(double pkDistinctProbability) {
+        this.pkDistinctProbability = pkDistinctProbability;
+    }
+
+    private double pkDistinctProbability;
 
     public ConstraintChainFkJoinNode() {
         super(ConstraintChainNodeType.FK_JOIN);
@@ -27,7 +37,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     @Override
     public String toString() {
-        return String.format("{pkTag:%d,refCols:%s,probability:%s}", pkTag, refCols, probability);
+        return String.format("{pkTag:%d,refCols:%s,probability:%s,pkDistinctProbability:%f,probabilityWithFailFilter:%s}", pkTag, refCols, probability, pkDistinctProbability, probabilityWithFailFilter);
     }
 
     public long getPkTag() {
@@ -62,9 +72,23 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         this.refCols = refCols;
     }
 
-    public void setAntiJoin() { this.antiOrNot = true; }
+    public void setAntiJoin() {
+        this.antiOrNot = true;
+    }
 
-    public void setAntiJoin(boolean antiOrNot) { this.antiOrNot = antiOrNot; }
+    public void setAntiJoin(boolean antiOrNot) {
+        this.antiOrNot = antiOrNot;
+    }
 
-    public boolean getAntiJoin() { return this.antiOrNot; }
+    public boolean getAntiJoin() {
+        return this.antiOrNot;
+    }
+
+    public void setProbabilityWithFailFilter(BigDecimal probabilityWithFailFilter) {
+        this.probabilityWithFailFilter = probabilityWithFailFilter;
+    }
+
+    public BigDecimal getProbabilityWithFailFilter() {
+        return probabilityWithFailFilter;
+    }
 }

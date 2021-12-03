@@ -8,6 +8,7 @@ import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperatio
 import ecnu.db.utils.exception.TouchstoneException;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -25,6 +26,11 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         super(ConstraintChainNodeType.FILTER);
         this.probability = probability;
         this.root = root;
+    }
+
+    @JsonIgnore
+    public boolean hasKeyColumn(){
+        return root.hasKeyColumn();
     }
 
     public List<AbstractFilterOperation> pushDownProbability() {

@@ -1,8 +1,11 @@
 package ecnu.db.analyzer.online;
 
+import ecnu.db.analyzer.online.node.ExecutionNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +25,7 @@ public abstract class AbstractAnalyzer {
      * @return 查询树Node信息
      * @throws TouchstoneException 查询树无法解析
      */
-    public abstract ExecutionNode getExecutionTree(List<String[]> queryPlan) throws TouchstoneException;
+    public abstract ExecutionNode getExecutionTree(List<String[]> queryPlan) throws TouchstoneException, IOException, SQLException;
 
     /**
      * 分析join信息
@@ -32,6 +35,22 @@ public abstract class AbstractAnalyzer {
      * @throws TouchstoneException 无法分析的join条件
      */
     public abstract String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException;
+
+
+    /**
+     * 分割查询plan
+     * @param queryPlan 原始的查询plan
+     * @return 分割后的多个查询plan
+     */
+    public abstract List<List<String[]>> splitQueryPlan(List<String[]> queryPlan);
+
+
+    /**
+     * 分割aggregate下不能识别的plan，返回识别的表和过滤条件，不再处理join和agg等算子
+     *
+     * @return 识别的表和过滤条件
+     */
+    public abstract List<Map.Entry<String, String>>  splitQueryPlanForMultipleAggregate() throws IOException, TouchstoneException, SQLException;
 
     /**
      * 分析join信息

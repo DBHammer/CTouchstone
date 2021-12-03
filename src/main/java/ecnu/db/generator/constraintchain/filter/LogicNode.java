@@ -33,6 +33,11 @@ public class LogicNode extends BoolExprNode {
 
 
     @Override
+    public boolean hasKeyColumn() {
+        return children.stream().anyMatch(BoolExprNode::hasKeyColumn);
+    }
+
+    @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         List<AbstractFilterOperation> operations = new ArrayList<>();
         // 如果上层要求设置概率为 1， 则不需要处理，直接下推概率1到所有的filter operation中
@@ -62,6 +67,19 @@ public class LogicNode extends BoolExprNode {
             }
         }
         return operations;
+    }
+
+    public void removeOtherTablesOperation(String tableName) {
+        BoolExprNode root = this.children.get(0);
+        if (root.getType() == AND) {
+            LogicNode andRoot = (LogicNode) root;
+            List<BoolExprNode> prepareForRemove = andRoot.getChildren().stream()
+                    .filter(child -> child.isDifferentTable(tableName)).toList();
+            if (prepareForRemove.size() > 1) {
+                throw new UnsupportedOperationException();
+            }
+            andRoot.getChildren().removeAll(prepareForRemove);
+        }
     }
 
     @Override
@@ -114,6 +132,25 @@ public class LogicNode extends BoolExprNode {
             case OR -> children.stream().anyMatch(BoolExprNode::isTrue);
             default -> throw new UnsupportedOperationException();
         };
+    }
+
+    @Override
+    public boolean isDifferentTable(String tableName) {
+        return children.stream().anyMatch(child -> child.isDifferentTable(tableName));
+    }
+
+    @Override
+    public String toSQL() {
+        String lowerType = switch (type) {
+            case AND -> "and";
+            case OR -> "or";
+            default -> throw new UnsupportedOperationException();
+        };
+        if (children.size() > 1) {
+            return "(" + children.stream().map(BoolExprNode::toSQL).collect(Collectors.joining(" " + lowerType + " ")) + ")";
+        } else {
+            return children.get(0).toSQL();
+        }
     }
 
     private BoolExprType getRealType() {

@@ -21,12 +21,11 @@ public abstract class DbConnector {
     private final Logger logger = LoggerFactory.getLogger(DbConnector.class);
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
     private final int[] sqlInfoColumns;
-    private final String url;
-    private final String user;
-    private final String pass;
+    private final Connection conn;
 
     protected DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig)
-            throws TouchstoneException {
+            throws TouchstoneException, SQLException {
+        String url;
         if (config.getDatabaseName() != null) {
             url = String.format("jdbc:%s://%s:%s/%s?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(),
                     config.getDatabaseName(), databaseConnectionConfig);
@@ -35,9 +34,10 @@ public abstract class DbConnector {
                     databaseConnectionConfig);
         }
         // 数据库的用户名与密码
-        user = config.getDatabaseUser();
-        pass = config.getDatabasePwd();
-        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+        String user = config.getDatabaseUser();
+        String pass = config.getDatabasePwd();
+        conn = DriverManager.getConnection(url, user, pass);
+        try (Statement stmt = conn.createStatement()) {
             for (String command : preExecutionCommands()) {
                 stmt.execute(command);
             }
@@ -55,6 +55,12 @@ public abstract class DbConnector {
 
     protected abstract String getExplainFormat();
 
+    /**
+     * 获取节点上查询计划的信息
+     *
+     * @param queryPlan 需要处理的查询计划
+     * @return 返回格式化后的查询计划
+     */
     protected abstract String[] formatQueryPlan(String[] queryPlan);
 
     protected abstract String[] preExecutionCommands();
@@ -62,15 +68,13 @@ public abstract class DbConnector {
     public List<String> getColumnMetadata(String canonicalTableName) throws SQLException, TouchstoneException {
         String[] schemaAndTable = canonicalTableName.split("\\.");
         List<String> columnNames = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(url, user, pass)) {
-            DatabaseMetaData databaseMetaData = conn.getMetaData();
-            ResultSet rs = databaseMetaData.getColumns(null, schemaAndTable[0], schemaAndTable[1], null);
-            while (rs.next()) {
-                String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
-                columnNames.add(canonicalColumnName);
-                ColumnManager.getInstance().addColumn(canonicalColumnName,
-                        new Column(ColumnType.getColumnType(rs.getInt("DATA_TYPE"))));
-            }
+        DatabaseMetaData databaseMetaData = conn.getMetaData();
+        ResultSet rs = databaseMetaData.getColumns(null, schemaAndTable[0], schemaAndTable[1], null);
+        while (rs.next()) {
+            String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
+            columnNames.add(canonicalColumnName);
+            ColumnManager.getInstance().addColumn(canonicalColumnName,
+                    new Column(ColumnType.getColumnType(rs.getInt("DATA_TYPE"))));
         }
         return columnNames;
     }
@@ -78,19 +82,17 @@ public abstract class DbConnector {
     public List<String> getPrimaryKeyList(String canonicalTableName) throws SQLException {
         String[] schemaAndTable = canonicalTableName.split("\\.");
         List<String> keys = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(url, user, pass)) {
-            DatabaseMetaData databaseMetaData = conn.getMetaData();
-            ResultSet rs = databaseMetaData.getPrimaryKeys(schemaAndTable[0], null, schemaAndTable[1]);
-            while (rs.next()) {
-                keys.add(canonicalTableName + "." + rs.getString("COLUMN_NAME").toLowerCase());
-            }
+        DatabaseMetaData databaseMetaData = conn.getMetaData();
+        ResultSet rs = databaseMetaData.getPrimaryKeys(schemaAndTable[0], null, schemaAndTable[1]);
+        while (rs.next()) {
+            keys.add(canonicalTableName + "." + rs.getString("COLUMN_NAME").toLowerCase());
         }
         return keys;
     }
 
     public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames)
             throws SQLException, TouchstoneException {
-        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+        try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(String.format("select %s from %s", getColumnDistributionSql(canonicalColumnNames), canonicalTableName));
             rs.next();
             String[] infos = new String[rs.getMetaData().getColumnCount()];
@@ -106,8 +108,16 @@ public abstract class DbConnector {
         }
     }
 
+    public List<String[]> explainQuery(Map.Entry<String, String> tableNameAndFilterInfo) throws SQLException {
+        return explainQuery(String.format("SELECT COUNT(*) FROM %s WHERE %s;",
+                tableNameAndFilterInfo.getKey(), tableNameAndFilterInfo.getValue()));
+    }
+
     public List<String[]> explainQuery(String sql) throws SQLException {
-        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+        try (Statement stmt = conn.createStatement()) {
+            for (String command : preExecutionCommands()) {
+                stmt.execute(command);
+            }
             ResultSet rs = stmt.executeQuery(String.format(getExplainFormat(), sql));
             ArrayList<String[]> result = new ArrayList<>();
             while (rs.next()) {
@@ -122,7 +132,7 @@ public abstract class DbConnector {
     }
 
     public int getMultiColNdv(String canonicalTableName, String columns) throws SQLException {
-        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+        try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(String.format("select count(*) from (select distinct %S from %S) as a", columns, canonicalTableName));
             rs.next();
             int result = rs.getInt("count");
@@ -136,13 +146,24 @@ public abstract class DbConnector {
     }
 
     public int getTableSize(String canonicalTableName) throws SQLException {
-        try (Statement stmt = DriverManager.getConnection(url, user, pass).createStatement()) {
+        try (Statement stmt = conn.createStatement()) {
             String countQuery = String.format("select count(*) as cnt from %s", canonicalTableName);
             ResultSet rs = stmt.executeQuery(countQuery);
             if (rs.next()) {
                 return rs.getInt("cnt");
             }
             throw new SQLException(String.format("table'%s'的size为0", canonicalTableName));
+        }
+    }
+
+    public int getRowsAfterFilter(String tableName, String filterInfo) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            String countQuery = String.format("select count(*) as cntAfterFilter from %s where %s;", tableName, filterInfo);
+            ResultSet rs = stmt.executeQuery(countQuery);
+            if (rs.next()) {
+                return rs.getInt("cntAfterFilter");
+            }
+            throw new SQLException(String.format("rows after filter: %s", tableName));
         }
     }
 

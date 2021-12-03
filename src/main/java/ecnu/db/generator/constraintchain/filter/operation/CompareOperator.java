@@ -58,5 +58,23 @@ public enum CompareOperator {
     /**
      * RANGE运算符，表示多个lt,gt,le,ge的整合，不直接在parser中使用
      */
-    RANGE
+    RANGE;
+
+    public static String toSQL(CompareOperator operator) {
+        return " " + switch (operator) {
+            case GE -> ">=";
+            case LE -> "<=";
+            case EQ -> "=";
+            case NE -> "<>";
+            case IN -> "in";
+            case NOT_IN -> "not in";
+            case NOT_LIKE -> "not like";
+            case LIKE -> "like";
+            case GT -> ">";
+            case LT -> "<";
+            case IS_NOT_NULL -> "is not null";
+            case ISNULL -> "is null";
+            default -> throw new UnsupportedOperationException();
+        } + " ";
+    }
 }

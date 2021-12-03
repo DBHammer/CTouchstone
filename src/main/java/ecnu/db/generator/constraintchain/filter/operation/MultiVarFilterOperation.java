@@ -1,11 +1,13 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ColumnNode;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
@@ -52,6 +54,25 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
+    public boolean hasKeyColumn() {
+        return hasKeyColumn(arithmeticTree);
+    }
+
+    private boolean hasKeyColumn(ArithmeticNode node) {
+        boolean hasKeyColumn = false;
+        if (node != null) {
+            hasKeyColumn = hasKeyColumn(node.getLeftNode()) || hasKeyColumn(node.getRightNode());
+            if (node.getType() == ArithmeticNodeType.COLUMN) {
+                ColumnNode columnNode = (ColumnNode) node;
+                hasKeyColumn = hasKeyColumn ||
+                        TableManager.getInstance().isPrimaryKey(columnNode.getCanonicalColumnName()) ||
+                        TableManager.getInstance().isForeignKey(columnNode.getCanonicalColumnName());
+            }
+        }
+        return hasKeyColumn;
+    }
+
+    @Override
     public BoolExprType getType() {
         return BoolExprType.MULTI_FILTER_OPERATION;
     }
@@ -75,6 +96,17 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             default -> throw new UnsupportedOperationException();
         }
         return ret;
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isDifferentTable(String tableName) {
+        return arithmeticTree.isDifferentTable(tableName);
+    }
+
+    @Override
+    public String toSQL() {
+        return arithmeticTree.toSQL() + CompareOperator.toSQL(operator) + parameters.get(0).getDataValue();
     }
 
     @Override
@@ -106,8 +138,13 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
                 throw new UnsupportedOperationException("多变量计算节点仅接受非等值约束");
         }
         double[] vector = arithmeticTree.calculate();
-        int pos = probability.multiply(BigDecimal.valueOf(vector.length)).intValue();
         Arrays.sort(vector);
+        int pos;
+        if (probability.equals(BigDecimal.ONE)) {
+            pos = vector.length - 1;
+        } else {
+            pos = probability.multiply(BigDecimal.valueOf(vector.length)).intValue();
+        }
         long internalValue = (long) (vector[pos] * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         parameters.forEach(param -> param.setData(internalValue));
     }

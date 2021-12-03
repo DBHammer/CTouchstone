@@ -16,6 +16,10 @@ public class ArithmeticNodeFactory {
             case MINUS -> new MathNode(ArithmeticNodeType.MINUS);
             case CONSTANT -> new NumericNode();
             case COLUMN -> new ColumnNode();
+            case SUM -> new MathNode(ArithmeticNodeType.SUM);
+            case AVG -> new MathNode(ArithmeticNodeType.AVG);
+            case MIN -> new MathNode(ArithmeticNodeType.MIN);
+            case MAX -> new MathNode(ArithmeticNodeType.MAX);
         };
     }
 }

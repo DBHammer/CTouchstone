@@ -74,13 +74,13 @@ public class Column {
         this.nullPercentage = nullPercentage;
     }
 
-    private void dealZeroPb(List<Parameter> parameters){
+    private void dealZeroPb(List<Parameter> parameters) {
         for (Parameter parameter : parameters) {
-            parameter.setData(min-1);
+            parameter.setData(min - 1);
             if (likeParameterId.contains(parameter.getId())) {
-                parameter.setDataValue(stringTemplate.getLikeValue(specialValue, min-1, parameter.getDataValue()));
+                parameter.setDataValue(stringTemplate.getLikeValue(specialValue, min - 1, parameter.getDataValue()));
             } else {
-                parameter.setDataValue(transferDataToValue(min-1));
+                parameter.setDataValue(transferDataToValue(min - 1));
             }
         }
     }
@@ -109,7 +109,7 @@ public class Column {
 
         Map.Entry<Long, BigDecimal> map = new AbstractMap.SimpleEntry<>(bound, probability);
         for (Map.Entry<Long, BigDecimal> longBigDecimalEntry : bucketBound2FreeSpace) {
-            if(longBigDecimalEntry == map){
+            if (longBigDecimalEntry == map) {
                 return;
             }
         }
@@ -117,17 +117,17 @@ public class Column {
     }
 
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
-        if(probability.compareTo(BigDecimal.ZERO)==0){
+        if (probability.compareTo(BigDecimal.ZERO) == 0) {
             dealZeroPb(parameters);
-        }else {
+        } else {
             BigDecimal tempProbability = new BigDecimal(probability.toString());
             TreeSet<BigDecimal> probabilityHistogram = new TreeSet<>(eqRequest2ParameterIds.keySet());
             int index = parameters.size() - 1;
-            while (tempProbability.compareTo(BigDecimal.ZERO) > 0 && !probabilityHistogram.isEmpty() && index > 0) {
+            while (index > 0 && !probabilityHistogram.isEmpty() && tempProbability.compareTo(probabilityHistogram.first()) > 0) {
                 BigDecimal lowerBound = probabilityHistogram.lower(tempProbability);
                 probabilityHistogram.remove(lowerBound);
                 tempProbability = tempProbability.subtract(lowerBound);
-                eqRequest2ParameterIds.get(tempProbability).add(parameters.get(index--));
+                eqRequest2ParameterIds.get(lowerBound).add(parameters.get(index--));
             }
             while (index >= 0) {
                 if (index > 0) {
@@ -143,10 +143,8 @@ public class Column {
 
     public void insertUniVarProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         switch (operator) {
-            case NE, NOT_LIKE, NOT_IN ->
-                    eqRequest2ParameterIds.computeIfAbsent(BigDecimal.ONE.subtract(probability), i -> new LinkedList<>()).add(parameters.get(0));
-            case EQ, LIKE ->
-                    eqRequest2ParameterIds.computeIfAbsent(probability, i -> new LinkedList<>()).add(parameters.get(0));
+            case NE, NOT_LIKE, NOT_IN -> eqRequest2ParameterIds.computeIfAbsent(BigDecimal.ONE.subtract(probability), i -> new LinkedList<>()).add(parameters.get(0));
+            case EQ, LIKE -> eqRequest2ParameterIds.computeIfAbsent(probability, i -> new LinkedList<>()).add(parameters.get(0));
             case IN -> insertEqualProbability(probability, parameters);
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
@@ -214,6 +212,7 @@ public class Column {
                 bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bucketBound, freeSpace2BucketId.getValue().subtract(eqProbability)));
                 //顺序赋值
                 long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
+                eqConstraint2Probability.put(eqParameterData, eqProbability);
                 eqRequest2ParameterIds.get(eqProbability).forEach(parameter -> {
                     parameter.setData(eqParameterData);
                     if (likeParameterId.contains(parameter.getId())) {
@@ -226,6 +225,18 @@ public class Column {
                 throw new UnsupportedOperationException("等值约束冲突，无法实例化");
             }
         }
+
+        var bucketId2CardinalityList = bucketId2EqNum.entrySet().stream().filter(e -> e.getValue().get() > 0).toList();
+        for (var bucketId2Cardinality : bucketId2CardinalityList) {
+            for (Map.Entry<Long, BigDecimal> space : bucketBound2FreeSpace) {
+                if (Objects.equals(space.getKey(), bucketId2Cardinality.getKey())) {
+                    bucketBound2FreeSpace.remove(space);
+                    long newSpaceBound = space.getKey() - bucketId2Cardinality.getValue().get();
+                    bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(newSpaceBound, space.getValue()));
+                }
+            }
+        }
+
         // 重新调整lowBound2EqProbability，移除没有等值约束的bound
         bucketId2EqNum.values().removeIf(value -> value.get() != 0);
         LinkedList<Long> prepareToDelete = new LinkedList<>();
@@ -266,11 +277,18 @@ public class Column {
             if (++i == bucketBound2FreeSpace.size()) {
                 randomSize = size - currentIndex;
             } else {
-                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue();
+                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue() - currentIndex;
             }
             try {
                 //todo
-                long[] randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, lastBound = bucket2Probability.getKey()).toArray();
+                long[] randomData;
+                long bound = bucket2Probability.getKey();
+                if (bound == lastBound) {
+                    randomData = new long[randomSize];
+                } else {
+                    randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
+                }
+                lastBound = bound;
                 System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);
             } catch (Exception e) {
                 e.printStackTrace();

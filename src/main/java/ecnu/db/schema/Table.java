@@ -40,7 +40,7 @@ public class Table {
         return canonicalColumnNamesNotKey;
     }
 
-    public long getJoinTag() {
+    public synchronized long getJoinTag() {
         long temp = joinTag;
         joinTag *= 4;
         return temp;
@@ -65,6 +65,11 @@ public class Table {
             return false;
         }
     }
+
+    public boolean isRefTable(String refTable) {
+        return foreignKeys.values().stream().anyMatch(remoteColumn -> remoteColumn.contains(refTable));
+    }
+
 
     public void addForeignKey(String localTable, String localColumnName,
                               String referencingTable, String referencingInfo) throws TouchstoneException {
@@ -95,13 +100,17 @@ public class Table {
         this.tableSize = tableSize;
     }
 
+    public void setPrimaryKeys(List<String> primaryKeys) {
+        this.primaryKeys = primaryKeys;
+    }
+
     public Map<String, String> getForeignKeys() {
         return foreignKeys;
     }
 
     @JsonSetter
     @SuppressWarnings("unused")
-    public void setForeignKeys(Map<String, String> foreignKeys) {
+    public synchronized void setForeignKeys(Map<String, String> foreignKeys) {
         this.foreignKeys = foreignKeys;
     }
 
@@ -111,7 +120,7 @@ public class Table {
         return String.join(",", primaryKeys);
     }
 
-    public void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
+    public synchronized void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
         if (this.primaryKeys == null) {
             this.primaryKeys = Arrays.asList(primaryKeys.split(","));
         } else {

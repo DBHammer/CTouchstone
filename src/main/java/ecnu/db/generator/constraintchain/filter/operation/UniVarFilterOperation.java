@@ -1,10 +1,12 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
@@ -33,6 +35,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         }
         this.parameters = parameters;
     }
+
 
     /**
      * merge operation
@@ -69,6 +72,11 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
+    public boolean hasKeyColumn() {
+        return TableManager.getInstance().isPrimaryKey(canonicalColumnName) || TableManager.getInstance().isForeignKey(canonicalColumnName);
+    }
+
+    @Override
     public BoolExprType getType() {
         return BoolExprType.UNI_FILTER_OPERATION;
     }
@@ -99,5 +107,23 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     public boolean[] evaluate() {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters);
     }
+
+    @JsonIgnore
+    @Override
+    public boolean isDifferentTable(String tableName) {
+        return !canonicalColumnName.contains(tableName);
+    }
+
+    @Override
+    public String toSQL() {
+        String parametersSQL;
+        if (parameters.size() == 1) {
+            parametersSQL = "'" + parameters.get(0).getDataValue() + "'";
+        } else {
+            parametersSQL = "('" + parameters.stream().map(Parameter::getDataValue).collect(Collectors.joining("','")) + "')";
+        }
+        return canonicalColumnName + CompareOperator.toSQL(operator) + parametersSQL;
+    }
+
 
 }

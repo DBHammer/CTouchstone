@@ -13,7 +13,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
@@ -25,7 +28,7 @@ public class TableManager {
     public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     private File schemaInfoPath;
 
-    private TableManager() {
+    public TableManager() {
     }
 
     public static TableManager getInstance() {
@@ -54,6 +57,27 @@ public class TableManager {
         return getSchema(tableName).getPrimaryKeys();
     }
 
+
+    public boolean isPrimaryKey(String canonicalColumnName) {
+        String[] nameArray = canonicalColumnName.split("\\.");
+        String tableName = nameArray[0] + "." + nameArray[1];
+        Table table = schemas.get(tableName);
+        if (table == null) {
+            return false;
+        }
+        return table.getPrimaryKeys().contains(canonicalColumnName);
+    }
+
+    public boolean isForeignKey(String canonicalColumnName) {
+        String[] nameArray = canonicalColumnName.split("\\.");
+        String tableName = nameArray[0] + "." + nameArray[1];
+        Table table = schemas.get(tableName);
+        if (table == null) {
+            return false;
+        }
+        return table.getForeignKeys().containsKey(canonicalColumnName);
+    }
+
     public boolean containSchema(String tableName) {
         return schemas.containsKey(tableName);
     }
@@ -70,8 +94,9 @@ public class TableManager {
         getSchema(tableName).setPrimaryKeys(tableName + "." + primaryKeys);
     }
 
+
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
-        logger.info("table:{}, column:{} -ref- table:{}, column:{}", localTable, localColumns, refTable, refColumns);
+        logger.debug("添加参照依赖： {}.{} 参照 {}.{}", localTable, localColumns, refTable, refColumns);
         getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
     }
 
@@ -79,6 +104,16 @@ public class TableManager {
         return getSchema(locTable).isRefTable(locTable + "." + locColumn, remoteColumn);
     }
 
+    public boolean isRefTable(String locTable, String remoteTable) {
+        return schemas.get(locTable).isRefTable(remoteTable);
+    }
+
+
+    /**
+     * 根据join的连接顺序，排列表名。顺序从被参照表到参照表。
+     *
+     * @return 从被参照表到参照表排序的表名。
+     */
     public List<String> createTopologicalOrder() {
         Graph<String, DefaultEdge> schemaGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
         schemas.keySet().forEach(schemaGraph::addVertex);
@@ -93,7 +128,6 @@ public class TableManager {
         while (topologicalOrderIterator.hasNext()) {
             orderedSchemas.add(topologicalOrderIterator.next());
         }
-        Collections.reverse(orderedSchemas);
         return orderedSchemas;
     }
 

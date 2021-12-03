@@ -49,4 +49,9 @@ public class TidbNodeTypeTool implements NodeTypeTool {
     public boolean isRangeScanNode(String nodeType) {
         return RANGE_SCAN_NODE_TYPES.contains(nodeType);
     }
+
+    @Override
+    public boolean isAggregateNode(String nodeType) {
+        return false;
+    }
 }
