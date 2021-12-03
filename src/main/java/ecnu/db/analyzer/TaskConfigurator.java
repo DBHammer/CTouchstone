@@ -252,8 +252,9 @@ public class TaskConfigurator implements Callable<Integer> {
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
         Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
         logger.info("实例化查询计划成功, 实例化的参数为{}", id2Parameter.values());
-        logger.info("开始持久化查询计划");
+        logger.info("开始持久化查询计划与新的数据分布");
         ConstraintChainManager.getInstance().storeConstraintChain(query2constraintChains);
+        ColumnManager.getInstance().storeColumnDistribution();
         logger.info("持久化查询计划完成");
         logger.info("开始填充查询模版");
         queryWriter.writeQuery(queryName2QueryTemplates, id2Parameter);

@@ -225,6 +225,18 @@ public class Column {
                 throw new UnsupportedOperationException("等值约束冲突，无法实例化");
             }
         }
+
+        var bucketId2CardinalityList = bucketId2EqNum.entrySet().stream().filter(e -> e.getValue().get() > 0).toList();
+        for (var bucketId2Cardinality : bucketId2CardinalityList) {
+            for (Map.Entry<Long, BigDecimal> space : bucketBound2FreeSpace) {
+                if (Objects.equals(space.getKey(), bucketId2Cardinality.getKey())) {
+                    bucketBound2FreeSpace.remove(space);
+                    long newSpaceBound = space.getKey() - bucketId2Cardinality.getValue().get();
+                    bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(newSpaceBound, space.getValue()));
+                }
+            }
+        }
+
         // 重新调整lowBound2EqProbability，移除没有等值约束的bound
         bucketId2EqNum.values().removeIf(value -> value.get() != 0);
         LinkedList<Long> prepareToDelete = new LinkedList<>();

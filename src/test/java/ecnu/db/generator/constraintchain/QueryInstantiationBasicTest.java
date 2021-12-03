@@ -83,26 +83,21 @@ class QueryInstantiationBasicTest {
         // **********************************
         // *    test query instantiation    *
         // **********************************
-        queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), samplingSize);
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).toList();
             parameters.forEach((param) -> id2Parameter.put(param.getId(), param));
         }
         // 2.sql_1 simple eq
-        // todo
         Column col = ColumnManager.getInstance().getColumn("public.lineitem.l_quantity");
-        assertTrue(id2Parameter.get(12).getData() >= col.getMin(),
-                String.format("'%s' should be greater than or equal to '%d'", id2Parameter.get(12).getData(), col.getMin()));
-        assertTrue(id2Parameter.get(12).getData() <= col.getRange(),
-                String.format("'%s' should be less than '%d'", id2Parameter.get(12).getData(), col.getRange()));
-        /*assertTrue(Integer.parseInt(id2Parameter.get(19).getDataValue()) <= col.getRange(),
-                String.format("'%s' should be less than '%d'", id2Parameter.get(19).getData(), col.getRange()));*/
-        //assertThat(id2Parameter.get(20).getDataValue(), startsWith("%"));
-        //assertEquals(id2Parameter.get(21).getData(), id2Parameter.get(22).getData());
+        assertTrue(id2Parameter.get(15).getData() >= col.getMin(),
+                String.format("'%s' should be greater than or equal to '%d'", id2Parameter.get(15).getData(), col.getMin()));
+        assertTrue(id2Parameter.get(15).getData() <= col.getRange(),
+                String.format("'%s' should be less than '%d'", id2Parameter.get(15).getData(), col.getRange()));
+
         // 6.sql_1 between
-        long left = id2Parameter.get(10).getData();
-        long right = id2Parameter.get(11).getData();
+        long left = id2Parameter.get(13).getData();
+        long right = id2Parameter.get(14).getData();
         assertEquals(100000, right - left, 0);
 
         // ******************************

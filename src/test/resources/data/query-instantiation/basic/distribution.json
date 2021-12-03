@@ -91,9 +91,12 @@
     "nullPercentage" : 0.0,
     "bucketBound2FreeSpace" : [
       {
-        "5" : 1
+        "4" : 0.59748
       }
     ],
+    "eqConstraint2Probability" : {
+      "4" : 0.20126
+    },
     "stringTemplate" : {
       "minLength" : 8,
       "rangeLength" : 2
@@ -172,6 +175,12 @@
     "bucketBound2FreeSpace" : [
       {
         "49000000" : 1
+      },
+      {
+        "49000000" : 1
+      },
+      {
+        "49000000" : 1
       }
     ]
   },
@@ -196,6 +205,18 @@
     "bucketBound2FreeSpace" : [
       {
         "100000" : 1
+      },
+      {
+        "100000" : 1
+      },
+      {
+        "0" : 0
+      },
+      {
+        "100000" : 1
+      },
+      {
+        "0" : 0
       }
     ]
   },
@@ -250,6 +271,42 @@
     "specialValue" : 0,
     "nullPercentage" : 0.0,
     "bucketBound2FreeSpace" : [
+      {
+        "218160000000" : 1
+      },
+      {
+        "216596000422" : 0.9928309517
+      },
+      {
+        "99398656173" : 0.4556227364
+      },
+      {
+        "214005947635" : 0.98095868920
+      },
+      {
+        "218160000000" : 1
+      },
+      {
+        "209788932500" : 0.96162877017
+      },
+      {
+        "218160000000" : 1
+      },
+      {
+        "216596000422" : 0.9928309517
+      },
+      {
+        "99398656173" : 0.4556227364
+      },
+      {
+        "214005947635" : 0.98095868920
+      },
+      {
+        "218160000000" : 1
+      },
+      {
+        "209788932500" : 0.96162877017
+      },
       {
         "218160000000" : 1
       }
@@ -388,6 +445,12 @@
     "bucketBound2FreeSpace" : [
       {
         "207792000000" : 1
+      },
+      {
+        "99882289728" : 0.480684
+      },
+      {
+        "99882289728" : 0.480684
       }
     ]
   },
@@ -443,9 +506,12 @@
     "nullPercentage" : 0.0,
     "bucketBound2FreeSpace" : [
       {
-        "1482071" : 1
+        "1482070" : 0.9784173334
       }
     ],
+    "eqConstraint2Probability" : {
+      "1482070" : 0.0107913333
+    },
     "stringTemplate" : {
       "minLength" : 19,
       "rangeLength" : 59
@@ -519,12 +585,22 @@
     "nullPercentage" : 0.0,
     "bucketBound2FreeSpace" : [
       {
-        "150" : 1
+        "149" : 0.99168
       }
     ],
+    "eqConstraint2Probability" : {
+      "149" : 0.00416
+    },
     "stringTemplate" : {
       "minLength" : 16,
-      "rangeLength" : 9
+      "rangeLength" : 9,
+      "likeIndex2Status" : {
+        "149" : [
+          true,
+          false,
+          false
+        ]
+      }
     }
   },
   "public.part.p_size" : {
@@ -535,9 +611,12 @@
     "nullPercentage" : 0.0,
     "bucketBound2FreeSpace" : [
       {
-        "50" : 1
+        "49" : 0.99168
       }
-    ]
+    ],
+    "eqConstraint2Probability" : {
+      "49" : 0.00416
+    }
   },
   "public.part.p_container" : {
     "columnType" : "VARCHAR",
@@ -823,9 +902,12 @@
     "nullPercentage" : 0.0,
     "bucketBound2FreeSpace" : [
       {
-        "5" : 1
+        "4" : 0.6
       }
     ],
+    "eqConstraint2Probability" : {
+      "4" : 0.2
+    },
     "stringTemplate" : {
       "minLength" : 4,
       "rangeLength" : 7
