@@ -55,7 +55,7 @@ class QueryInstantiationBasicTest {
         }
         List<AbstractFilterOperation> operations;
         operations = query2operations.get("2_1.sql_public.part");
-        assertNull(operations);
+        assertEquals(2, operations.size());
 
         operations = query2operations.get("3_1.sql_public.customer");
         assertEquals(1, operations.size());
@@ -75,7 +75,6 @@ class QueryInstantiationBasicTest {
         assertEquals(0.01904131080, operations.get(0).getProbability().doubleValue(), 0.0000001);
     }
 
-    @Disabled
     @Test
     void computeTest() throws Exception {
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
