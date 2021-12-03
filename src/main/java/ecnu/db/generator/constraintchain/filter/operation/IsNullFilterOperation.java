@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.schema.ColumnManager;
@@ -77,6 +78,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null);
     }
 
+    @JsonIgnore
     @Override
     public boolean isDifferentTable(String tableName) {
         return !canonicalColumnName.contains(tableName);

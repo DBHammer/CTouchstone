@@ -74,13 +74,13 @@ public class Column {
         this.nullPercentage = nullPercentage;
     }
 
-    private void dealZeroPb(List<Parameter> parameters){
+    private void dealZeroPb(List<Parameter> parameters) {
         for (Parameter parameter : parameters) {
-            parameter.setData(min-1);
+            parameter.setData(min - 1);
             if (likeParameterId.contains(parameter.getId())) {
-                parameter.setDataValue(stringTemplate.getLikeValue(specialValue, min-1, parameter.getDataValue()));
+                parameter.setDataValue(stringTemplate.getLikeValue(specialValue, min - 1, parameter.getDataValue()));
             } else {
-                parameter.setDataValue(transferDataToValue(min-1));
+                parameter.setDataValue(transferDataToValue(min - 1));
             }
         }
     }
@@ -109,7 +109,7 @@ public class Column {
 
         Map.Entry<Long, BigDecimal> map = new AbstractMap.SimpleEntry<>(bound, probability);
         for (Map.Entry<Long, BigDecimal> longBigDecimalEntry : bucketBound2FreeSpace) {
-            if(longBigDecimalEntry == map){
+            if (longBigDecimalEntry == map) {
                 return;
             }
         }
@@ -117,9 +117,9 @@ public class Column {
     }
 
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
-        if(probability.compareTo(BigDecimal.ZERO)==0){
+        if (probability.compareTo(BigDecimal.ZERO) == 0) {
             dealZeroPb(parameters);
-        }else {
+        } else {
             BigDecimal tempProbability = new BigDecimal(probability.toString());
             TreeSet<BigDecimal> probabilityHistogram = new TreeSet<>(eqRequest2ParameterIds.keySet());
             int index = parameters.size() - 1;
@@ -143,10 +143,8 @@ public class Column {
 
     public void insertUniVarProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         switch (operator) {
-            case NE, NOT_LIKE, NOT_IN ->
-                    eqRequest2ParameterIds.computeIfAbsent(BigDecimal.ONE.subtract(probability), i -> new LinkedList<>()).add(parameters.get(0));
-            case EQ, LIKE ->
-                    eqRequest2ParameterIds.computeIfAbsent(probability, i -> new LinkedList<>()).add(parameters.get(0));
+            case NE, NOT_LIKE, NOT_IN -> eqRequest2ParameterIds.computeIfAbsent(BigDecimal.ONE.subtract(probability), i -> new LinkedList<>()).add(parameters.get(0));
+            case EQ, LIKE -> eqRequest2ParameterIds.computeIfAbsent(probability, i -> new LinkedList<>()).add(parameters.get(0));
             case IN -> insertEqualProbability(probability, parameters);
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
@@ -214,6 +212,7 @@ public class Column {
                 bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bucketBound, freeSpace2BucketId.getValue().subtract(eqProbability)));
                 //顺序赋值
                 long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
+                eqConstraint2Probability.put(eqParameterData, eqProbability);
                 eqRequest2ParameterIds.get(eqProbability).forEach(parameter -> {
                     parameter.setData(eqParameterData);
                     if (likeParameterId.contains(parameter.getId())) {
@@ -266,15 +265,15 @@ public class Column {
             if (++i == bucketBound2FreeSpace.size()) {
                 randomSize = size - currentIndex;
             } else {
-                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue()-currentIndex;
+                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue() - currentIndex;
             }
             try {
                 //todo
                 long[] randomData;
                 long bound = bucket2Probability.getKey();
-                if(bound == lastBound){
+                if (bound == lastBound) {
                     randomData = new long[randomSize];
-                }else {
+                } else {
                     randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
                 }
                 lastBound = bound;

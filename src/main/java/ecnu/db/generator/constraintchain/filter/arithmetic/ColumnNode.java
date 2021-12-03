@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.arithmetic;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
@@ -33,6 +34,7 @@ public class ColumnNode extends ArithmeticNode {
         return Arrays.copyOf(columnValue, columnValue.length);
     }
 
+    @JsonIgnore
     @Override
     public boolean isDifferentTable(String tableName) {
         return !canonicalColumnName.contains(tableName);

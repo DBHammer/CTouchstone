@@ -6,6 +6,7 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
+import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -20,8 +21,7 @@ import java.util.stream.IntStream;
 
 import static ecnu.db.analyzer.TaskConfigurator.queryInstantiation;
 import static ecnu.db.utils.CommonUtils.readFile;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class QueryInstantiationBasicTest {
     Map<String, List<ConstraintChain>> query2chains;
@@ -59,10 +59,10 @@ class QueryInstantiationBasicTest {
 
         operations = query2operations.get("3_1.sql_public.customer");
         assertEquals(1, operations.size());
-        assertEquals(0.1997866667, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.20126, operations.get(0).getProbability().doubleValue(), 0.0000001);
         operations = query2operations.get("3_1.sql_public.orders");
         assertEquals(1, operations.size());
-        assertEquals(0.4827473333, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.480684, operations.get(0).getProbability().doubleValue(), 0.0000001);
 
 
         operations = query2operations.get("1_1.sql_public.lineitem");
@@ -86,37 +86,48 @@ class QueryInstantiationBasicTest {
         queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), samplingSize);
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
-            List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());
+            List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).toList();
             parameters.forEach((param) -> id2Parameter.put(param.getId(), param));
         }
-//        // 2.sql_1 simple eq
-//        // todo
-//        Column col = ColumnManager.getInstance().getColumn("tpch.part.p_size");
-//        assertTrue(Integer.parseInt(id2Parameter.get(19).getDataValue()) >= col.getMin(),
-//                String.format("'%s' should be greater than or equal to '%d'", id2Parameter.get(19).getData(), col.getMin()));
-//        assertTrue(Integer.parseInt(id2Parameter.get(19).getDataValue()) <= col.getMax(),
-//                String.format("'%s' should be less than '%d'", id2Parameter.get(19).getData(), col.getMax()));
-//        assertThat(id2Parameter.get(20).getDataValue(), startsWith("%"));
-//        assertEquals(id2Parameter.get(21).getData(), id2Parameter.get(22).getData());
+        // 2.sql_1 simple eq
+        // todo
+        Column col = ColumnManager.getInstance().getColumn("public.lineitem.l_quantity");
+        assertTrue(id2Parameter.get(12).getData() >= col.getMin(),
+                String.format("'%s' should be greater than or equal to '%d'", id2Parameter.get(12).getData(), col.getMin()));
+        assertTrue(id2Parameter.get(12).getData() <= col.getRange(),
+                String.format("'%s' should be less than '%d'", id2Parameter.get(12).getData(), col.getRange()));
+        /*assertTrue(Integer.parseInt(id2Parameter.get(19).getDataValue()) <= col.getRange(),
+                String.format("'%s' should be less than '%d'", id2Parameter.get(19).getData(), col.getRange()));*/
+        //assertThat(id2Parameter.get(20).getDataValue(), startsWith("%"));
+        //assertEquals(id2Parameter.get(21).getData(), id2Parameter.get(22).getData());
         // 6.sql_1 between
-        long left = id2Parameter.get(0).getData();
-        long right = id2Parameter.get(2).getData();
-        assertEquals(26694, right - left, 0);
+        long left = id2Parameter.get(10).getData();
+        long right = id2Parameter.get(11).getData();
+        assertEquals(100000, right - left, 0);
 
         // ******************************
         // *    test data generation    *
         // ******************************
         List<ConstraintChain> chains;
         Map<String, Double> map;
-        chains = query2chains.get("2_1.sql");
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_shipdate")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_quantity", "public.lineitem.l_discount", "public.orders.o_orderdate", "public.customer.c_mktsegment")), samplingSize);
+        chains = query2chains.get("1_1.sql");
         map = getRate(chains);
-        // todo 精度有待提高
-        assertEquals(0.00416, map.get("tpch.part"), 0.003);
-        assertEquals(0.2, map.get("tpch.region"), 0.003);
+        assertEquals(0.9928309517, map.get("public.lineitem"), 0.00005);
 
         chains = query2chains.get("6_1.sql");
         map = getRate(chains);
-        assertEquals(0.01904131080, map.get("tpch.lineitem"), 0.003);
+        assertEquals(0.01904131080, map.get("public.lineitem"), 0.001);
+
+        chains = query2chains.get("3_1.sql");
+        map = getRate(chains);
+        assertEquals(0.480684, map.get("public.orders"), 0.0001);
+
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.orders.o_comment")), samplingSize);
+        chains = query2chains.get("13_1.sql");
+        map = getRate(chains);
+        assertEquals(0.9892086667, map.get("public.orders"), 0.0001);
     }
 
     private Map<String, Double> getRate(List<ConstraintChain> chains) throws TouchstoneException {
@@ -126,7 +137,8 @@ class QueryInstantiationBasicTest {
             for (ConstraintChainNode node : chain.getNodes()) {
                 if (node instanceof ConstraintChainFilterNode) {
                     boolean[] evaluation = ((ConstraintChainFilterNode) node).getRoot().evaluate();
-                    double rate = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count() * 1.0 / evaluation.length;
+                    long satisfyRowCount = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count();
+                    double rate = satisfyRowCount * 1.0 / evaluation.length;
                     ret.put(tableName, rate);
                 }
             }

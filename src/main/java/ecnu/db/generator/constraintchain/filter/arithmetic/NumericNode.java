@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.arithmetic;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 
 import java.util.Arrays;
@@ -42,6 +43,7 @@ public class NumericNode extends ArithmeticNode {
         return value;
     }
 
+    @JsonIgnore
     @Override
     public boolean isDifferentTable(String tableName) {
         return false;

@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
@@ -97,6 +98,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         return ret;
     }
 
+    @JsonIgnore
     @Override
     public boolean isDifferentTable(String tableName) {
         return arithmeticTree.isDifferentTable(tableName);

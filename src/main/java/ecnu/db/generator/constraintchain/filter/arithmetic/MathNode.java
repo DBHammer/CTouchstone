@@ -1,5 +1,7 @@
 package ecnu.db.generator.constraintchain.filter.arithmetic;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.stream.IntStream;
 
 public class MathNode extends ArithmeticNode {
@@ -23,6 +25,7 @@ public class MathNode extends ArithmeticNode {
         return leftValue;
     }
 
+    @JsonIgnore
     @Override
     public boolean isDifferentTable(String tableName) {
         return leftNode.isDifferentTable(tableName) || rightNode.isDifferentTable(tableName);
