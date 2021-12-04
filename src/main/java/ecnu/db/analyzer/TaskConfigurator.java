@@ -302,7 +302,7 @@ public class TaskConfigurator implements Callable<Integer> {
         private String queriesDirectory;
         @CommandLine.Option(names = {"-o", "--output"}, required = true, description = "the dir path for output")
         private String resultDirectory;
-        @CommandLine.Option(names = {"--sample_size"}, defaultValue = "10000", description = "sample size for query instantiation")
+        @CommandLine.Option(names = {"--sample_size"}, defaultValue = "4000000", description = "sample size for query instantiation")
         private int sampleSize;
         @CommandLine.Option(names = {"--skip_threshold"}, description = "skip threshold, if passsing this threshold, then we will skip the node")
         private Double skipNodeThreshold;

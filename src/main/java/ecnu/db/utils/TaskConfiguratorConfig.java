@@ -7,7 +7,7 @@ public class TaskConfiguratorConfig {
     private DatabaseConnectorConfig databaseConnectorConfig;
     private String resultDirectory;
     private String queriesDirectory;
-    private int sampleSize = 10_000;
+    private int sampleSize = 4000_000;
     private Double skipNodeThreshold = 0.01;
     private String defaultSchemaName;
 

@@ -354,7 +354,12 @@ public class Column {
     public double[] calculate() {
         //lazy生成computeData
         if (!columnData2ComputeData) {
-            computeData = Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
+            computeData = switch (columnType){
+                case DATE,DATETIME -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double)data).toArray();
+                case DECIMAL -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
+                case INTEGER -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (specialValue * data) + min).toArray();
+                default -> throw new IllegalStateException("Unexpected value: " + columnType);
+            };
             columnData2ComputeData = true;
         }
         return computeData;

@@ -124,10 +124,11 @@ public class ColumnManager {
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = new HashMap<>();
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
-            if (column.getValue().getBucketBound2FreeSpace().size() > 1) {
+            if (column.getValue().getBucketBound2FreeSpace().size() > 1 ||
+                 column.getValue().getBucketBound2FreeSpace().get(0).getValue().compareTo(BigDecimal.ONE)<0) {
                 bucket2Probabilities.put(column.getKey(), column.getValue().getBucketBound2FreeSpace());
             }
-            if (column.getValue().getEqConstraint2Probability().size() > 1) {
+            if (column.getValue().getEqConstraint2Probability().size() > 0) {
                 eq2Probabilities.put(column.getKey(), column.getValue().getEqConstraint2Probability());
             }
         }
