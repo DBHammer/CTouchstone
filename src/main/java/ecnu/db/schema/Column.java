@@ -114,14 +114,11 @@ public class Column {
             parameter.setData(bound);
             parameter.setDataValue(transferDataToValue(bound));
         });
-
-        Map.Entry<Long, BigDecimal> map = new AbstractMap.SimpleEntry<>(bound, probability);
-        for (Map.Entry<Long, BigDecimal> longBigDecimalEntry : bucketBound2FreeSpace) {
-            if (longBigDecimalEntry == map) {
-                return;
+        if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
+            if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(bound))) {
+                this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
             }
         }
-        this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
     }
 
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
@@ -157,7 +154,7 @@ public class Column {
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
         }
-        if (operator == CompareOperator.LIKE || operator==CompareOperator.NOT_LIKE) {
+        if (operator == CompareOperator.LIKE || operator == CompareOperator.NOT_LIKE) {
             List<Integer> parameterIds = parameters.stream().mapToInt(Parameter::getId).boxed().toList();
             likeParameterId.addAll(parameterIds);
         }
@@ -248,18 +245,6 @@ public class Column {
             }
         }
         bucketBound2FreeSpace.addAll(newbucketBound2FreeSpace);
-
-        // 重新调整lowBound2EqProbability，移除没有等值约束的bound
-        bucketId2EqNum.values().removeIf(value -> value.get() != 0);
-        LinkedList<Long> prepareToDelete = new LinkedList<>();
-        for (int i = 0; i < bucketBound2FreeSpace.size() - 1; i++) {
-            if (bucketId2EqNum.containsKey(bucketBound2FreeSpace.get(i).getKey()) &&
-                    bucketId2EqNum.containsKey(bucketBound2FreeSpace.get(i + 1).getKey())) {
-                prepareToDelete.add(bucketBound2FreeSpace.get(i).getKey());
-                bucketBound2FreeSpace.get(i + 1).setValue(bucketBound2FreeSpace.get(i).getValue().add(bucketBound2FreeSpace.get(i + 1).getValue()));
-            }
-        }
-        bucketBound2FreeSpace.removeIf(longBigDecimalPair -> prepareToDelete.contains(longBigDecimalPair.getKey()));
     }
 
     /**
