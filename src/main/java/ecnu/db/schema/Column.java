@@ -157,7 +157,7 @@ public class Column {
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
         }
-        if (operator == CompareOperator.LIKE) {
+        if (operator == CompareOperator.LIKE || operator==CompareOperator.NOT_LIKE) {
             List<Integer> parameterIds = parameters.stream().mapToInt(Parameter::getId).boxed().toList();
             likeParameterId.addAll(parameterIds);
         }
