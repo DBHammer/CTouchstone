@@ -115,7 +115,7 @@ public class TaskConfigurator implements Callable<Integer> {
         ConstraintChainManager.getInstance().setResultDir(config.getResultDirectory());
         if (taskConfiguratorConfig.isLoad) {
             TableManager.getInstance().loadSchemaInfo();
-            ColumnManager.getInstance().loadColumnDistribution();
+            ColumnManager.getInstance().loadColumnMetaData();
         }
         DbConnector dbConnector;
         AbstractAnalyzer abstractAnalyzer;

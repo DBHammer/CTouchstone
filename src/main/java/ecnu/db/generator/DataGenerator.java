@@ -53,15 +53,19 @@ public class DataGenerator implements Callable<Integer> {
         return schema2chains;
     }
 
-    @Override
-    public Integer call() throws Exception {
+    private void init() throws IOException {
         TableManager.getInstance().setResultDir(configPath);
         TableManager.getInstance().loadSchemaInfo();
         ColumnManager.getInstance().setResultDir(configPath);
-        ColumnManager.getInstance().loadColumnDistribution();
+        ColumnManager.getInstance().loadColumnMetaData();
         ConstraintChainManager.getInstance().setResultDir(configPath);
-        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
         JoinInfoTableManager.getInstance().setJoinInfoTablePath(configPath);
+    }
+
+    @Override
+    public Integer call() throws Exception {
+        init();
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
         int stepRange = STEP_SIZE * generatorNum;
         Map<String, Collection<ConstraintChain>> schema2chains = getSchema2Chains(query2chains);
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
@@ -71,7 +75,6 @@ public class DataGenerator implements Callable<Integer> {
             int tableSize = TableManager.getInstance().getTableSize(schemaName);
             List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
             List<String> allColumnNames = TableManager.getInstance().getColumnNames(schemaName);
-            logger.info(String.valueOf(allColumnNames));
             String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
             JoinInfoTable joinInfoTable = new JoinInfoTable();
             while (resultStart < tableSize) {

@@ -1,5 +1,6 @@
 package ecnu.db.schema;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import ecnu.db.generator.constraintchain.filter.Parameter;
@@ -27,6 +28,7 @@ public class ColumnManager {
     private File distributionInfoPath;
     public static final String COLUMN_STRING_INFO = "/stringTemplate.json";
     public static final String COLUMN_DISTRIBUTION_INFO = "/distribution.json";
+    public static final String COLUMN_EQDISTRIBUTION_INFO = "/eq_distribution.json";
     public static final String COLUMN_METADATA_INFO = "/column.csv";
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
             .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
@@ -120,16 +122,22 @@ public class ColumnManager {
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columName2StringTemplate);
         CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_STRING_INFO, content);
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = new HashMap<>();
+        Map<String, Map<Long, BigDecimal>> eq2Probabilities = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
             if (column.getValue().getBucketBound2FreeSpace().size() > 1) {
                 bucket2Probabilities.put(column.getKey(), column.getValue().getBucketBound2FreeSpace());
             }
+            if (column.getValue().getEqConstraint2Probability().size() > 1) {
+                eq2Probabilities.put(column.getKey(), column.getValue().getEqConstraint2Probability());
+            }
         }
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(bucket2Probabilities);
         CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_DISTRIBUTION_INFO, content);
+        content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(eq2Probabilities);
+        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_EQDISTRIBUTION_INFO, content);
     }
 
-    public void loadColumnDistribution() throws IOException {
+    public void loadColumnMetaData() throws IOException {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(distributionInfoPath.getPath() + COLUMN_METADATA_INFO))) {
             String line = bufferedReader.readLine();
             while ((line = bufferedReader.readLine()) != null) {
@@ -142,6 +150,27 @@ public class ColumnManager {
                 column.initBucketBound2FreeSpace();
                 columns.put(line.substring(0, commaIndex), column);
             }
+        }
+    }
+
+    public void loadColumnDistribution() throws IOException {
+        String content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_STRING_INFO);
+        Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        });
+        for (Map.Entry<String, Map<Long, boolean[]>> template : columName2StringTemplate.entrySet()) {
+            columns.get(template.getKey()).getStringTemplate().setLikeIndex2Status(template.getValue());
+        }
+        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_DISTRIBUTION_INFO);
+        Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        });
+        for (Map.Entry<String, List<Map.Entry<Long, BigDecimal>>> bucket : bucket2Probabilities.entrySet()) {
+            columns.get(bucket.getKey()).setBucketBound2FreeSpace(bucket.getValue());
+        }
+        content = CommonUtils.readFile(distributionInfoPath.getPath()+COLUMN_EQDISTRIBUTION_INFO);
+        Map<String, Map<Long, BigDecimal>> eq2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        });
+        for (Map.Entry<String, Map<Long, BigDecimal>> eq2Probability : eq2Probabilities.entrySet()) {
+            columns.get(eq2Probability.getKey()).setEqConstraint2Probability(eq2Probability.getValue());
         }
     }
 

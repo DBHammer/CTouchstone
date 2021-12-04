@@ -11,15 +11,12 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ecnu.db.analyzer.TaskConfigurator.queryInstantiation;
 import static ecnu.db.utils.CommonUtils.readFile;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -78,6 +75,7 @@ class QueryInstantiationBasicTest {
     @Test
     void computeTest() throws Exception {
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
+        ColumnManager.getInstance().loadColumnMetaData();
         ColumnManager.getInstance().loadColumnDistribution();
         // **********************************
         // *    test query instantiation    *
