@@ -1,6 +1,7 @@
 package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 
@@ -16,14 +17,21 @@ import java.util.stream.IntStream;
 /**
  * @author wangqingshuai
  */
+@JsonPropertyOrder({"columnType", "nullPercentage", "specialValue", "min", "range", "minLength", "rangeLength"})
 public class Column {
     private ColumnType columnType;
     private long min;
     private long range;
     private long specialValue;
     private float nullPercentage;
+    private int minLength;
+    private int rangeLength;
+
+    @JsonIgnore
     private List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace = new LinkedList<>();
+    @JsonIgnore
     private Map<Long, BigDecimal> eqConstraint2Probability = new HashMap<>();
+    @JsonIgnore
     private StringTemplate stringTemplate;
 
     @JsonIgnore
@@ -38,12 +46,12 @@ public class Column {
     private boolean columnData2ComputeData = false;
     @JsonIgnore
     private double[] computeData;
-    @JsonIgnore
-    private BigDecimal Max = BigDecimal.ONE;
-    @JsonIgnore
-    private BigDecimal Min = new BigDecimal(0.0000000000000001);
 
     public Column() {
+    }
+
+    public void initStringTemplate() {
+        stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
     }
 
     public Column(ColumnType columnType) {
@@ -78,7 +86,7 @@ public class Column {
         for (Parameter parameter : parameters) {
             parameter.setData(min - 1);
             if (likeParameterId.contains(parameter.getId())) {
-                parameter.setDataValue(stringTemplate.getLikeValue(specialValue, min - 1, parameter.getDataValue()));
+                parameter.setDataValue(stringTemplate.getLikeValue(min - 1, parameter.getDataValue()));
             } else {
                 parameter.setDataValue(transferDataToValue(min - 1));
             }
@@ -216,7 +224,7 @@ public class Column {
                 eqRequest2ParameterIds.get(eqProbability).forEach(parameter -> {
                     parameter.setData(eqParameterData);
                     if (likeParameterId.contains(parameter.getId())) {
-                        parameter.setDataValue(stringTemplate.getLikeValue(specialValue, eqParameterData, parameter.getDataValue()));
+                        parameter.setDataValue(stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue()));
                     } else {
                         parameter.setDataValue(transferDataToValue(eqParameterData));
                     }
@@ -227,15 +235,19 @@ public class Column {
         }
 
         var bucketId2CardinalityList = bucketId2EqNum.entrySet().stream().filter(e -> e.getValue().get() > 0).toList();
+        List<Map.Entry<Long, BigDecimal>> newbucketBound2FreeSpace = new ArrayList<>();
         for (var bucketId2Cardinality : bucketId2CardinalityList) {
-            for (Map.Entry<Long, BigDecimal> space : bucketBound2FreeSpace) {
-                if (Objects.equals(space.getKey(), bucketId2Cardinality.getKey())) {
-                    bucketBound2FreeSpace.remove(space);
+            var spaceIterator = bucketBound2FreeSpace.iterator();
+            while (spaceIterator.hasNext()) {
+                var space = spaceIterator.next();
+                if (space.getKey().equals(bucketId2Cardinality.getKey())) {
+                    spaceIterator.remove();
                     long newSpaceBound = space.getKey() - bucketId2Cardinality.getValue().get();
-                    bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(newSpaceBound, space.getValue()));
+                    newbucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(newSpaceBound, space.getValue()));
                 }
             }
         }
+        bucketBound2FreeSpace.addAll(newbucketBound2FreeSpace);
 
         // 重新调整lowBound2EqProbability，移除没有等值约束的bound
         bucketId2EqNum.values().removeIf(value -> value.get() != 0);
@@ -363,11 +375,27 @@ public class Column {
         return computeData;
     }
 
+    public int getMinLength() {
+        return minLength;
+    }
+
+    public void setMinLength(int minLength) {
+        this.minLength = minLength;
+    }
+
+    public int getRangeLength() {
+        return rangeLength;
+    }
+
+    public void setRangeLength(int rangeLength) {
+        this.rangeLength = rangeLength;
+    }
+
     public String transferDataToValue(long data) {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> Double.toString(((double) (data + min)) / specialValue);
-            case VARCHAR -> stringTemplate.transferColumnData2Value(specialValue, data);
+            case VARCHAR -> stringTemplate.transferColumnData2Value(data);
             case DATE -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
             case DATETIME -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE);
             default -> throw new UnsupportedOperationException();
@@ -416,9 +444,5 @@ public class Column {
 
     public StringTemplate getStringTemplate() {
         return stringTemplate;
-    }
-
-    public void setStringTemplate(StringTemplate stringTemplate) {
-        this.stringTemplate = stringTemplate;
     }
 }

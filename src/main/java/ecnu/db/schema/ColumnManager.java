@@ -1,31 +1,33 @@
 package ecnu.db.schema;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.SequenceWriter;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
+import static ecnu.db.utils.CommonUtils.CSV_MAPPER;
 
 public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
-    private LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
+    private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class);
+    private final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
     private File distributionInfoPath;
-    public static final String COLUMN_MANAGE_INFO = "/distribution.json";
+    public static final String COLUMN_STRING_INFO = "/stringTemplate.json";
+    public static final String COLUMN_DISTRIBUTION_INFO = "/distribution.json";
+    public static final String COLUMN_METADATA_INFO = "/column.csv";
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
             .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
             .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
@@ -57,7 +59,7 @@ public class ColumnManager {
     }
 
     public void setResultDir(String resultDir) {
-        this.distributionInfoPath = new File(resultDir + COLUMN_MANAGE_INFO);
+        this.distributionInfoPath = new File(resultDir);
     }
 
     public Column getColumn(String columnName) {
@@ -91,15 +93,56 @@ public class ColumnManager {
         columns.put(columnName, column);
     }
 
+    public void storeColumnMetaData() throws IOException {
+        try (StringWriter writer = new StringWriter()) {
+            writer.write("ColumnName");
+            for (int i = 0; i < columnSchema.size(); i++) {
+                writer.write("," + columnSchema.columnName(i));
+            }
+            writer.write("\n");
+            SequenceWriter seqW = CSV_MAPPER.writer(columnSchema).writeValues(writer);
+            for (var column : columns.entrySet()) {
+                writer.write(column.getKey() + ", ");
+                seqW.write(column.getValue());
+            }
+            CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_METADATA_INFO, writer.toString());
+        }
+    }
+
     public void storeColumnDistribution() throws IOException {
-        String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columns);
-        CommonUtils.writeFile(distributionInfoPath.getPath(), content);
+        Map<String, Map<Long, boolean[]>> columName2StringTemplate = new HashMap<>();
+        for (Map.Entry<String, Column> column : columns.entrySet()) {
+            if (column.getValue().getColumnType() == ColumnType.VARCHAR &&
+                    column.getValue().getStringTemplate().getLikeIndex2Status() != null) {
+                columName2StringTemplate.put(column.getKey(), column.getValue().getStringTemplate().getLikeIndex2Status());
+            }
+        }
+        String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columName2StringTemplate);
+        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_STRING_INFO, content);
+        Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = new HashMap<>();
+        for (Map.Entry<String, Column> column : columns.entrySet()) {
+            if (column.getValue().getBucketBound2FreeSpace().size() > 1) {
+                bucket2Probabilities.put(column.getKey(), column.getValue().getBucketBound2FreeSpace());
+            }
+        }
+        content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(bucket2Probabilities);
+        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_DISTRIBUTION_INFO, content);
     }
 
     public void loadColumnDistribution() throws IOException {
-        String fileContent = CommonUtils.readFile(distributionInfoPath.getPath());
-        columns = CommonUtils.MAPPER.readValue(fileContent, new TypeReference<>() {
-        });
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(distributionInfoPath.getPath() + COLUMN_METADATA_INFO))) {
+            String line = bufferedReader.readLine();
+            while ((line = bufferedReader.readLine()) != null) {
+                int commaIndex = line.indexOf(',');
+                String columnData = line.substring(commaIndex + 1);
+                Column column = CSV_MAPPER.readerWithSchemaFor(Column.class).readValue(columnData);
+                if (column.getColumnType() == ColumnType.VARCHAR) {
+                    column.initStringTemplate();
+                }
+                column.initBucketBound2FreeSpace();
+                columns.put(line.substring(0, commaIndex), column);
+            }
+        }
     }
 
     public void initAllEqParameter() {
@@ -128,10 +171,8 @@ public class ColumnManager {
                     specialValue = (int) ((maxBound - min + 1) / range);
                 }
                 case VARCHAR -> {
-                    StringTemplate stringTemplate = new StringTemplate();
-                    stringTemplate.minLength = Integer.parseInt(sqlResult[index++]);
-                    stringTemplate.rangeLength = Integer.parseInt(sqlResult[index++]) - stringTemplate.minLength;
-                    column.setStringTemplate(stringTemplate);
+                    column.setMinLength(Integer.parseInt(sqlResult[index++]));
+                    column.setRangeLength(Integer.parseInt(sqlResult[index++]) - column.getMinLength());
                     min = 0;
                     range = Integer.parseInt(sqlResult[index++]);
                     specialValue = ThreadLocalRandom.current().nextInt();
@@ -152,6 +193,9 @@ public class ColumnManager {
             column.setMin(min);
             column.setRange(range);
             column.setSpecialValue(specialValue);
+            if (column.getColumnType() == ColumnType.VARCHAR) {
+                column.initStringTemplate();
+            }
             column.initBucketBound2FreeSpace();
             column.setNullPercentage(Float.parseFloat(sqlResult[index++]));
         }

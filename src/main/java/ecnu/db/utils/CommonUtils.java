@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNodeDeserializer;
@@ -43,6 +44,8 @@ public class CommonUtils {
     static {
         dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
     }
+
+    public static final CsvMapper CSV_MAPPER = new CsvMapper();
 
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)

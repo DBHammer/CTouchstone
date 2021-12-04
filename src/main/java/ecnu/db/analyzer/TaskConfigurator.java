@@ -171,7 +171,7 @@ public class TaskConfigurator implements Callable<Integer> {
         TableManager.getInstance().storeSchemaInfo();
         logger.info("持久化表结构信息成功");
         logger.info("开始持久化数据分布信息");
-        ColumnManager.getInstance().storeColumnDistribution();
+        ColumnManager.getInstance().storeColumnMetaData();
         logger.info("持久化数据分布信息成功");
         return queryFiles;
     }
