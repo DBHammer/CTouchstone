@@ -10,6 +10,7 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -55,10 +56,10 @@ class QueryInstantiationBasicTest {
 
         operations = query2operations.get("3_1.sql_public.customer");
         assertEquals(1, operations.size());
-        assertEquals(0.20126, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.1997866667, operations.get(0).getProbability().doubleValue(), 0.0000001);
         operations = query2operations.get("3_1.sql_public.orders");
         assertEquals(1, operations.size());
-        assertEquals(0.480684, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.4827473333, operations.get(0).getProbability().doubleValue(), 0.0000001);
 
 
         operations = query2operations.get("1_1.sql_public.lineitem");
@@ -71,6 +72,7 @@ class QueryInstantiationBasicTest {
         assertEquals(0.01904131080, operations.get(0).getProbability().doubleValue(), 0.0000001);
     }
 
+    @Disabled
     @Test
     void computeTest() throws Exception {
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
@@ -101,11 +103,16 @@ class QueryInstantiationBasicTest {
         // ******************************
         List<ConstraintChain> chains;
         Map<String, Double> map;
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_shipdate")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_shipdate", "public.lineitem.l_shipmode")), samplingSize);
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_quantity", "public.lineitem.l_discount", "public.orders.o_orderdate")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.orders.o_orderdate")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_commitdate", "public.lineitem.l_receiptdate")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.orders.o_orderdate", "public.orders.o_orderstatus")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_commitdate", "public.lineitem.l_receiptdate","public.lineitem.l_returnflag")), samplingSize);
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.customer.c_mktsegment")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.region.r_name", "public.orders.o_orderdate")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.nation.n_name")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.part.p_type", "public.part.p_name", "public.part.p_size", "public.part.p_brand", "public.part.p_container")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.supplier.s_comment")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.customer.c_acctbal", "public.customer.c_phone")), samplingSize);
         chains = query2chains.get("1_1.sql");
         map = getRate(chains);
         assertEquals(0.9928309517, map.get("public.lineitem"), 0.00005);
@@ -130,10 +137,106 @@ class QueryInstantiationBasicTest {
         map = getRate(chains);
         assertEquals(0.6320880022, map.get("public.lineitem"), 0.001);
 
+        chains = query2chains.get("5_1.sql");
+        map = getRate(chains);
+        assertEquals(0.2, map.get("public.region"), 0.0001);
+
+        chains = query2chains.get("5_1.sql");
+        map = getRate(chains);
+        assertEquals(0.1510966667, map.get("public.orders"), 0.0001);
+
+        chains = query2chains.get("7_1.sql");
+        map = getRate(chains);
+        assertEquals(0.08, map.get("public.nation"), 0.0001);
+
+        chains = query2chains.get("7_1.sql");
+        map = getRate(chains);
+        assertEquals(0.3046799690, map.get("public.lineitem"), 0.0001);
+
+        chains = query2chains.get("8_1.sql");
+        map = getRate(chains);
+        assertEquals(0.006835, map.get("public.part"), 0.0001);
+
+        chains = query2chains.get("8_1.sql");
+        map = getRate(chains);
+        assertEquals(0.2, map.get("public.region"), 0.0001);
+
+        chains = query2chains.get("8_1.sql");
+        map = getRate(chains);
+        assertEquals(0.304842, map.get("public.orders"), 0.0001);
+
+        chains = query2chains.get("9_1.sql");
+        map = getRate(chains);
+        assertEquals(0.0544, map.get("public.part"), 0.0001);
+
+        chains = query2chains.get("10_1.sql");
+        map = getRate(chains);
+        assertEquals(0.2464284316, map.get("public.lineitem"), 0.0001);
+
+        chains = query2chains.get("10_1.sql");
+        map = getRate(chains);
+        assertEquals(0.03767733333, map.get("public.orders"), 0.0001);
+
+        chains = query2chains.get("11_1.sql");
+        map = getRate(chains);
+        assertEquals(0.04, map.get("public.nation"), 0.0001);
+
+        chains = query2chains.get("12_1.sql");
+        map = getRate(chains);
+        assertEquals(0.005138459462, map.get("public.lineitem"), 0.0001);
+
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.orders.o_comment")), samplingSize);
         chains = query2chains.get("13_1.sql");
         map = getRate(chains);
         assertEquals(0.9892086667, map.get("public.orders"), 0.0001);
+
+        chains = query2chains.get("14_1.sql");
+        map = getRate(chains);
+        assertEquals(0.01254845894, map.get("public.lineitem"), 0.0001);
+
+        chains = query2chains.get("15_1.sql");
+        map = getRate(chains);
+        assertEquals(0.03837122983, map.get("public.lineitem"), 0.0001);
+
+        chains = query2chains.get("16_1.sql");
+        map = getRate(chains);
+        assertEquals(0.0004, map.get("public.supplier"), 0.0001);
+
+        /*chains = query2chains.get("17_1.sql");
+        map = getRate(chains);
+        assertEquals(0.001025*0.001025, map.get("public.part"), 0.00000001);*/
+
+        chains = query2chains.get("20_1.sql");
+        map = getRate(chains);
+        assertEquals(0.04, map.get("public.nation"), 0.0001);
+
+        chains = query2chains.get("20_1.sql");
+        map = getRate(chains);
+        assertEquals(0.011165, map.get("public.part"), 0.0001);
+
+        chains = query2chains.get("20_1.sql_2");
+        map = getRate(chains);
+        assertEquals(0.1514228369, map.get("public.lineitem"), 0.0001);
+
+        chains = query2chains.get("21_1.sql");
+        map = getRate(chains);
+        assertEquals(0.6320880022, map.get("public.lineitem"), 0.001);
+
+        chains = query2chains.get("21_1.sql");
+        map = getRate(chains);
+        assertEquals(0.04, map.get("public.nation"), 0.0001);
+
+        chains = query2chains.get("21_1.sql");
+        map = getRate(chains);
+        assertEquals(0.4862753333, map.get("public.orders"), 0.0001);
+
+        chains = query2chains.get("22_1.sql");
+        map = getRate(chains);
+        assertEquals(0.2555866667, map.get("public.customer"), 0.0001);
+
+        chains = query2chains.get("22_1.sql_2");
+        map = getRate(chains);
+        assertEquals(0.1272, map.get("public.customer"), 0.0001);
     }
 
     private Map<String, Double> getRate(List<ConstraintChain> chains) throws TouchstoneException {

@@ -94,12 +94,13 @@ public class LogicNode extends BoolExprNode {
             computeVectors[i] = children.get(i).evaluate();
         }
         boolean[] resultVector = new boolean[computeVectors[0].length];
-        Arrays.fill(resultVector, true);
         if (getRealType() == AND) {
+            Arrays.fill(resultVector, true);
             Arrays.stream(computeVectors).forEach(
                     computeVector -> IntStream.range(0, resultVector.length)
                             .forEach(i -> resultVector[i] &= computeVector[i]));
         } else if (getRealType() == OR) {
+            Arrays.fill(resultVector, false);
             Arrays.stream(computeVectors).forEach(
                     computeVector -> IntStream.range(0, resultVector.length)
                             .forEach(i -> resultVector[i] |= computeVector[i]));
