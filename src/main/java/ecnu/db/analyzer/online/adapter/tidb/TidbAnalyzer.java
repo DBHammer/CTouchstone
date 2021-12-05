@@ -2,7 +2,6 @@ package ecnu.db.analyzer.online.adapter.tidb;
 
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.node.ExecutionNode;
-import ecnu.db.analyzer.online.node.ExecutionNodeType;
 import ecnu.db.analyzer.online.node.FilterNode;
 import ecnu.db.analyzer.online.node.JoinNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
@@ -168,14 +167,14 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                     && nodeTypeRef.isIndexScanNode(rawNode.right.left.nodeType)
                     && nodeTypeRef.isFilterNode(rawNode.right.right.nodeType)) {
                 node = new FilterNode(rawNode.right.right.id, rawNode.rowCount, rawNode.right.right.operatorInfo);
-                node.setLeftNode(new JoinNode(rawNode.right.left.id, rawNode.right.left.rowCount, rawNode.operatorInfo,false, 0));
+                node.setLeftNode(new JoinNode(rawNode.right.left.id, rawNode.right.left.rowCount, rawNode.operatorInfo,false, false, 0));
                 String canonicalTblName = rawNode.right.right.left.operatorInfo;
                 node.getLeftNode().setRightNode(new FilterNode(rawNode.right.right.left.id,
                         TableManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName));
                 node.getLeftNode().setLeftNode(buildExecutionTree(rawNode.left));
                 return node;
             }
-            node = new JoinNode(rawNode.id, rawNode.rowCount, rawNode.operatorInfo,false, 0);
+            node = new JoinNode(rawNode.id, rawNode.rowCount, rawNode.operatorInfo,false, false, 0);
             node.setLeftNode(rawNode.left == null ? null : buildExecutionTree(rawNode.left));
             node.setRightNode(rawNode.right == null ? null : buildExecutionTree(rawNode.right));
         } else if (nodeTypeRef.isReaderNode(nodeType)) {

@@ -9,9 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,7 +60,10 @@ public class ConstraintChainManager {
                 if (removeData(graph).equals(removeData(oldGraph))) {
                     CommonUtils.writeFile(path, graph);
                 } else {
-                    String currentTime = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME);
+                    //String currentTime = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME);
+                    Calendar date = Calendar.getInstance();
+                    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+                    String currentTime = format.format(date.getTime());
                     String newPath = resultDir + "/pic/" + currentTime + "_" + stringListEntry.getKey() + ".dot";
                     CommonUtils.writeFile(newPath + "", graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());

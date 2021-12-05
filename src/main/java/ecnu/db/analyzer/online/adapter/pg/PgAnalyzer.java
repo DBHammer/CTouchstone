@@ -198,7 +198,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         }
         joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
-        return new JoinNode(path.toString(), rowCount, joinInfo, true, 0);
+        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, 0);
     }
 
     private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
@@ -218,7 +218,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
             rowCount = fkRowCount;
             pkDistinctProbability = ((double) joinRowCount - (double) fkRowCount) / (double) pkRowCount;
         }
-        return new JoinNode(path.toString(), rowCount, joinInfo, false, pkDistinctProbability);
+        boolean isSemiJoin = PgJsonReader.isSemiJoin(path);
+        JoinNode joinNode = new JoinNode(path.toString(), rowCount, joinInfo, false, isSemiJoin, pkDistinctProbability);
+        if(isSemiJoin) {
+            joinNode.setPkDistinctSize(joinNode.getOutputRows());
+        }
+        return joinNode;
     }
 
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {

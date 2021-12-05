@@ -6,6 +6,7 @@ import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
+import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -19,6 +20,7 @@ import java.util.stream.IntStream;
 
 import static ecnu.db.utils.CommonUtils.readFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class QueryInstantiationBasicTest {
     Map<String, List<ConstraintChain>> query2chains;
@@ -86,17 +88,17 @@ class QueryInstantiationBasicTest {
             List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).toList();
             parameters.forEach((param) -> id2Parameter.put(param.getId(), param));
         }
-//        // 2.sql_1 simple eq
-//        Column col = ColumnManager.getInstance().getColumn("public.lineitem.l_quantity");
-//        assertTrue(id2Parameter.get(15).getData() >= col.getMin(),
-//                String.format("'%s' should be greater than or equal to '%d'", id2Parameter.get(15).getData(), col.getMin()));
-//        assertTrue(id2Parameter.get(15).getData() <= col.getRange(),
-//                String.format("'%s' should be less than '%d'", id2Parameter.get(15).getData(), col.getRange()));
-//
-//        // 6.sql_1 between
-//        long left = id2Parameter.get(13).getData();
-//        long right = id2Parameter.get(14).getData();
-//        assertEquals(100000, right - left, 0);
+        // 2.sql_1 simple eq
+        Column col = ColumnManager.getInstance().getColumn("public.part.p_size");
+        assertTrue(id2Parameter.get(88).getData() >= col.getMin(),
+                String.format("'%s' should be greater than or equal to '%d'", id2Parameter.get(88).getData(), col.getMin()));
+        assertTrue(id2Parameter.get(88).getData() <= col.getRange(),
+                String.format("'%s' should be less than '%d'", id2Parameter.get(88).getData(), col.getRange()));
+
+        // 6.sql_1 between
+        long left = id2Parameter.get(126).getData();
+        long right = id2Parameter.get(127).getData();
+        assertEquals(4.154052365E9, right - left, 0);
 
         // ******************************
         // *    test data generation    *

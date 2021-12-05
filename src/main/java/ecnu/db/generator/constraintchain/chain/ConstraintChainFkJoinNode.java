@@ -9,6 +9,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String refCols;
     private String localCols;
     private long pkTag;
+    private long pkDistinctSize = 0;
     private BigDecimal probability;
     private BigDecimal probabilityWithFailFilter;
     private boolean antiOrNot = false;
@@ -86,6 +87,14 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     public void setProbabilityWithFailFilter(BigDecimal probabilityWithFailFilter) {
         this.probabilityWithFailFilter = probabilityWithFailFilter;
+    }
+
+    public void setPkDistinctSize(long pkDistinctSize) {
+        this.pkDistinctSize = pkDistinctSize;
+    }
+
+    public long getPkDistinctSize() {
+        return pkDistinctSize;
     }
 
     public BigDecimal getProbabilityWithFailFilter() {

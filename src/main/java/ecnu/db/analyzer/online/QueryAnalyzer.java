@@ -210,6 +210,9 @@ public class QueryAnalyzer {
                 BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
+            if(node.isSemiJoin()){
+                fkJoinNode.setPkDistinctSize(node.getOutputRows());
+            }
             constraintChain.addNode(fkJoinNode);
             return node.getOutputRows();
         }
