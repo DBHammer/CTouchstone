@@ -1,5 +1,7 @@
 package ecnu.db.generator.constraintchain.chain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.math.BigDecimal;
 
 /**
@@ -9,6 +11,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String refCols;
     private String localCols;
     private long pkTag;
+    @JsonIgnore
     private long pkDistinctSize = 0;
     private BigDecimal probability;
     private BigDecimal probabilityWithFailFilter;
@@ -54,7 +57,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     }
 
     public void setProbability(BigDecimal probability) {
-        this.probability = probability;
+        this.probability = probability.stripTrailingZeros();
     }
 
     public String getLocalCols() {
@@ -86,7 +89,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     }
 
     public void setProbabilityWithFailFilter(BigDecimal probabilityWithFailFilter) {
-        this.probabilityWithFailFilter = probabilityWithFailFilter;
+        this.probabilityWithFailFilter = probabilityWithFailFilter.stripTrailingZeros();
     }
 
     public void setPkDistinctSize(long pkDistinctSize) {

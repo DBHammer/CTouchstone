@@ -14,12 +14,12 @@
                     "parameters" : [
                       {
                         "id" : 8,
-                        "data" : 4,
+                        "data" : 5,
                         "actual" : true
                       },
                       {
                         "id" : 9,
-                        "data" : 5,
+                        "data" : 4,
                         "actual" : true
                       }
                     ],
@@ -58,7 +58,7 @@
                     "parameters" : [
                       {
                         "id" : 11,
-                        "data" : 217929654045,
+                        "data" : 218115676755,
                         "actual" : true
                       }
                     ],
@@ -85,7 +85,7 @@
                     "parameters" : [
                       {
                         "id" : 10,
-                        "data" : 212894526193,
+                        "data" : 212769030369,
                         "actual" : true
                       }
                     ],
@@ -146,7 +146,7 @@
                     "parameters" : [
                       {
                         "id" : 101,
-                        "data" : 149996,
+                        "data" : 149992,
                         "actual" : true
                       },
                       {
@@ -156,27 +156,27 @@
                       },
                       {
                         "id" : 103,
-                        "data" : 149995,
-                        "actual" : true
-                      },
-                      {
-                        "id" : 104,
                         "data" : 149994,
                         "actual" : true
                       },
                       {
-                        "id" : 105,
-                        "data" : 149999,
-                        "actual" : true
-                      },
-                      {
-                        "id" : 106,
+                        "id" : 104,
                         "data" : 149997,
                         "actual" : true
                       },
                       {
+                        "id" : 105,
+                        "data" : 149995,
+                        "actual" : true
+                      },
+                      {
+                        "id" : 106,
+                        "data" : 149996,
+                        "actual" : true
+                      },
+                      {
                         "id" : 107,
-                        "data" : 149998,
+                        "data" : 149999,
                         "actual" : true
                       }
                     ],
@@ -193,7 +193,7 @@
         },
         {
           "constraintChainNodeType" : "AGGREGATE",
-          "aggProbability" : 0.00002608378110,
+          "aggProbability" : 0.0000260837811,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -517,7 +517,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 139,
+                    "id" : 140,
                     "data" : 149,
                     "actual" : true
                   }
@@ -595,7 +595,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 140,
+                    "id" : 139,
                     "data" : 4,
                     "actual" : true
                   }
@@ -983,7 +983,7 @@
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.3046799690,
+                    "probability" : 0.304679969,
                     "canonicalColumnName" : "public.lineitem.l_shipdate",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -1004,7 +1004,7 @@
               }
             ]
           },
-          "probability" : 0.3046799690
+          "probability" : 0.304679969
         },
         {
           "constraintChainNodeType" : "FK_JOIN",
@@ -1327,37 +1327,37 @@
                     "parameters" : [
                       {
                         "id" : 110,
-                        "data" : 149990,
+                        "data" : 149998,
                         "actual" : true
                       },
                       {
                         "id" : 111,
-                        "data" : 149991,
-                        "actual" : true
-                      },
-                      {
-                        "id" : 112,
-                        "data" : 149989,
-                        "actual" : true
-                      },
-                      {
-                        "id" : 113,
-                        "data" : 149988,
-                        "actual" : true
-                      },
-                      {
-                        "id" : 114,
                         "data" : 149992,
                         "actual" : true
                       },
                       {
-                        "id" : 115,
+                        "id" : 112,
+                        "data" : 149993,
+                        "actual" : true
+                      },
+                      {
+                        "id" : 113,
                         "data" : 149994,
                         "actual" : true
                       },
                       {
+                        "id" : 114,
+                        "data" : 149995,
+                        "actual" : true
+                      },
+                      {
+                        "id" : 115,
+                        "data" : 149996,
+                        "actual" : true
+                      },
+                      {
                         "id" : 116,
-                        "data" : 149999,
+                        "data" : 149997,
                         "actual" : true
                       }
                     ],
@@ -1594,7 +1594,7 @@
           "localCols" : "public.partsupp.ps_suppkey",
           "pkTag" : 256,
           "probability" : 0.01948051948,
-          "pkDistinctProbability" : 0.0,
+          "pkDistinctProbability" : 174.0,
           "antiJoin" : false
         }
       ],
@@ -1666,8 +1666,8 @@
               {
                 "parameters" : [
                   {
-                    "id" : 96,
-                    "data" : -27046448119,
+                    "id" : 95,
+                    "data" : -27058870978,
                     "actual" : true
                   }
                 ],
@@ -1726,7 +1726,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 95,
+                    "id" : 96,
                     "data" : 23,
                     "actual" : true
                   }
@@ -2126,7 +2126,7 @@
                 "parameters" : [
                   {
                     "id" : 120,
-                    "data" : 27046448119,
+                    "data" : 27058870978,
                     "actual" : true
                   }
                 ],
@@ -2160,7 +2160,7 @@
           "pkTag" : 64,
           "probability" : 0.01389925806,
           "probabilityWithFailFilter" : 0.01390857183,
-          "pkDistinctProbability" : 0.0,
+          "pkDistinctProbability" : 52724.0,
           "antiJoin" : false
         }
       ],
@@ -2239,7 +2239,7 @@
           "groupKey" : [
             "public.partsupp.ps_partkey"
           ],
-          "aggProbability" : 0.9442733990,
+          "aggProbability" : 0.944273399,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -2441,7 +2441,7 @@
                       },
                       {
                         "id" : 23,
-                        "data" : 45,
+                        "data" : 43,
                         "actual" : true
                       },
                       {
@@ -2451,22 +2451,22 @@
                       },
                       {
                         "id" : 25,
-                        "data" : 43,
+                        "data" : 45,
                         "actual" : true
                       },
                       {
                         "id" : 26,
-                        "data" : 48,
+                        "data" : 47,
                         "actual" : true
                       },
                       {
                         "id" : 27,
-                        "data" : 49,
+                        "data" : 48,
                         "actual" : true
                       },
                       {
                         "id" : 28,
-                        "data" : 47,
+                        "data" : 49,
                         "actual" : true
                       },
                       {
@@ -2570,7 +2570,7 @@
                             "parameters" : [
                               {
                                 "id" : 69,
-                                "data" : 38,
+                                "data" : 37,
                                 "actual" : true
                               },
                               {
@@ -2580,7 +2580,7 @@
                               },
                               {
                                 "id" : 71,
-                                "data" : 37,
+                                "data" : 38,
                                 "actual" : true
                               },
                               {
@@ -2911,7 +2911,7 @@
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.01904131080,
+                    "probability" : 0.0190413108,
                     "canonicalColumnName" : "public.lineitem.l_shipdate",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -2971,7 +2971,7 @@
               }
             ]
           },
-          "probability" : 0.01904131080
+          "probability" : 0.0190413108
         }
       ],
       "tableName" : "public.lineitem"

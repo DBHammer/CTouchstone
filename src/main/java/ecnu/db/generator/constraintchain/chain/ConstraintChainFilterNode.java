@@ -55,7 +55,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
     }
 
     public void setProbability(BigDecimal probability) {
-        this.probability = probability;
+        this.probability = probability.stripTrailingZeros();
     }
 
     @Override

@@ -79,6 +79,6 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
     }
 
     public void setProbability(BigDecimal probability) {
-        this.probability = probability;
+        this.probability = probability == null ? null : probability.stripTrailingZeros();
     }
 }
