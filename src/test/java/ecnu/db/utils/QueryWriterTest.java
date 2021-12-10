@@ -6,6 +6,7 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +21,7 @@ class QueryWriterTest {
     }
 
     @Test
-    public void testTemplatizeSqlInt() {
+    public void testTemplatizeSqlInt() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a=5";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "5"));
@@ -29,7 +30,7 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlFloat() {
+    void testTemplatizeSqlFloat() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a=1.5";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "1.5"));
@@ -38,7 +39,7 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlStr() {
+    void testTemplatizeSqlStr() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a='5'";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "5"));
@@ -47,7 +48,7 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlDate() {
+    void testTemplatizeSqlDate() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a='1998-12-12 12:00:00.000000'";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "1998-12-12 12:00:00.000000"));
@@ -56,7 +57,7 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlConflicts() {
+    void testTemplatizeSqlConflicts() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a='5' or b='5'";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, "db.test.a", "5"));
@@ -66,7 +67,7 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlCannotFind() {
+    void testTemplatizeSqlCannotFind() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a='5' or b='5'";
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter(0, "db.test.b", "6");

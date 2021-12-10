@@ -10,12 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.*;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static ecnu.db.analyzer.online.adapter.pg.PgAnalyzer.TIME_OR_DATE;
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
 /**
@@ -24,13 +26,15 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 public class QueryWriter {
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
     private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
+    private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* (\\+|\\-) interval '[0-9]+' (month|year|day)");
+    private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* ((\\+|\\-) [0-9]+\\.*[0-9]*)*");
     public static final String QUERY_DIR = "/queries/";
     private final String queryDir;
     private DbType dbType;
 
     public QueryWriter(String resultDir) {
         this.queryDir = resultDir + QUERY_DIR;
-        if(new File(queryDir).mkdir()){
+        if (new File(queryDir).mkdir()) {
             logger.info("create query dir for output");
         }
     }
@@ -47,7 +51,17 @@ public class QueryWriter {
      * @param parameters         需要模板化的参数
      * @return 模板化的SQL语句
      */
-    public String templatizeSql(String queryCanonicalName, String query, List<Parameter> parameters) {
+    public String templatizeSql(String queryCanonicalName, String query, List<Parameter> parameters) throws SQLException, ClassNotFoundException {
+        Matcher matcher = DATECompute.matcher(query);
+        while (matcher.find()) {
+            String dateCompute = matcher.group();
+            query = query.replace(dateCompute, evaluate(dateCompute, true));
+        }
+        matcher = NumberCompute.matcher(query);
+        while (matcher.find()) {
+            String dateCompute = matcher.group();
+            query = query.replace(dateCompute, evaluate(dateCompute, false));
+        }
         Lexer lexer = new Lexer(query, null, dbType);
         Map<String, Collection<Map.Entry<Integer, Integer>>> literalMap = new HashMap<>();
         int lastPos = 0, pos;
@@ -109,6 +123,25 @@ public class QueryWriter {
         return query;
     }
 
+
+    public String evaluate(String str, boolean isDate) throws ClassNotFoundException, SQLException {
+        String JDBC_URL = "jdbc:h2:mem:h2DB;MODE=MYSQL;";
+        String DRIVER_CLASS = "org.h2.Driver";
+        String USER = "root";
+        String PASSWORD = "root";
+        Class.forName(DRIVER_CLASS);
+        Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+        Statement statement = conn.createStatement();
+        String date = isDate ? "DATE " : " ";
+        ResultSet resultSet = statement.executeQuery("SELECT " + date + str);
+        String result = "";
+        if (resultSet.next()) {
+            result = resultSet.getString(1);
+        }
+        return "'" + result + "'";
+    }
+
+
     /**
      * 为模板化后的SQL语句添加conflictArgs和cannotFindArgs参数
      *
@@ -129,10 +162,10 @@ public class QueryWriter {
         for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
             String query = queryName2QueryTemplate.getValue();
             List<List<String>> matches = matchPattern(PATTERN, query);
-            if(matches.isEmpty()){
+            if (matches.isEmpty()) {
                 String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
                 CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
-            }else {
+            } else {
                 for (List<String> group : matches) {
                     int parameterId = Integer.parseInt(group.get(1));
                     Parameter parameter = id2Parameter.remove(parameterId);
@@ -147,7 +180,7 @@ public class QueryWriter {
                     String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
                     CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
                 }
-           }
+            }
         }
     }
 }
