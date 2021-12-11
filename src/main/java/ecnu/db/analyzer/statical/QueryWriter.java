@@ -62,6 +62,16 @@ public class QueryWriter {
             String dateCompute = matcher.group();
             query = query.replace(dateCompute, evaluate(dateCompute, false));
         }
+        for (Parameter parameter : parameters) {
+            List<String> cols = parameter.hasOnlyOneColumn();
+            if(cols.size()!=1){
+                String pattern = cols.stream().map(col -> col.split("\\.")[2]).collect(Collectors.joining(" .{1,2} "));
+                matcher = Pattern.compile(pattern).matcher(query);
+                if(matcher.find()){
+                    query = query.replace(matcher.group(), matcher.group()+" +'"+parameter.getId()+"' ");
+                }
+            }
+        }
         Lexer lexer = new Lexer(query, null, dbType);
         // paramter data, column name -> start location and end location
         Map<String, List<parameterColumnName2Location>> literalMap = new HashMap<>();
@@ -112,8 +122,7 @@ public class QueryWriter {
         List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
         TreeMap<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> replaceParams = new TreeMap<>();
         for (Parameter parameter : parameters) {
-            if(!parameter.hasOnlyOneColumn()){
-                cannotFindArgs.add(parameter);
+            if(parameter.hasOnlyOneColumn().size()!=1){
                 continue;
             }
 
@@ -217,7 +226,11 @@ public class QueryWriter {
                     if (parameter != null) {
                         String parameterData = parameter.getDataValue();
                         try {
-                            query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
+                            if(parameterData.contains("interval")){
+                                query = query.replaceAll(group.get(0), String.format("%s", parameterData));
+                            }else {
+                                query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
+                            }
                         } catch (IllegalArgumentException e) {
                             logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
                         }

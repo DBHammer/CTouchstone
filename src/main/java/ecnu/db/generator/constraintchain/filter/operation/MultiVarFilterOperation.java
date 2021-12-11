@@ -147,5 +147,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         }
         long internalValue = (long) (vector[pos] * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         parameters.forEach(param -> param.setData(internalValue));
+        //todo check parameter type
+        parameters.forEach(param -> param.setDataValue("interval '" + internalValue / 86400000 + "' day"));
     }
 }

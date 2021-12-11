@@ -68,13 +68,13 @@ public class Parameter {
         this.dataValue = dataValue;
     }
 
-    public boolean hasOnlyOneColumn(){
+    public List<String> hasOnlyOneColumn(){
         Matcher matcher = CanonicalColumnName.matcher(operand);
-        int size = 0;
+        List<String> cols = new ArrayList<>();
         while (matcher.find()){
-           size++;
+           cols.add(matcher.group());
         }
-        return size == 1;
+        return cols;
     }
 
     public Integer getId() {
