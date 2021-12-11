@@ -68,6 +68,15 @@ public class Parameter {
         this.dataValue = dataValue;
     }
 
+    public boolean hasOnlyOneColumn(){
+        Matcher matcher = CanonicalColumnName.matcher(operand);
+        int size = 0;
+        while (matcher.find()){
+           size++;
+        }
+        return size == 1;
+    }
+
     public Integer getId() {
         return id;
     }

@@ -26,8 +26,8 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 public class QueryWriter {
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
     private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
-    private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* (\\+|\\-) interval '[0-9]+' (month|year|day)");
-    private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* ((\\+|\\-) [0-9]+\\.*[0-9]*)*");
+    private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
+    private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)*");
     public static final String QUERY_DIR = "/queries/";
     private final String queryDir;
     private DbType dbType;
@@ -51,7 +51,7 @@ public class QueryWriter {
      * @param parameters         需要模板化的参数
      * @return 模板化的SQL语句
      */
-    public String templatizeSql(String queryCanonicalName, String query, List<Parameter> parameters) throws SQLException, ClassNotFoundException {
+    public String templatizeSql(String queryCanonicalName, String query, List<Parameter> parameters) throws SQLException {
         Matcher matcher = DATECompute.matcher(query);
         while (matcher.find()) {
             String dateCompute = matcher.group();
@@ -63,18 +63,47 @@ public class QueryWriter {
             query = query.replace(dateCompute, evaluate(dateCompute, false));
         }
         Lexer lexer = new Lexer(query, null, dbType);
-        Map<String, Collection<Map.Entry<Integer, Integer>>> literalMap = new HashMap<>();
+        // paramter data, column name -> start location and end location
+        Map<String, List<parameterColumnName2Location>> literalMap = new HashMap<>();
         int lastPos = 0, pos;
+        String lastColumn ="";
         while (!lexer.isEOF()) {
             lexer.nextToken();
+            // 读进一个关键字
             Token token = lexer.token();
+            // 更新到最新的位置
             pos = lexer.pos();
-            if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS) {
+            // 如果可能是列名
+            if(token == Token.IDENTIFIER) {
+                while(query.length() > pos && query.charAt(pos)=='.'){
+                    lexer.nextToken();
+                    lexer.nextToken();
+                    pos = lexer.pos();
+                }
+                String col = query.substring(lastPos, pos).trim();
+                if(!col.equals("DATE")){
+                    lastColumn = col;
+                }
+            }else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS) {
                 String str = query.substring(lastPos, pos).trim();
                 if (!literalMap.containsKey(str)) {
                     literalMap.put(str, new ArrayList<>());
                 }
-                literalMap.get(str).add(new AbstractMap.SimpleEntry<>(pos - str.length(), pos));
+                parameterColumnName2Location currentLocations = null;
+                for (parameterColumnName2Location parameterColumnName2Location : literalMap.get(str)) {
+                    if(parameterColumnName2Location.columnName.equals(lastColumn)){
+                        currentLocations = parameterColumnName2Location;
+                        break;
+                    }
+                }
+                if(currentLocations!=null){
+                    currentLocations.range.add(new AbstractMap.SimpleEntry<>(pos - str.length(), pos));
+                }else {
+                    currentLocations = new parameterColumnName2Location();
+                    currentLocations.columnName = lastColumn;
+                    currentLocations.range.add(new AbstractMap.SimpleEntry<>(pos - str.length(), pos));
+                    literalMap.get(str).add(currentLocations);
+                }
             }
             lastPos = pos;
         }
@@ -83,8 +112,13 @@ public class QueryWriter {
         List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
         TreeMap<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> replaceParams = new TreeMap<>();
         for (Parameter parameter : parameters) {
+            if(!parameter.hasOnlyOneColumn()){
+                cannotFindArgs.add(parameter);
+                continue;
+            }
+
             String data = parameter.getDataValue();
-            Collection<Map.Entry<Integer, Integer>> matches = literalMap.getOrDefault(data, new ArrayList<>());
+            List<parameterColumnName2Location> matches = literalMap.getOrDefault(data, new ArrayList<>());
             if (literalMap.containsKey("'" + data + "'")) {
                 matches.addAll(literalMap.get("'" + data + "'"));
             }
@@ -92,11 +126,27 @@ public class QueryWriter {
             if (matches.isEmpty()) {
                 cannotFindArgs.add(parameter);
             } else if (matches.size() > 1) {
-                conflictArgs.add(parameter);
+                String col = parameter.getOperand();
+                parameterColumnName2Location location = null;
+                for (parameterColumnName2Location match : matches) {
+                    if(col.contains(match.columnName)){
+                        location = match;
+                        break;
+                    }
+                }
+                if(location!=null){
+                    var pair = location.range;
+                    for (Map.Entry<Integer, Integer> range : pair) {
+                        replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));
+                    }
+                }else{
+                    conflictArgs.add(parameter);
+                }
             } else {
-                var pair = matches.stream().findFirst().get();
-                int startPos = pair.getKey();
-                replaceParams.put(startPos, new AbstractMap.SimpleEntry<>(parameter, pair));
+                var pair = matches.stream().findFirst().get().range;
+                for (Map.Entry<Integer, Integer> range : pair) {
+                    replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));
+                }
             }
         }
         StringBuilder fragments = new StringBuilder();
@@ -124,13 +174,8 @@ public class QueryWriter {
     }
 
 
-    public String evaluate(String str, boolean isDate) throws ClassNotFoundException, SQLException {
-        String JDBC_URL = "jdbc:h2:mem:h2DB;MODE=MYSQL;";
-        String DRIVER_CLASS = "org.h2.Driver";
-        String USER = "root";
-        String PASSWORD = "root";
-        Class.forName(DRIVER_CLASS);
-        Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+    public String evaluate(String str, boolean isDate) throws SQLException {
+        Connection conn = DriverManager.getConnection("jdbc:h2:mem:h2DB;MODE=MYSQL;", "root", "root");
         Statement statement = conn.createStatement();
         String date = isDate ? "DATE " : " ";
         ResultSet resultSet = statement.executeQuery("SELECT " + date + str);
@@ -182,5 +227,10 @@ public class QueryWriter {
                 }
             }
         }
+    }
+
+    private static class parameterColumnName2Location {
+        public String columnName;
+        public List<Map.Entry<Integer,Integer>> range = new ArrayList<>();
     }
 }
