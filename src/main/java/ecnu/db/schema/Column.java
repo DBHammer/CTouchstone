@@ -32,6 +32,8 @@ public class Column {
     @JsonIgnore
     private Map<Long, BigDecimal> eqConstraint2Probability = new HashMap<>();
     @JsonIgnore
+    private List<Parameter> boundPara = new ArrayList<>();
+    @JsonIgnore
     private StringTemplate stringTemplate;
 
     @JsonIgnore
@@ -126,14 +128,7 @@ public class Column {
             dealZeroPb(parameters);
         } else {
             BigDecimal tempProbability = new BigDecimal(probability.toString());
-            TreeSet<BigDecimal> probabilityHistogram = new TreeSet<>(eqRequest2ParameterIds.keySet());
             int index = parameters.size() - 1;
-            while (index > 0 && !probabilityHistogram.isEmpty() && tempProbability.compareTo(probabilityHistogram.first()) > 0) {
-                BigDecimal lowerBound = probabilityHistogram.lower(tempProbability);
-                probabilityHistogram.remove(lowerBound);
-                tempProbability = tempProbability.subtract(lowerBound);
-                eqRequest2ParameterIds.get(lowerBound).add(parameters.get(index--));
-            }
             while (index >= 0) {
                 if (index > 0) {
                     BigDecimal currentProbability = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(tempProbability.doubleValue()));
@@ -259,8 +254,19 @@ public class Column {
         // 使用Long.MIN_VALUE来代指null
         Arrays.fill(columnData, 0, nullSize, Long.MIN_VALUE);
         int currentIndex = nullSize;
-        if (eqConstraint2Probability.size() > 0) {
-            for (Map.Entry<Long, BigDecimal> entry : eqConstraint2Probability.entrySet()) {
+        Map<Long, BigDecimal> newEqConstraint2Probability = eqConstraint2Probability;
+        if (boundPara.size() > 0) {
+            newEqConstraint2Probability = new HashMap<>(eqConstraint2Probability);
+            for (Parameter parameter : boundPara) {
+                long paraData = parameter.getData();
+                BigDecimal paraProbability = newEqConstraint2Probability.get(paraData);
+                int eqSize = paraProbability.multiply(BigDecimal.valueOf(sizeWithoutNull)).intValue();
+                Arrays.fill(columnData, currentIndex, currentIndex += eqSize, paraData);
+                newEqConstraint2Probability.remove(paraData);
+            }
+        }
+        if (newEqConstraint2Probability.size() > 0) {
+            for (Map.Entry<Long, BigDecimal> entry : newEqConstraint2Probability.entrySet()) {
                 int eqSize = entry.getValue().multiply(BigDecimal.valueOf(sizeWithoutNull)).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, entry.getKey());
             }
@@ -274,14 +280,15 @@ public class Column {
             if (++i == bucketBound2FreeSpace.size()) {
                 randomSize = size - currentIndex;
             } else {
-                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue() - currentIndex;
+                //todo 确定左边界
+                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue() - (currentIndex - nullSize);
             }
             try {
                 //todo
                 long[] randomData;
                 long bound = bucket2Probability.getKey();
                 if (bound == lastBound) {
-                    randomData = new long[randomSize];
+                    throw new UnsupportedOperationException();
                 } else {
                     randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
                 }
@@ -297,7 +304,8 @@ public class Column {
         long temp;
         int swapIndex;
         Random rnd = ThreadLocalRandom.current();
-        for (int index = columnData.length - 1; index > 0; index--) {
+
+        for (int index = columnData.length - 1; index >= currentIndex; index--) {
             swapIndex = rnd.nextInt(index);
             temp = columnData[swapIndex];
             columnData[swapIndex] = columnData[index];
@@ -434,5 +442,18 @@ public class Column {
 
     public StringTemplate getStringTemplate() {
         return stringTemplate;
+    }
+
+
+    public List<Parameter> getBoundPara() {
+        return boundPara;
+    }
+
+    public void setBoundPara(List<Parameter> boundPara) {
+        this.boundPara = boundPara;
+    }
+
+    public void addBoundPara(List<Parameter> parameter) {
+        this.boundPara.addAll(parameter);
     }
 }

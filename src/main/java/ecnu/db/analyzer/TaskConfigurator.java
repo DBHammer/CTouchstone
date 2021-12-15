@@ -31,6 +31,7 @@ import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -59,13 +60,25 @@ public class TaskConfigurator implements Callable<Integer> {
      * @param samplingSize     多元非等值的采样大小
      */
     public static Map<Integer, Parameter> queryInstantiation(List<ConstraintChain> constraintChains, int samplingSize) {
-        List<AbstractFilterOperation> filterOperations = constraintChains.stream()
-                .map(constraintChain -> constraintChain.getNodes().stream()
-                        .filter(ConstraintChainFilterNode.class::isInstance)
-                        .map(ConstraintChainFilterNode.class::cast)
-                        .map(ConstraintChainFilterNode::pushDownProbability)
-                        .flatMap(Collection::stream).toList())
-                .flatMap(Collection::stream).toList();
+        List<List<AbstractFilterOperation>> allFilterOperations = constraintChains.stream()
+                .map(ConstraintChain::getNodes)
+                .flatMap(Collection::stream)
+                .filter(ConstraintChainFilterNode.class::isInstance)
+                .map(ConstraintChainFilterNode.class::cast)
+                .map(ConstraintChainFilterNode::pushDownProbability).toList();
+        allFilterOperations.forEach(operationOfSameNode -> {
+            var validOperations = operationOfSameNode.stream()
+                    .filter(node -> node.getProbability().compareTo(BigDecimal.ONE) != 0)
+                    .filter(node -> node.getProbability().compareTo(BigDecimal.ZERO) != 0).toList();
+            if (validOperations.size() > 1) {
+                for (AbstractFilterOperation validOperation : validOperations) {
+                    String columnName = ((UniVarFilterOperation) validOperation).getCanonicalColumnName();
+                    ColumnManager.getInstance().getColumn(columnName).addBoundPara(validOperation.getParameters());
+                }
+            }
+        });
+
+        List<AbstractFilterOperation> filterOperations = allFilterOperations.stream().flatMap(Collection::stream).toList();
 
         // uni-var operation
         filterOperations.stream()

@@ -29,6 +29,7 @@ public class ColumnManager {
     public static final String COLUMN_STRING_INFO = "/stringTemplate.json";
     public static final String COLUMN_DISTRIBUTION_INFO = "/distribution.json";
     public static final String COLUMN_EQDISTRIBUTION_INFO = "/eq_distribution.json";
+    public static final String COLUMN_BOUNDPARA_INFO = "/boundPara.json";
     public static final String COLUMN_METADATA_INFO = "/column.csv";
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
             .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
@@ -123,6 +124,7 @@ public class ColumnManager {
         CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_STRING_INFO, content);
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = new HashMap<>();
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = new HashMap<>();
+        Map<String, List<Parameter>> boundParas = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
             if (column.getValue().getBucketBound2FreeSpace().size() > 1 ||
                  column.getValue().getBucketBound2FreeSpace().get(0).getValue().compareTo(BigDecimal.ONE)<0) {
@@ -131,11 +133,16 @@ public class ColumnManager {
             if (column.getValue().getEqConstraint2Probability().size() > 0) {
                 eq2Probabilities.put(column.getKey(), column.getValue().getEqConstraint2Probability());
             }
+            if (column.getValue().getBoundPara().size() > 0) {
+                boundParas.put(column.getKey(), column.getValue().getBoundPara());
+            }
         }
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(bucket2Probabilities);
         CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_DISTRIBUTION_INFO, content);
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(eq2Probabilities);
         CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_EQDISTRIBUTION_INFO, content);
+        content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(boundParas);
+        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_BOUNDPARA_INFO, content);
     }
 
     public void loadColumnMetaData() throws IOException {
@@ -172,6 +179,12 @@ public class ColumnManager {
         });
         for (Map.Entry<String, Map<Long, BigDecimal>> eq2Probability : eq2Probabilities.entrySet()) {
             columns.get(eq2Probability.getKey()).setEqConstraint2Probability(eq2Probability.getValue());
+        }
+        content = CommonUtils.readFile(distributionInfoPath.getPath()+COLUMN_BOUNDPARA_INFO);
+        Map<String, List<Parameter>> boundParas = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        });
+        for (Map.Entry<String, List<Parameter>> boundPara : boundParas.entrySet()) {
+            columns.get(boundPara.getKey()).setBoundPara(boundPara.getValue());
         }
     }
 
