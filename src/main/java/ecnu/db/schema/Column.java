@@ -19,6 +19,10 @@ import java.util.stream.IntStream;
  */
 @JsonPropertyOrder({"columnType", "nullPercentage", "specialValue", "min", "range", "minLength", "rangeLength"})
 public class Column {
+    @JsonIgnore
+    private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
+    @JsonIgnore
+    private final HashSet<Integer> likeParameterId = new HashSet<>();
     private ColumnType columnType;
     private long min;
     private long range;
@@ -26,7 +30,6 @@ public class Column {
     private float nullPercentage;
     private int minLength;
     private int rangeLength;
-
     @JsonIgnore
     private List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace = new LinkedList<>();
     @JsonIgnore
@@ -35,11 +38,6 @@ public class Column {
     private List<Parameter> boundPara = new ArrayList<>();
     @JsonIgnore
     private StringTemplate stringTemplate;
-
-    @JsonIgnore
-    private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
-    @JsonIgnore
-    private final HashSet<Integer> likeParameterId = new HashSet<>();
     @JsonIgnore
     private boolean hasBetweenConstraint = false;
     @JsonIgnore
@@ -52,12 +50,12 @@ public class Column {
     public Column() {
     }
 
-    public void initStringTemplate() {
-        stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
-    }
-
     public Column(ColumnType columnType) {
         this.columnType = columnType;
+    }
+
+    public void initStringTemplate() {
+        stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
     }
 
     public void initBucketBound2FreeSpace() {
@@ -362,8 +360,8 @@ public class Column {
     public double[] calculate() {
         //lazy生成computeData
         if (!columnData2ComputeData) {
-            computeData = switch (columnType){
-                case DATE,DATETIME -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double)data).toArray();
+            computeData = switch (columnType) {
+                case DATE, DATETIME -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) data).toArray();
                 case DECIMAL -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
                 case INTEGER -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (specialValue * data) + min).toArray();
                 default -> throw new IllegalStateException("Unexpected value: " + columnType);

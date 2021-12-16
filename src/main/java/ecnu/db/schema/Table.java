@@ -100,10 +100,6 @@ public class Table {
         this.tableSize = tableSize;
     }
 
-    public void setPrimaryKeys(List<String> primaryKeys) {
-        this.primaryKeys = primaryKeys;
-    }
-
     public Map<String, String> getForeignKeys() {
         return foreignKeys;
     }
@@ -118,6 +114,10 @@ public class Table {
     @SuppressWarnings("unused")
     public String getPrimaryKeys() {
         return String.join(",", primaryKeys);
+    }
+
+    public void setPrimaryKeys(List<String> primaryKeys) {
+        this.primaryKeys = primaryKeys;
     }
 
     public synchronized void setPrimaryKeys(String primaryKeys) throws TouchstoneException {

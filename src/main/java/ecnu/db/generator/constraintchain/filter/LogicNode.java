@@ -19,10 +19,6 @@ public class LogicNode extends BoolExprNode {
     private BoolExprType type;
     private List<BoolExprNode> children;
 
-    public void setType(BoolExprType type) {
-        this.type = type;
-    }
-
     public List<BoolExprNode> getChildren() {
         return children;
     }
@@ -30,7 +26,6 @@ public class LogicNode extends BoolExprNode {
     public void setChildren(List<BoolExprNode> children) {
         this.children = children;
     }
-
 
     @Override
     public boolean hasKeyColumn() {
@@ -85,6 +80,10 @@ public class LogicNode extends BoolExprNode {
     @Override
     public BoolExprType getType() {
         return type;
+    }
+
+    public void setType(BoolExprType type) {
+        this.type = type;
     }
 
     @Override

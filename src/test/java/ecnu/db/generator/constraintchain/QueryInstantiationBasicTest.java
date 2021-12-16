@@ -9,7 +9,6 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -106,7 +105,7 @@ class QueryInstantiationBasicTest {
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.part.p_brand", "public.part.p_container")), samplingSize);
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_commitdate", "public.lineitem.l_shipdate", "public.lineitem.l_receiptdate")), largeSampleSize);
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_quantity", "public.lineitem.l_discount", "public.lineitem.l_shipmode", "public.lineitem.l_shipinstruct")), largeSampleSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_returnflag","public.orders.o_orderdate")), samplingSize);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_returnflag", "public.orders.o_orderdate")), samplingSize);
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.orders.o_orderdate", "public.orders.o_orderstatus")), samplingSize);
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.customer.c_mktsegment")), samplingSize);
         ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.region.r_name", "public.orders.o_orderdate")), samplingSize);

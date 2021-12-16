@@ -11,9 +11,9 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
+import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprNodeDeserializer;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
@@ -41,26 +41,21 @@ public class CommonUtils {
     public static final int SAMPLE_DOUBLE_PRECISION = (int) 1E6;
     public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
     public static final int INIT_HASHMAP_SIZE = 16;
-
-
+    public static final CsvMapper CSV_MAPPER = new CsvMapper();
     private static final SimpleModule touchStoneJsonModule = new SimpleModule()
             .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
             .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
             .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
-
     private static final DefaultPrettyPrinter dpf = new DefaultPrettyPrinter();
-
-    static {
-        dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
-    }
-
-    public static final CsvMapper CSV_MAPPER = new CsvMapper();
-
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .setDefaultPrettyPrinter(dpf)
             .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
+
+    static {
+        dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
+    }
 
     public static boolean isNotCanonicalColumnName(String columnName) {
         return columnName.split(CANONICAL_NAME_SPLIT_REGEX).length != 3;

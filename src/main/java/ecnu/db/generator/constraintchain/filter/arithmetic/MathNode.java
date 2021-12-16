@@ -10,6 +10,10 @@ public class MathNode extends ArithmeticNode {
         super(type);
     }
 
+    public MathNode() {
+        super(ArithmeticNodeType.MINUS);
+    }
+
     @Override
     public double[] calculate() {
         double[] leftValue = leftNode.calculate();
@@ -23,10 +27,6 @@ public class MathNode extends ArithmeticNode {
             default -> throw new UnsupportedOperationException();
         }
         return leftValue;
-    }
-
-    public MathNode() {
-        super(ArithmeticNodeType.MINUS);
     }
 
     @JsonIgnore

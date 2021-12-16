@@ -25,28 +25,22 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 
 public class PgAnalyzer extends AbstractAnalyzer {
 
+    protected static final Logger logger = LoggerFactory.getLogger(PgAnalyzer.class);
     private static final String NUMERIC = "'[0-9]+'::numeric";
-
     private static final String DATE1 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}";
     private static final String DATE2 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}";
     private static final String DATE3 = "[0-9]{4}-[0-9]{2}-[0-9]{2}";
     private static final String DATE = String.format("'(%s|%s|%s)'::date", DATE1, DATE2, DATE3);
-
     private static final String TIMESTAMP1 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}";
     private static final String TIMESTAMP2 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}";
     private static final String TIMESTAMP3 = "[0-9]{4}-[0-9]{2}-[0-9]{2}";
-    public static final String  TIME_OR_DATE=String.format("(%s|%s|%s|%s|%s|%s)",DATE1,DATE2,DATE3,TIMESTAMP1,TIMESTAMP2,TIMESTAMP3);
+    public static final String TIME_OR_DATE = String.format("(%s|%s|%s|%s|%s|%s)", DATE1, DATE2, DATE3, TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final String TIMESTAMP = String.format("'(%s|%s|%s)'::timestamp without time zone", TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final Pattern REDUNDANCY = Pattern.compile(NUMERIC + "|" + DATE + "|" + TIMESTAMP);
-
     private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9_]+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
-
-
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
-    protected static final Logger logger = LoggerFactory.getLogger(PgAnalyzer.class);
-
     public StringBuilder pathForSplit = null;
 
     public PgAnalyzer() {
@@ -221,7 +215,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         }
         boolean isSemiJoin = PgJsonReader.isSemiJoin(path);
         JoinNode joinNode = new JoinNode(path.toString(), rowCount, joinInfo, false, isSemiJoin, pkDistinctProbability);
-        if(isSemiJoin) {
+        if (isSemiJoin) {
             joinNode.setPkDistinctSize(joinNode.getOutputRows());
         }
         return joinNode;

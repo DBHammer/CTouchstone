@@ -13,11 +13,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PgJsonReader {
-    private PgJsonReader() {
-    }
-
     private static ReadContext readContext;
 
+    private PgJsonReader() {
+    }
 
     static void setReadContext(String plan) {
         Configuration conf = Configuration.defaultConfiguration()

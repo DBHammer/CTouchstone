@@ -21,7 +21,7 @@ public class ConstraintChainPkJoinNode extends ConstraintChainNode {
         this.pkTag = pkTag;
         this.pkColumns = pkColumns;
     }
-    
+
     @Override
     public String toString() {
         return String.format("{pkTag:%d,pkColumns:%s}", pkTag, Arrays.toString(pkColumns));

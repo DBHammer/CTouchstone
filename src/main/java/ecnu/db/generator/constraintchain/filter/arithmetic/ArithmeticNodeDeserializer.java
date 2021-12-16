@@ -31,7 +31,7 @@ public class ArithmeticNodeDeserializer extends StdDeserializer<ArithmeticNode> 
         mapper.registerModule(module);
         return switch (ArithmeticNodeType.valueOf(node.get("type").asText())) {
             case CONSTANT -> mapper.readValue(node.toString(), NumericNode.class);
-            case MINUS, PLUS, MUL, DIV, SUM, MIN, AVG, MAX-> mapper.readValue(node.toString(), MathNode.class);
+            case MINUS, PLUS, MUL, DIV, SUM, MIN, AVG, MAX -> mapper.readValue(node.toString(), MathNode.class);
             case COLUMN -> mapper.readValue(node.toString(), ColumnNode.class);
         };
     }

@@ -18,15 +18,6 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private BigDecimal probability;
     private BigDecimal probabilityWithFailFilter;
     private boolean antiOrNot = false;
-
-    public double getPkDistinctProbability() {
-        return pkDistinctProbability;
-    }
-
-    public void setPkDistinctProbability(double pkDistinctProbability) {
-        this.pkDistinctProbability = pkDistinctProbability;
-    }
-
     private double pkDistinctProbability;
 
     public ConstraintChainFkJoinNode() {
@@ -39,6 +30,14 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         this.pkTag = pkTag;
         this.localCols = localCols;
         this.probability = probability;
+    }
+
+    public double getPkDistinctProbability() {
+        return pkDistinctProbability;
+    }
+
+    public void setPkDistinctProbability(double pkDistinctProbability) {
+        this.pkDistinctProbability = pkDistinctProbability;
     }
 
     @Override
@@ -82,27 +81,27 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         this.antiOrNot = true;
     }
 
-    public void setAntiJoin(boolean antiOrNot) {
-        this.antiOrNot = antiOrNot;
-    }
-
     public boolean getAntiJoin() {
         return this.antiOrNot;
     }
 
-    public void setProbabilityWithFailFilter(BigDecimal probabilityWithFailFilter) {
-        this.probabilityWithFailFilter = probabilityWithFailFilter.stripTrailingZeros();
-    }
-
-    public void setPkDistinctSize(long pkDistinctSize) {
-        this.pkDistinctSize = pkDistinctSize;
+    public void setAntiJoin(boolean antiOrNot) {
+        this.antiOrNot = antiOrNot;
     }
 
     public long getPkDistinctSize() {
         return pkDistinctSize;
     }
 
+    public void setPkDistinctSize(long pkDistinctSize) {
+        this.pkDistinctSize = pkDistinctSize;
+    }
+
     public BigDecimal getProbabilityWithFailFilter() {
         return probabilityWithFailFilter;
+    }
+
+    public void setProbabilityWithFailFilter(BigDecimal probabilityWithFailFilter) {
+        this.probabilityWithFailFilter = probabilityWithFailFilter.stripTrailingZeros();
     }
 }

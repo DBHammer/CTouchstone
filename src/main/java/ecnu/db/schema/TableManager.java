@@ -22,10 +22,10 @@ import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
 
 public class TableManager {
+    public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
     private static final TableManager INSTANCE = new TableManager();
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
-    public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     private File schemaInfoPath;
 
     public TableManager() {

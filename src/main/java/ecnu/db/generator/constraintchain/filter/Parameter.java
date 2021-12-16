@@ -2,8 +2,6 @@ package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.ColumnType;
-import ecnu.db.utils.CommonUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,15 +34,6 @@ public class Parameter {
      */
     @JsonIgnore
     private String dataValue;
-
-    public boolean isActual() {
-        return isActual;
-    }
-
-    public void setActual(boolean actual) {
-        isActual = actual;
-    }
-
     /**
      * 此参数是否为确定的值
      */
@@ -57,13 +46,13 @@ public class Parameter {
     public Parameter(Integer id, String operand, String dataValue) {
         this.id = id;
         this.operand = operand;
-        if(operand!=null){
+        if (operand != null) {
             Matcher matcher = CanonicalColumnName.matcher(operand);
             List<String> cols = new ArrayList<>();
-            if(matcher.find()){
+            if (matcher.find()) {
                 cols.add(matcher.group());
             }
-            if(cols.size()==1 &&  ColumnManager.getInstance().isDateColumn((cols.get(0)))){
+            if (cols.size() == 1 && ColumnManager.getInstance().isDateColumn((cols.get(0)))) {
                 dataValue = dataValue.split(" ")[0];
             }
         }
@@ -71,14 +60,22 @@ public class Parameter {
         this.dataValue = dataValue;
     }
 
-    public List<String> hasOnlyOneColumn(){
-        if(operand==null){
+    public boolean isActual() {
+        return isActual;
+    }
+
+    public void setActual(boolean actual) {
+        isActual = actual;
+    }
+
+    public List<String> hasOnlyOneColumn() {
+        if (operand == null) {
             return null;
         }
         Matcher matcher = CanonicalColumnName.matcher(operand);
         List<String> cols = new ArrayList<>();
-        while (matcher.find()){
-           cols.add(matcher.group());
+        while (matcher.find()) {
+            cols.add(matcher.group());
         }
         return cols;
     }

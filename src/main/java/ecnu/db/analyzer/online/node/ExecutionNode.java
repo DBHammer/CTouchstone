@@ -11,22 +11,12 @@ public class ExecutionNode {
      * 节点类型
      */
     private final ExecutionNodeType type;
-
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
     /**
      * 节点额外信息
      * filter node -> filter info
      * join node -> join condition
      */
     private String info;
-
-    public void setOutputRows(int outputRows) {
-        this.outputRows = outputRows;
-    }
-
     /**
      * 节点输出的数据量
      */
@@ -39,15 +29,6 @@ public class ExecutionNode {
      * 指向左节点
      */
     private ExecutionNode leftNode;
-
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
     /**
      * 表名
      */
@@ -57,8 +38,28 @@ public class ExecutionNode {
      */
     private String id;
 
+
+    ExecutionNode(String id, ExecutionNodeType type, int outputRows, String info) {
+        this.type = type;
+        this.info = info;
+        this.id = id;
+        this.outputRows = outputRows;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public ExecutionNode getRightNode() {
@@ -77,24 +78,20 @@ public class ExecutionNode {
         this.leftNode = leftNode;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-
-    ExecutionNode(String id, ExecutionNodeType type, int outputRows, String info) {
-        this.type = type;
-        this.info = info;
-        this.id = id;
-        this.outputRows = outputRows;
-    }
-
     public String getInfo() {
         return info;
     }
 
+    public void setInfo(String info) {
+        this.info = info;
+    }
+
     public int getOutputRows() {
         return outputRows;
+    }
+
+    public void setOutputRows(int outputRows) {
+        this.outputRows = outputRows;
     }
 
     public ExecutionNodeType getType() {

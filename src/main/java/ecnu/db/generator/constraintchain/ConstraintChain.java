@@ -21,15 +21,6 @@ public class ConstraintChain {
 
     @JsonIgnore
     private final Set<String> joinTables = new HashSet<>();
-
-    public void addJoinTable(String tableName) {
-        joinTables.add(tableName);
-    }
-
-    public Set<String> getJoinTables() {
-        return joinTables;
-    }
-
     private String tableName;
 
     public ConstraintChain() {
@@ -37,6 +28,14 @@ public class ConstraintChain {
 
     public ConstraintChain(String tableName) {
         this.tableName = tableName;
+    }
+
+    public void addJoinTable(String tableName) {
+        joinTables.add(tableName);
+    }
+
+    public Set<String> getJoinTables() {
+        return joinTables;
     }
 
     public void addNode(ConstraintChainNode node) {
@@ -135,9 +134,9 @@ public class ConstraintChain {
                         subGraphHashMap.get(subGraphTag).joinLabel = "anti join";
                     } else if (fkJoinNode.getPkDistinctProbability() == 0) {
                         subGraphHashMap.get(subGraphTag).joinLabel = "eq join";
-                    } else if (fkJoinNode.getPkDistinctSize()!=0) {
+                    } else if (fkJoinNode.getPkDistinctSize() != 0) {
                         subGraphHashMap.get(subGraphTag).joinLabel = "semi join: " + fkJoinNode.getPkDistinctSize();
-                    } else{
+                    } else {
                         subGraphHashMap.get(subGraphTag).joinLabel = "outer join: " + fkJoinNode.getPkDistinctProbability();
                     }
                     if (fkJoinNode.getProbabilityWithFailFilter() != null) {

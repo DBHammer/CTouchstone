@@ -22,7 +22,7 @@ public class ColumnNode extends ArithmeticNode {
     }
 
     public void setCanonicalColumnName(String canonicalColumnName) throws IllegalQueryColumnNameException {
-        if(CommonUtils.isNotCanonicalColumnName(canonicalColumnName)){
+        if (CommonUtils.isNotCanonicalColumnName(canonicalColumnName)) {
             throw new IllegalQueryColumnNameException();
         }
         this.canonicalColumnName = canonicalColumnName;

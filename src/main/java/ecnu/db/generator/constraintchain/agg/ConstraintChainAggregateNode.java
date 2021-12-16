@@ -1,8 +1,8 @@
 package ecnu.db.generator.constraintchain.agg;
 
-import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
+import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.schema.TableManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,18 +11,10 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class ConstraintChainAggregateNode extends ConstraintChainNode {
+    private final Logger logger = LoggerFactory.getLogger(ConstraintChainAggregateNode.class);
+    ConstraintChainFilterNode aggFilter;
     private List<String> groupKey;
     private BigDecimal aggProbability;
-    ConstraintChainFilterNode aggFilter;
-    private final Logger logger = LoggerFactory.getLogger(ConstraintChainAggregateNode.class);
-
-    public BigDecimal getAggProbability() {
-        return aggProbability;
-    }
-
-    public void setAggProbability(BigDecimal aggProbability) {
-        this.aggProbability = aggProbability.stripTrailingZeros();
-    }
 
     public ConstraintChainAggregateNode(List<String> groupKeys, BigDecimal aggProbability) {
         super(ConstraintChainNodeType.AGGREGATE);
@@ -32,6 +24,14 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
 
     public ConstraintChainAggregateNode() {
         super(ConstraintChainNodeType.AGGREGATE);
+    }
+
+    public BigDecimal getAggProbability() {
+        return aggProbability;
+    }
+
+    public void setAggProbability(BigDecimal aggProbability) {
+        this.aggProbability = aggProbability.stripTrailingZeros();
     }
 
     public boolean removeAgg() {

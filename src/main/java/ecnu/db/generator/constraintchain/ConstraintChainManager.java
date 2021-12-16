@@ -16,23 +16,22 @@ import java.util.stream.Collectors;
 import static ecnu.db.utils.CommonUtils.readFile;
 
 public class ConstraintChainManager {
+    public static final String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
     private static final Logger logger = LoggerFactory.getLogger(ConstraintChainManager.class);
     private static final ConstraintChainManager INSTANCE = new ConstraintChainManager();
     private static final String[] COLOR_LIST = {"#FFFFCC", "#CCFFFF", "#FFCCCC"};
     private static final String GRAPH_TEMPLATE = "digraph \"%s\" {rankdir=BT;" + System.lineSeparator() + "%s}";
-    public static final String CONSTRAINT_CHAINS_INFO = "/constraintChain.json";
     private String resultDir;
-
-    public void setResultDir(String resultDir) {
-        this.resultDir = resultDir;
-    }
-
 
     private ConstraintChainManager() {
     }
 
     public static ConstraintChainManager getInstance() {
         return INSTANCE;
+    }
+
+    public void setResultDir(String resultDir) {
+        this.resultDir = resultDir;
     }
 
     public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {

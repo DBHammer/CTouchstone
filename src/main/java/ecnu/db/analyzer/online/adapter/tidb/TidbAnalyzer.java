@@ -1,13 +1,13 @@
 package ecnu.db.analyzer.online.adapter.tidb;
 
 import ecnu.db.analyzer.online.AbstractAnalyzer;
+import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoLexer;
+import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoParser;
 import ecnu.db.analyzer.online.node.ExecutionNode;
 import ecnu.db.analyzer.online.node.FilterNode;
 import ecnu.db.analyzer.online.node.JoinNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.schema.TableManager;
-import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoLexer;
-import ecnu.db.analyzer.online.adapter.tidb.parser.TidbSelectOperatorInfoParser;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.UnsupportedJoin;
 import ecnu.db.utils.exception.analyze.UnsupportedSelectionConditionException;
@@ -41,6 +41,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
     private static final Pattern INDEX_COLUMN = Pattern.compile("index:.+\\((.+)\\)");
     private static final Pattern RANGE_SCAN_JOIN_PUSHDOWN = Pattern.compile("range: decided by \\[[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+(, [a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)*]");
     private final TidbSelectOperatorInfoParser parser = new TidbSelectOperatorInfoParser(new TidbSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
+
     public TidbAnalyzer() {
         super();
         this.nodeTypeRef = new TidbNodeTypeTool();
@@ -57,33 +58,33 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      * 合并节点，删除query plan中不需要或者不支持的节点，并根据节点类型提取对应信息
      * 关于join下推到tikv节点的处理:
      * 1. 有selection的下推
-     ************************************************************************
-     *           IndexJoin                                       Filter      *
-     *           /       \                                         /         *
-     *      leftNode    IndexLookup              ===>>>          Join        *
-     *                    /         \                           /   \        *
-     *               RangeScan     Selection              leftNode  Scan     *
-     *                              /                                        *
-     *                            Scan                                       *
-     ************************************************************************
+     * ***********************************************************************
+     * IndexJoin                                       Filter      *
+     * /       \                                         /         *
+     * leftNode    IndexLookup              ===>>>          Join        *
+     * /         \                           /   \        *
+     * RangeScan     Selection              leftNode  Scan     *
+     * /                                        *
+     * Scan                                       *
+     * ***********************************************************************
      * <p>
      * 2. 没有selection的下推(leftNode中有Selection节点)
-     ************************************************************************
-     *           IndexJoin                                       Join        *
-     *           /       \                                      /    \       *
-     *      leftNode    IndexLookup              ===>>>   leftNode   Scan    *
-     *                  /        \                                           *
-     *          RangeScan       Scan                                         *
-     ************************************************************************
+     * ***********************************************************************
+     * IndexJoin                                       Join        *
+     * /       \                                      /    \       *
+     * leftNode    IndexLookup              ===>>>   leftNode   Scan    *
+     * /        \                                           *
+     * RangeScan       Scan                                         *
+     * ***********************************************************************
      * <p>
      * 3. 没有selection的下推(leftNode中没有Selection节点，但右边扫描节点上有索引)
-     ************************************************************************
-     *          IndexJoin                                        Join        *
-     *          /       \                                       /    \       *
-     *      leftNode   IndexReader              ===>>>    leftNode   Scan    *
-     *                  /                                                    *
-     *            RangeScan                                                  *
-     ************************************************************************
+     * ***********************************************************************
+     * IndexJoin                                        Join        *
+     * /       \                                       /    \       *
+     * leftNode   IndexReader              ===>>>    leftNode   Scan    *
+     * /                                                    *
+     * RangeScan                                                  *
+     * ***********************************************************************
      *
      * @param rawNode 需要处理的query plan树
      * @return 处理好的树
@@ -134,8 +135,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             } else {
                 throw new UnsupportedSelectionConditionException(rawNode.operatorInfo);
             }
-        }
-        else if (nodeTypeRef.isRangeScanNode(nodeType) && !matches.isEmpty()) {
+        } else if (nodeTypeRef.isRangeScanNode(nodeType) && !matches.isEmpty()) {
             String canonicalTableName = rawNode.operatorInfo;
             int rowCount = TableManager.getInstance().getTableSize(canonicalTableName);
             ExecutionNode scanNode = new FilterNode(rawNode.id, rowCount, null);
@@ -167,14 +167,14 @@ public class TidbAnalyzer extends AbstractAnalyzer {
                     && nodeTypeRef.isIndexScanNode(rawNode.right.left.nodeType)
                     && nodeTypeRef.isFilterNode(rawNode.right.right.nodeType)) {
                 node = new FilterNode(rawNode.right.right.id, rawNode.rowCount, rawNode.right.right.operatorInfo);
-                node.setLeftNode(new JoinNode(rawNode.right.left.id, rawNode.right.left.rowCount, rawNode.operatorInfo,false, false, 0));
+                node.setLeftNode(new JoinNode(rawNode.right.left.id, rawNode.right.left.rowCount, rawNode.operatorInfo, false, false, 0));
                 String canonicalTblName = rawNode.right.right.left.operatorInfo;
                 node.getLeftNode().setRightNode(new FilterNode(rawNode.right.right.left.id,
                         TableManager.getInstance().getTableSize(canonicalTblName), "table:" + canonicalTblName));
                 node.getLeftNode().setLeftNode(buildExecutionTree(rawNode.left));
                 return node;
             }
-            node = new JoinNode(rawNode.id, rawNode.rowCount, rawNode.operatorInfo,false, false, 0);
+            node = new JoinNode(rawNode.id, rawNode.rowCount, rawNode.operatorInfo, false, false, 0);
             node.setLeftNode(rawNode.left == null ? null : buildExecutionTree(rawNode.left));
             node.setRightNode(rawNode.right == null ? null : buildExecutionTree(rawNode.right));
         } else if (nodeTypeRef.isReaderNode(nodeType)) {

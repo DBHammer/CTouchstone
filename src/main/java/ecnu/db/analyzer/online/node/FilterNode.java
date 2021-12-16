@@ -1,10 +1,16 @@
 package ecnu.db.analyzer.online.node;
 
-public class FilterNode extends ExecutionNode{
+public class FilterNode extends ExecutionNode {
     /**
      * 是否为新生成的节点
      */
     public boolean isAdd = false;
+    private boolean isIndexScan = false;
+    private String filterInfoWithQuote;
+
+    public FilterNode(String id, int outputRows, String info) {
+        super(id, ExecutionNodeType.filter, outputRows, info);
+    }
 
     public boolean isAdd() {
         return isAdd;
@@ -13,10 +19,6 @@ public class FilterNode extends ExecutionNode{
     public void setAdd() {
         isAdd = true;
     }
-
-    private boolean isIndexScan = false;
-
-    private String filterInfoWithQuote;
 
     public boolean isIndexScan() {
         return isIndexScan;
@@ -32,9 +34,5 @@ public class FilterNode extends ExecutionNode{
 
     public void setFilterInfoWithQuote(String filterInfoWithQuote) {
         this.filterInfoWithQuote = filterInfoWithQuote;
-    }
-
-    public FilterNode(String id, int outputRows, String info) {
-        super(id, ExecutionNodeType.filter, outputRows, info);
     }
 }

@@ -125,6 +125,18 @@ public class QueryReader {
             this.defaultDatabaseName = null;
         }
 
+        private static String convertTableName2CanonicalTableName(String canonicalTableName,
+                                                                  String defaultDatabase) throws IllegalQueryTableNameException {
+            List<List<String>> matches = matchPattern(QueryReader.CANONICAL_TBL_NAME, canonicalTableName);
+            if (matches.size() == 1 && matches.get(0).get(0).length() == canonicalTableName.length()) {
+                return canonicalTableName;
+            } else {
+                if (defaultDatabase == null) {
+                    throw new IllegalQueryTableNameException();
+                }
+                return String.format("%s.%s", defaultDatabase, canonicalTableName);
+            }
+        }
 
         @Override
         public boolean visit(SQLExprTableSource x) {
@@ -150,19 +162,6 @@ public class QueryReader {
          */
         public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
             return convertTableName2CanonicalTableName(tableName, defaultDatabaseName);
-        }
-
-        private static String convertTableName2CanonicalTableName(String canonicalTableName,
-                                                                  String defaultDatabase) throws IllegalQueryTableNameException {
-            List<List<String>> matches = matchPattern(QueryReader.CANONICAL_TBL_NAME, canonicalTableName);
-            if (matches.size() == 1 && matches.get(0).get(0).length() == canonicalTableName.length()) {
-                return canonicalTableName;
-            } else {
-                if (defaultDatabase == null) {
-                    throw new IllegalQueryTableNameException();
-                }
-                return String.format("%s.%s", defaultDatabase, canonicalTableName);
-            }
         }
     }
 
