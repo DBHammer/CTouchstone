@@ -49,7 +49,7 @@ class QueryComplexTest {
         List<AbstractFilterOperation> operations;
         operations = query2operations.get("19_1.sql_public.lineitem");
         assertEquals(8, operations.size());
-        assertEquals(0.0235290687, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.01924177021, operations.get(0).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.lineitem");
         assertEquals(8, operations.size());
@@ -61,15 +61,15 @@ class QueryComplexTest {
 
         operations = query2operations.get("19_1.sql_public.lineitem");
         assertEquals(8, operations.size());
-        assertEquals(0.0235290687, operations.get(7).getProbability().doubleValue(), 0.0000001);
+        assertEquals( 0.01924177021, operations.get(7).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.part");
         assertEquals(10, operations.size());
-        assertEquals(0.002265, operations.get(1).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.00243, operations.get(1).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.part");
         assertEquals(10, operations.size());
-        assertEquals(0.002265, operations.get(3).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.00243, operations.get(3).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.part");
         assertEquals(10, operations.size());
