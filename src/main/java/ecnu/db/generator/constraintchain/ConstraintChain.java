@@ -130,15 +130,12 @@ public class ConstraintChain {
                     currentProbability = fkJoinNode.getProbability().doubleValue();
                     subGraphHashMap.putIfAbsent(subGraphTag, new SubGraph(subGraphTag));
                     subGraphHashMap.get(subGraphTag).fkInfo = currentNodeInfo + conditionColor;
-                    if (fkJoinNode.getAntiJoin()) {
-                        subGraphHashMap.get(subGraphTag).joinLabel = "anti join";
-                    } else if (fkJoinNode.getPkDistinctProbability() == 0) {
-                        subGraphHashMap.get(subGraphTag).joinLabel = "eq join";
-                    } else if (fkJoinNode.getPkDistinctSize() != 0) {
-                        subGraphHashMap.get(subGraphTag).joinLabel = "semi join: " + fkJoinNode.getPkDistinctSize();
-                    } else {
-                        subGraphHashMap.get(subGraphTag).joinLabel = "outer join: " + fkJoinNode.getPkDistinctProbability();
-                    }
+                    subGraphHashMap.get(subGraphTag).joinLabel = switch (fkJoinNode.getType()) {
+                        case INNER_JOIN -> "eq join";
+                        case SEMI_JOIN -> "semi join: " + fkJoinNode.getPkDistinctProbability();
+                        case OUTER_JOIN -> "outer join: " + fkJoinNode.getPkDistinctProbability();
+                        case ANTI_SEMI_JOIN -> "anti join";
+                    };
                     if (fkJoinNode.getProbabilityWithFailFilter() != null) {
                         subGraphHashMap.get(subGraphTag).joinLabel = String.format("%s filterWithCannotJoin: %2$,.4f",
                                 subGraphHashMap.get(subGraphTag).joinLabel,

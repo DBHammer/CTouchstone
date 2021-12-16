@@ -8,6 +8,7 @@ import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
+import ecnu.db.generator.constraintchain.join.ConstraintNodeJoinType;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -178,7 +179,8 @@ public class QueryAnalyzer {
             } else {
                 constraintChain.addJoinTable(externalTable);
             }
-            if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount && node.getPkDistinctSize() == 0) {
+            if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount &&
+                    node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0) {
                 logger.debug("由于输入的主键为全集，跳过节点{}", node.getInfo());
                 node.setJoinTag(SKIP_JOIN_TAG);
             } else {
@@ -204,7 +206,7 @@ public class QueryAnalyzer {
             BigDecimal probability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
             if (node.isAntiJoin()) {
-                fkJoinNode.setAntiJoin();
+                fkJoinNode.setType(ConstraintNodeJoinType.ANTI_SEMI_JOIN);
             }
             fkJoinNode.setPkDistinctProbability(node.getPkDistinctSize());
             if (node.getRightNode().getType() == ExecutionNodeType.filter && node.getRightNode().getInfo() != null &&
@@ -215,7 +217,7 @@ public class QueryAnalyzer {
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
             if (node.isSemiJoin()) {
-                fkJoinNode.setPkDistinctSize(node.getOutputRows());
+                fkJoinNode.setType(ConstraintNodeJoinType.SEMI_JOIN);
             }
             constraintChain.addNode(fkJoinNode);
             return node.getOutputRows();

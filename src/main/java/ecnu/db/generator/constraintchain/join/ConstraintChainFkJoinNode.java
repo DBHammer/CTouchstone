@@ -1,6 +1,5 @@
 package ecnu.db.generator.constraintchain.join;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 
@@ -13,12 +12,10 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String refCols;
     private String localCols;
     private long pkTag;
-    @JsonIgnore
-    private long pkDistinctSize = 0;
     private BigDecimal probability;
     private BigDecimal probabilityWithFailFilter;
-    private boolean antiOrNot = false;
-    private double pkDistinctProbability;
+    private BigDecimal pkDistinctProbability;
+    private ConstraintNodeJoinType type = ConstraintNodeJoinType.INNER_JOIN;
 
     public ConstraintChainFkJoinNode() {
         super(ConstraintChainNodeType.FK_JOIN);
@@ -32,11 +29,19 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         this.probability = probability;
     }
 
-    public double getPkDistinctProbability() {
+    public ConstraintNodeJoinType getType() {
+        return type;
+    }
+
+    public void setType(ConstraintNodeJoinType type) {
+        this.type = type;
+    }
+
+    public BigDecimal getPkDistinctProbability() {
         return pkDistinctProbability;
     }
 
-    public void setPkDistinctProbability(double pkDistinctProbability) {
+    public void setPkDistinctProbability(BigDecimal pkDistinctProbability) {
         this.pkDistinctProbability = pkDistinctProbability;
     }
 
@@ -75,26 +80,6 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
     public void setRefCols(String refCols) {
         this.refCols = refCols;
-    }
-
-    public void setAntiJoin() {
-        this.antiOrNot = true;
-    }
-
-    public boolean getAntiJoin() {
-        return this.antiOrNot;
-    }
-
-    public void setAntiJoin(boolean antiOrNot) {
-        this.antiOrNot = antiOrNot;
-    }
-
-    public long getPkDistinctSize() {
-        return pkDistinctSize;
-    }
-
-    public void setPkDistinctSize(long pkDistinctSize) {
-        this.pkDistinctSize = pkDistinctSize;
     }
 
     public BigDecimal getProbabilityWithFailFilter() {

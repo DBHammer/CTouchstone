@@ -22,7 +22,7 @@ class QueryComplexTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        String content = readFile("src/test/resources/data/query-instantiation/complex/constraintChain.json");
+        String content = readFile("src/test/resources/data/query-instantiation/basic/constraintChain.json");
         query2chains = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
     }

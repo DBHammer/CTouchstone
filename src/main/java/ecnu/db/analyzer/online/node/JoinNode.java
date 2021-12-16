@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.online.node;
 
+import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
 
 public class JoinNode extends ExecutionNode {
@@ -10,16 +11,15 @@ public class JoinNode extends ExecutionNode {
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
      */
     private long joinTag = Long.MIN_VALUE;
-    private double pkDistinctProbability;
-    private long pkDistinctSize;
+    private final BigDecimal pkDistinctProbability;
     private long rowsRemoveByFilterAfterJoin;
     private String indexJoinFilter;
 
-    public JoinNode(String id, int outputRows, String info, boolean antiJoin, boolean semiJoin, double pkDistinctSize) {
+    public JoinNode(String id, int outputRows, String info, boolean antiJoin, boolean semiJoin, BigDecimal pkDistinctProbability) {
         super(id, ExecutionNodeType.join, outputRows, info);
         this.antiJoin = antiJoin;
         this.semiJoin = semiJoin;
-        this.pkDistinctProbability = pkDistinctSize;
+        this.pkDistinctProbability = pkDistinctProbability;
     }
 
     /**
@@ -30,6 +30,7 @@ public class JoinNode extends ExecutionNode {
             waitSetJoinTag.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         return joinTag;
     }
@@ -43,16 +44,8 @@ public class JoinNode extends ExecutionNode {
         return antiJoin;
     }
 
-    public double getPkDistinctSize() {
+    public BigDecimal getPkDistinctSize() {
         return pkDistinctProbability;
-    }
-
-    public void setPkDistinctSize(int pkDistinctSize) {
-        this.pkDistinctProbability = pkDistinctSize;
-    }
-
-    public void setPkDistinctSize(long pkDistinctSize) {
-        this.pkDistinctSize = pkDistinctSize;
     }
 
     public String getIndexJoinFilter() {

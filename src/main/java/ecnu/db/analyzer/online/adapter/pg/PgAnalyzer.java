@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -87,7 +88,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (node.getType() == ExecutionNodeType.aggregate) {
             assert leftNode != null;
             if (leftNode.getType() == ExecutionNodeType.join &&
-                    ((JoinNode) leftNode).getPkDistinctSize() > 0) {
+                    ((JoinNode) leftNode).getPkDistinctSize().compareTo(BigDecimal.ZERO) > 0) {
                 logger.debug("跳过外连接后的主键聚集");
                 node.setInfo(null);
             }
@@ -193,7 +194,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         }
         joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
-        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, 0);
+        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, BigDecimal.ZERO);
     }
 
     private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
@@ -203,7 +204,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             case "Merge Join" -> PgJsonReader.readMergeJoin(path);
             default -> throw new UnsupportedOperationException();
         };
-        double pkDistinctProbability = 0;
+        BigDecimal pkDistinctProbability = BigDecimal.ZERO;
         if (PgJsonReader.isOutJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
@@ -211,14 +212,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
             int pkRowCount = PgJsonReader.readRowCount(rightChildPath);
             int fkRowCount = PgJsonReader.readRowCount(leftChildPath);
             rowCount = fkRowCount;
-            pkDistinctProbability = ((double) joinRowCount - (double) fkRowCount) / (double) pkRowCount;
+            pkDistinctProbability = BigDecimal.valueOf(joinRowCount - fkRowCount)
+                    .divide(BigDecimal.valueOf(pkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
         }
         boolean isSemiJoin = PgJsonReader.isSemiJoin(path);
-        JoinNode joinNode = new JoinNode(path.toString(), rowCount, joinInfo, false, isSemiJoin, pkDistinctProbability);
-        if (isSemiJoin) {
-            joinNode.setPkDistinctSize(joinNode.getOutputRows());
-        }
-        return joinNode;
+        return new JoinNode(path.toString(), rowCount, joinInfo, false, isSemiJoin, pkDistinctProbability);
     }
 
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
