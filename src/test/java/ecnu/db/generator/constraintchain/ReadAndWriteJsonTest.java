@@ -28,7 +28,7 @@ public class ReadAndWriteJsonTest {
 
     @Test
     void writeTestStringTemplate() throws IOException {
-        String content = readFile(dir + "StringTemplate.json");
+        String content = readFile(dir + "stringTemplate.json");
         Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columName2StringTemplate);
