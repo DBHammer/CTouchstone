@@ -126,7 +126,7 @@ public class QueryWriter {
                 continue;
             }
 
-            String data = parameter.getDataValue();
+            String data = parameter.getRealDataValue();
             List<parameterColumnName2Location> matches = literalMap.getOrDefault(data, new ArrayList<>());
             if (literalMap.containsKey("'" + data + "'")) {
                 matches.addAll(literalMap.get("'" + data + "'"));

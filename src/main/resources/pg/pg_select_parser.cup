@@ -3,7 +3,7 @@ import ecnu.db.generator.constraintchain.filter.arithmetic.*;
 import ecnu.db.generator.constraintchain.filter.operation.*;
 import ecnu.db.generator.constraintchain.filter.*;
 import java.io.StringReader;
-
+import ecnu.db.generator.constraintchain.filter.Parameter;
 
 /* define how to connect to the scanner! */
 parser code {:
@@ -59,7 +59,6 @@ non terminal          CompareOperator           null_expr;
 non terminal          AbstractFilterOperation   not_expr;
 non terminal          CompareOperator           in_expr;
 non terminal          CompareOperator           like_expr;
-non terminal          String                    column_expr;
 
 /* precedence */
 precedence left         OR;
@@ -182,7 +181,7 @@ multi_compare_expr ::=
         | like_compare_expr:e                                    {:  RESULT=e;  :}
         ;
 in_compare_expr ::=
-        LPAREN column_expr:col in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
+        LPAREN CANONICAL_COLUMN_NAME:col in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
                                                                                     List<Parameter> parameterList = new ArrayList<>();
                                                                                     for (String argument: arguments) {
                                                                                         Parameter parameter = new Parameter(parameterId++, col, argument);
@@ -194,10 +193,24 @@ in_compare_expr ::=
                                                                                     }
                                                                                     RESULT = operation;
                                                                                   :}
-        ;
-column_expr ::=
-        CANONICAL_COLUMN_NAME:col                                {:  RESULT=col; :}
-        |SUBSTRING LPAREN CANONICAL_COLUMN_NAME:col INTEGER INTEGER RPAREN  {:  RESULT=col; :}
+        |LPAREN SUBSTRING LPAREN CANONICAL_COLUMN_NAME:col INTEGER:leftInt INTEGER:rightInt RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN {:
+                                                                                   List<Parameter> parameterList = new ArrayList<>();
+                                                                                   for (String argument: arguments) {
+
+                                                                                       if(leftInt > 1){
+                                                                                          argument = "%" + argument;
+                                                                                       }
+                                                                                       argument = argument + "%";
+                                                                                       Parameter parameter = new Parameter(parameterId++, col, argument);
+                                                                                       parameter.setType(Parameter.ParameterType.SUBSTRING);
+                                                                                       parameterList.add(parameter);
+                                                                                   }
+                                                                                   UniVarFilterOperation operation = new UniVarFilterOperation(col, inornotin, parameterList);
+                                                                                   if(inornotin == CompareOperator.NOT_IN){
+                                                                                       operation.setOperator(CompareOperator.NOT_IN);
+                                                                                   }
+                                                                                    RESULT = operation;
+                                                                                  :}
         ;
 in_expr ::=
         NOT_IN:notin                                                              {: RESULT = notin; :}
@@ -231,6 +244,7 @@ in_arguments ::=
 like_compare_expr ::=
         LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN like_expr:likeop STRING:str RPAREN     {:
                                                                                             Parameter parameter = new Parameter(parameterId++, col, str);
+                                                                                            parameter.setType(Parameter.ParameterType.LIKE);
                                                                                             UniVarFilterOperation operation = new UniVarFilterOperation(col, likeop, Collections.singletonList(parameter));
                                                                                             if(likeop == CompareOperator.NOT_LIKE){
                                                                                               operation.setOperator(CompareOperator.NOT_LIKE);

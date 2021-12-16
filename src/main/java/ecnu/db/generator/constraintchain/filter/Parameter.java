@@ -91,11 +91,24 @@ public class Parameter {
         this.id = id;
     }
 
+    public String getRealDataValue(){
+        if(type==ParameterType.SUBSTRING){
+            return dataValue.replace("%","");
+        }else {
+            return dataValue;
+        }
+    }
+
     public String getDataValue() {
         return dataValue;
     }
 
     public void setDataValue(String dataValue) {
+        if(type==ParameterType.SUBSTRING){
+            dataValue = dataValue.replace("%","");
+            int length = this.dataValue.replace("%","").length();
+            dataValue = dataValue.substring(0,length);
+        }
         this.dataValue = dataValue;
     }
 
