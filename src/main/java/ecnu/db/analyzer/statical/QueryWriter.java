@@ -27,7 +27,7 @@ public class QueryWriter {
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
     private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
     private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
-    private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)*");
+    private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
     public static final String QUERY_DIR = "/queries/";
     private final String queryDir;
     private DbType dbType;

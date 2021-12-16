@@ -85,6 +85,10 @@ public class ColumnManager {
         return columns.get(columnName).getColumnType();
     }
 
+    public boolean isDateColumn(String columnName){
+        return columns.containsKey(columnName) && columns.get(columnName).getColumnType() ==ColumnType.DATE;
+    }
+
     public int getNdv(String columnName) {
         return (int) getColumn(columnName).getRange();
     }

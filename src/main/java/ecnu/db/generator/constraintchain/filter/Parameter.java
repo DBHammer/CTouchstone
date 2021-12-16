@@ -57,18 +57,24 @@ public class Parameter {
     public Parameter(Integer id, String operand, String dataValue) {
         this.id = id;
         this.operand = operand;
-        Matcher matcher = CanonicalColumnName.matcher(operand);
-        List<String> cols = new ArrayList<>();
-        if(matcher.find()){
-            cols.add(matcher.group());
+        if(operand!=null){
+            Matcher matcher = CanonicalColumnName.matcher(operand);
+            List<String> cols = new ArrayList<>();
+            if(matcher.find()){
+                cols.add(matcher.group());
+            }
+            if(cols.size()==1 &&  ColumnManager.getInstance().isDateColumn((cols.get(0)))){
+                dataValue = dataValue.split(" ")[0];
+            }
         }
-        if(cols.size()==1 &&  ColumnManager.getInstance().getColumnType(cols.get(0)) == ColumnType.DATE){
-            dataValue = dataValue.split(" ")[0];
-        }
+
         this.dataValue = dataValue;
     }
 
     public List<String> hasOnlyOneColumn(){
+        if(operand==null){
+            return null;
+        }
         Matcher matcher = CanonicalColumnName.matcher(operand);
         List<String> cols = new ArrayList<>();
         while (matcher.find()){
