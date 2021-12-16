@@ -32,7 +32,7 @@ class QueryInstantiationMultiVarTest {
         query2chains = CommonUtils.MAPPER.readValue(fileContent, new TypeReference<>() {
         });
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/multi-var-test");
-        ColumnManager.getInstance().loadColumnDistribution();
+        ColumnManager.getInstance().loadColumnMetaData();
     }
 
     @Disabled
@@ -45,7 +45,7 @@ class QueryInstantiationMultiVarTest {
         queryInstantiation(query2chains.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), samplingSize);
         Map<Integer, Parameter> id2Parameter = new HashMap<>();
         for (String key : query2chains.keySet()) {
-            List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).collect(Collectors.toList());
+            List<Parameter> parameters = query2chains.get(key).stream().flatMap((l) -> l.getParameters().stream()).toList();
             parameters.forEach((param) -> id2Parameter.put(param.getId(), param));
         }
         // known distribution c2:[2,23], c3[-3,9], c4[0,10]

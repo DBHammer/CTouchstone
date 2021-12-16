@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.chain.ConstraintChainNodeDeserializer;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author xuechao.lian
@@ -44,14 +46,16 @@ public class CommonUtils {
         dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
     }
 
+    public static final CsvMapper CSV_MAPPER = new CsvMapper();
+
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .setDefaultPrettyPrinter(dpf)
             .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
 
-    public static boolean isCanonicalColumnName(String columnName) {
-        return columnName.split(CANONICAL_NAME_SPLIT_REGEX).length == 3;
+    public static boolean isNotCanonicalColumnName(String columnName) {
+        return columnName.split(CANONICAL_NAME_SPLIT_REGEX).length != 3;
     }
 
     /**
@@ -76,12 +80,12 @@ public class CommonUtils {
 
     public static String readFile(String path) throws IOException {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(path))) {
-            StringBuilder fileContent = new StringBuilder();
+            List<String> fileContent = new ArrayList<>();
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                fileContent.append(line);
+                fileContent.add(line);
             }
-            return fileContent.toString();
+            return fileContent.stream().collect(Collectors.joining(System.lineSeparator()));
         }
     }
 

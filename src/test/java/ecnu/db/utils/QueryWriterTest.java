@@ -3,9 +3,14 @@ package ecnu.db.utils;
 import com.alibaba.druid.util.JdbcConstants;
 import ecnu.db.analyzer.statical.QueryWriter;
 import ecnu.db.generator.constraintchain.filter.Parameter;
+import ecnu.db.schema.Column;
+import ecnu.db.schema.ColumnManager;
+import ecnu.db.schema.ColumnType;
+import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +25,7 @@ class QueryWriterTest {
     }
 
     @Test
-    public void testTemplatizeSqlInt() {
+    public void testTemplatizeSqlInt() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a=5";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "5"));
@@ -29,7 +34,7 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlFloat() {
+    void testTemplatizeSqlFloat() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a=1.5";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "1.5"));
@@ -38,7 +43,7 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlStr() {
+    void testTemplatizeSqlStr() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a='5'";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "5"));
@@ -47,7 +52,7 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlDate() {
+    void testTemplatizeSqlDate() throws SQLException, ClassNotFoundException {
         String sql = "select * from test where a='1998-12-12 12:00:00.000000'";
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, "1998-12-12 12:00:00.000000"));
@@ -56,17 +61,19 @@ class QueryWriterTest {
     }
 
     @Test
-    void testTemplatizeSqlConflicts() {
+    void testTemplatizeSqlConflicts() throws SQLException, TouchstoneException {
         String sql = "select * from test where a='5' or b='5'";
         List<Parameter> parameters = new ArrayList<>();
+        ColumnManager.getInstance().addColumn("db.test.a", new Column(ColumnType.INTEGER));
+        ColumnManager.getInstance().addColumn("db.test.b", new Column(ColumnType.INTEGER));
         parameters.add(new Parameter(0, "db.test.a", "5"));
         parameters.add(new Parameter(1, "db.test.b", "5"));
         String modified = queryWriter.templatizeSql("q5", sql, parameters);
-        assertEquals("-- conflictArgs:{id:0,data:'5',operand:db.test.a},{id:1,data:'5',operand:db.test.b}" + System.lineSeparator() + "select * from test where a='5' or b='5'", modified);
+        assertEquals("select * from test where a='0' or b='1'", modified);
     }
 
     @Test
-    void testTemplatizeSqlCannotFind() {
+    void testTemplatizeSqlCannotFind() throws SQLException {
         String sql = "select * from test where a='5' or b='5'";
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter(0, "db.test.b", "6");

@@ -1,6 +1,5 @@
 package ecnu.db.analyzer.online.node;
 
-import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
 
 public class JoinNode extends ExecutionNode {
@@ -11,7 +10,11 @@ public class JoinNode extends ExecutionNode {
 
     private final boolean antiJoin;
 
+    private final boolean semiJoin;
+
     private double pkDistinctProbability;
+
+    private long pkDistinctSize;
 
     private long rowsRemoveByFilterAfterJoin;
 
@@ -19,9 +22,10 @@ public class JoinNode extends ExecutionNode {
 
     private final CountDownLatch waitSetJoinTag = new CountDownLatch(1);
 
-    public JoinNode(String id, int outputRows, String info, boolean antiJoin, double pkDistinctSize) {
+    public JoinNode(String id, int outputRows, String info, boolean antiJoin, boolean semiJoin, double pkDistinctSize) {
         super(id, ExecutionNodeType.join, outputRows, info);
         this.antiJoin = antiJoin;
+        this.semiJoin = semiJoin;
         this.pkDistinctProbability = pkDistinctSize;
     }
 
@@ -64,6 +68,14 @@ public class JoinNode extends ExecutionNode {
 
     public void setRowsRemoveByFilterAfterJoin(long rowsRemoveByFilterAfterJoin) {
         this.rowsRemoveByFilterAfterJoin = rowsRemoveByFilterAfterJoin;
+    }
+
+    public boolean isSemiJoin() {
+        return semiJoin;
+    }
+
+    public void setPkDistinctSize(long pkDistinctSize) {
+        this.pkDistinctSize = pkDistinctSize;
     }
 
     public long getRowsRemoveByFilterAfterJoin() {

@@ -1,0 +1,74 @@
+{
+  "public.part.p_brand" : [
+    {
+      "id" : 30,
+      "data" : 23,
+      "actual" : true
+    },
+    {
+      "id" : 68,
+      "data" : 24,
+      "actual" : true
+    }
+  ],
+  "public.part.p_type" : [
+    {
+      "id" : 87,
+      "data" : 148,
+      "actual" : true
+    }
+  ],
+  "public.part.p_container" : [
+    {
+      "id" : 31,
+      "data" : 39,
+      "actual" : true
+    },
+    {
+      "id" : 69,
+      "data" : 36,
+      "actual" : true
+    },
+    {
+      "id" : 70,
+      "data" : 35,
+      "actual" : true
+    },
+    {
+      "id" : 71,
+      "data" : 38,
+      "actual" : true
+    },
+    {
+      "id" : 72,
+      "data" : 37,
+      "actual" : true
+    }
+  ],
+  "public.part.p_size" : [
+    {
+      "id" : 88,
+      "data" : 44,
+      "actual" : true
+    }
+  ],
+  "public.lineitem.l_shipmode" : [
+    {
+      "id" : 34,
+      "data" : 6,
+      "actual" : true
+    },
+    {
+      "id" : 35,
+      "data" : 5,
+      "actual" : true
+    }
+  ],
+  "public.lineitem.l_shipinstruct" : [
+    {
+      "id" : 36,
+      "data" : 3,
+      "actual" : true
+    }
+  ]
+}

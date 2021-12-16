@@ -131,7 +131,9 @@ public class ConstraintChain {
                         subGraphHashMap.get(subGraphTag).joinLabel = "anti join";
                     } else if (fkJoinNode.getPkDistinctProbability() == 0) {
                         subGraphHashMap.get(subGraphTag).joinLabel = "eq join";
-                    } else {
+                    } else if (fkJoinNode.getPkDistinctSize()!=0) {
+                        subGraphHashMap.get(subGraphTag).joinLabel = "semi join: " + fkJoinNode.getPkDistinctSize();
+                    } else{
                         subGraphHashMap.get(subGraphTag).joinLabel = "outer join: " + fkJoinNode.getPkDistinctProbability();
                     }
                     if (fkJoinNode.getProbabilityWithFailFilter() != null) {

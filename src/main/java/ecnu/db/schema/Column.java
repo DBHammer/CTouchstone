@@ -1,6 +1,7 @@
 package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 
@@ -16,14 +17,23 @@ import java.util.stream.IntStream;
 /**
  * @author wangqingshuai
  */
+@JsonPropertyOrder({"columnType", "nullPercentage", "specialValue", "min", "range", "minLength", "rangeLength"})
 public class Column {
     private ColumnType columnType;
     private long min;
     private long range;
     private long specialValue;
     private float nullPercentage;
+    private int minLength;
+    private int rangeLength;
+
+    @JsonIgnore
     private List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace = new LinkedList<>();
+    @JsonIgnore
     private Map<Long, BigDecimal> eqConstraint2Probability = new HashMap<>();
+    @JsonIgnore
+    private List<Parameter> boundPara = new ArrayList<>();
+    @JsonIgnore
     private StringTemplate stringTemplate;
 
     @JsonIgnore
@@ -38,12 +48,12 @@ public class Column {
     private boolean columnData2ComputeData = false;
     @JsonIgnore
     private double[] computeData;
-    @JsonIgnore
-    private BigDecimal Max = BigDecimal.ONE;
-    @JsonIgnore
-    private BigDecimal Min = new BigDecimal(0.0000000000000001);
 
     public Column() {
+    }
+
+    public void initStringTemplate() {
+        stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
     }
 
     public Column(ColumnType columnType) {
@@ -78,7 +88,7 @@ public class Column {
         for (Parameter parameter : parameters) {
             parameter.setData(min - 1);
             if (likeParameterId.contains(parameter.getId())) {
-                parameter.setDataValue(stringTemplate.getLikeValue(specialValue, min - 1, parameter.getDataValue()));
+                parameter.setDataValue(stringTemplate.getLikeValue(min - 1, parameter.getDataValue()));
             } else {
                 parameter.setDataValue(transferDataToValue(min - 1));
             }
@@ -106,14 +116,11 @@ public class Column {
             parameter.setData(bound);
             parameter.setDataValue(transferDataToValue(bound));
         });
-
-        Map.Entry<Long, BigDecimal> map = new AbstractMap.SimpleEntry<>(bound, probability);
-        for (Map.Entry<Long, BigDecimal> longBigDecimalEntry : bucketBound2FreeSpace) {
-            if (longBigDecimalEntry == map) {
-                return;
+        if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
+            if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(bound))) {
+                this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
             }
         }
-        this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
     }
 
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
@@ -121,14 +128,7 @@ public class Column {
             dealZeroPb(parameters);
         } else {
             BigDecimal tempProbability = new BigDecimal(probability.toString());
-            TreeSet<BigDecimal> probabilityHistogram = new TreeSet<>(eqRequest2ParameterIds.keySet());
             int index = parameters.size() - 1;
-            while (index > 0 && !probabilityHistogram.isEmpty() && tempProbability.compareTo(probabilityHistogram.first()) > 0) {
-                BigDecimal lowerBound = probabilityHistogram.lower(tempProbability);
-                probabilityHistogram.remove(lowerBound);
-                tempProbability = tempProbability.subtract(lowerBound);
-                eqRequest2ParameterIds.get(lowerBound).add(parameters.get(index--));
-            }
             while (index >= 0) {
                 if (index > 0) {
                     BigDecimal currentProbability = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(tempProbability.doubleValue()));
@@ -149,7 +149,7 @@ public class Column {
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
         }
-        if (operator == CompareOperator.LIKE) {
+        if (operator == CompareOperator.LIKE || operator == CompareOperator.NOT_LIKE) {
             List<Integer> parameterIds = parameters.stream().mapToInt(Parameter::getId).boxed().toList();
             likeParameterId.addAll(parameterIds);
         }
@@ -216,7 +216,7 @@ public class Column {
                 eqRequest2ParameterIds.get(eqProbability).forEach(parameter -> {
                     parameter.setData(eqParameterData);
                     if (likeParameterId.contains(parameter.getId())) {
-                        parameter.setDataValue(stringTemplate.getLikeValue(specialValue, eqParameterData, parameter.getDataValue()));
+                        parameter.setDataValue(stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue()));
                     } else {
                         parameter.setDataValue(transferDataToValue(eqParameterData));
                     }
@@ -227,27 +227,19 @@ public class Column {
         }
 
         var bucketId2CardinalityList = bucketId2EqNum.entrySet().stream().filter(e -> e.getValue().get() > 0).toList();
+        List<Map.Entry<Long, BigDecimal>> newbucketBound2FreeSpace = new ArrayList<>();
         for (var bucketId2Cardinality : bucketId2CardinalityList) {
-            for (Map.Entry<Long, BigDecimal> space : bucketBound2FreeSpace) {
-                if (Objects.equals(space.getKey(), bucketId2Cardinality.getKey())) {
-                    bucketBound2FreeSpace.remove(space);
+            var spaceIterator = bucketBound2FreeSpace.iterator();
+            while (spaceIterator.hasNext()) {
+                var space = spaceIterator.next();
+                if (space.getKey().equals(bucketId2Cardinality.getKey())) {
+                    spaceIterator.remove();
                     long newSpaceBound = space.getKey() - bucketId2Cardinality.getValue().get();
-                    bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(newSpaceBound, space.getValue()));
+                    newbucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(newSpaceBound, space.getValue()));
                 }
             }
         }
-
-        // 重新调整lowBound2EqProbability，移除没有等值约束的bound
-        bucketId2EqNum.values().removeIf(value -> value.get() != 0);
-        LinkedList<Long> prepareToDelete = new LinkedList<>();
-        for (int i = 0; i < bucketBound2FreeSpace.size() - 1; i++) {
-            if (bucketId2EqNum.containsKey(bucketBound2FreeSpace.get(i).getKey()) &&
-                    bucketId2EqNum.containsKey(bucketBound2FreeSpace.get(i + 1).getKey())) {
-                prepareToDelete.add(bucketBound2FreeSpace.get(i).getKey());
-                bucketBound2FreeSpace.get(i + 1).setValue(bucketBound2FreeSpace.get(i).getValue().add(bucketBound2FreeSpace.get(i + 1).getValue()));
-            }
-        }
-        bucketBound2FreeSpace.removeIf(longBigDecimalPair -> prepareToDelete.contains(longBigDecimalPair.getKey()));
+        bucketBound2FreeSpace.addAll(newbucketBound2FreeSpace);
     }
 
     /**
@@ -262,8 +254,19 @@ public class Column {
         // 使用Long.MIN_VALUE来代指null
         Arrays.fill(columnData, 0, nullSize, Long.MIN_VALUE);
         int currentIndex = nullSize;
-        if (eqConstraint2Probability.size() > 0) {
-            for (Map.Entry<Long, BigDecimal> entry : eqConstraint2Probability.entrySet()) {
+        Map<Long, BigDecimal> newEqConstraint2Probability = eqConstraint2Probability;
+        if (boundPara.size() > 0) {
+            newEqConstraint2Probability = new HashMap<>(eqConstraint2Probability);
+            for (Parameter parameter : boundPara) {
+                long paraData = parameter.getData();
+                BigDecimal paraProbability = newEqConstraint2Probability.get(paraData);
+                int eqSize = paraProbability.multiply(BigDecimal.valueOf(sizeWithoutNull)).intValue();
+                Arrays.fill(columnData, currentIndex, currentIndex += eqSize, paraData);
+                newEqConstraint2Probability.remove(paraData);
+            }
+        }
+        if (newEqConstraint2Probability.size() > 0) {
+            for (Map.Entry<Long, BigDecimal> entry : newEqConstraint2Probability.entrySet()) {
                 int eqSize = entry.getValue().multiply(BigDecimal.valueOf(sizeWithoutNull)).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, entry.getKey());
             }
@@ -277,14 +280,15 @@ public class Column {
             if (++i == bucketBound2FreeSpace.size()) {
                 randomSize = size - currentIndex;
             } else {
-                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue() - currentIndex;
+                //todo 确定左边界
+                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue() - (currentIndex - nullSize);
             }
             try {
                 //todo
                 long[] randomData;
                 long bound = bucket2Probability.getKey();
                 if (bound == lastBound) {
-                    randomData = new long[randomSize];
+                    throw new UnsupportedOperationException();
                 } else {
                     randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
                 }
@@ -300,7 +304,8 @@ public class Column {
         long temp;
         int swapIndex;
         Random rnd = ThreadLocalRandom.current();
-        for (int index = columnData.length - 1; index > 0; index--) {
+
+        for (int index = columnData.length - 1; index >= currentIndex; index--) {
             swapIndex = rnd.nextInt(index);
             temp = columnData[swapIndex];
             columnData[swapIndex] = columnData[index];
@@ -357,17 +362,38 @@ public class Column {
     public double[] calculate() {
         //lazy生成computeData
         if (!columnData2ComputeData) {
-            computeData = Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
+            computeData = switch (columnType){
+                case DATE,DATETIME -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double)data).toArray();
+                case DECIMAL -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
+                case INTEGER -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (specialValue * data) + min).toArray();
+                default -> throw new IllegalStateException("Unexpected value: " + columnType);
+            };
             columnData2ComputeData = true;
         }
         return computeData;
+    }
+
+    public int getMinLength() {
+        return minLength;
+    }
+
+    public void setMinLength(int minLength) {
+        this.minLength = minLength;
+    }
+
+    public int getRangeLength() {
+        return rangeLength;
+    }
+
+    public void setRangeLength(int rangeLength) {
+        this.rangeLength = rangeLength;
     }
 
     public String transferDataToValue(long data) {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> Double.toString(((double) (data + min)) / specialValue);
-            case VARCHAR -> stringTemplate.transferColumnData2Value(specialValue, data);
+            case VARCHAR -> stringTemplate.transferColumnData2Value(data);
             case DATE -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
             case DATETIME -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE);
             default -> throw new UnsupportedOperationException();
@@ -418,7 +444,16 @@ public class Column {
         return stringTemplate;
     }
 
-    public void setStringTemplate(StringTemplate stringTemplate) {
-        this.stringTemplate = stringTemplate;
+
+    public List<Parameter> getBoundPara() {
+        return boundPara;
+    }
+
+    public void setBoundPara(List<Parameter> boundPara) {
+        this.boundPara = boundPara;
+    }
+
+    public void addBoundPara(List<Parameter> parameter) {
+        this.boundPara.addAll(parameter);
     }
 }
