@@ -11,7 +11,6 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -24,8 +23,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class QueryInstantiationBasicTest {
     Map<String, List<ConstraintChain>> query2chains;
-    int samplingSize = 10_000;
-    int largeSampleSize = 400_0000;
+    private final static List<String> allColumns = List.of(
+            //part table
+            "public.part.p_type", "public.part.p_name", "public.part.p_size", "public.part.p_brand", "public.part.p_container",
+            //region table
+            "public.region.r_name", "public.orders.o_orderdate",
+            //customer table
+            "public.customer.c_mktsegment", "public.customer.c_acctbal", "public.customer.c_phone",
+            //nation table
+            "public.nation.n_name",
+            //orders table
+            "public.orders.o_orderdate", "public.orders.o_orderstatus", "public.orders.o_comment",
+            //supplier table
+            "public.supplier.s_comment"
+    );
+    private final static List<String> lineColumns = List.of("public.lineitem.l_commitdate", "public.lineitem.l_shipdate",
+            "public.lineitem.l_receiptdate", "public.lineitem.l_quantity", "public.lineitem.l_discount",
+            "public.lineitem.l_shipmode", "public.lineitem.l_shipinstruct", "public.lineitem.l_returnflag");
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -75,12 +89,13 @@ class QueryInstantiationBasicTest {
         assertEquals(0.01904131080, operations.get(0).getProbability().doubleValue(), 0.0000001);
     }
 
-    @Disabled
     @Test
     void computeTest() throws Exception {
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
         ColumnManager.getInstance().loadColumnMetaData();
         ColumnManager.getInstance().loadColumnDistribution();
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(allColumns), 10_000);
+        ColumnManager.getInstance().prepareGeneration(new HashSet<>(lineColumns), 400_0000);
         // **********************************
         // *    test query instantiation    *
         // **********************************
@@ -106,17 +121,7 @@ class QueryInstantiationBasicTest {
         // ******************************
         List<ConstraintChain> chains;
         Map<String, Double> map;
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.part.p_brand", "public.part.p_container")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_commitdate", "public.lineitem.l_shipdate", "public.lineitem.l_receiptdate")), largeSampleSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_quantity", "public.lineitem.l_discount", "public.lineitem.l_shipmode", "public.lineitem.l_shipinstruct")), largeSampleSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.lineitem.l_returnflag","public.orders.o_orderdate")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.orders.o_orderdate", "public.orders.o_orderstatus")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.customer.c_mktsegment")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.region.r_name", "public.orders.o_orderdate")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.nation.n_name")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.part.p_type", "public.part.p_name", "public.part.p_size")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.supplier.s_comment")), samplingSize);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.customer.c_acctbal", "public.customer.c_phone")), samplingSize);
+
         chains = query2chains.get("1_1.sql");
         map = getRate(chains);
         assertEquals(0.9928309517, map.get("public.lineitem"), 0.00005);
@@ -189,7 +194,6 @@ class QueryInstantiationBasicTest {
         map = getRate(chains);
         assertEquals(0.005138459462, map.get("public.lineitem"), 0.0001);
 
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(List.of("public.orders.o_comment")), samplingSize);
         chains = query2chains.get("13_1.sql");
         map = getRate(chains);
         assertEquals(0.9892086667, map.get("public.orders"), 0.0001);
@@ -248,7 +252,7 @@ class QueryInstantiationBasicTest {
 
         chains = query2chains.get("22_1.sql_2");
         map = getRate(chains);
-        assertEquals(0.1272, map.get("public.customer"), 0.0005);
+        assertEquals(0.1272, map.get("public.customer"), 0.0006);
     }
 
     private Map<String, Double> getRate(List<ConstraintChain> chains) throws TouchstoneException {
