@@ -3,6 +3,7 @@ package ecnu.db.generator.constraintchain;
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.utils.CommonUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ public class ReadAndWriteJsonTest {
     Map<String, Map<Long, BigDecimal>> eq2Probabilities = new HashMap<>();
     int samplingSize = 4000_000;
 
+    @Disabled
     @Test
     void writeTest() throws IOException {
         String content = readFile("src/test/resources/data/query-instantiation/basic/constraintChain.json");
