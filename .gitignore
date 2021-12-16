@@ -47,3 +47,10 @@ k8s.config
 
 #vscode
 .vscode
+
+# sql file
+*.sql
+
+# query plan graph
+*.dot
+
