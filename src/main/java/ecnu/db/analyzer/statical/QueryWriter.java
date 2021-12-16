@@ -64,7 +64,7 @@ public class QueryWriter {
         }
         for (Parameter parameter : parameters) {
             List<String> cols = parameter.hasOnlyOneColumn();
-            if(cols.size()!=1){
+            if (cols != null && cols.size() != 1) {
                 String pattern = cols.stream().map(col -> col.split("\\.")[2]).collect(Collectors.joining(" .{1,2} "));
                 matcher = Pattern.compile(pattern).matcher(query);
                 if(matcher.find()){
@@ -122,7 +122,7 @@ public class QueryWriter {
         List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
         TreeMap<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> replaceParams = new TreeMap<>();
         for (Parameter parameter : parameters) {
-            if(parameter.hasOnlyOneColumn().size()!=1){
+            if (parameter.hasOnlyOneColumn() != null && parameter.hasOnlyOneColumn().size() != 1) {
                 continue;
             }
 
