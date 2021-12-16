@@ -26,6 +26,8 @@ public class Parameter {
      * parameter的内部data，用于快速计算
      */
     private long data;
+
+    private ParameterType type  = ParameterType.ACTUAL;
     /**
      * 操作数
      */
@@ -37,19 +39,13 @@ public class Parameter {
     @JsonIgnore
     private String dataValue;
 
-    public boolean isActual() {
-        return isActual;
+    public ParameterType getType() {
+        return type;
     }
 
-    public void setActual(boolean actual) {
-        isActual = actual;
+    public void setType(ParameterType type) {
+        this.type = type;
     }
-
-    /**
-     * 此参数是否为确定的值
-     */
-    @JsonIgnore
-    private boolean isActual = true;
 
     public Parameter() {
     }
@@ -124,5 +120,12 @@ public class Parameter {
     @Override
     public String toString() {
         return "{id:" + id + ", data:" + dataValue + "}";
+    }
+
+    public enum ParameterType{
+        ACTUAL,
+        VIRTUAL,
+        LIKE,
+        SUBSTRING
     }
 }

@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.chain;
 
+import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.TableManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
 
     public boolean removeAgg() {
         // 如果filter含有虚参，则不能被约减。其需要参与计算。
-        if (aggFilter != null && aggFilter.getParameters().stream().anyMatch(parameter -> !parameter.isActual())) {
+        if (aggFilter != null && aggFilter.getParameters().stream().anyMatch(parameter -> parameter.getType() == Parameter.ParameterType.VIRTUAL)) {
             return false;
         }
         // filter不再需要被计算，只需要考虑group key的情况

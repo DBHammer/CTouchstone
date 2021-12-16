@@ -136,7 +136,7 @@ uni_compare_expr ::=
         LPAREN arithmetic_expr:e1 uni_compare_operator:op uni_compare_constant:constant RPAREN  {:
                                                                                                     Parameter parameter = new Parameter(parameterId++, e1.toString(), constant);
                                                                                                     if(constant.contains("$")){
-                                                                                                       parameter.setActual(false);
+                                                                                                       parameter.setType(Parameter.ParameterType.VIRTUAL);
                                                                                                     }
                                                                                                     AbstractFilterOperation operation;
                                                                                                     if (e1.getType() == ArithmeticNodeType.COLUMN) {

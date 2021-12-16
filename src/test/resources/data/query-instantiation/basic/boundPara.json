@@ -3,72 +3,72 @@
     {
       "id" : 30,
       "data" : 23,
-      "actual" : true
+      "type" : "ACTUAL"
     },
     {
       "id" : 68,
       "data" : 24,
-      "actual" : true
+      "type" : "ACTUAL"
     }
   ],
   "public.part.p_type" : [
     {
       "id" : 87,
       "data" : 148,
-      "actual" : true
+      "type" : "ACTUAL"
     }
   ],
   "public.part.p_container" : [
     {
       "id" : 31,
-      "data" : 39,
-      "actual" : true
+      "data" : 38,
+      "type" : "ACTUAL"
     },
     {
       "id" : 69,
-      "data" : 36,
-      "actual" : true
+      "data" : 35,
+      "type" : "ACTUAL"
     },
     {
       "id" : 70,
-      "data" : 35,
-      "actual" : true
+      "data" : 36,
+      "type" : "ACTUAL"
     },
     {
       "id" : 71,
-      "data" : 38,
-      "actual" : true
+      "data" : 39,
+      "type" : "ACTUAL"
     },
     {
       "id" : 72,
       "data" : 37,
-      "actual" : true
+      "type" : "ACTUAL"
     }
   ],
   "public.part.p_size" : [
     {
       "id" : 88,
-      "data" : 44,
-      "actual" : true
+      "data" : 46,
+      "type" : "ACTUAL"
     }
   ],
   "public.lineitem.l_shipmode" : [
     {
       "id" : 34,
-      "data" : 6,
-      "actual" : true
+      "data" : 5,
+      "type" : "ACTUAL"
     },
     {
       "id" : 35,
-      "data" : 5,
-      "actual" : true
+      "data" : 6,
+      "type" : "ACTUAL"
     }
   ],
   "public.lineitem.l_shipinstruct" : [
     {
       "id" : 36,
       "data" : 3,
-      "actual" : true
+      "type" : "ACTUAL"
     }
   ]
 }
