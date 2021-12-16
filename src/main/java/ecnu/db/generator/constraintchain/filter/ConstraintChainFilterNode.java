@@ -1,14 +1,12 @@
-package ecnu.db.generator.constraintchain.chain;
+package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ecnu.db.generator.constraintchain.filter.BoolExprType;
-import ecnu.db.generator.constraintchain.filter.Parameter;
-import ecnu.db.generator.constraintchain.filter.LogicNode;
+import ecnu.db.generator.constraintchain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.utils.exception.TouchstoneException;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
 import java.util.List;
 
 /**

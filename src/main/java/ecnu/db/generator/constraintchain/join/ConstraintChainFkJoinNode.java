@@ -1,6 +1,8 @@
-package ecnu.db.generator.constraintchain.chain;
+package ecnu.db.generator.constraintchain.join;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.generator.constraintchain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 
 import java.math.BigDecimal;
 

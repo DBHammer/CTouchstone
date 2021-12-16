@@ -1,7 +1,6 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.utils.CommonUtils;
 import org.junit.jupiter.api.Test;

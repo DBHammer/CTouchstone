@@ -1,4 +1,4 @@
-package ecnu.db.generator.constraintchain.chain;
+package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.utils.CommonUtils;

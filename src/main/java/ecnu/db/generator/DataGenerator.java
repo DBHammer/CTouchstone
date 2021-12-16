@@ -1,7 +1,7 @@
 package ecnu.db.generator;
 
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainManager;
+import ecnu.db.generator.constraintchain.ConstraintChain;
+import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.generator.joininfo.JoinInfoTable;
 import ecnu.db.generator.joininfo.JoinInfoTableManager;
 import ecnu.db.schema.ColumnManager;

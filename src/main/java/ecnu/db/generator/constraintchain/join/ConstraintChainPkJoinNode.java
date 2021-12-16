@@ -1,4 +1,7 @@
-package ecnu.db.generator.constraintchain.chain;
+package ecnu.db.generator.constraintchain.join;
+
+import ecnu.db.generator.constraintchain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 
 import java.util.Arrays;
 

@@ -1,9 +1,7 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.schema.Column;
@@ -75,7 +73,6 @@ class QueryInstantiationBasicTest {
         assertEquals(0.01904131080, operations.get(0).getProbability().doubleValue(), 0.0000001);
     }
 
-    @Disabled
     @Test
     void computeTest() throws Exception {
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
@@ -248,7 +245,7 @@ class QueryInstantiationBasicTest {
 
         chains = query2chains.get("22_1.sql_2");
         map = getRate(chains);
-        assertEquals(0.1272, map.get("public.customer"), 0.0005);
+        assertEquals(0.1272, map.get("public.customer"), 0.0006);
     }
 
     private Map<String, Double> getRate(List<ConstraintChain> chains) throws TouchstoneException {
