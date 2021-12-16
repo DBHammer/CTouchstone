@@ -24,7 +24,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     public IsNullFilterOperation(String canonicalColumnName) throws IllegalQueryColumnNameException {
         super(CompareOperator.ISNULL);
-        if (!CommonUtils.isCanonicalColumnName(canonicalColumnName)) {
+        if (CommonUtils.isNotCanonicalColumnName(canonicalColumnName)) {
             throw new IllegalQueryColumnNameException();
         }
         this.canonicalColumnName = canonicalColumnName;

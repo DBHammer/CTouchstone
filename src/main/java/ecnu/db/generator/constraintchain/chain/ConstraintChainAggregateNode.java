@@ -24,7 +24,7 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
     public ConstraintChainAggregateNode(List<String> groupKeys, BigDecimal aggProbability) {
         super(ConstraintChainNodeType.AGGREGATE);
         this.groupKey = groupKeys;
-        this.aggProbability = aggProbability;
+        this.aggProbability = aggProbability.stripTrailingZeros();
     }
 
     public ConstraintChainAggregateNode() {

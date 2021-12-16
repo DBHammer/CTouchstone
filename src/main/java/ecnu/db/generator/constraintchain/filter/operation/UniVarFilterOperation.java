@@ -30,7 +30,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
             throws IllegalQueryColumnNameException {
         super(operator);
         this.canonicalColumnName = canonicalColumnName;
-        if (!CommonUtils.isCanonicalColumnName(canonicalColumnName)) {
+        if (CommonUtils.isNotCanonicalColumnName(canonicalColumnName)) {
             throw new IllegalQueryColumnNameException();
         }
         this.parameters = parameters;
