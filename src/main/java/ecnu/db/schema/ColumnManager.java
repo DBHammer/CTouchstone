@@ -225,10 +225,9 @@ public class ColumnManager {
                     specialValue = ThreadLocalRandom.current().nextInt();
                 }
                 case DECIMAL -> {
-                    int precision = CommonUtils.SAMPLE_DOUBLE_PRECISION;
-                    min = (long) (Double.parseDouble(sqlResult[index++]) * precision);
-                    range = (long) (Double.parseDouble(sqlResult[index++]) * precision) - min;
-                    specialValue = precision;
+                    specialValue = column.getSpecialValue();
+                    min = (long) (Double.parseDouble(sqlResult[index++]) * specialValue);
+                    range = (long) (Double.parseDouble(sqlResult[index++]) * specialValue) - min;
                 }
                 case DATE, DATETIME -> {
                     min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000;

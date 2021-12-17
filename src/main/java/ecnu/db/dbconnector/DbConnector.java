@@ -75,6 +75,9 @@ public abstract class DbConnector {
             columnNames.add(canonicalColumnName);
             ColumnManager.getInstance().addColumn(canonicalColumnName,
                     new Column(ColumnType.getColumnType(rs.getInt("DATA_TYPE"))));
+            if(ColumnManager.getInstance().getColumnType(canonicalColumnName)==ColumnType.DECIMAL) {
+                ColumnManager.getInstance().setSpecialValue(canonicalColumnName, (int) Math.pow(10, rs.getInt("DECIMAL_DIGITS")));
+            }
         }
         return columnNames;
     }
