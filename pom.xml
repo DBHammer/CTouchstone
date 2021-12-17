@@ -51,7 +51,7 @@
         <dependency>
             <groupId>com.google.ortools</groupId>
             <artifactId>ortools-java</artifactId>
-            <version>9.1.9490</version>
+            <version>9.2.9972</version>
         </dependency>
 
         <!--cli lib-->
