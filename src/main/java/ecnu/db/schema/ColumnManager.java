@@ -137,7 +137,7 @@ public class ColumnManager {
             if (column.getValue().getEqConstraint2Probability().size() > 0) {
                 eq2Probabilities.put(column.getKey(), column.getValue().getEqConstraint2Probability());
             }
-            if (column.getValue().getBoundPara().size() > 0) {
+            if (!column.getValue().getBoundPara().isEmpty()) {
                 boundParas.put(column.getKey(), column.getValue().getBoundPara());
             }
         }
@@ -250,10 +250,6 @@ public class ColumnManager {
 
     public void prepareGeneration(Collection<String> columnNames, int size) {
         columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
-    }
-
-    public List<String> getData(String columnName) {
-        return getColumn(columnName).output();
     }
 
     public void insertBetweenProbability(String columnName, BigDecimal probability,

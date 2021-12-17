@@ -24,6 +24,8 @@ import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
 
 import java.io.*;
 import java.math.MathContext;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -47,12 +49,13 @@ public class CommonUtils {
             .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
             .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
     private static final DefaultPrettyPrinter dpf = new DefaultPrettyPrinter();
+    public static final DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault());
+    public static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault());
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .setDefaultPrettyPrinter(dpf)
             .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
-
     static {
         dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
     }

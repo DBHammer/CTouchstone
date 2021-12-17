@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,6 +29,8 @@ public class Column {
     private float nullPercentage;
     private int minLength;
     private int rangeLength;
+    @JsonIgnore
+    private BigDecimal decimalPre;
     @JsonIgnore
     private List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace = new LinkedList<>();
     @JsonIgnore
@@ -253,7 +254,7 @@ public class Column {
         Arrays.fill(columnData, 0, nullSize, Long.MIN_VALUE);
         int currentIndex = nullSize;
         Map<Long, BigDecimal> newEqConstraint2Probability = eqConstraint2Probability;
-        if (boundPara.size() > 0) {
+        if (!boundPara.isEmpty()) {
             newEqConstraint2Probability = new HashMap<>(eqConstraint2Probability);
             for (Parameter parameter : boundPara) {
                 long paraData = parameter.getData();
@@ -390,10 +391,10 @@ public class Column {
     public String transferDataToValue(long data) {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
-            case DECIMAL -> Double.toString(((double) (data + min)) / specialValue);
+            case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
             case VARCHAR -> stringTemplate.transferColumnData2Value(data);
-            case DATE -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
-            case DATETIME -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE);
+            case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochMilli(data + min));
+            case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochMilli(data + min));
             default -> throw new UnsupportedOperationException();
         };
     }
@@ -402,8 +403,8 @@ public class Column {
         this.columnData = columnData;
     }
 
-    public List<String> output() {
-        return Arrays.stream(columnData).parallel().mapToObj(this::transferDataToValue).toList();
+    public String output(int index) {
+        return transferDataToValue(columnData[index]);
     }
 
     public long getMin() {
@@ -419,6 +420,9 @@ public class Column {
     }
 
     public void setSpecialValue(long specialValue) {
+        if (columnType == ColumnType.DECIMAL) {
+            decimalPre = BigDecimal.ONE.divide(BigDecimal.valueOf(specialValue), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+        }
         this.specialValue = specialValue;
     }
 

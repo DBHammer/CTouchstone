@@ -60,6 +60,12 @@ public class DataGenerator implements Callable<Integer> {
         ColumnManager.getInstance().loadColumnMetaData();
         ConstraintChainManager.getInstance().setResultDir(configPath);
         JoinInfoTableManager.getInstance().setJoinInfoTablePath(configPath);
+        File dataDir = new File(outputPath);
+        if (dataDir.isDirectory() && dataDir.listFiles() != null) {
+            Arrays.stream(Objects.requireNonNull(dataDir.listFiles()))
+                    .filter(File::delete)
+                    .forEach(file -> logger.info("删除{}", file.getName()));
+        }
     }
 
     @Override
@@ -80,13 +86,7 @@ public class DataGenerator implements Callable<Integer> {
             while (resultStart < tableSize) {
                 int range = Math.min(resultStart + STEP_SIZE, tableSize) - resultStart;
                 ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
-                computeFksAndPkJoinInfo(joinInfoTable, resultStart, range, schema2chains.get(schemaName));
-                ColumnManager.getInstance().setData(pkName, LongStream.range(resultStart, resultStart + range).toArray());
-                List<List<String>> columnData = allColumnNames.stream().parallel()
-                        .map(attColumnName -> ColumnManager.getInstance().getData(attColumnName)).toList();
-                List<String> rowData = IntStream.range(0, columnData.get(0).size()).parallel()
-                        .mapToObj(i -> columnData.stream().map(column -> column.get(i)).collect(Collectors.joining(",")))
-                        .toList();
+                List<String> rowData = generateAttRows(attColumnNames, range);
                 executorService.submit(() -> {
                     try {
                         Files.write(Paths.get(outputPath + "/" + schemaName + generatorId), rowData,
@@ -106,45 +106,15 @@ public class DataGenerator implements Callable<Integer> {
         return 0;
     }
 
-    /**
-     * 准备好生成tuple
-     * todo 处理复合主键
-     * todo 性能问题
-     *
-     * @param pkStart 需要生成的数据起始
-     * @param range   需要生成的数据范围
-     * @param chains  约束链条
-     * @throws TouchstoneException 生成失败
-     */
-    public void computeFksAndPkJoinInfo(JoinInfoTable joinInfoTable, int pkStart, int range,
-                                        Collection<ConstraintChain> chains) throws TouchstoneException {
-        long[] pkBitMap = new long[range];
-        Map<String, long[]> fkBitMap = new HashMap<>();
-        for (ConstraintChain chain : chains) {
-            chain.evaluate(pkBitMap, fkBitMap);
-        }
-        Map<Long, List<int[]>> status2RowId = IntStream.range(0, pkBitMap.length).boxed().parallel()
-                .collect(Collectors.groupingBy(
-                        i -> pkBitMap[i],
-                        Collector.of(
-                                ArrayList::new,
-                                (result, i) -> result.add(new int[]{i + pkStart}),
-                                (result1, result2) -> {
-                                    result1.addAll(result2);
-                                    return result1;
-                                }
-                        )));
-        status2RowId.entrySet().parallelStream().forEach(joinInfoTable::addJoinInfo);
-        for (Map.Entry<String, long[]> fk2BitMap : fkBitMap.entrySet()) {
-            String[] tables = fk2BitMap.getKey().split(":");
-            Map<Long, List<Integer>> bitMap2RowId = IntStream.range(0, fk2BitMap.getValue().length).boxed().parallel()
-                    .collect(Collectors.groupingByConcurrent(i -> fk2BitMap.getValue()[i], Collectors.toList()));
-            long[] data = new long[range];
-            bitMap2RowId.forEach((key, value) -> {
-                int[][] keys = JoinInfoTableManager.getInstance().getFks(tables[1], key, value.size());
-                IntStream.range(0, value.size()).parallel().forEach(index -> data[value.get(index)] = keys[index][0]);
-            });
-            ColumnManager.getInstance().setData(tables[0], data);
-        }
+    private static List<String> generateAttRows(List<String> attColumnNames, int range) {
+        List<Column> columns = attColumnNames.stream().map(col -> ColumnManager.getInstance().getColumn(col)).toList();
+        return IntStream.range(0, range).parallel()
+                .mapToObj(
+                        rowId -> columns.stream()
+                                .map(col -> col.output(rowId))
+                                .collect(Collectors.joining(","))
+                ).toList();
     }
+
+
 }
