@@ -3,8 +3,10 @@ package ecnu.db.schema;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.utils.exception.TouchstoneException;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -116,6 +118,10 @@ public class Table {
         return String.join(",", primaryKeys);
     }
 
+    public List<String> getPrimaryKeysList() {
+        return primaryKeys;
+    }
+
     public void setPrimaryKeys(List<String> primaryKeys) {
         this.primaryKeys = primaryKeys;
     }
@@ -135,6 +141,21 @@ public class Table {
                 throw new TouchstoneException("query中使用了多列主键的部分主键");
             }
         }
+    }
+
+    public void toSQL(DbConnector dbConnector, String tableName) throws SQLException, TouchstoneException {
+        StringBuilder head = new StringBuilder("CREATE TABLE ");
+        head.append(tableName).append(" (");
+        for (String canonicalColumnName : canonicalColumnNames) {
+            String columnName = canonicalColumnName.split("\\.")[2].toUpperCase();
+            Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
+            String addColumn = columnName + " " + column.getOriginalType() + ",";
+            head.append(addColumn);
+        }
+        head = new StringBuilder(head.substring(0, head.length() - 1));
+        head.append(");");
+        System.out.println(head);
+        dbConnector.executeSql(head.toString());
     }
 
     @Override

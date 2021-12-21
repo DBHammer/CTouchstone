@@ -24,6 +24,16 @@ public class Column {
     private final HashSet<Integer> likeParameterId = new HashSet<>();
     private ColumnType columnType;
     private long min;
+
+    public String getOriginalType() {
+        return originalType;
+    }
+
+    public void setOriginalType(String originalType) {
+        this.originalType = originalType;
+    }
+
+    private String originalType;
     private long range;
     private long specialValue;
     private float nullPercentage;

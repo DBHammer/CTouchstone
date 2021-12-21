@@ -30,7 +30,7 @@ public abstract class DbConnector {
             url = String.format("jdbc:%s://%s:%s/%s?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(),
                     config.getDatabaseName(), databaseConnectionConfig);
         } else {
-            url = String.format("jdbc:%s://%s:%s?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(),
+            url = String.format("jdbc:%s://%s:%s/?%s", dbType, config.getDatabaseIp(), config.getDatabasePort(),
                     databaseConnectionConfig);
         }
         // 数据库的用户名与密码
@@ -75,7 +75,18 @@ public abstract class DbConnector {
             columnNames.add(canonicalColumnName);
             ColumnManager.getInstance().addColumn(canonicalColumnName,
                     new Column(ColumnType.getColumnType(rs.getInt("DATA_TYPE"))));
-            if(ColumnManager.getInstance().getColumnType(canonicalColumnName)==ColumnType.DECIMAL) {
+            String originalType;
+            switch (rs.getInt("DATA_TYPE")) {
+                case Types.CHAR -> originalType = "CHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                case Types.VARCHAR -> originalType = "VARCHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                case Types.INTEGER -> originalType = "INTEGER" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                //case Types.DECIMAL -> originalType = "DECIMAL" + rs.getInt("DECIMAL_DIGITS") + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                case Types.DATE -> originalType = "DATE" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                case Types.NUMERIC -> originalType = "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                default -> throw new UnsupportedOperationException();
+            }
+            ColumnManager.getInstance().getColumn(canonicalColumnName).setOriginalType(originalType);
+            if (ColumnManager.getInstance().getColumnType(canonicalColumnName) == ColumnType.DECIMAL) {
                 ColumnManager.getInstance().setSpecialValue(canonicalColumnName, (int) Math.pow(10, rs.getInt("DECIMAL_DIGITS")));
             }
         }
@@ -108,6 +119,12 @@ public abstract class DbConnector {
                 }
             }
             return infos;
+        }
+    }
+
+    public void executeSql(String sql) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
         }
     }
 

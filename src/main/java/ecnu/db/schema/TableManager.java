@@ -25,6 +25,11 @@ public class TableManager {
     public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
     private static final TableManager INSTANCE = new TableManager();
+
+    public LinkedHashMap<String, Table> getSchemas() {
+        return schemas;
+    }
+
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
     private File schemaInfoPath;
 
