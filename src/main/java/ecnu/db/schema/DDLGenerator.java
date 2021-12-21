@@ -1,11 +1,9 @@
 package ecnu.db.schema;
 
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.TouchstoneException;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,60 +13,65 @@ import java.util.concurrent.Callable;
 public class DDLGenerator implements Callable<Integer> {
     @CommandLine.Option(names = {"-c", "--config_path"}, required = true, description = "the config path for creating ddl")
     private String configPath;
-    @CommandLine.Option(names = {"-d", "--database"}, defaultValue = "TouchstoneDatabase", description = "the database name")
+    @CommandLine.Option(names = {"-d", "--database"}, defaultValue = "demo", description = "the database name")
     private String dataBase;
     @CommandLine.Option(names = {"-o", "--output"}, defaultValue = "./ddl", description = "the output path for dll")
     private String outputPath;
 
-    private static final String OUTPUT_PATH = "./output";
-    private static final String CREATE_SCHEMA_PATH = OUTPUT_PATH + "/CreateSchema.sql";
-    private static final String CREATE_INDEX_PATH = OUTPUT_PATH + "/CreateIndex.sql";
-    private static final String IMPORT_DATA = OUTPUT_PATH + "/importData.sql";
-
-    @Override
-    public Integer call() throws IOException, SQLException, TouchstoneException {
+    public void init() throws IOException {
         TableManager.getInstance().setResultDir(configPath);
         TableManager.getInstance().loadSchemaInfo();
         ColumnManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnMetaData();
+        createSchemaPath = outputPath + "/CreateSchema.sql";
+        createIndexPath = outputPath + "/CreateIndex.sql";
+        importData = outputPath + "/importData.sql";
+    }
+
+    private String createSchemaPath;
+    private String createIndexPath;
+    private String importData;
+
+    @Override
+    public Integer call() throws IOException {
         //构建createschema语句
         createSchema();
         //构建数据导入语句
         importData();
         //构建createindex语句
         createIndex();
-        return null;
+        return 0;
     }
 
-    public void createSchema() throws SQLException, TouchstoneException, IOException {
-        String createTable = "DROP DATABASE IF EXISTS "+ dataBase + ";\nCREATE DATABASE "+ dataBase + ";\n";
-        StringBuilder createSchema = new StringBuilder(createTable);
-        createSchema.append("\\c ").append(dataBase).append("\n");
+    public void createSchema() throws IOException {
+        String deleteDatabase = "DROP DATABASE IF EXISTS " + dataBase + ";\n";
+        String createDatabase = "CREATE DATABASE " + dataBase + ";\n";
+        String connectDatabase = "\\c " + dataBase + ";\n";
+        StringBuilder createSchema = new StringBuilder().append(deleteDatabase).append(createDatabase).append(connectDatabase);
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             createSchema.append(tableName2Schema.getValue().getSql(tableName2Schema.getKey())).append("\n");
         }
-        CommonUtils.writeFile(CREATE_SCHEMA_PATH, createSchema.toString());
+        CommonUtils.writeFile(createSchemaPath, createSchema.toString());
     }
 
     public void importData() throws IOException {
-        StringBuilder importData = new StringBuilder("\\c " + dataBase +";\n");
+        StringBuilder importData = new StringBuilder("\\c " + dataBase + ";\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
             String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM " + "'" + "./data/" + tableName + "0" + "' DELIMITER ',';\n";
             importData.append(inData);
         }
-        CommonUtils.writeFile(IMPORT_DATA, importData.toString());
+        CommonUtils.writeFile(this.importData, importData.toString());
     }
+
     public void createIndex() throws IOException {
         List<String> addFks = new ArrayList<>();
-        StringBuilder createIndex =  new StringBuilder("\\c " + dataBase + "\n");
+        StringBuilder createIndex = new StringBuilder("\\c " + dataBase + "\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
             Table table = tableName2Schema.getValue();
             Map<String, String> foreignKeys = table.getForeignKeys();
             List<String> pks = new ArrayList<>(table.getPrimaryKeysList());
-            String addPk = null;
-            String addFk = null;
             if (!foreignKeys.isEmpty()) {
                 for (Map.Entry<String, String> foreignKey : foreignKeys.entrySet()) {
                     pks.removeIf(pk -> pk.equals(foreignKey.getKey()));
@@ -76,24 +79,25 @@ public class DDLGenerator implements Callable<Integer> {
                     String tableRef = foreignKey.getValue().split("\\.")[1].toUpperCase();
                     String indexName = tableName.split("\\.")[1] + "_" + key.split("_")[1].toLowerCase();
                     String simpleTableName = tableName.split("\\.")[1].toUpperCase();
-                    addFk = String.format("ALTER TABLE %s ADD FOREIGN KEY (%s) references %s;%nCREATE INDEX %s on %s(%s);%n", simpleTableName, key, tableRef, indexName, simpleTableName, key);
-                    addFks.add(addFk);
+                    addFks.add(String.format("ALTER TABLE %s ADD FOREIGN KEY (%s) references %s;%nCREATE INDEX %s on %s(%s);%n", simpleTableName, key, tableRef, indexName, simpleTableName, key));
                 }
             }
+            String addPk = null;
             if (!pks.isEmpty()) {
                 for (String pk : pks) {
                     pk = pk.split(",")[0].split("\\.")[2].toUpperCase();
                     String simpleTableName = tableName.split("\\.")[1].toUpperCase();
+                    // todo 复合主键会覆盖之前的创建
                     addPk = String.format("ALTER TABLE %s ADD PRIMARY KEY (%s);%n", simpleTableName, pk);
                 }
             }
             if (addPk != null) {
-                createIndex.append(addPk + "\n");
+                createIndex.append(addPk).append("\n");
             }
         }
         for (String addFk : addFks) {
-            createIndex.append(addFk + "\n");
+            createIndex.append(addFk).append("\n");
         }
-        CommonUtils.writeFile(CREATE_INDEX_PATH, createIndex.toString());
+        CommonUtils.writeFile(createIndexPath, createIndex.toString());
     }
 }
