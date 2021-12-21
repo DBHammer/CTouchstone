@@ -39,6 +39,34 @@ public class ConstraintChainManager {
         });
     }
 
+    /**
+     * 对一组约束链进行分类
+     *
+     * @param allChains              输入的约束链
+     * @param haveFkConstrainChains  含有外键和Agg的约束链
+     * @param onlyPkConstrainChains  只有主键的约束链
+     * @param fkAndPkConstrainChains 既含有主键又含有外键的约束链
+     */
+    public void classifyConstraintChain(List<ConstraintChain> allChains, List<ConstraintChain> haveFkConstrainChains,
+                                        List<ConstraintChain> onlyPkConstrainChains, List<ConstraintChain> fkAndPkConstrainChains) {
+        for (ConstraintChain constraintChain : allChains) {
+            if (constraintChain.getNodes().stream().allMatch(node ->
+                    node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN ||
+                            node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER)) {
+                onlyPkConstrainChains.add(constraintChain);
+            } else {
+                if (constraintChain.getNodes().stream().anyMatch(node ->
+                        node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN)) {
+                    fkAndPkConstrainChains.add(constraintChain);
+                }
+                haveFkConstrainChains.add(constraintChain);
+            }
+        }
+        logger.debug("含有外键约束的链有{}条，不需要推导主键信息的约束链有{}条，需要推导主键信息的约束链有{}条",
+                haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
+    }
+
+
     public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
         String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
         CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
