@@ -122,8 +122,14 @@ public class Column {
             default -> throw new UnsupportedOperationException();
         };
         parameters.parallelStream().forEach(parameter -> {
-            parameter.setData(bound);
-            parameter.setDataValue(transferDataToValue(bound));
+            long value = bound;
+            if(operator==CompareOperator.GE){
+                value++;
+            }else if(operator==CompareOperator.LE){
+                value--;
+            }
+            parameter.setData(value);
+            parameter.setDataValue(transferDataToValue(value));
         });
         if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
             if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(bound))) {
@@ -404,8 +410,8 @@ public class Column {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
             case VARCHAR -> stringTemplate.transferColumnData2Value(data);
-            case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochMilli(data + min));
-            case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochMilli(data + min));
+            case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min)*24*60*60));
+            case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();
         };
     }
