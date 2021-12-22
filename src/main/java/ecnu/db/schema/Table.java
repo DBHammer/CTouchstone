@@ -112,6 +112,7 @@ public class Table {
         return String.join(",", primaryKeys);
     }
 
+    @JsonIgnore
     public List<String> getPrimaryKeysList() {
         return primaryKeys;
     }
