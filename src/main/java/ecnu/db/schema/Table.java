@@ -18,7 +18,7 @@ public class Table {
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new HashMap<>();
     @JsonIgnore
-    private long joinTag = 1;
+    private int joinTag = 0;
 
     public Table() {
     }
@@ -42,14 +42,8 @@ public class Table {
         return canonicalColumnNamesNotKey;
     }
 
-    public synchronized long getJoinTag() {
-        long temp = joinTag;
-        joinTag *= 4;
-        return temp;
-    }
-
-    public void setJoinTag(int joinTag) {
-        this.joinTag = joinTag;
+    public synchronized int getJoinTag() {
+        return joinTag++;
     }
 
 

@@ -10,7 +10,7 @@ public class JoinNode extends ExecutionNode {
     /**
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
      */
-    private long joinTag = Long.MIN_VALUE;
+    private int joinTag = Integer.MIN_VALUE;
     private final BigDecimal pkDistinctProbability;
     private long rowsRemoveByFilterAfterJoin;
     private String indexJoinFilter;
@@ -25,7 +25,7 @@ public class JoinNode extends ExecutionNode {
     /**
      * @return 当前表最新的join tag
      */
-    public long getJoinTag() {
+    public int getJoinTag() {
         try {
             waitSetJoinTag.await();
         } catch (InterruptedException e) {
@@ -35,7 +35,7 @@ public class JoinNode extends ExecutionNode {
         return joinTag;
     }
 
-    public void setJoinTag(long joinTag) {
+    public void setJoinTag(int joinTag) {
         this.joinTag = joinTag;
         waitSetJoinTag.countDown();
     }

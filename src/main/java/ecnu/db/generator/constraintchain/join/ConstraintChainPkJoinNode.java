@@ -10,13 +10,13 @@ import java.util.Arrays;
  */
 public class ConstraintChainPkJoinNode extends ConstraintChainNode {
     private String[] pkColumns;
-    private long pkTag;
+    private int pkTag;
 
     public ConstraintChainPkJoinNode() {
         super(ConstraintChainNodeType.PK_JOIN);
     }
 
-    public ConstraintChainPkJoinNode(long pkTag, String[] pkColumns) {
+    public ConstraintChainPkJoinNode(int pkTag, String[] pkColumns) {
         super(ConstraintChainNodeType.PK_JOIN);
         this.pkTag = pkTag;
         this.pkColumns = pkColumns;
@@ -31,11 +31,11 @@ public class ConstraintChainPkJoinNode extends ConstraintChainNode {
         return pkColumns;
     }
 
-    public long getPkTag() {
+    public int getPkTag() {
         return pkTag;
     }
 
-    public void setPkTag(long pkTag) {
+    public void setPkTag(int pkTag) {
         this.pkTag = pkTag;
     }
 }

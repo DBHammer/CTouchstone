@@ -193,7 +193,7 @@ public class QueryAnalyzer {
         } else {
             constraintChain.addJoinTable(externalTable);
             logger.debug("{} wait join tag", node.getInfo());
-            long fkJoinTag = node.getJoinTag();
+            int fkJoinTag = node.getJoinTag();
             logger.debug("{} get join tag", node.getInfo());
             if (fkJoinTag == SKIP_JOIN_TAG) {
                 logger.debug("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());

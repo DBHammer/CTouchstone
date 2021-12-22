@@ -91,7 +91,7 @@ public class TableManager {
         return getSchema(tableName).getTableSize();
     }
 
-    public long getJoinTag(String tableName) throws CannotFindSchemaException {
+    public int getJoinTag(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getJoinTag();
     }
 
