@@ -229,9 +229,14 @@ public class ColumnManager {
                     min = (long) (Double.parseDouble(sqlResult[index++]) * specialValue);
                     range = (long) (Double.parseDouble(sqlResult[index++]) * specialValue) - min;
                 }
-                case DATE, DATETIME -> {
-                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000;
-                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000 - min;
+                case DATE -> {
+                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC)/(24*60*60);
+                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC)/(24*60*60) - min;
+                    specialValue = 0;
+                }
+                case DATETIME -> {
+                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC);
+                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) - min;
                     specialValue = 0;
                 }
                 default -> throw new TouchstoneException("未匹配到的类型");

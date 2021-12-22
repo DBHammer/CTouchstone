@@ -13,10 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
@@ -145,7 +143,12 @@ public class TableManager {
     }
 
     public String getPrimaryKeyColumn(String schemaName) throws CannotFindSchemaException {
-        return getSchema(schemaName).getPrimaryKeys();
+        List<String> pkNames = new ArrayList<>( getSchema(schemaName).getPrimaryKeysList());
+        var fks = getSchema(schemaName).getForeignKeys();
+        if(fks!=null){
+            pkNames.removeAll(fks.keySet());
+        }
+        return String.join(",", pkNames);
     }
 
     public Table getSchema(String tableName) throws CannotFindSchemaException {

@@ -152,7 +152,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         long internalValue = (long) (PosthSmallestNumber * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         parameters.forEach(param -> param.setData(internalValue));
         //todo check parameter type
-        parameters.forEach(param -> param.setDataValue("interval '" + internalValue / 86400000 + "' day"));
+        parameters.forEach(param -> param.setDataValue("interval '" + internalValue + "' day"));
     }
 
     private static double select(double[] a,int l,int r,int k){

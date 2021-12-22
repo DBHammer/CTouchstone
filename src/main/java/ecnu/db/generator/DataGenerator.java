@@ -18,6 +18,7 @@ import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -158,7 +159,7 @@ public class DataGenerator implements Callable<Integer> {
                         }
                         rowData.get(i).insert(0, new StringBuilder().append(pkStatus2Location.get(new JoinStatus(status)).getAndIncrement()).append(","));
                     }
-                } else if (pkName != null) {
+                } else if (!pkName.isEmpty()) {
                     for (int i = 0; i < rowData.size(); i++) {
                         rowData.get(i).insert(0, new StringBuilder().append(resultStart + i).append(","));
                     }
