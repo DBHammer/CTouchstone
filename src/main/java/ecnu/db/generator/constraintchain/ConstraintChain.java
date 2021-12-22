@@ -1,15 +1,22 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.ortools.sat.CpModel;
+import com.google.ortools.sat.IntVar;
+import com.google.ortools.sat.LinearExpr;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
-import ecnu.db.utils.exception.TouchstoneException;
+import ecnu.db.generator.constraintchain.join.ConstraintNodeJoinType;
+import ecnu.db.generator.joininfo.JoinStatus;
+import ecnu.db.utils.exception.schema.CannotFindColumnException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 /**
@@ -18,6 +25,7 @@ import java.util.stream.IntStream;
 public class ConstraintChain {
 
     private final List<ConstraintChainNode> nodes = new ArrayList<>();
+    private final Logger logger = LoggerFactory.getLogger(ConstraintChain.class);
 
     @JsonIgnore
     private final Set<String> joinTables = new HashSet<>();
@@ -68,41 +76,107 @@ public class ConstraintChain {
     }
 
     /**
-     * 计算pk和fk的bitmap
+     * 给定range空间 计算filter的状态
      *
-     * @param pkBitMap  pkTag -> bitmaps
-     * @param fkBitMaps ref_col+local_col -> bitmaps
-     * @throws TouchstoneException 计算失败
+     * @param range 批大小
+     * @return filter状态
      */
-    public void evaluate(long[] pkBitMap, Map<String, long[]> fkBitMaps) throws TouchstoneException {
-        boolean[] flag = new boolean[pkBitMap.length];
-        Arrays.fill(flag, true);
+    public boolean[] evaluateFilterStatus(int range) {
+        if (nodes.get(0).getConstraintChainNodeType() == ConstraintChainNodeType.FILTER) {
+            try {
+                return ((ConstraintChainFilterNode) nodes.get(0)).evaluate();
+            } catch (CannotFindColumnException e) {
+                e.printStackTrace();
+                return new boolean[0];
+            }
+        } else {
+            boolean[] ret = new boolean[range];
+            Arrays.fill(ret, true);
+            return ret;
+        }
+    }
+
+    public void computePkStatus(List<List<boolean[]>> fkStatus, List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus,
+                                int filterIndex, boolean[][] pkStatus) {
+        boolean[] canBeInput = new boolean[fkStatus.size()];
+        Arrays.fill(canBeInput, true);
         for (ConstraintChainNode node : nodes) {
+            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER) {
+                int i = 0;
+                for (var status : filterStatus2PkStatus) {
+                    canBeInput[i++] = status.getKey().status()[filterIndex];
+                }
+            } else if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN) {
+                ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
+                int joinStatusIndex = fkJoinNode.joinStatusIndex;
+                int joinStatusLocation = fkJoinNode.joinStatusLocation;
+                for (int i = 0; i < fkStatus.size(); i++) {
+                    if (canBeInput[i]) {
+                        canBeInput[i] = fkStatus.get(i).get(joinStatusIndex)[joinStatusLocation];
+                    }
+                }
+            } else if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
+                pkStatus[((ConstraintChainPkJoinNode) node).getPkTag()] = canBeInput;
+                break;
+            }
+        }
+
+    }
+
+    public void addConstraint2Model(CpModel model, IntVar[] vars, int filterIndex, int filterSize, int unFilterSize,
+                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
+        // 每一组填充状态是否能到达这个算子
+        boolean[] canBeInput = new boolean[filterStatus2PkStatus.size()];
+        Arrays.fill(canBeInput, true);
+        for (ConstraintChainNode node : nodes) {
+            // filter的状态 根据其filter status对应的index的位置获得
             switch (node.getConstraintChainNodeType()) {
                 case FILTER -> {
-                    boolean[] evaluateStatus = ((ConstraintChainFilterNode) node).evaluate();
-                    IntStream.range(0, pkBitMap.length).parallel().forEach(i -> flag[i] &= evaluateStatus[i]);
+                    int i = 0;
+                    for (Map.Entry<JoinStatus, List<boolean[]>> status2PkStatus : filterStatus2PkStatus) {
+                        canBeInput[i++] = status2PkStatus.getKey().status()[filterIndex];
+                    }
                 }
+                // join的状态根据前缀状态获得
+                // todo 考虑index join
+                // todo 考虑semi join 和 outer join
                 case FK_JOIN -> {
-                    ConstraintChainFkJoinNode constraintChainFkJoinNode = (ConstraintChainFkJoinNode) node;
-                    double probability = constraintChainFkJoinNode.getProbability().doubleValue();
-                    long[] fkBitMap = fkBitMaps.computeIfAbsent(constraintChainFkJoinNode.getLocalCols() + ":" +
-                            constraintChainFkJoinNode.getRefCols(), k -> new long[pkBitMap.length]);
-                    long fkTag = constraintChainFkJoinNode.getPkTag();
-                    IntStream.range(0, pkBitMap.length).parallel()
-                            .filter(i -> flag[i])
-                            .forEach(i -> {
-                                //todo 引入规则
-                                flag[i] &= ThreadLocalRandom.current().nextDouble() < probability;
-                                fkBitMap[i] += fkTag * (1 + Boolean.compare(flag[i], false));
-                            });
+                    ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
+                    // 获取join对应的位置
+                    int joinStatusIndex = fkJoinNode.joinStatusIndex;
+                    int joinStatusLocation = fkJoinNode.joinStatusLocation;
+                    // 找到有效的CpModel变量
+                    if (fkJoinNode.getProbabilityWithFailFilter() != null) {
+                        List<IntVar> indexJoinVars = new ArrayList<>();
+                        IntStream.range(0, filterStatus2PkStatus.size()).filter(i -> !canBeInput[i]).forEach(i -> {
+                            if (filterStatus2PkStatus.get(i).getValue().get(joinStatusIndex)[joinStatusLocation] ==
+                                    (fkJoinNode.getType() != ConstraintNodeJoinType.ANTI_SEMI_JOIN)) {
+                                logger.info("indexJoin {}", i);
+                                logger.info(filterStatus2PkStatus.get(i).getKey().toString());
+                                logger.info(filterStatus2PkStatus.get(i).getValue().toString());
+                                System.out.println(filterStatus2PkStatus.get(i).getValue());
+                                indexJoinVars.add(vars[i]);
+                            }
+                        });
+                        int unfilterSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).intValue();
+                        logger.info("输出的数据量为:{}, 属于第{}个过滤算子, 为第{}个表的第{}个状态", unfilterSize, filterIndex, joinStatusIndex, joinStatusLocation);
+                        model.addEquality(LinearExpr.sum(indexJoinVars.toArray(IntVar[]::new)), unfilterSize);
+                    }
+                    List<IntVar> validVars = new ArrayList<>();
+                    IntStream.range(0, filterStatus2PkStatus.size()).filter(i -> canBeInput[i]).forEach(i -> {
+                        if (filterStatus2PkStatus.get(i).getValue().get(joinStatusIndex)[joinStatusLocation] ==
+                                (fkJoinNode.getType() != ConstraintNodeJoinType.ANTI_SEMI_JOIN)) {
+                            validVars.add(vars[i]);
+                        } else {
+                            canBeInput[i] = false;
+                        }
+                    });
+                    filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                    logger.info("输出的数据量为:{}, 属于第{}个过滤算子, 为第{}个表的第{}个状态", filterSize, filterIndex, joinStatusIndex, joinStatusLocation);
+                    model.addEquality(LinearExpr.sum(validVars.toArray(IntVar[]::new)), filterSize);
                 }
-                case PK_JOIN -> {
-                    long pkTag = ((ConstraintChainPkJoinNode) node).getPkTag();
-                    IntStream.range(0, flag.length).parallel()
-                            .forEach(i -> pkBitMap[i] += pkTag * (1 + Boolean.compare(flag[i], false)));
+                default -> {
                 }
-                default -> throw new UnsupportedOperationException("不支持的Node类型");
             }
         }
     }
@@ -187,6 +261,21 @@ public class ConstraintChain {
             graph.append(String.format("\t%s->RESULT[label=\"%2$,.4f\"]%n", lastNodeInfo, lastProbability));
         }
         return graph;
+    }
+
+    @JsonIgnore
+    public int getJoinTag() {
+        int joinTag = Integer.MIN_VALUE;
+        for (ConstraintChainNode node : nodes) {
+            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
+                if (joinTag == Integer.MIN_VALUE) {
+                    joinTag = ((ConstraintChainPkJoinNode) node).getPkTag();
+                } else {
+                    throw new UnsupportedOperationException("约束链中存在双主键");
+                }
+            }
+        }
+        return joinTag;
     }
 
     static class SubGraph {
