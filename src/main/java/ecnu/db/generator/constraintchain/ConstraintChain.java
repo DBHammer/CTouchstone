@@ -154,7 +154,6 @@ public class ConstraintChain {
                                 logger.info("indexJoin {}", i);
                                 logger.info(filterStatus2PkStatus.get(i).getKey().toString());
                                 logger.info(filterStatus2PkStatus.get(i).getValue().toString());
-                                System.out.println(filterStatus2PkStatus.get(i).getValue());
                                 indexJoinVars.add(vars[i]);
                             }
                         });
