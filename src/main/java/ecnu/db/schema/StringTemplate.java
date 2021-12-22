@@ -64,13 +64,13 @@ class StringTemplate {
             char[] value = getParameterBuilder(data);
             boolean[] status = likeIndex2Status.get(data);
             if (status[0]) {
-                value[0] = (char) (ThreadLocalRandom.current().nextInt(52) + 65);
+                value[0] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
             }
             if (status[1]) {
-                value[value.length - 1] = (char) (ThreadLocalRandom.current().nextInt(52) + 65);
+                value[value.length - 1] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
             }
             if (status[2]) {
-                value[value.length / 2] = (char) (ThreadLocalRandom.current().nextInt(52) + 65);
+                value[value.length / 2] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
             }
             return new String(value);
         } else {
