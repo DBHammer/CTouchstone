@@ -210,28 +210,29 @@ public class Column {
         // 填充到bucket之后，重新调整剩余容量的记录treemap
         // 针对等值约束的赋值，采用逆序赋值法，即从bound开始，按照当前在bucket中的位置，分配对应的值，赋值最小从lowBound-1开始
         for (BigDecimal eqProbability : eqRequest2ParameterIds.descendingKeySet()) {
-            bucketBound2FreeSpace.sort(Map.Entry.comparingByValue());
-            Optional<Map.Entry<Long, BigDecimal>> freeSpace2BucketIdOptional = bucketBound2FreeSpace.stream().
-                    filter(bucket -> bucket.getValue().compareTo(eqProbability) > -1).findFirst();
-            if (freeSpace2BucketIdOptional.isPresent()) {
-                //重新调整freeSpace
-                Map.Entry<Long, BigDecimal> freeSpace2BucketId = freeSpace2BucketIdOptional.get();
-                Long bucketBound = freeSpace2BucketId.getKey();
-                bucketBound2FreeSpace.remove(freeSpace2BucketId);
-                bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bucketBound, freeSpace2BucketId.getValue().subtract(eqProbability)));
-                //顺序赋值
-                long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
-                eqConstraint2Probability.put(eqParameterData, eqProbability);
-                eqRequest2ParameterIds.get(eqProbability).forEach(parameter -> {
+            while (!eqRequest2ParameterIds.get(eqProbability).isEmpty()){
+                bucketBound2FreeSpace.sort(Map.Entry.comparingByValue());
+                Optional<Map.Entry<Long, BigDecimal>> freeSpace2BucketIdOptional = bucketBound2FreeSpace.stream().
+                        filter(bucket -> bucket.getValue().compareTo(eqProbability) > -1).findFirst();
+                if (freeSpace2BucketIdOptional.isPresent()) {
+                    //重新调整freeSpace
+                    Map.Entry<Long, BigDecimal> freeSpace2BucketId = freeSpace2BucketIdOptional.get();
+                    Long bucketBound = freeSpace2BucketId.getKey();
+                    bucketBound2FreeSpace.remove(freeSpace2BucketId);
+                    bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bucketBound, freeSpace2BucketId.getValue().subtract(eqProbability)));
+                    //顺序赋值
+                    long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
+                    eqConstraint2Probability.put(eqParameterData, eqProbability);
+                    Parameter parameter = eqRequest2ParameterIds.get(eqProbability).remove(0);
                     parameter.setData(eqParameterData);
                     if (likeParameterId.contains(parameter.getId())) {
                         parameter.setDataValue(stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue()));
                     } else {
                         parameter.setDataValue(transferDataToValue(eqParameterData));
                     }
-                });
-            } else {
-                throw new UnsupportedOperationException("等值约束冲突，无法实例化");
+                } else {
+                    throw new UnsupportedOperationException("等值约束冲突，无法实例化");
+                }
             }
         }
 
