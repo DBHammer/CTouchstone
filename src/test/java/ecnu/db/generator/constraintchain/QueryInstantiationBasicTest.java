@@ -1,9 +1,7 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.schema.Column;
@@ -114,7 +112,7 @@ class QueryInstantiationBasicTest {
         // 6.sql_1 between
         long left = id2Parameter.get(126).getData();
         long right = id2Parameter.get(127).getData();
-        assertEquals(4.154052365E9, right - left, 0);
+        assertEquals(49, right - left, 0);
 
         // ******************************
         // *    test data generation    *

@@ -91,6 +91,7 @@ public class Parameter {
         this.id = id;
     }
 
+    @JsonIgnore
     public String getRealDataValue(){
         if(type==ParameterType.SUBSTRING){
             return dataValue.replace("%","");

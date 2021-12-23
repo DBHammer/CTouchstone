@@ -1,5 +1,8 @@
-package ecnu.db.generator.constraintchain.chain;
+package ecnu.db.generator.constraintchain.agg;
 
+import ecnu.db.generator.constraintchain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
+import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.TableManager;
 import org.slf4j.Logger;
@@ -91,9 +94,7 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
         for (String key : groupKey) {
             String[] array = key.split("\\.");
             String tableName = array[0] + "." + array[1];
-            if (!table2keys.containsKey(tableName)) {
-                table2keys.put(tableName, new ArrayList<>());
-            }
+            table2keys.computeIfAbsent(tableName, v -> new ArrayList<>());
             table2keys.get(tableName).add(key);
         }
         return table2keys;

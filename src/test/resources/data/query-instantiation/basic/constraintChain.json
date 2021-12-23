@@ -14,13 +14,13 @@
                     "parameters" : [
                       {
                         "id" : 8,
-                        "data" : 3,
-                        "actual" : true
+                        "data" : 4,
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 9,
-                        "data" : 4,
-                        "actual" : true
+                        "data" : 3,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "IN",
@@ -32,8 +32,8 @@
                     "parameters" : [
                       {
                         "id" : 13,
-                        "data" : 220579200000,
-                        "actual" : true
+                        "data" : 2553,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -46,7 +46,7 @@
                       {
                         "id" : 12,
                         "data" : 0,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -58,8 +58,8 @@
                     "parameters" : [
                       {
                         "id" : 11,
-                        "data" : 218061159542,
-                        "actual" : true
+                        "data" : 2524,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -85,8 +85,8 @@
                     "parameters" : [
                       {
                         "id" : 10,
-                        "data" : 212759432725,
-                        "actual" : true
+                        "data" : 2463,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -133,8 +133,8 @@
                     "parameters" : [
                       {
                         "id" : 100,
-                        "data" : 0,
-                        "actual" : true
+                        "data" : -1,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GT",
@@ -146,38 +146,38 @@
                     "parameters" : [
                       {
                         "id" : 101,
-                        "data" : 149987,
-                        "actual" : true
+                        "data" : 149999,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 102,
-                        "data" : 149986,
-                        "actual" : true
+                        "data" : 149998,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 103,
-                        "data" : 149996,
-                        "actual" : true
+                        "data" : 149997,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 104,
-                        "data" : 149995,
-                        "actual" : true
+                        "data" : 149996,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 105,
-                        "data" : 149997,
-                        "actual" : true
+                        "data" : 149995,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 106,
-                        "data" : 149993,
-                        "actual" : true
+                        "data" : 149994,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 107,
-                        "data" : 149999,
-                        "actual" : true
+                        "data" : 149993,
+                        "type" : "SUBSTRING"
                       }
                     ],
                     "operator" : "IN",
@@ -193,6 +193,7 @@
         },
         {
           "constraintChainNodeType" : "AGGREGATE",
+          "aggProbability" : 0.0000260837811,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -203,7 +204,7 @@
                     {
                       "id" : 108,
                       "data" : 0,
-                      "actual" : false
+                      "type" : "VIRTUAL"
                     }
                   ],
                   "operator" : "EQ",
@@ -222,8 +223,7 @@
               ]
             },
             "probability" : 1
-          },
-          "aggProbability" : 0.0000260837811
+          }
         }
       ],
       "tableName" : "public.customer"
@@ -241,8 +241,8 @@
                 "parameters" : [
                   {
                     "id" : 118,
-                    "data" : 100311033881,
-                    "actual" : true
+                    "data" : 1161,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "LT",
@@ -258,7 +258,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer.c_custkey",
           "localCols" : "public.orders.o_custkey",
-          "pkTag" : 16,
+          "pkTag" : 2,
           "probability" : 0.1995522848,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -268,7 +268,7 @@
           "pkColumns" : [
             "o_orderkey"
           ],
-          "pkTag" : 16
+          "pkTag" : 2
         }
       ],
       "tableName" : "public.orders"
@@ -285,7 +285,7 @@
                   {
                     "id" : 117,
                     "data" : 4,
-                    "actual" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -302,7 +302,7 @@
           "pkColumns" : [
             "c_custkey"
           ],
-          "pkTag" : 16
+          "pkTag" : 2
         }
       ],
       "tableName" : "public.customer"
@@ -318,8 +318,8 @@
                 "parameters" : [
                   {
                     "id" : 119,
-                    "data" : 99857862705,
-                    "actual" : true
+                    "data" : 1154,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "GT",
@@ -335,7 +335,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.orders.o_orderkey",
           "localCols" : "public.lineitem.l_orderkey",
-          "pkTag" : 16,
+          "pkTag" : 2,
           "probability" : 0.009253930116,
           "probabilityWithFailFilter" : 0.1994705347,
           "pkDistinctProbability" : 0,
@@ -359,7 +359,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.region.r_regionkey",
           "localCols" : "public.nation.n_regionkey",
-          "pkTag" : 4,
+          "pkTag" : 1,
           "probability" : 0.2,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -369,7 +369,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 1024
+          "pkTag" : 5
         }
       ],
       "tableName" : "public.nation"
@@ -386,7 +386,7 @@
                   {
                     "id" : 125,
                     "data" : 4,
-                    "actual" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -403,7 +403,7 @@
           "pkColumns" : [
             "r_regionkey"
           ],
-          "pkTag" : 4
+          "pkTag" : 1
         }
       ],
       "tableName" : "public.region"
@@ -414,7 +414,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.customer.c_nationkey",
-          "pkTag" : 1024,
+          "pkTag" : 5,
           "probability" : 0.1984266667,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -424,7 +424,7 @@
           "pkColumns" : [
             "c_custkey"
           ],
-          "pkTag" : 64
+          "pkTag" : 3
         }
       ],
       "tableName" : "public.customer"
@@ -443,8 +443,8 @@
                     "parameters" : [
                       {
                         "id" : 123,
-                        "data" : 176395321433,
-                        "actual" : true
+                        "data" : 2041,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -456,8 +456,8 @@
                     "parameters" : [
                       {
                         "id" : 124,
-                        "data" : 207792000000,
-                        "actual" : true
+                        "data" : 2405,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -475,7 +475,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer.c_custkey",
           "localCols" : "public.orders.o_custkey",
-          "pkTag" : 64,
+          "pkTag" : 3,
           "probability" : 0.1997838029,
           "probabilityWithFailFilter" : 0.1992492274,
           "pkDistinctProbability" : 0,
@@ -486,7 +486,7 @@
           "pkColumns" : [
             "o_orderkey"
           ],
-          "pkTag" : 256
+          "pkTag" : 4
         }
       ],
       "tableName" : "public.orders"
@@ -497,7 +497,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.orders.o_orderkey",
           "localCols" : "public.lineitem.l_orderkey",
-          "pkTag" : 256,
+          "pkTag" : 4,
           "probability" : 0.03023787683,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -519,7 +519,7 @@
                   {
                     "id" : 139,
                     "data" : 149,
-                    "actual" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -536,7 +536,7 @@
           "pkColumns" : [
             "p_partkey"
           ],
-          "pkTag" : 1024
+          "pkTag" : 5
         }
       ],
       "tableName" : "public.part"
@@ -547,7 +547,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.part.p_partkey",
           "localCols" : "public.lineitem.l_partkey",
-          "pkTag" : 1024,
+          "pkTag" : 5,
           "probability" : 0.006874441259,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -556,7 +556,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.orders.o_orderkey",
           "localCols" : "public.lineitem.l_orderkey",
-          "pkTag" : 4096,
+          "pkTag" : 6,
           "probability" : 0.06319234032,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -570,7 +570,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.region.r_regionkey",
           "localCols" : "public.nation.n_regionkey",
-          "pkTag" : 16,
+          "pkTag" : 2,
           "probability" : 0.2,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -580,7 +580,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 65536
+          "pkTag" : 8
         }
       ],
       "tableName" : "public.nation"
@@ -596,8 +596,8 @@
                 "parameters" : [
                   {
                     "id" : 140,
-                    "data" : 4,
-                    "actual" : true
+                    "data" : 3,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -614,7 +614,7 @@
           "pkColumns" : [
             "r_regionkey"
           ],
-          "pkTag" : 16
+          "pkTag" : 2
         }
       ],
       "tableName" : "public.region"
@@ -625,7 +625,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.customer.c_nationkey",
-          "pkTag" : 65536,
+          "pkTag" : 8,
           "probability" : 0.20122,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -635,7 +635,7 @@
           "pkColumns" : [
             "c_custkey"
           ],
-          "pkTag" : 1024
+          "pkTag" : 5
         }
       ],
       "tableName" : "public.customer"
@@ -654,8 +654,8 @@
                     "parameters" : [
                       {
                         "id" : 137,
-                        "data" : 144448271136,
-                        "actual" : true
+                        "data" : 1671,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -667,8 +667,8 @@
                     "parameters" : [
                       {
                         "id" : 138,
-                        "data" : 207792000000,
-                        "actual" : true
+                        "data" : 2404,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -686,7 +686,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer.c_custkey",
           "localCols" : "public.orders.o_custkey",
-          "pkTag" : 1024,
+          "pkTag" : 5,
           "probability" : 0.2005563538,
           "probabilityWithFailFilter" : 0.2014266301,
           "pkDistinctProbability" : 0,
@@ -697,7 +697,7 @@
           "pkColumns" : [
             "o_orderkey"
           ],
-          "pkTag" : 4096
+          "pkTag" : 6
         }
       ],
       "tableName" : "public.orders"
@@ -710,13 +710,17 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.part.p_partkey",
           "localCols" : "public.lineitem.l_partkey",
-          "pkTag" : 4,
+          "pkTag" : 1,
           "probability" : 0.001009295618,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
           "constraintChainNodeType" : "AGGREGATE",
+          "groupKey" : [
+            "public.lineitem.l_partkey"
+          ],
+          "aggProbability" : 1,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -727,7 +731,7 @@
                     {
                       "id" : 32,
                       "data" : 0,
-                      "actual" : true
+                      "type" : "ACTUAL"
                     }
                   ],
                   "operator" : "LT",
@@ -760,11 +764,7 @@
               ]
             },
             "probability" : 0.09162951956
-          },
-          "groupKey" : [
-            "public.lineitem.l_partkey"
-          ],
-          "aggProbability" : 1
+          }
         }
       ],
       "tableName" : "public.lineitem"
@@ -784,7 +784,7 @@
                       {
                         "id" : 30,
                         "data" : 23,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -796,8 +796,8 @@
                     "parameters" : [
                       {
                         "id" : 31,
-                        "data" : 38,
-                        "actual" : true
+                        "data" : 39,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -816,7 +816,7 @@
           "pkColumns" : [
             "p_partkey"
           ],
-          "pkTag" : 4
+          "pkTag" : 1
         }
       ],
       "tableName" : "public.part"
@@ -837,8 +837,8 @@
                     "parameters" : [
                       {
                         "id" : 92,
-                        "data" : 185125593901,
-                        "actual" : true
+                        "data" : 2142,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -850,8 +850,8 @@
                     "parameters" : [
                       {
                         "id" : 93,
-                        "data" : 218160000000,
-                        "actual" : true
+                        "data" : 2525,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -876,7 +876,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.customer.c_nationkey",
-          "pkTag" : 4096,
+          "pkTag" : 6,
           "probability" : 0.07996,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -886,7 +886,7 @@
           "pkColumns" : [
             "c_custkey"
           ],
-          "pkTag" : 256
+          "pkTag" : 4
         }
       ],
       "tableName" : "public.customer"
@@ -906,7 +906,7 @@
                       {
                         "id" : 133,
                         "data" : 24,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -918,8 +918,8 @@
                     "parameters" : [
                       {
                         "id" : 134,
-                        "data" : 22,
-                        "actual" : true
+                        "data" : 18,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -938,7 +938,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 4096
+          "pkTag" : 6
         }
       ],
       "tableName" : "public.nation"
@@ -949,7 +949,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer.c_custkey",
           "localCols" : "public.orders.o_custkey",
-          "pkTag" : 256,
+          "pkTag" : 4,
           "probability" : 0.07968866667,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -959,7 +959,7 @@
           "pkColumns" : [
             "o_orderkey"
           ],
-          "pkTag" : 1024
+          "pkTag" : 5
         }
       ],
       "tableName" : "public.orders"
@@ -978,8 +978,8 @@
                     "parameters" : [
                       {
                         "id" : 131,
-                        "data" : 151691017962,
-                        "actual" : true
+                        "data" : 1755,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -991,8 +991,8 @@
                     "parameters" : [
                       {
                         "id" : 132,
-                        "data" : 218160000000,
-                        "actual" : true
+                        "data" : 2524,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -1010,7 +1010,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.orders.o_orderkey",
           "localCols" : "public.lineitem.l_orderkey",
-          "pkTag" : 1024,
+          "pkTag" : 5,
           "probability" : 0.07954825125,
           "probabilityWithFailFilter" : 0.07968457366,
           "pkDistinctProbability" : 0,
@@ -1020,7 +1020,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.supplier.s_suppkey",
           "localCols" : "public.lineitem.l_suppkey",
-          "pkTag" : 4096,
+          "pkTag" : 6,
           "probability" : 0.03936060502,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1034,7 +1034,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.supplier.s_nationkey",
-          "pkTag" : 16384,
+          "pkTag" : 7,
           "probability" : 0.0795,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1044,7 +1044,7 @@
           "pkColumns" : [
             "s_suppkey"
           ],
-          "pkTag" : 4096
+          "pkTag" : 6
         }
       ],
       "tableName" : "public.supplier"
@@ -1063,8 +1063,8 @@
                     "parameters" : [
                       {
                         "id" : 135,
-                        "data" : 24,
-                        "actual" : true
+                        "data" : 23,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1076,8 +1076,8 @@
                     "parameters" : [
                       {
                         "id" : 136,
-                        "data" : 22,
-                        "actual" : true
+                        "data" : 17,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1096,7 +1096,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 16384
+          "pkTag" : 7
         }
       ],
       "tableName" : "public.nation"
@@ -1109,7 +1109,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.region.r_regionkey",
           "localCols" : "public.nation.n_regionkey",
-          "pkTag" : 1,
+          "pkTag" : 0,
           "probability" : 0.2,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1119,7 +1119,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 16
+          "pkTag" : 2
         }
       ],
       "tableName" : "public.nation"
@@ -1135,8 +1135,8 @@
                 "parameters" : [
                   {
                     "id" : 86,
-                    "data" : 4,
-                    "actual" : true
+                    "data" : 2,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1153,7 +1153,7 @@
           "pkColumns" : [
             "r_regionkey"
           ],
-          "pkTag" : 1
+          "pkTag" : 0
         }
       ],
       "tableName" : "public.region"
@@ -1164,7 +1164,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.supplier.s_nationkey",
-          "pkTag" : 16,
+          "pkTag" : 2,
           "probability" : 0.2036,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1174,7 +1174,7 @@
           "pkColumns" : [
             "s_suppkey"
           ],
-          "pkTag" : 64
+          "pkTag" : 3
         }
       ],
       "tableName" : "public.supplier"
@@ -1185,7 +1185,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.supplier.s_suppkey",
           "localCols" : "public.partsupp.ps_suppkey",
-          "pkTag" : 64,
+          "pkTag" : 3,
           "probability" : 0.2036,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1194,13 +1194,17 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.part.p_partkey",
           "localCols" : "public.partsupp.ps_partkey",
-          "pkTag" : 64,
+          "pkTag" : 3,
           "probability" : 0.004242387033,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
           "constraintChainNodeType" : "AGGREGATE",
+          "groupKey" : [
+            "public.partsupp.ps_partkey"
+          ],
+          "aggProbability" : 1,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -1211,7 +1215,7 @@
                     {
                       "id" : 89,
                       "data" : 0,
-                      "actual" : true
+                      "type" : "ACTUAL"
                     }
                   ],
                   "operator" : "LE",
@@ -1237,11 +1241,7 @@
               ]
             },
             "probability" : 0.7322720695
-          },
-          "groupKey" : [
-            "public.partsupp.ps_partkey"
-          ],
-          "aggProbability" : 1
+          }
         }
       ],
       "tableName" : "public.partsupp"
@@ -1261,7 +1261,7 @@
                       {
                         "id" : 87,
                         "data" : 148,
-                        "actual" : true
+                        "type" : "LIKE"
                       }
                     ],
                     "operator" : "LIKE",
@@ -1273,8 +1273,8 @@
                     "parameters" : [
                       {
                         "id" : 88,
-                        "data" : 45,
-                        "actual" : true
+                        "data" : 41,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1293,7 +1293,7 @@
           "pkColumns" : [
             "p_partkey"
           ],
-          "pkTag" : 64
+          "pkTag" : 3
         }
       ],
       "tableName" : "public.part"
@@ -1314,8 +1314,8 @@
                     "parameters" : [
                       {
                         "id" : 109,
-                        "data" : 0,
-                        "actual" : false
+                        "data" : -1,
+                        "type" : "VIRTUAL"
                       }
                     ],
                     "operator" : "GT",
@@ -1327,38 +1327,38 @@
                     "parameters" : [
                       {
                         "id" : 110,
-                        "data" : 149990,
-                        "actual" : true
+                        "data" : 149992,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 111,
-                        "data" : 149989,
-                        "actual" : true
+                        "data" : 149991,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 112,
-                        "data" : 149988,
-                        "actual" : true
+                        "data" : 149990,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 113,
-                        "data" : 149994,
-                        "actual" : true
+                        "data" : 149989,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 114,
-                        "data" : 149998,
-                        "actual" : true
+                        "data" : 149988,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 115,
-                        "data" : 149992,
-                        "actual" : true
+                        "data" : 149987,
+                        "type" : "SUBSTRING"
                       },
                       {
                         "id" : 116,
-                        "data" : 149991,
-                        "actual" : true
+                        "data" : 149986,
+                        "type" : "SUBSTRING"
                       }
                     ],
                     "operator" : "IN",
@@ -1377,7 +1377,7 @@
           "pkColumns" : [
             "c_custkey"
           ],
-          "pkTag" : 4
+          "pkTag" : 1
         }
       ],
       "tableName" : "public.customer"
@@ -1388,7 +1388,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer.c_custkey",
           "localCols" : "public.orders.o_custkey",
-          "pkTag" : 4,
+          "pkTag" : 1,
           "probability" : 0.004244,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1410,7 +1410,7 @@
                   {
                     "id" : 3,
                     "data" : 2,
-                    "actual" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1426,7 +1426,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.orders.o_orderkey",
           "localCols" : "public.lineitem.l_orderkey",
-          "pkTag" : 1,
+          "pkTag" : 0,
           "probability" : 0.07643471029,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1448,8 +1448,8 @@
                     "parameters" : [
                       {
                         "id" : 1,
-                        "data" : 199962951552,
-                        "actual" : true
+                        "data" : 2314,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -1461,8 +1461,8 @@
                     "parameters" : [
                       {
                         "id" : 2,
-                        "data" : 207792000000,
-                        "actual" : true
+                        "data" : 2405,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -1481,7 +1481,7 @@
           "pkColumns" : [
             "o_orderkey"
           ],
-          "pkTag" : 1
+          "pkTag" : 0
         }
       ],
       "tableName" : "public.orders"
@@ -1499,8 +1499,8 @@
                 "parameters" : [
                   {
                     "id" : 91,
-                    "data" : 23,
-                    "actual" : true
+                    "data" : 22,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1517,7 +1517,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 64
+          "pkTag" : 3
         }
       ],
       "tableName" : "public.nation"
@@ -1528,7 +1528,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.supplier.s_nationkey",
-          "pkTag" : 64,
+          "pkTag" : 3,
           "probability" : 0.0397,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1538,7 +1538,7 @@
           "pkColumns" : [
             "s_suppkey"
           ],
-          "pkTag" : 256
+          "pkTag" : 4
         }
       ],
       "tableName" : "public.supplier"
@@ -1555,7 +1555,7 @@
                   {
                     "id" : 90,
                     "data" : 199995,
-                    "actual" : true
+                    "type" : "LIKE"
                   }
                 ],
                 "operator" : "LIKE",
@@ -1572,7 +1572,7 @@
           "pkColumns" : [
             "p_partkey"
           ],
-          "pkTag" : 256
+          "pkTag" : 4
         }
       ],
       "tableName" : "public.part"
@@ -1583,7 +1583,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.part.p_partkey",
           "localCols" : "public.partsupp.ps_partkey",
-          "pkTag" : 256,
+          "pkTag" : 4,
           "probability" : 0.011165,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1592,7 +1592,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.supplier.s_suppkey",
           "localCols" : "public.partsupp.ps_suppkey",
-          "pkTag" : 256,
+          "pkTag" : 4,
           "probability" : 0.01948051948,
           "pkDistinctProbability" : 0,
           "type" : "SEMI_JOIN"
@@ -1616,8 +1616,8 @@
                     "parameters" : [
                       {
                         "id" : 17,
-                        "data" : 209788932500,
-                        "actual" : true
+                        "data" : 2428,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -1629,8 +1629,8 @@
                     "parameters" : [
                       {
                         "id" : 18,
-                        "data" : 218160000000,
-                        "actual" : true
+                        "data" : 2525,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -1666,9 +1666,9 @@
               {
                 "parameters" : [
                   {
-                    "id" : 96,
-                    "data" : -27134202833,
-                    "actual" : true
+                    "id" : 95,
+                    "data" : -312,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "GT",
@@ -1698,7 +1698,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.supplier.s_suppkey",
           "localCols" : "public.lineitem.l_suppkey",
-          "pkTag" : 1024,
+          "pkTag" : 5,
           "probability" : 0.03728815257,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1707,7 +1707,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.orders.o_orderkey",
           "localCols" : "public.lineitem.l_orderkey",
-          "pkTag" : 4,
+          "pkTag" : 1,
           "probability" : 0.4831772067,
           "probabilityWithFailFilter" : 0.09486144978,
           "pkDistinctProbability" : 0,
@@ -1726,9 +1726,9 @@
               {
                 "parameters" : [
                   {
-                    "id" : 95,
-                    "data" : 23,
-                    "actual" : true
+                    "id" : 96,
+                    "data" : 21,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1745,7 +1745,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 256
+          "pkTag" : 4
         }
       ],
       "tableName" : "public.nation"
@@ -1756,7 +1756,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.supplier.s_nationkey",
-          "pkTag" : 256,
+          "pkTag" : 4,
           "probability" : 0.0373,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1766,7 +1766,7 @@
           "pkColumns" : [
             "s_suppkey"
           ],
-          "pkTag" : 1024
+          "pkTag" : 5
         }
       ],
       "tableName" : "public.supplier"
@@ -1783,7 +1783,7 @@
                   {
                     "id" : 94,
                     "data" : 2,
-                    "actual" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1800,7 +1800,7 @@
           "pkColumns" : [
             "o_orderkey"
           ],
-          "pkTag" : 4
+          "pkTag" : 1
         }
       ],
       "tableName" : "public.orders"
@@ -1818,8 +1818,8 @@
                 "parameters" : [
                   {
                     "id" : 4,
-                    "data" : 23,
-                    "actual" : true
+                    "data" : 20,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1836,7 +1836,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 1
+          "pkTag" : 0
         }
       ],
       "tableName" : "public.nation"
@@ -1847,7 +1847,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.supplier.s_nationkey",
-          "pkTag" : 1,
+          "pkTag" : 0,
           "probability" : 0.0406,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1857,7 +1857,7 @@
           "pkColumns" : [
             "s_suppkey"
           ],
-          "pkTag" : 1
+          "pkTag" : 0
         }
       ],
       "tableName" : "public.supplier"
@@ -1868,13 +1868,14 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.supplier.s_suppkey",
           "localCols" : "public.partsupp.ps_suppkey",
-          "pkTag" : 1,
+          "pkTag" : 0,
           "probability" : 0.0406,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
           "constraintChainNodeType" : "AGGREGATE",
+          "aggProbability" : 0.00003078817734,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -1885,7 +1886,7 @@
                     {
                       "id" : 5,
                       "data" : 0,
-                      "actual" : false
+                      "type" : "VIRTUAL"
                     }
                   ],
                   "operator" : "EQ",
@@ -1911,8 +1912,7 @@
               ]
             },
             "probability" : 1
-          },
-          "aggProbability" : 0.00003078817734
+          }
         }
       ],
       "tableName" : "public.partsupp"
@@ -1925,7 +1925,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.part.p_partkey",
           "localCols" : "public.lineitem.l_partkey",
-          "pkTag" : 4096,
+          "pkTag" : 6,
           "probability" : 0.05437182304,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -1945,7 +1945,7 @@
                   {
                     "id" : 141,
                     "data" : 199996,
-                    "actual" : true
+                    "type" : "LIKE"
                   }
                 ],
                 "operator" : "LIKE",
@@ -1962,7 +1962,7 @@
           "pkColumns" : [
             "p_partkey"
           ],
-          "pkTag" : 4096
+          "pkTag" : 6
         }
       ],
       "tableName" : "public.part"
@@ -1973,6 +1973,10 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "AGGREGATE",
+          "groupKey" : [
+            "public.lineitem.l_orderkey"
+          ],
+          "aggProbability" : 0.2499493852,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -1983,7 +1987,7 @@
                     {
                       "id" : 33,
                       "data" : 0,
-                      "actual" : true
+                      "type" : "ACTUAL"
                     }
                   ],
                   "operator" : "GT",
@@ -2002,11 +2006,7 @@
               ]
             },
             "probability" : 0.000006
-          },
-          "groupKey" : [
-            "public.lineitem.l_orderkey"
-          ],
-          "aggProbability" : 0.2499493852
+          }
         }
       ],
       "tableName" : "public.lineitem"
@@ -2025,7 +2025,7 @@
                   {
                     "id" : 14,
                     "data" : 1482070,
-                    "actual" : true
+                    "type" : "LIKE"
                   }
                 ],
                 "operator" : "NOT_LIKE",
@@ -2041,7 +2041,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer.c_custkey",
           "localCols" : "public.orders.o_custkey",
-          "pkTag" : 1,
+          "pkTag" : 0,
           "probability" : 1,
           "pkDistinctProbability" : 0.33336,
           "type" : "INNER_JOIN"
@@ -2056,7 +2056,7 @@
           "pkColumns" : [
             "c_custkey"
           ],
-          "pkTag" : 1
+          "pkTag" : 0
         }
       ],
       "tableName" : "public.customer"
@@ -2077,8 +2077,8 @@
                     "parameters" : [
                       {
                         "id" : 121,
-                        "data" : 199830241728,
-                        "actual" : true
+                        "data" : 2312,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -2090,8 +2090,8 @@
                     "parameters" : [
                       {
                         "id" : 122,
-                        "data" : 207792000000,
-                        "actual" : true
+                        "data" : 2405,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -2110,7 +2110,7 @@
           "pkColumns" : [
             "o_orderkey"
           ],
-          "pkTag" : 64
+          "pkTag" : 3
         }
       ],
       "tableName" : "public.orders"
@@ -2126,8 +2126,8 @@
                 "parameters" : [
                   {
                     "id" : 120,
-                    "data" : 27134202833,
-                    "actual" : true
+                    "data" : 313,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "LT",
@@ -2157,7 +2157,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.orders.o_orderkey",
           "localCols" : "public.lineitem.l_orderkey",
-          "pkTag" : 64,
+          "pkTag" : 3,
           "probability" : 0.01389925806,
           "probabilityWithFailFilter" : 0.01390857183,
           "pkDistinctProbability" : 0,
@@ -2179,8 +2179,8 @@
                 "parameters" : [
                   {
                     "id" : 6,
-                    "data" : 23,
-                    "actual" : true
+                    "data" : 19,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -2197,7 +2197,7 @@
           "pkColumns" : [
             "n_nationkey"
           ],
-          "pkTag" : 4
+          "pkTag" : 1
         }
       ],
       "tableName" : "public.nation"
@@ -2208,7 +2208,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.nation.n_nationkey",
           "localCols" : "public.supplier.s_nationkey",
-          "pkTag" : 4,
+          "pkTag" : 1,
           "probability" : 0.0406,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -2218,7 +2218,7 @@
           "pkColumns" : [
             "s_suppkey"
           ],
-          "pkTag" : 4
+          "pkTag" : 1
         }
       ],
       "tableName" : "public.supplier"
@@ -2229,13 +2229,17 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.supplier.s_suppkey",
           "localCols" : "public.partsupp.ps_suppkey",
-          "pkTag" : 4,
+          "pkTag" : 1,
           "probability" : 0.0406,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
           "constraintChainNodeType" : "AGGREGATE",
+          "groupKey" : [
+            "public.partsupp.ps_partkey"
+          ],
+          "aggProbability" : 0.944273399,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -2246,7 +2250,7 @@
                     {
                       "id" : 7,
                       "data" : 0,
-                      "actual" : false
+                      "type" : "VIRTUAL"
                     }
                   ],
                   "operator" : "GT",
@@ -2265,11 +2269,7 @@
               ]
             },
             "probability" : 0.02732311705
-          },
-          "groupKey" : [
-            "public.partsupp.ps_partkey"
-          ],
-          "aggProbability" : 0.944273399
+          }
         }
       ],
       "tableName" : "public.partsupp"
@@ -2287,8 +2287,8 @@
                 "parameters" : [
                   {
                     "id" : 0,
-                    "data" : 216596000422,
-                    "actual" : true
+                    "data" : 2505,
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "LE",
@@ -2319,8 +2319,8 @@
                     "parameters" : [
                       {
                         "id" : 15,
-                        "data" : 215422428197,
-                        "actual" : true
+                        "data" : 2493,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -2332,8 +2332,8 @@
                     "parameters" : [
                       {
                         "id" : 16,
-                        "data" : 218160000000,
-                        "actual" : true
+                        "data" : 2525,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -2364,7 +2364,7 @@
                   {
                     "id" : 19,
                     "data" : 9999,
-                    "actual" : true
+                    "type" : "LIKE"
                   }
                 ],
                 "operator" : "LIKE",
@@ -2381,7 +2381,7 @@
           "pkColumns" : [
             "s_suppkey"
           ],
-          "pkTag" : 16
+          "pkTag" : 2
         }
       ],
       "tableName" : "public.supplier"
@@ -2392,7 +2392,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.supplier.s_suppkey",
           "localCols" : "public.partsupp.ps_suppkey",
-          "pkTag" : 16,
+          "pkTag" : 2,
           "probability" : 0.9996,
           "pkDistinctProbability" : 0,
           "type" : "ANTI_SEMI_JOIN"
@@ -2401,7 +2401,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.part.p_partkey",
           "localCols" : "public.partsupp.ps_partkey",
-          "pkTag" : 1,
+          "pkTag" : 0,
           "probability" : 0.1483055722,
           "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
@@ -2424,7 +2424,7 @@
                       {
                         "id" : 20,
                         "data" : 22,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "NE",
@@ -2436,43 +2436,43 @@
                     "parameters" : [
                       {
                         "id" : 22,
-                        "data" : 42,
-                        "actual" : true
+                        "data" : 49,
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 23,
-                        "data" : 41,
-                        "actual" : true
+                        "data" : 48,
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 24,
-                        "data" : 43,
-                        "actual" : true
+                        "data" : 47,
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 25,
-                        "data" : 44,
-                        "actual" : true
+                        "data" : 46,
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 26,
-                        "data" : 46,
-                        "actual" : true
+                        "data" : 45,
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 27,
-                        "data" : 49,
-                        "actual" : true
+                        "data" : 44,
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 28,
-                        "data" : 48,
-                        "actual" : true
+                        "data" : 43,
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 29,
-                        "data" : 47,
-                        "actual" : true
+                        "data" : 42,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "IN",
@@ -2485,7 +2485,7 @@
                       {
                         "id" : 21,
                         "data" : 147,
-                        "actual" : true
+                        "type" : "LIKE"
                       }
                     ],
                     "operator" : "NOT_LIKE",
@@ -2504,7 +2504,7 @@
           "pkColumns" : [
             "p_partkey"
           ],
-          "pkTag" : 1
+          "pkTag" : 0
         }
       ],
       "tableName" : "public.part"
@@ -2526,7 +2526,7 @@
                       {
                         "id" : 67,
                         "data" : 0,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -2545,7 +2545,7 @@
                               {
                                 "id" : 68,
                                 "data" : 24,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "EQ",
@@ -2557,8 +2557,8 @@
                             "parameters" : [
                               {
                                 "id" : 73,
-                                "data" : 50,
-                                "actual" : true
+                                "data" : 49,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
@@ -2570,23 +2570,23 @@
                             "parameters" : [
                               {
                                 "id" : 69,
-                                "data" : 39,
-                                "actual" : true
+                                "data" : 38,
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 70,
-                                "data" : 35,
-                                "actual" : true
+                                "data" : 37,
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 71,
                                 "data" : 36,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 72,
-                                "data" : 37,
-                                "actual" : true
+                                "data" : 35,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "IN",
@@ -2603,8 +2603,8 @@
                             "parameters" : [
                               {
                                 "id" : 80,
-                                "data" : 22,
-                                "actual" : true
+                                "data" : 21,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "EQ",
@@ -2616,8 +2616,8 @@
                             "parameters" : [
                               {
                                 "id" : 85,
-                                "data" : 0,
-                                "actual" : true
+                                "data" : -1,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
@@ -2630,22 +2630,22 @@
                               {
                                 "id" : 81,
                                 "data" : -1,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 82,
                                 "data" : -1,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 83,
                                 "data" : -1,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 84,
                                 "data" : -1,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "IN",
@@ -2662,8 +2662,8 @@
                             "parameters" : [
                               {
                                 "id" : 74,
-                                "data" : 22,
-                                "actual" : true
+                                "data" : 20,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "EQ",
@@ -2675,8 +2675,8 @@
                             "parameters" : [
                               {
                                 "id" : 79,
-                                "data" : 0,
-                                "actual" : true
+                                "data" : -1,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
@@ -2689,22 +2689,22 @@
                               {
                                 "id" : 75,
                                 "data" : -1,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 76,
                                 "data" : -1,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 77,
                                 "data" : -1,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               },
                               {
                                 "id" : 78,
                                 "data" : -1,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "IN",
@@ -2727,7 +2727,7 @@
           "pkColumns" : [
             "p_partkey"
           ],
-          "pkTag" : 16
+          "pkTag" : 2
         }
       ],
       "tableName" : "public.part"
@@ -2747,12 +2747,12 @@
                       {
                         "id" : 34,
                         "data" : 6,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       },
                       {
                         "id" : 35,
                         "data" : 5,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "IN",
@@ -2771,7 +2771,7 @@
                               {
                                 "id" : 37,
                                 "data" : 0,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "GE",
@@ -2783,8 +2783,8 @@
                             "parameters" : [
                               {
                                 "id" : 38,
-                                "data" : 49000000,
-                                "actual" : true
+                                "data" : 4899,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
@@ -2802,7 +2802,7 @@
                               {
                                 "id" : 41,
                                 "data" : 0,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "GE",
@@ -2814,8 +2814,8 @@
                             "parameters" : [
                               {
                                 "id" : 42,
-                                "data" : 49000000,
-                                "actual" : true
+                                "data" : 4899,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
@@ -2833,7 +2833,7 @@
                               {
                                 "id" : 39,
                                 "data" : 0,
-                                "actual" : true
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "GE",
@@ -2845,8 +2845,8 @@
                             "parameters" : [
                               {
                                 "id" : 40,
-                                "data" : 49000000,
-                                "actual" : true
+                                "data" : 4899,
+                                "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
@@ -2863,7 +2863,7 @@
                       {
                         "id" : 36,
                         "data" : 3,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -2881,7 +2881,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.part.p_partkey",
           "localCols" : "public.lineitem.l_partkey",
-          "pkTag" : 16,
+          "pkTag" : 2,
           "probability" : 0.001030535012,
           "probabilityWithFailFilter" : 0.002418896788,
           "pkDistinctProbability" : 0,
@@ -2906,8 +2906,8 @@
                     "parameters" : [
                       {
                         "id" : 126,
-                        "data" : 214005947635,
-                        "actual" : true
+                        "data" : 2476,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -2919,8 +2919,8 @@
                     "parameters" : [
                       {
                         "id" : 130,
-                        "data" : 49000000,
-                        "actual" : true
+                        "data" : 4900,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -2932,8 +2932,8 @@
                     "parameters" : [
                       {
                         "id" : 129,
-                        "data" : 100000,
-                        "actual" : true
+                        "data" : 9,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -2946,7 +2946,7 @@
                       {
                         "id" : 128,
                         "data" : 0,
-                        "actual" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -2958,8 +2958,8 @@
                     "parameters" : [
                       {
                         "id" : 127,
-                        "data" : 218160000000,
-                        "actual" : true
+                        "data" : 2525,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
