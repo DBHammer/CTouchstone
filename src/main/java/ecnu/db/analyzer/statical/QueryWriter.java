@@ -121,6 +121,9 @@ public class QueryWriter {
         // replacement
         List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
         TreeMap<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> replaceParams = new TreeMap<>();
+        List<Parameter> subPlanParameters = parameters.stream().filter(parameter -> parameter.isSubPlan()).toList();
+        parameters.removeAll(subPlanParameters);
+        parameters.addAll(subPlanParameters);
         for (Parameter parameter : parameters) {
             if (parameter.hasOnlyOneColumn() != null && parameter.hasOnlyOneColumn().size() != 1) {
                 continue;

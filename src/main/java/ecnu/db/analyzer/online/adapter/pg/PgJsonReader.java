@@ -178,4 +178,8 @@ public class PgJsonReader {
     static boolean isSemiJoin(StringBuilder path) {
         return readContext.read(path + "['Join Type']").equals("Semi");
     }
+
+    static boolean isAntiJoin(StringBuilder path) {
+        return readContext.read(path + "['Join Type']").equals("Anti");
+    }
 }

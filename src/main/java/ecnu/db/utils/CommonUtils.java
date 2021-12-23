@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * @author xuechao.lian
  */
 public class CommonUtils {
-    public static final int STEP_SIZE = 100000;
+    public static final int STEP_SIZE = 1000000;
     public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public static final String CANONICAL_NAME_CONTACT_SYMBOL = ".";
     public static final String CANONICAL_NAME_SPLIT_REGEX = "\\.";

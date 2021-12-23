@@ -216,7 +216,8 @@ public class PgAnalyzer extends AbstractAnalyzer {
                     .divide(BigDecimal.valueOf(pkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
         }
         boolean isSemiJoin = PgJsonReader.isSemiJoin(path);
-        return new JoinNode(path.toString(), rowCount, joinInfo, false, isSemiJoin, pkDistinctProbability);
+        boolean isAntiJoin = PgJsonReader.isAntiJoin(path);
+        return new JoinNode(path.toString(), rowCount, joinInfo, isAntiJoin, isSemiJoin, pkDistinctProbability);
     }
 
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
