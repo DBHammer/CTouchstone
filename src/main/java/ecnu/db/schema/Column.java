@@ -123,9 +123,7 @@ public class Column {
         };
         parameters.parallelStream().forEach(parameter -> {
             long value = bound;
-            if(operator==CompareOperator.GE){
-                value++;
-            }else if(operator==CompareOperator.LE){
+            if(operator==CompareOperator.GT || operator==CompareOperator.LE){
                 value--;
             }
             parameter.setData(value);
@@ -142,17 +140,8 @@ public class Column {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             dealZeroPb(parameters);
         } else {
-            BigDecimal tempProbability = new BigDecimal(probability.toString());
-            int index = parameters.size() - 1;
-            while (index >= 0) {
-                if (index > 0) {
-                    BigDecimal currentProbability = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(tempProbability.doubleValue()));
-                    eqRequest2ParameterIds.computeIfAbsent(currentProbability, i -> new LinkedList<>()).add(parameters.get(index--));
-                    tempProbability = tempProbability.subtract(currentProbability);
-                } else {
-                    eqRequest2ParameterIds.computeIfAbsent(tempProbability, i -> new LinkedList<>()).add(parameters.get(index--));
-                }
-            }
+            BigDecimal tempProbability = new BigDecimal(probability.toString()).divide(BigDecimal.valueOf(parameters.size()),CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            eqRequest2ParameterIds.computeIfAbsent(tempProbability, i -> new LinkedList<>()).addAll(parameters);
         }
     }
 
