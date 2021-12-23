@@ -144,8 +144,11 @@ public class DataGenerator implements Callable<Integer> {
                     long[] result = computeWithCpModel(haveFkConstrainChains, filterHistogram, filterStatus2PkStatus, filterStatus, range);
                     List<List<boolean[]>> fkStatus = populateFkStatus(filterHistogram, result, range, filterStatus, allStatus);
                     int chainIndex = 0;
-                    for (ConstraintChain fkAndPkConstrainChain : fkAndPkConstrainChains) {
-                        fkAndPkConstrainChain.computePkStatus(fkStatus, filterStatus[chainIndex++], pkStatus);
+                    for (ConstraintChain fkAndPkConstrainChain : haveFkConstrainChains) {
+                        if (fkAndPkConstrainChains.contains(fkAndPkConstrainChain)) {
+                            fkAndPkConstrainChain.computePkStatus(fkStatus, filterStatus[chainIndex], pkStatus);
+                        }
+                        chainIndex++;
                     }
                     List<StringBuilder> fksList = RuleTableManager.getInstance().populateFks(involveFks, fkStatus);
                     for (int i = 0; i < rowData.size(); i++) {
