@@ -366,7 +366,7 @@ public class QueryAnalyzer {
             }
         }
         if(constraintChains.size()>1){
-            for (ConstraintChain constraintChain : constraintChains.get(1)) {
+            for (ConstraintChain constraintChain : constraintChains.get(0)) {
                 for (Parameter parameter : constraintChain.getParameters()) {
                     parameter.setSubPlan(true);
                 }
