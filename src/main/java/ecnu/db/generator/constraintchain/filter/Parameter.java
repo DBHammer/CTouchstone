@@ -39,6 +39,9 @@ public class Parameter {
     @JsonIgnore
     private String dataValue;
 
+    @JsonIgnore
+    private boolean isSubPlan = false;
+
     public ParameterType getType() {
         return type;
     }
@@ -134,6 +137,16 @@ public class Parameter {
     @Override
     public String toString() {
         return "{id:" + id + ", data:" + dataValue + "}";
+    }
+
+    @JsonIgnore
+    public boolean isSubPlan() {
+        return isSubPlan;
+    }
+
+    @JsonIgnore
+    public void setSubPlan(boolean subPlan) {
+        isSubPlan = subPlan;
     }
 
     public enum ParameterType{

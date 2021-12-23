@@ -152,9 +152,15 @@ public class QueryWriter {
                     conflictArgs.add(parameter);
                 }
             } else {
-                var pair = matches.stream().findFirst().get().range;
-                for (Map.Entry<Integer, Integer> range : pair) {
-                    replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));
+                if(parameter.isSubPlan()){
+                    var subplanranges = matches.stream().findFirst().get().range;
+                    var subplanrange = subplanranges.get(subplanranges.size()-1);
+                    replaceParams.put(subplanrange.getKey(), new AbstractMap.SimpleEntry<>(parameter, subplanrange));
+                }else {
+                    var pair = matches.stream().findFirst().get().range;
+                    for (Map.Entry<Integer, Integer> range : pair) {
+                        replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));
+                    }
                 }
             }
         }

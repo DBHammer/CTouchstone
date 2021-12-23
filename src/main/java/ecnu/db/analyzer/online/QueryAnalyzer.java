@@ -6,6 +6,7 @@ import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
+import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintNodeJoinType;
@@ -361,6 +362,13 @@ public class QueryAnalyzer {
             if (!allNodes.isEmpty()) {
                 for (ExecutionNode node : allNodes) {
                     logger.error("can not input {}", node);
+                }
+            }
+        }
+        if(constraintChains.size()>1){
+            for (ConstraintChain constraintChain : constraintChains.get(1)) {
+                for (Parameter parameter : constraintChain.getParameters()) {
+                    parameter.setSubPlan(true);
                 }
             }
         }
