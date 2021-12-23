@@ -18,7 +18,6 @@ import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -106,16 +105,19 @@ public class DataGenerator implements Callable<Integer> {
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
             logger.info("开始输出表数据{}", schemaName);
             //对约束链进行分类
+            List<ConstraintChain> allChains = schema2chains.get(schemaName);
             List<ConstraintChain> haveFkConstrainChains = new ArrayList<>();
             List<ConstraintChain> onlyPkConstrainChains = new ArrayList<>();
             List<ConstraintChain> fkAndPkConstrainChains = new ArrayList<>();
-            ConstraintChainManager.getInstance().classifyConstraintChain(schema2chains.get(schemaName),
-                    haveFkConstrainChains, onlyPkConstrainChains, fkAndPkConstrainChains);
-            // 统计所有的联合状态
-            SortedMap<String, List<Integer>> involveFks = ConstraintChainManager.getInvolvedFks(schema2chains.get(schemaName));
+            SortedMap<String, List<Integer>> involveFks = new TreeMap<>();
+            if (allChains != null) {
+                ConstraintChainManager.getInstance().classifyConstraintChain(allChains,
+                        haveFkConstrainChains, onlyPkConstrainChains, fkAndPkConstrainChains);
+                // 统计所有的联合状态
+                involveFks = ConstraintChainManager.getInvolvedFks(allChains);
+            }
             List<List<boolean[]>> allStatus = ConstraintChainManager.getAllDistinctStatus(involveFks);
             ExecutorService executorService = Executors.newSingleThreadExecutor();
-
             int resultStart = STEP_SIZE * generatorId;
             int tableSize = TableManager.getInstance().getTableSize(schemaName);
 
