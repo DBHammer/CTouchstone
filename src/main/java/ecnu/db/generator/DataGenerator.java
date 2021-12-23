@@ -145,7 +145,7 @@ public class DataGenerator implements Callable<Integer> {
                     List<List<boolean[]>> fkStatus = populateFkStatus(filterHistogram, result, range, filterStatus, allStatus);
                     int chainIndex = 0;
                     for (ConstraintChain fkAndPkConstrainChain : fkAndPkConstrainChains) {
-                        fkAndPkConstrainChain.computePkStatus(fkStatus, filterStatus2PkStatus, chainIndex++, pkStatus);
+                        fkAndPkConstrainChain.computePkStatus(fkStatus, filterStatus[chainIndex++], pkStatus);
                     }
                     List<StringBuilder> fksList = RuleTableManager.getInstance().populateFks(involveFks, fkStatus);
                     for (int i = 0; i < rowData.size(); i++) {

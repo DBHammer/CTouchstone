@@ -96,31 +96,23 @@ public class ConstraintChain {
         }
     }
 
-    public void computePkStatus(List<List<boolean[]>> fkStatus, List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus,
-                                int filterIndex, boolean[][] pkStatus) {
-        boolean[] canBeInput = new boolean[fkStatus.size()];
-        Arrays.fill(canBeInput, true);
+    public void computePkStatus(List<List<boolean[]>> fkStatus, boolean[] filterStatus, boolean[][] pkStatus) {
         for (ConstraintChainNode node : nodes) {
-            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER) {
-                int i = 0;
-                for (var status : filterStatus2PkStatus) {
-                    canBeInput[i++] = status.getKey().status()[filterIndex];
-                }
-            } else if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN) {
+            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN) {
                 ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
                 int joinStatusIndex = fkJoinNode.joinStatusIndex;
                 int joinStatusLocation = fkJoinNode.joinStatusLocation;
                 for (int i = 0; i < fkStatus.size(); i++) {
-                    if (canBeInput[i]) {
-                        canBeInput[i] = fkStatus.get(i).get(joinStatusIndex)[joinStatusLocation];
+                    if (filterStatus[i]) {
+                        filterStatus[i] = fkStatus.get(i).get(joinStatusIndex)[joinStatusLocation]==
+                                (fkJoinNode.getType() != ConstraintNodeJoinType.ANTI_SEMI_JOIN);
                     }
                 }
             } else if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
-                pkStatus[((ConstraintChainPkJoinNode) node).getPkTag()] = canBeInput;
+                pkStatus[((ConstraintChainPkJoinNode) node).getPkTag()] = filterStatus;
                 break;
             }
         }
-
     }
 
     public void addConstraint2Model(CpModel model, IntVar[] vars, int filterIndex, int filterSize, int unFilterSize,
