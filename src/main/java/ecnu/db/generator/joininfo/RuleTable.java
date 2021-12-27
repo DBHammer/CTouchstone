@@ -10,6 +10,28 @@ public class RuleTable {
         rules.get(status).add(range);
     }
 
+    public long getSize(List<Integer> location, boolean[] status) {
+        int size = 0;
+        for (Map.Entry<JoinStatus, List<Map.Entry<Long, Long>>> joinStatusListEntry : rules.entrySet()) {
+            JoinStatus joinStatus = joinStatusListEntry.getKey();
+            boolean[] joinStatusStatus = joinStatus.status();
+            int i = 0;
+            boolean found = true;
+            for (Integer integer : location) {
+                if (joinStatusStatus[integer] != status[i++]) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) {
+                for (Map.Entry<Long, Long> longLongEntry : joinStatusListEntry.getValue()) {
+                    size += longLongEntry.getValue() - longLongEntry.getKey();
+                }
+            }
+        }
+        return size;
+    }
+
     public long getKey(List<Integer> location, boolean[] status) {
         for (Map.Entry<JoinStatus, List<Map.Entry<Long, Long>>> joinStatusListEntry : rules.entrySet()) {
             JoinStatus joinStatus = joinStatusListEntry.getKey();

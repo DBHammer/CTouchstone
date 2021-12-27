@@ -70,6 +70,13 @@ public class PgJsonReader {
         return readContext.read(path + "['Output']");
     }
 
+    static int readAggGroup(StringBuilder path) {
+        String childSelection = path + "['Plans'][0]";
+        double actualRows = readContext.read(childSelection + "['Actual Rows']");
+        int actualLoops = readContext.read(childSelection + "['Actual Loops']");
+        return (int) (actualLoops / actualRows);
+    }
+
     static int readActualLoops(StringBuilder path) {
         return readContext.read(path + "['Actual Loops']");
     }
@@ -176,7 +183,7 @@ public class PgJsonReader {
     }
 
     static boolean isSemiJoin(StringBuilder path) {
-        return readContext.read(path + "['Join Type']").equals("Semi");
+        return readContext.read(path + "['Join Type']").equals("Semi") || readContext.read(path + "['Join Type']").equals("Anti");
     }
 
     static boolean isAntiJoin(StringBuilder path) {

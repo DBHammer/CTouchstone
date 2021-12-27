@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.agg;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
@@ -16,6 +17,11 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
     private BigDecimal aggProbability;
     ConstraintChainFilterNode aggFilter;
     private final Logger logger = LoggerFactory.getLogger(ConstraintChainAggregateNode.class);
+
+    @JsonIgnore
+    public int joinStatusIndex;
+    @JsonIgnore
+    public int joinStatusLocation;
 
     public BigDecimal getAggProbability() {
         return aggProbability;

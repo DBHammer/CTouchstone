@@ -1,11 +1,14 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
-import ecnu.db.generator.joininfo.RuleTableManager;
 import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.schema.Table;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.schema.CannotFindSchemaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +47,7 @@ public class ConstraintChainManager {
         });
     }
 
+
     /**
      * 清理不影响键值填充的约束链
      *
@@ -55,7 +59,9 @@ public class ConstraintChainManager {
             while (constraintChainIterator.hasNext()) {
                 ConstraintChain constraintChain = constraintChainIterator.next();
                 if (constraintChain.getNodes().stream().allMatch(
-                        node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER)) {
+                        node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER ||
+                                (node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE &&
+                                        ((ConstraintChainAggregateNode) node).getGroupKey() == null))) {
                     logger.info("由于没有参与Join和与键值有关的Aggregation, 移除查询{}中的约束链{}", query2ConstraintChains.getKey(), constraintChain);
                     constraintChainIterator.remove();
                 }
@@ -92,6 +98,26 @@ public class ConstraintChainManager {
                         }
                 )
         );
+        //传递约束链
+        for (ConstraintChain constraintChain : constraintChains) {
+            for (int i = 0; i < constraintChain.getNodes().size(); i++) {
+                if (constraintChain.getNodes().get(i).getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE) {
+                    ConstraintChainAggregateNode aggregateNode = (ConstraintChainAggregateNode) constraintChain.getNodes().get(i);
+                    if (aggregateNode.getGroupKey() != null) {
+                        String fkCol = aggregateNode.getGroupKey().get(0);
+                        String[] cols = fkCol.split("\\.");
+                        try {
+                            String remoteCol = TableManager.getInstance().getSchema(cols[0]+"."+cols[1]).getForeignKeys().get(fkCol);
+                            aggregateNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(remoteCol);
+                        } catch (CannotFindSchemaException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        aggregateNode.joinStatusIndex = -1;
+                    }
+                }
+            }
+        }
         return involveFks;
     }
 
@@ -102,15 +128,10 @@ public class ConstraintChainManager {
      * status11--- status22---- status33
      * ......
      *
-     * @param involveFks 涉及到参照主键
+     * @param col2AllStatus 涉及到参照主键
      * @return 所有可能的状态组
      */
-    public static List<List<boolean[]>> getAllDistinctStatus(SortedMap<String, List<Integer>> involveFks) {
-        // 获得每个列的涉及到的status
-        // 表 -> 表内所有的不同join status -> join status
-        List<List<boolean[]>> col2AllStatus = involveFks.entrySet().stream()
-                .map(col2Location -> RuleTableManager.getInstance().getAllStatusRule(col2Location.getKey(), col2Location.getValue()))
-                .toList();
+    public static List<List<boolean[]>> getAllDistinctStatus(List<List<boolean[]>> col2AllStatus) {
         int diffStatusSize = 1;
         for (List<boolean[]> tableStatus : col2AllStatus) {
             diffStatusSize *= tableStatus.size();
@@ -130,12 +151,6 @@ public class ConstraintChainManager {
                     }
                     return result;
                 }).toList();
-        if (!allDiffStatus.isEmpty()) {
-            logger.debug("共计{}种状态，参照列为{}", allDiffStatus.size(), involveFks);
-            for (List<boolean[]> booleans : allDiffStatus) {
-                logger.debug(booleans.stream().map(Arrays::toString).collect(Collectors.joining("\t\t")));
-            }
-        }
         return allDiffStatus;
     }
 

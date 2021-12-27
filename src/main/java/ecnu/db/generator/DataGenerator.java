@@ -1,12 +1,9 @@
 package ecnu.db.generator;
 
 import com.google.ortools.Loader;
-import com.google.ortools.sat.CpModel;
-import com.google.ortools.sat.CpSolver;
-import com.google.ortools.sat.CpSolverStatus;
-import com.google.ortools.sat.IntVar;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
+import ecnu.db.generator.constraintchain.join.ConstructCpModel;
 import ecnu.db.generator.joininfo.JoinInfoTableManager;
 import ecnu.db.generator.joininfo.JoinStatus;
 import ecnu.db.generator.joininfo.RuleTableManager;
@@ -116,7 +113,32 @@ public class DataGenerator implements Callable<Integer> {
                 // 统计所有的联合状态
                 involveFks = ConstraintChainManager.getInvolvedFks(allChains);
             }
-            List<List<boolean[]>> allStatus = ConstraintChainManager.getAllDistinctStatus(involveFks);
+            // 获得每个列的涉及到的status
+            // 表 -> 表内所有的不同join status -> join status
+            List<List<boolean[]>> col2AllStatus = involveFks.entrySet().stream()
+                    .map(col2Location -> RuleTableManager.getInstance().getAllStatusRule(col2Location.getKey(), col2Location.getValue()))
+                    .toList();
+            List<List<boolean[]>> allStatus = ConstraintChainManager.getAllDistinctStatus(col2AllStatus);
+            if (!allStatus.isEmpty()) {
+                logger.debug("共计{}种状态，参照列为{}", allStatus.size(), involveFks);
+                for (List<boolean[]> booleans : allStatus) {
+                    logger.debug(booleans.stream().map(Arrays::toString).collect(Collectors.joining("\t\t")));
+                }
+            }
+            int tableIndex = 0;
+            List<Map<Integer, Long>> statusSize = new ArrayList<>(allStatus.size());
+            for (Map.Entry<String, List<Integer>> table2Location : involveFks.entrySet()) {
+                var statuses = col2AllStatus.get(tableIndex++);
+                Map<Integer, Long> sizes = new HashMap<>();
+                for (boolean[] status : statuses) {
+                    try {
+                        sizes.put(Arrays.hashCode(status), RuleTableManager.getInstance().getStatueSize(table2Location.getKey(), table2Location.getValue(), status));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                statusSize.add(sizes);
+            }
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             int resultStart = STEP_SIZE * generatorId;
             int tableSize = TableManager.getInstance().getTableSize(schemaName);
@@ -141,7 +163,25 @@ public class DataGenerator implements Callable<Integer> {
                             .map(constraintChain -> constraintChain.evaluateFilterStatus(range)).toArray(boolean[][]::new);
                     SortedMap<JoinStatus, Long> filterHistogram = new TreeMap<>(countStatus(filterStatus));
                     List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus = getAllVarStatus(filterHistogram, allStatus);
-                    long[] result = computeWithCpModel(haveFkConstrainChains, filterHistogram, filterStatus2PkStatus, filterStatus, range);
+                    long[] result = ConstructCpModel.computeWithCpModel(haveFkConstrainChains, filterHistogram, statusSize, filterStatus2PkStatus, filterStatus, range);
+                    logger.info("填充方案");
+                    if (result.length > filterStatus2PkStatus.size()) {
+                        int step = result.length / (filterStatus2PkStatus.get(0).getValue().size() + 1);
+                        for (int i = 0; i < step; i++) {
+                            if (ConstructCpModel.validCardinality.contains(i) && result[i] > 0) {
+                                logger.info("{}->{} size:{} cardinality:{}", filterStatus2PkStatus.get(i).getKey(),
+                                        filterStatus2PkStatus.get(i).getValue().stream().map(Arrays::toString).toList(), result[i], result[step + i]);
+                            }
+                        }
+                    } else {
+                        for (int i = 0; i < result.length; i++) {
+                            if (result[i] > 0) {
+                                logger.info("{}->{} size:{}", filterStatus2PkStatus.get(i).getKey(),
+                                        filterStatus2PkStatus.get(i).getValue().stream().map(Arrays::toString).toList(), result[i]);
+                            }
+                        }
+                    }
+
                     List<List<boolean[]>> fkStatus = populateFkStatus(filterHistogram, result, range, filterStatus, allStatus);
                     int chainIndex = 0;
                     for (ConstraintChain fkAndPkConstrainChain : haveFkConstrainChains) {
@@ -193,7 +233,7 @@ public class DataGenerator implements Callable<Integer> {
             logger.debug("PK Info");
             Map<JoinStatus, Long> pkHistogram = countStatus(pkStatus);
             for (Map.Entry<JoinStatus, Long> s : pkHistogram.entrySet()) {
-                logger.debug("size:{}\tstatus:{}", s.getValue(), s.getKey());
+                logger.debug("status:{} size:{}", s.getKey(), s.getValue());
             }
             return pkHistogram;
         } else {
@@ -201,20 +241,6 @@ public class DataGenerator implements Callable<Integer> {
         }
     }
 
-    public int[] computeFilterSizeForEachFilter(boolean[][] filterStatus) {
-        int[] filterSize = new int[filterStatus.length];
-        for (int i = 0; i < filterStatus.length; i++) {
-            int size = 0;
-            boolean[] status = filterStatus[i];
-            for (boolean b : status) {
-                if (b) {
-                    size++;
-                }
-            }
-            filterSize[i] = size;
-        }
-        return filterSize;
-    }
 
     public List<Map.Entry<JoinStatus, List<boolean[]>>> getAllVarStatus(SortedMap<JoinStatus, Long> filterHistogram,
                                                                         List<List<boolean[]>> allPkStatus) {
@@ -236,45 +262,6 @@ public class DataGenerator implements Callable<Integer> {
             i++;
         }
         return filterStatus2JoinLocation;
-    }
-
-    /**
-     * 根据join info table计算不同status的填充数量
-     *
-     * @param haveFkConstrainChains 具有外键的约束链
-     * @param filterHistogram       filter status的统计直方图
-     * @param filterStatus2PkStatus filter status -> pk status的所有填充方案
-     * @param filterStatus          每一个约束链的filterStatus, 用于计算其过滤的size
-     * @param range                 每个填充方案的的上界
-     * @return 一个可行的填充方案
-     */
-    public long[] computeWithCpModel(List<ConstraintChain> haveFkConstrainChains,
-                                     SortedMap<JoinStatus, Long> filterHistogram,
-                                     List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus,
-                                     boolean[][] filterStatus, int range) {
-        logger.info("filterHistogram: {}", filterHistogram);
-        CpModel model = new CpModel();
-        IntVar[] vars = RuleTableManager.getInstance().initModel(filterHistogram, filterStatus2PkStatus, model, range);
-        int chainIndex = 0;
-        int[] filterSize = computeFilterSizeForEachFilter(filterStatus);
-        for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
-            haveFkConstrainChain.addConstraint2Model(model, vars, chainIndex, filterSize[chainIndex], range - filterSize[chainIndex], filterStatus2PkStatus);
-            chainIndex++;
-        }
-        CpSolver solver = new CpSolver();
-        solver.getParameters().setEnumerateAllSolutions(false);
-        CpSolverStatus status = solver.solve(model);
-        long[] result = new long[vars.length];
-        if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
-            logger.info("用时{}ms", solver.wallTime() * 1000);
-            int i = 0;
-            for (IntVar intVar : vars) {
-                result[i++] = solver.value(intVar);
-            }
-        } else {
-            logger.error("No solution found.");
-        }
-        return result;
     }
 
 

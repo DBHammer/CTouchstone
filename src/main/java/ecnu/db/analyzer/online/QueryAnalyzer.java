@@ -133,7 +133,7 @@ public class QueryAnalyzer {
         if (node.getAggFilter() != null) {
             ExecutionNode aggNode = node.getAggFilter();
             LogicNode root = analyzeSelectInfo(aggNode.getInfo());
-            BigDecimal filterProbability = BigDecimal.valueOf(aggNode.getOutputRows()).divide(BigDecimal.valueOf(node.getOutputRows()), BIG_DECIMAL_DEFAULT_PRECISION);
+            BigDecimal filterProbability = BigDecimal.valueOf(aggNode.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             aggregateNode.setAggFilter(new ConstraintChainFilterNode(filterProbability, root));
         }
         constraintChain.addNode(aggregateNode);
@@ -206,10 +206,7 @@ public class QueryAnalyzer {
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             BigDecimal probability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
-            if (node.isAntiJoin()) {
-                fkJoinNode.setType(ConstraintNodeJoinType.ANTI_SEMI_JOIN);
-            }
-            fkJoinNode.setPkDistinctProbability(node.getPkDistinctSize());
+            // deal with index join
             if (node.getRightNode().getType() == ExecutionNodeType.filter && node.getRightNode().getInfo() != null &&
                     ((FilterNode) node.getRightNode()).isIndexScan()) {
                 int tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
@@ -218,7 +215,19 @@ public class QueryAnalyzer {
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
             if (node.isSemiJoin()) {
-                fkJoinNode.setType(ConstraintNodeJoinType.SEMI_JOIN);
+                if (node.isAntiJoin()) {
+                    fkJoinNode.setType(ConstraintNodeJoinType.ANTI_SEMI_JOIN);
+                } else {
+                    fkJoinNode.setType(ConstraintNodeJoinType.SEMI_JOIN);
+                }
+                fkJoinNode.setPkDistinctProbability(fkJoinNode.getProbability());
+            } else {
+                if (node.getPkDistinctSize() != null && node.getPkDistinctSize().compareTo(BigDecimal.ZERO) > 0) {
+                    fkJoinNode.setType(ConstraintNodeJoinType.OUTER_JOIN);
+                    fkJoinNode.setPkDistinctProbability(node.getPkDistinctSize());
+                } else if (node.isAntiJoin()) {
+                    fkJoinNode.setType(ConstraintNodeJoinType.ANTI_JOIN);
+                }
             }
             constraintChain.addNode(fkJoinNode);
             return node.getOutputRows();
@@ -365,7 +374,7 @@ public class QueryAnalyzer {
                 }
             }
         }
-        if(constraintChains.size()>1){
+        if (constraintChains.size() > 1) {
             for (ConstraintChain constraintChain : constraintChains.get(0)) {
                 for (Parameter parameter : constraintChain.getParameters()) {
                     parameter.setSubPlan(true);

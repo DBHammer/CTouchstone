@@ -212,12 +212,16 @@ public class PgAnalyzer extends AbstractAnalyzer {
             int pkRowCount = PgJsonReader.readRowCount(rightChildPath);
             int fkRowCount = PgJsonReader.readRowCount(leftChildPath);
             rowCount = fkRowCount;
-            pkDistinctProbability = BigDecimal.valueOf(joinRowCount - fkRowCount)
-                    .divide(BigDecimal.valueOf(pkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - joinRowCount)
+                    .divide(BigDecimal.valueOf(fkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
         }
         boolean isSemiJoin = PgJsonReader.isSemiJoin(path);
-        boolean isAntiJoin = PgJsonReader.isAntiJoin(path);
-        return new JoinNode(path.toString(), rowCount, joinInfo, isAntiJoin, isSemiJoin, pkDistinctProbability);
+        if (PgJsonReader.isAntiJoin(path)) {
+            StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
+            int pkRowCount = PgJsonReader.readRowCount(leftChildPath);
+            rowCount = pkRowCount - rowCount;
+        }
+        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), isSemiJoin, pkDistinctProbability);
     }
 
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
@@ -270,7 +274,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
             String aggOutPut = PgJsonReader.readOutput(aggPath).get(0);
             aggFilterInfo = aggFilterInfo.replace("(SubPlan 1)", aggOutPut);
             rowsAfterFilter = PgJsonReader.readRowCount(parentPath);
-            rowCount = rowsAfterFilter + PgJsonReader.readRowsRemovedByJoinFilter(parentPath);
+            if (!aggOutPut.toLowerCase(Locale.ROOT).contains("min") && !aggOutPut.toLowerCase(Locale.ROOT).contains("max")) {
+                rowCount = PgJsonReader.readAggGroup(aggPath);
+            } else {
+                rowCount = rowsAfterFilter;
+            }
         } else {
             throw new UnsupportedOperationException();
         }

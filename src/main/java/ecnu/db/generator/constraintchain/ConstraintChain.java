@@ -3,13 +3,12 @@ package ecnu.db.generator.constraintchain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.ortools.sat.CpModel;
 import com.google.ortools.sat.IntVar;
-import com.google.ortools.sat.LinearExpr;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
-import ecnu.db.generator.constraintchain.join.ConstraintNodeJoinType;
+import ecnu.db.generator.constraintchain.join.ConstructCpModel;
 import ecnu.db.generator.joininfo.JoinStatus;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.slf4j.Logger;
@@ -17,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.IntStream;
 
 /**
  * @author wangqingshuai
@@ -96,16 +94,29 @@ public class ConstraintChain {
         }
     }
 
+    public boolean hasCardinalityConstraint() {
+        boolean hasCardinalityConstraint;
+        hasCardinalityConstraint = nodes.stream()
+                .filter(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
+                .map(ConstraintChainFkJoinNode.class::cast)
+                .anyMatch(node -> node.getType().hasCardinalityConstraint());
+        hasCardinalityConstraint |= nodes.stream()
+                .filter(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE)
+                .map(ConstraintChainAggregateNode.class::cast)
+                .anyMatch(node -> node.getGroupKey() != null);
+        return hasCardinalityConstraint;
+    }
+
     public void computePkStatus(List<List<boolean[]>> fkStatus, boolean[] filterStatus, boolean[][] pkStatus) {
         for (ConstraintChainNode node : nodes) {
             if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN) {
                 ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
                 int joinStatusIndex = fkJoinNode.joinStatusIndex;
                 int joinStatusLocation = fkJoinNode.joinStatusLocation;
+                boolean status = !fkJoinNode.getType().isAnti();
                 for (int i = 0; i < fkStatus.size(); i++) {
                     if (filterStatus[i]) {
-                        filterStatus[i] = fkStatus.get(i).get(joinStatusIndex)[joinStatusLocation]==
-                                (fkJoinNode.getType() != ConstraintNodeJoinType.ANTI_SEMI_JOIN);
+                        filterStatus[i] = fkStatus.get(i).get(joinStatusIndex)[joinStatusLocation] == status;
                     }
                 }
             } else if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
@@ -116,6 +127,7 @@ public class ConstraintChain {
     }
 
     public void addConstraint2Model(CpModel model, IntVar[] vars, int filterIndex, int filterSize, int unFilterSize,
+                                    List<Map<Integer, Long>> statusHash2Size,
                                     List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
         // 每一组填充状态是否能到达这个算子
         boolean[] canBeInput = new boolean[filterStatus2PkStatus.size()];
@@ -130,41 +142,35 @@ public class ConstraintChain {
                     }
                 }
                 // join的状态根据前缀状态获得
-                // todo 考虑index join
                 // todo 考虑semi join 和 outer join
                 case FK_JOIN -> {
                     ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
-                    // 获取join对应的位置
-                    int joinStatusIndex = fkJoinNode.joinStatusIndex;
-                    int joinStatusLocation = fkJoinNode.joinStatusLocation;
-                    // 找到有效的CpModel变量
-                    if (fkJoinNode.getProbabilityWithFailFilter() != null) {
-                        List<IntVar> indexJoinVars = new ArrayList<>();
-                        IntStream.range(0, filterStatus2PkStatus.size()).filter(i -> !canBeInput[i]).forEach(i -> {
-                            if (filterStatus2PkStatus.get(i).getValue().get(joinStatusIndex)[joinStatusLocation] ==
-                                    (fkJoinNode.getType() != ConstraintNodeJoinType.ANTI_SEMI_JOIN)) {
-                                logger.info("indexJoin {}", i);
-                                logger.info(filterStatus2PkStatus.get(i).getKey().toString());
-                                logger.info(filterStatus2PkStatus.get(i).getValue().toString());
-                                indexJoinVars.add(vars[i]);
-                            }
-                        });
-                        int unfilterSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).intValue();
-                        logger.info("输出的数据量为:{}, 属于第{}个过滤算子, 为第{}个表的第{}个状态", unfilterSize, filterIndex, joinStatusIndex, joinStatusLocation);
-                        model.addEquality(LinearExpr.sum(indexJoinVars.toArray(IntVar[]::new)), unfilterSize);
-                    }
-                    List<IntVar> validVars = new ArrayList<>();
-                    IntStream.range(0, filterStatus2PkStatus.size()).filter(i -> canBeInput[i]).forEach(i -> {
-                        if (filterStatus2PkStatus.get(i).getValue().get(joinStatusIndex)[joinStatusLocation] ==
-                                (fkJoinNode.getType() != ConstraintNodeJoinType.ANTI_SEMI_JOIN)) {
-                            validVars.add(vars[i]);
-                        } else {
-                            canBeInput[i] = false;
+                    if (!fkJoinNode.getType().isSemi()) {
+                        if (fkJoinNode.getProbabilityWithFailFilter() != null) {
+                            int indexJoinSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).intValue();
+                            ConstructCpModel.addIndexJoinFkConstraint(model, vars, indexJoinSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
                         }
-                    });
-                    filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
-                    logger.info("输出的数据量为:{}, 属于第{}个过滤算子, 为第{}个表的第{}个状态", filterSize, filterIndex, joinStatusIndex, joinStatusLocation);
-                    model.addEquality(LinearExpr.sum(validVars.toArray(IntVar[]::new)), filterSize);
+                        filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        ConstructCpModel.addEqJoinFkConstraint(model, vars, filterSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
+                    }
+                    if (fkJoinNode.getType().hasCardinalityConstraint()) {
+                        // 获取join对应的位置
+                        int joinStatusIndex = fkJoinNode.joinStatusIndex;
+                        int joinStatusLocation = fkJoinNode.joinStatusLocation;
+                        logger.info("SEMI JOIN/OUTER JOIN, 为第{}个表的第{}个状态", joinStatusIndex, joinStatusLocation);
+                        int pkSize = fkJoinNode.getPkDistinctProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        ConstructCpModel.addCardinalityConstraint(joinStatusIndex, joinStatusLocation,
+                                model, vars, pkSize, statusHash2Size, canBeInput, filterStatus2PkStatus);
+                    }
+                }
+                case AGGREGATE -> {
+                    ConstraintChainAggregateNode aggregateNode = (ConstraintChainAggregateNode) node;
+                    if (aggregateNode.joinStatusIndex >= 0) {
+                        int pkSize = aggregateNode.getAggProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        logger.info("Aggregation, 为第{}个表, Cardinality为{}", aggregateNode.joinStatusIndex, pkSize);
+                        ConstructCpModel.addAggCardinalityConstraint(aggregateNode.joinStatusIndex,
+                                model, vars, pkSize, statusHash2Size, canBeInput, filterStatus2PkStatus);
+                    }
                 }
                 default -> {
                 }
@@ -199,7 +205,8 @@ public class ConstraintChain {
                         case INNER_JOIN -> "eq join";
                         case SEMI_JOIN -> "semi join: " + fkJoinNode.getPkDistinctProbability();
                         case OUTER_JOIN -> "outer join: " + fkJoinNode.getPkDistinctProbability();
-                        case ANTI_SEMI_JOIN -> "anti join";
+                        case ANTI_SEMI_JOIN -> "anti semi join";
+                        case ANTI_JOIN -> "anti join";
                     };
                     if (fkJoinNode.getProbabilityWithFailFilter() != null) {
                         subGraphHashMap.get(subGraphTag).joinLabel = String.format("%s filterWithCannotJoin: %2$,.4f",

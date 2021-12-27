@@ -1,8 +1,5 @@
 package ecnu.db.generator.joininfo;
 
-import com.google.ortools.sat.CpModel;
-import com.google.ortools.sat.IntVar;
-import com.google.ortools.sat.LinearExpr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +16,10 @@ public class RuleTableManager {
     }
 
     private RuleTableManager() {
+    }
+
+    public long getStatueSize(String colName, List<Integer> location, boolean[] status) {
+        return ruleTableMap.get(colName).getSize(location, status);
     }
 
     public List<boolean[]> getAllStatusRule(String colName, List<Integer> location) {
@@ -59,21 +60,4 @@ public class RuleTableManager {
         return fksList;
     }
 
-    public IntVar[] initModel(SortedMap<JoinStatus, Long> filterHistogram,
-                              List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus,
-                              CpModel model, int range) {
-        int varNum = filterStatus2PkStatus.size();
-        IntVar[] vars = new IntVar[varNum];
-        logger.debug("create {} vars", varNum);
-        for (int i = 0; i < varNum; i++) {
-            vars[i] = model.newIntVar(0, range, String.valueOf(i));
-        }
-        int i = 0;
-        int allPkSize = filterStatus2PkStatus.size() / filterHistogram.size();
-        for (Map.Entry<JoinStatus, Long> filter2Status : filterHistogram.entrySet()) {
-            model.addEquality(LinearExpr.sum(Arrays.copyOfRange(vars, i, i + allPkSize)), filter2Status.getValue());
-            i += allPkSize;
-        }
-        return vars;
-    }
 }
