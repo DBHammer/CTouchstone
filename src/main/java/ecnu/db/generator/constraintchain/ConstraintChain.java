@@ -8,7 +8,7 @@ import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
-import ecnu.db.generator.constraintchain.join.ConstructCpModel;
+import ecnu.db.generator.ConstructCpModel;
 import ecnu.db.generator.joininfo.JoinStatus;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.slf4j.Logger;
@@ -141,8 +141,6 @@ public class ConstraintChain {
                         canBeInput[i++] = status2PkStatus.getKey().status()[filterIndex];
                     }
                 }
-                // join的状态根据前缀状态获得
-                // todo 考虑semi join 和 outer join
                 case FK_JOIN -> {
                     ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
                     if (!fkJoinNode.getType().isSemi()) {
