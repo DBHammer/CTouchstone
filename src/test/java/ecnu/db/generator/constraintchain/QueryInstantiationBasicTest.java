@@ -142,7 +142,7 @@ class QueryInstantiationBasicTest {
 
         chains = query2chains.get("4_1.sql");
         map = getRate(chains);
-        assertEquals(0.6320880022, map.get("public.lineitem"), 0.0005);
+        assertEquals(0.6320880022, map.get("public.lineitem"), 0.001);
 
         chains = query2chains.get("5_1.sql");
         map = getRate(chains);
@@ -234,7 +234,7 @@ class QueryInstantiationBasicTest {
 
         chains = query2chains.get("21_1.sql");
         map = getRate(chains);
-        assertEquals(0.6320880022, map.get("public.lineitem"), 0.0005);
+        assertEquals(0.6320880022, map.get("public.lineitem"), 0.001);
 
         chains = query2chains.get("21_1.sql");
         map = getRate(chains);
