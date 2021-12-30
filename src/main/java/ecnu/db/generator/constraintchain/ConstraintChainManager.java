@@ -164,6 +164,9 @@ public class ConstraintChainManager {
      */
     public void classifyConstraintChain(List<ConstraintChain> allChains, List<ConstraintChain> haveFkConstrainChains,
                                         List<ConstraintChain> onlyPkConstrainChains, List<ConstraintChain> fkAndPkConstrainChains) {
+        if (allChains == null) {
+            return;
+        }
         for (ConstraintChain constraintChain : allChains) {
             if (constraintChain.getNodes().stream().allMatch(node ->
                     node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN ||
