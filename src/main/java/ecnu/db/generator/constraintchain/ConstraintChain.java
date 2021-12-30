@@ -1,14 +1,12 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.ortools.sat.CpModel;
-import com.google.ortools.sat.IntVar;
+import ecnu.db.generator.ConstructCpModel;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
-import ecnu.db.generator.ConstructCpModel;
 import ecnu.db.generator.joininfo.JoinStatus;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.slf4j.Logger;
@@ -126,7 +124,7 @@ public class ConstraintChain {
         }
     }
 
-    public void addConstraint2Model(CpModel model, IntVar[] vars, int filterIndex, int filterSize, int unFilterSize,
+    public void addConstraint2Model(int filterIndex, int filterSize, int unFilterSize,
                                     List<Map<Integer, Long>> statusHash2Size,
                                     List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
         // 每一组填充状态是否能到达这个算子
@@ -146,10 +144,10 @@ public class ConstraintChain {
                     if (!fkJoinNode.getType().isSemi()) {
                         if (fkJoinNode.getProbabilityWithFailFilter() != null) {
                             int indexJoinSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).intValue();
-                            ConstructCpModel.addIndexJoinFkConstraint(model, vars, indexJoinSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
+                            ConstructCpModel.addIndexJoinFkConstraint(indexJoinSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
                         }
                         filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
-                        ConstructCpModel.addEqJoinFkConstraint(model, vars, filterSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
+                        ConstructCpModel.addEqJoinFkConstraint(filterSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
                     }
                     if (fkJoinNode.getType().hasCardinalityConstraint()) {
                         // 获取join对应的位置
@@ -158,7 +156,7 @@ public class ConstraintChain {
                         logger.info("SEMI JOIN/OUTER JOIN, 为第{}个表的第{}个状态", joinStatusIndex, joinStatusLocation);
                         int pkSize = fkJoinNode.getPkDistinctProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
                         ConstructCpModel.addCardinalityConstraint(joinStatusIndex, joinStatusLocation,
-                                model, vars, pkSize, statusHash2Size, canBeInput, filterStatus2PkStatus);
+                                pkSize, statusHash2Size, canBeInput, filterStatus2PkStatus);
                     }
                 }
                 case AGGREGATE -> {
@@ -167,7 +165,7 @@ public class ConstraintChain {
                         int pkSize = aggregateNode.getAggProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
                         logger.info("Aggregation, 为第{}个表, Cardinality为{}", aggregateNode.joinStatusIndex, pkSize);
                         ConstructCpModel.addAggCardinalityConstraint(aggregateNode.joinStatusIndex,
-                                model, vars, pkSize, statusHash2Size, canBeInput, filterStatus2PkStatus);
+                                pkSize, statusHash2Size, canBeInput, filterStatus2PkStatus);
                     }
                 }
                 default -> {

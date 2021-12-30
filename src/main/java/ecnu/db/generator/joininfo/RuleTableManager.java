@@ -18,6 +18,10 @@ public class RuleTableManager {
     private RuleTableManager() {
     }
 
+    public RuleTable getRuleTable(String colName){
+        return ruleTableMap.get(colName);
+    }
+
     public long getStatueSize(String colName, List<Integer> location, boolean[] status) {
         return ruleTableMap.get(colName).getSize(location, status);
     }
@@ -38,26 +42,6 @@ public class RuleTableManager {
             accumulativeIndex += size;
         }
         return pkStatus2Index;
-    }
-
-    public List<StringBuilder> populateFks(SortedMap<String, List<Integer>> involveFks,
-                                           List<List<boolean[]>> fkStatus) {
-        List<RuleTable> ruleTables = new ArrayList<>();
-        for (String refTable : involveFks.keySet()) {
-            ruleTables.add(ruleTableMap.get(refTable));
-        }
-        List<List<Integer>> location = new ArrayList<>(involveFks.size());
-        location.addAll(involveFks.values());
-        List<StringBuilder> fksList = new ArrayList<>();
-        for (List<boolean[]> status : fkStatus) {
-            StringBuilder fks = new StringBuilder();
-            for (int statusTableIndex = 0; statusTableIndex < status.size(); statusTableIndex++) {
-                long fk = ruleTables.get(statusTableIndex).getKey(location.get(statusTableIndex), status.get(statusTableIndex));
-                fks.append(fk).append(",");
-            }
-            fksList.add(fks);
-        }
-        return fksList;
     }
 
 }
