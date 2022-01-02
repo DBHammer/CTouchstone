@@ -2,6 +2,9 @@ package ecnu.db.generator;
 
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
+import ecnu.db.generator.fkgenerate.BoundFkGenerate;
+import ecnu.db.generator.fkgenerate.FkGenerate;
+import ecnu.db.generator.fkgenerate.RandomFkGenerate;
 import ecnu.db.generator.joininfo.JoinStatus;
 import ecnu.db.generator.joininfo.RuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
@@ -45,18 +48,9 @@ public class KeysGenerator {
                 logger.debug(booleans.stream().map(Arrays::toString).collect(Collectors.joining("\t\t")));
             }
         }
-        int tableIndex = 0;
         statusHash2Size = new ArrayList<>(allStatus.size());
         for (Map.Entry<String, List<Integer>> table2Location : involveFks.entrySet()) {
-            var statuses = col2AllStatus.get(tableIndex++);
-            Map<Integer, Long> sizes = new HashMap<>();
-            for (boolean[] status : statuses) {
-                try {
-                    sizes.put(Arrays.hashCode(status), RuleTableManager.getInstance().getStatueSize(table2Location.getKey(), table2Location.getValue(), status));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+            Map<Integer, Long> sizes = RuleTableManager.getInstance().getStatueSize(table2Location.getKey(), table2Location.getValue());
             statusHash2Size.add(sizes);
         }
     }
@@ -121,12 +115,48 @@ public class KeysGenerator {
         }).collect(Collectors.groupingByConcurrent(Function.identity(), Collectors.counting()));
     }
 
-    public List<List<boolean[]>> populateFkStatus(List<ConstraintChain> haveFkConstrainChains,
-                                                  boolean[][] filterStatus, int range) {
+    public List<List<Map.Entry<boolean[], Long>>> populateFkStatus(List<ConstraintChain> haveFkConstrainChains,
+                                                                   boolean[][] filterStatus, int range) {
         // 统计status的分布直方图
         SortedMap<JoinStatus, Long> filterHistogram = new TreeMap<>(countStatus(filterStatus));
         long[] result = generateFkSolution(haveFkConstrainChains, filterHistogram, filterStatus, range);
-        List<List<boolean[]>> fkStatus = new ArrayList<>(range);
+        logger.info("statusHash2Size" + statusHash2Size);
+        boolean hasCardinalityConstraint = result.length > filterHistogram.size() * allStatus.size();
+        List<List<FkGenerate>> cardinalityRangeForEachFk = new ArrayList<>();
+        List<String> refCols = new ArrayList<>(involveFks.keySet());
+        if (hasCardinalityConstraint) {
+            int step = filterHistogram.size() * allStatus.size();
+            int fkNum = result.length / step - 1;
+            for (int i = 1; i <= fkNum; i++) {
+                int resultRangeStart = step * i;
+                int fkIndex = i - 1;
+                List<FkGenerate> cardinalityRangeForFk = new ArrayList<>();
+                RuleTable ruleTable = RuleTableManager.getInstance().getRuleTable(refCols.get(fkIndex));
+                for (int rangeIndex = resultRangeStart; rangeIndex < resultRangeStart + step; rangeIndex++) {
+                    if (result[rangeIndex] == 0) {
+                        if (refCols.get(fkIndex).contains("public.orders.o_orderkey")) {
+                            cardinalityRangeForFk.add(new RandomFkGenerate(-1L, -1L, 0));
+                        } else {
+                            cardinalityRangeForFk.add(new RandomFkGenerate(-1L, -1L, 0));
+                        }
+                    } else {
+                        int ruleHash = Arrays.hashCode(allStatus.get(rangeIndex % allStatus.size()).get(fkIndex));
+                        long currentCounter = ruleTable.getRuleCounter().get(ruleHash);
+                        long nextCounter = currentCounter + result[rangeIndex];
+                        if (refCols.get(fkIndex).contains("public.orders.o_orderkey")) {
+                            cardinalityRangeForFk.add(new BoundFkGenerate(currentCounter, nextCounter, result[rangeIndex - resultRangeStart]));
+                        } else {
+                            cardinalityRangeForFk.add(new RandomFkGenerate(currentCounter, nextCounter, result[rangeIndex - resultRangeStart]));
+                        }
+                        ruleTable.getRuleCounter().put(ruleHash, nextCounter);
+                    }
+                }
+                cardinalityRangeForEachFk.add(cardinalityRangeForFk);
+            }
+        }
+//        System.out.println(cardinalityRangeForEachFk);
+
+        List<List<Map.Entry<boolean[], Long>>> fkStatus2PkIndex = new ArrayList<>(range);
         Map<JoinStatus, Integer> filterStatus2JoinLocation = getAllVarLocation(filterHistogram, allStatus);
         for (int j = 0; j < filterStatus[0].length; j++) {
             boolean[] status = new boolean[filterStatus.length];
@@ -143,24 +173,36 @@ public class KeysGenerator {
             if (hasNewIndex) {
                 filterStatus2JoinLocation.put(new JoinStatus(status), index);
             }
-            fkStatus.add(allStatus.get(index % allStatus.size()));
+            List<boolean[]> fkStatus = allStatus.get(index % allStatus.size());
+            List<Map.Entry<boolean[], Long>> rowFkStatus2Index = new ArrayList<>();
+            for (int fkIndex = 0; fkIndex < fkStatus.size(); fkIndex++) {
+                if (cardinalityRangeForEachFk.isEmpty()) {
+                    rowFkStatus2Index.add(new AbstractMap.SimpleEntry<>(fkStatus.get(fkIndex), -1L));
+                } else {
+                    FkGenerate pkRange = cardinalityRangeForEachFk.get(fkIndex).get(index);
+                    if (!pkRange.isValid()) {
+                        rowFkStatus2Index.add(new AbstractMap.SimpleEntry<>(fkStatus.get(fkIndex), -1L));
+                    } else {
+                        rowFkStatus2Index.add(new AbstractMap.SimpleEntry<>(fkStatus.get(fkIndex), pkRange.getValue()));
+                    }
+                }
+            }
+            fkStatus2PkIndex.add(rowFkStatus2Index);
         }
-        return fkStatus;
+        return fkStatus2PkIndex;
     }
 
-    public List<long[]> populateFks(List<List<boolean[]>> fkStatus) {
+    public List<long[]> populateFks(List<List<Map.Entry<boolean[], Long>>> fkStatus) {
         List<RuleTable> ruleTables = new ArrayList<>();
         for (String refTable : involveFks.keySet()) {
             ruleTables.add(RuleTableManager.getInstance().getRuleTable(refTable));
         }
-        List<List<Integer>> location = new ArrayList<>(involveFks.size());
-        location.addAll(involveFks.values());
         List<long[]> fksList = new ArrayList<>();
-        for (List<boolean[]> status : fkStatus) {
-            long[] fks = new long[status.size()];
+        for (var status2Index : fkStatus) {
+            long[] fks = new long[status2Index.size()];
             int i = 0;
-            for (int statusTableIndex = 0; statusTableIndex < status.size(); statusTableIndex++) {
-                fks[i++] = ruleTables.get(statusTableIndex).getKey(location.get(statusTableIndex), status.get(statusTableIndex));
+            for (int statusTableIndex = 0; statusTableIndex < status2Index.size(); statusTableIndex++) {
+                fks[i++] = ruleTables.get(statusTableIndex).getKey(status2Index.get(statusTableIndex).getKey(), status2Index.get(statusTableIndex).getValue());
             }
             fksList.add(fks);
         }
@@ -201,4 +243,6 @@ public class KeysGenerator {
             return new HashMap<>();
         }
     }
+
+
 }

@@ -1,14 +1,14 @@
 package ecnu.db.generator.joininfo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RuleTableManager {
     private final Map<String, RuleTable> ruleTableMap = new HashMap<>();
-    private final Logger logger = LoggerFactory.getLogger(RuleTableManager.class);
+
     private static final RuleTableManager INSTANCE = new RuleTableManager();
 
     public static RuleTableManager getInstance() {
@@ -18,12 +18,12 @@ public class RuleTableManager {
     private RuleTableManager() {
     }
 
-    public RuleTable getRuleTable(String colName){
+    public RuleTable getRuleTable(String colName) {
         return ruleTableMap.get(colName);
     }
 
-    public long getStatueSize(String colName, List<Integer> location, boolean[] status) {
-        return ruleTableMap.get(colName).getSize(location, status);
+    public Map<Integer, Long> getStatueSize(String colName, List<Integer> location) {
+        return ruleTableMap.get(colName).mergeRules(location);
     }
 
     public List<boolean[]> getAllStatusRule(String colName, List<Integer> location) {

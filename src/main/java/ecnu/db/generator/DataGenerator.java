@@ -120,7 +120,7 @@ public class DataGenerator implements Callable<Integer> {
                     boolean[][] filterStatus = haveFkConstrainChains.stream().parallel()
                             .map(constraintChain -> constraintChain.evaluateFilterStatus(range)).toArray(boolean[][]::new);
                     // 生成每一行对应的主键状态 row -> col -> col_status
-                    List<List<boolean[]>> fkStatus = keysGenerator.populateFkStatus(haveFkConstrainChains, filterStatus, range);
+                    List<List<Map.Entry<boolean[], Long>>> fkStatus = keysGenerator.populateFkStatus(haveFkConstrainChains, filterStatus, range);
                     // 根据外键状态和filter status推演主键状态表
                     int chainIndex = 0;
                     for (ConstraintChain fkAndPkConstrainChain : haveFkConstrainChains) {
@@ -135,10 +135,11 @@ public class DataGenerator implements Callable<Integer> {
                 List<StringBuilder> rowData = futureRowData.get();
                 if (fksList != null) {
                     for (int i = 0; i < rowData.size(); i++) {
-                        StringBuilder row = rowData.get(i);
+                        StringBuilder row = new StringBuilder();
                         for (long l : fksList.get(i)) {
-                            row.append(',').append(l);
+                            row.append(l).append(',');
                         }
+                        rowData.get(i).insert(0, row);
                     }
                 }
                 if (pkStatus.length > 0) {
@@ -149,11 +150,11 @@ public class DataGenerator implements Callable<Integer> {
                         for (int colIndex = 0; colIndex < pkStatus.length; colIndex++) {
                             status[colIndex] = pkStatus[colIndex][i];
                         }
-                        rowData.get(i).append(',').append(pkStatus2Location.get(new JoinStatus(status)).getAndIncrement());
+                        rowData.get(i).insert(0, pkStatus2Location.get(new JoinStatus(status)).getAndIncrement() + ",");
                     }
                 } else if (!pkName.isEmpty()) {
                     for (int i = 0; i < rowData.size(); i++) {
-                        rowData.get(i).append(',').append(resultStart + i);
+                        rowData.get(i).insert(0, (resultStart + i) + ",");
                     }
                 }
                 dataWriter.addWriteTask(schemaName, rowData);

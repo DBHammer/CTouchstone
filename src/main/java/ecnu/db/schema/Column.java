@@ -123,7 +123,7 @@ public class Column {
         };
         parameters.parallelStream().forEach(parameter -> {
             long value = bound;
-            if(operator==CompareOperator.GT || operator==CompareOperator.LE){
+            if (operator == CompareOperator.GT || operator == CompareOperator.LE) {
                 value--;
             }
             parameter.setData(value);
@@ -140,7 +140,7 @@ public class Column {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             dealZeroPb(parameters);
         } else {
-            BigDecimal tempProbability = new BigDecimal(probability.toString()).divide(BigDecimal.valueOf(parameters.size()),CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            BigDecimal tempProbability = new BigDecimal(probability.toString()).divide(BigDecimal.valueOf(parameters.size()), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
             eqRequest2ParameterIds.computeIfAbsent(tempProbability, i -> new LinkedList<>()).addAll(parameters);
         }
     }
@@ -154,8 +154,8 @@ public class Column {
             default -> throw new UnsupportedOperationException();
         }
         likeParameterId.addAll(parameters.stream()
-                .filter(parameter -> parameter.getType()== Parameter.ParameterType.LIKE ||
-                        parameter.getType()== Parameter.ParameterType.SUBSTRING)
+                .filter(parameter -> parameter.getType() == Parameter.ParameterType.LIKE ||
+                        parameter.getType() == Parameter.ParameterType.SUBSTRING)
                 .mapToInt(Parameter::getId).boxed().toList());
     }
 
@@ -205,7 +205,7 @@ public class Column {
         // 填充到bucket之后，重新调整剩余容量的记录treemap
         // 针对等值约束的赋值，采用逆序赋值法，即从bound开始，按照当前在bucket中的位置，分配对应的值，赋值最小从lowBound-1开始
         for (BigDecimal eqProbability : eqRequest2ParameterIds.descendingKeySet()) {
-            while (!eqRequest2ParameterIds.get(eqProbability).isEmpty()){
+            while (!eqRequest2ParameterIds.get(eqProbability).isEmpty()) {
                 bucketBound2FreeSpace.sort(Map.Entry.comparingByValue());
                 Optional<Map.Entry<Long, BigDecimal>> freeSpace2BucketIdOptional = bucketBound2FreeSpace.stream().
                         filter(bucket -> bucket.getValue().compareTo(eqProbability) > -1).findFirst();
@@ -305,17 +305,17 @@ public class Column {
             currentIndex += randomSize;
         }
 
-        // shuffle数组
-        long temp;
-        int swapIndex;
-        Random rnd = ThreadLocalRandom.current();
-
-        for (int index = columnData.length - 1; index >= currentIndex; index--) {
-            swapIndex = rnd.nextInt(index);
-            temp = columnData[swapIndex];
-            columnData[swapIndex] = columnData[index];
-            columnData[index] = temp;
-        }
+//        // shuffle数组
+//        long temp;
+//        int swapIndex;
+//        Random rnd = ThreadLocalRandom.current();
+//
+//        for (int index = columnData.length - 1; index > boundIndex; index--) {
+//            swapIndex = rnd.nextInt(index - boundIndex) + boundIndex;
+//            temp = columnData[swapIndex];
+//            columnData[swapIndex] = columnData[index];
+//            columnData[index] = temp;
+//        }
         columnData2ComputeData = false;
     }
 
@@ -399,7 +399,7 @@ public class Column {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
             case VARCHAR -> stringTemplate.transferColumnData2Value(data);
-            case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min)*24*60*60));
+            case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min) * 24 * 60 * 60));
             case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();
         };

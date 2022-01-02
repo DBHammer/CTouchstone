@@ -130,7 +130,7 @@ public class ConstructCpModel {
     }
 
     public static void addAggCardinalityConstraint(int joinStatusIndex,
-                                                   int pkCardinalitySize,
+                                                   int pkCardinalitySize, int cardinalityBound,
                                                    List<Map<Integer, Long>> statusHash2Size,
                                                    boolean[] canBeInput,
                                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
@@ -146,7 +146,7 @@ public class ConstructCpModel {
             hash2Index.computeIfAbsent(fkHash, v -> new ArrayList<>());
             hash2Index.get(fkHash).add(vars[anchor + i]);
             cardinalityVars.add(vars[anchor + i]);
-            model.addLessOrEqual(vars[i], LinearExpr.scalProd(new IntVar[]{vars[anchor + i]}, new int[]{100000000}));
+            model.addLessOrEqual(vars[i], LinearExpr.scalProd(new IntVar[]{vars[anchor + i]}, new int[]{cardinalityBound}));
         });
         model.addEquality(LinearExpr.sum(cardinalityVars.toArray(IntVar[]::new)), pkCardinalitySize);
         var pkStatusHash2Size = statusHash2Size.get(joinStatusIndex);
@@ -158,7 +158,7 @@ public class ConstructCpModel {
     }
 
     public static void addCardinalityConstraint(int joinStatusIndex, int joinStatusLocation,
-                                                int pkCardinalitySize,
+                                                int pkCardinalitySize, int cardinalityBound,
                                                 List<Map<Integer, Long>> statusHash2Size,
                                                 boolean[] canBeInput,
                                                 List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
@@ -173,7 +173,7 @@ public class ConstructCpModel {
                 hash2Index.computeIfAbsent(fkHash, v -> new ArrayList<>());
                 hash2Index.get(fkHash).add(vars[anchor + i]);
                 cardinalityVars.add(vars[anchor + i]);
-                model.addLessOrEqual(vars[i], LinearExpr.scalProd(new IntVar[]{vars[anchor + i]}, new int[]{100000000}));
+                model.addLessOrEqual(vars[i], LinearExpr.scalProd(new IntVar[]{vars[anchor + i]}, new int[]{cardinalityBound}));
             }
         });
         model.addEquality(LinearExpr.sum(cardinalityVars.toArray(IntVar[]::new)), pkCardinalitySize);

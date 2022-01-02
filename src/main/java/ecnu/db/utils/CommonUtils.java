@@ -36,13 +36,14 @@ import java.util.stream.Collectors;
  * @author xuechao.lian
  */
 public class CommonUtils {
-    public static final int STEP_SIZE = 1000000;
+    public static final int STEP_SIZE = 700000;
     public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public static final String CANONICAL_NAME_CONTACT_SYMBOL = ".";
     public static final String CANONICAL_NAME_SPLIT_REGEX = "\\.";
     public static final int SAMPLE_DOUBLE_PRECISION = (int) 1E6;
     public static final int SINGLE_THREAD_TUPLE_SIZE = 100;
     public static final int INIT_HASHMAP_SIZE = 16;
+    public static final double CardinalityScale = 1.4;
     public static final CsvMapper CSV_MAPPER = new CsvMapper();
     private static final SimpleModule touchStoneJsonModule = new SimpleModule()
             .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
@@ -56,6 +57,7 @@ public class CommonUtils {
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .setDefaultPrettyPrinter(dpf)
             .registerModule(new JavaTimeModule()).registerModule(touchStoneJsonModule);
+
     static {
         dpf.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
     }

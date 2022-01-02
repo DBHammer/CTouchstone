@@ -141,7 +141,16 @@ public class Table {
     public void toSQL(DbConnector dbConnector, String tableName) throws SQLException, TouchstoneException {
         StringBuilder head = new StringBuilder("CREATE TABLE ");
         head.append(tableName).append(" (");
-        for (String canonicalColumnName : canonicalColumnNames) {
+        List<String> allColumns = new ArrayList<>(canonicalColumnNames);
+        List<String> tempPrimayKeys = new ArrayList<>(primaryKeys);
+        tempPrimayKeys.removeAll(foreignKeys.keySet());
+        allColumns.removeAll(tempPrimayKeys);
+        allColumns.removeAll(foreignKeys.keySet());
+        List<String> foreignKeysList = new ArrayList<>(foreignKeys.keySet());
+        Collections.sort(foreignKeysList);
+        allColumns.addAll(0, foreignKeysList);
+        allColumns.addAll(0, tempPrimayKeys);
+        for (String canonicalColumnName : allColumns) {
             String columnName = canonicalColumnName.split("\\.")[2].toUpperCase();
             Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
             String addColumn = columnName + " " + column.getOriginalType() + ",";
