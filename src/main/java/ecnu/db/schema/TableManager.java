@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
@@ -58,6 +57,25 @@ public class TableManager {
 
     public String getPrimaryKeys(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getPrimaryKeys();
+    }
+
+    /**
+     * 输出指定行的基数
+     *
+     * @param fkCol 外键列
+     * @return 外键行的基数
+     */
+    public int cardinalityConstraint(String fkCol) {
+        String[] cols = fkCol.split("\\.");
+        String tableName = cols[0] + "." + cols[1];
+        String pkCol = schemas.get(tableName).getForeignKeys().get(fkCol);
+        String[] pkCols = pkCol.split("\\.");
+        String pkTable = pkCols[0] + "." + pkCols[1];
+        double scale = CommonUtils.CardinalityScale;
+        if(tableName.equals("public.orders")){
+            scale = 2;
+        }
+        return (int) (scale * schemas.get(tableName).getTableSize() / schemas.get(pkTable).getTableSize());
     }
 
 
@@ -143,9 +161,9 @@ public class TableManager {
     }
 
     public String getPrimaryKeyColumn(String schemaName) throws CannotFindSchemaException {
-        List<String> pkNames = new ArrayList<>( getSchema(schemaName).getPrimaryKeysList());
+        List<String> pkNames = new ArrayList<>(getSchema(schemaName).getPrimaryKeysList());
         var fks = getSchema(schemaName).getForeignKeys();
-        if(fks!=null){
+        if (fks != null) {
             pkNames.removeAll(fks.keySet());
         }
         return String.join(",", pkNames);
