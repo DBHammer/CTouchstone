@@ -319,6 +319,14 @@ public class Column {
         columnData2ComputeData = false;
     }
 
+    public void shuffleRows(List<Integer> rowIndexes) {
+        long[] tempIndex = new long[rowIndexes.size()];
+        for (int i = 0; i < tempIndex.length; i++) {
+            tempIndex[i] = columnData[rowIndexes.get(i)];
+        }
+        columnData = tempIndex;
+    }
+
     /**
      * 无运算比较，针对传入的参数，对于单操作符进行比较
      *
@@ -368,7 +376,7 @@ public class Column {
         //lazy生成computeData
         if (!columnData2ComputeData) {
             computeData = switch (columnType) {
-                case DATE, DATETIME -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) data).toArray();
+                case DATE, DATETIME -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) data + min).toArray();
                 case DECIMAL -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
                 case INTEGER -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (specialValue * data) + min).toArray();
                 default -> throw new IllegalStateException("Unexpected value: " + columnType);

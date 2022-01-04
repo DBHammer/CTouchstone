@@ -254,6 +254,12 @@ public class ColumnManager {
 
     public void prepareGeneration(Collection<String> columnNames, int size) {
         columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
+        List<Integer> rowIndex = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            rowIndex.add(i);
+        }
+        Collections.shuffle(rowIndex);
+        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).shuffleRows(rowIndex));
     }
 
     public void insertBetweenProbability(String columnName, BigDecimal probability,
