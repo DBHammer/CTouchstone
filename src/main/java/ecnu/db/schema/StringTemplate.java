@@ -11,6 +11,7 @@ class StringTemplate {
     long specialValue;
     Map<Long, boolean[]> likeIndex2Status = new HashMap<>();
     private static final char[] randomCharSet = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray();
+    private static final char[] likeRandomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ-".toCharArray();
 
     public StringTemplate(int minLength, int rangeLength, long specialValue) {
         this.minLength = minLength;
@@ -34,10 +35,12 @@ class StringTemplate {
     public String getLikeValue(long dataId, String originValue) {
         char[] likeValue = getParameterBuilder(dataId);
         likeIndex2Status.put(dataId, new boolean[3]);
+        int firstChangeIndex = 0;
         if (originValue.startsWith("%")) {
             likeValue[0] = '%';
             originValue = originValue.substring(1);
             likeIndex2Status.get(dataId)[0] = true;
+            firstChangeIndex = 1;
         }
         if (originValue.endsWith("%")) {
             likeValue[likeValue.length - 1] = '%';
@@ -48,6 +51,7 @@ class StringTemplate {
             likeValue[likeValue.length / 2] = '%';
             likeIndex2Status.get(dataId)[2] = true;
         }
+        likeValue[firstChangeIndex] = likeRandomCharSet[likeValue[firstChangeIndex] % likeRandomCharSet.length];
         return new String(likeValue);
     }
 
@@ -63,8 +67,10 @@ class StringTemplate {
         if (likeIndex2Status.size() > 0 && likeIndex2Status.containsKey(data)) {
             char[] value = getParameterBuilder(data);
             boolean[] status = likeIndex2Status.get(data);
+            int firstChangeIndex = 0;
             if (status[0]) {
                 value[0] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
+                firstChangeIndex = 1;
             }
             if (status[1]) {
                 value[value.length - 1] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
@@ -72,6 +78,7 @@ class StringTemplate {
             if (status[2]) {
                 value[value.length / 2] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
             }
+            value[firstChangeIndex] = likeRandomCharSet[value[firstChangeIndex] % likeRandomCharSet.length];
             return new String(value);
         } else {
             return getParameterValue(data);
