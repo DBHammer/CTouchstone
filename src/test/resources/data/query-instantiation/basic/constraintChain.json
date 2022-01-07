@@ -58,7 +58,7 @@
                     "parameters" : [
                       {
                         "id" : 11,
-                        "data" : 2524,
+                        "data" : 2494,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -85,7 +85,7 @@
                     "parameters" : [
                       {
                         "id" : 10,
-                        "data" : 2463,
+                        "data" : 2491,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -222,7 +222,7 @@
                 }
               ]
             },
-            "probability" : 1
+            "probability" : 0.0000260837811
           }
         }
       ],
@@ -260,7 +260,6 @@
           "localCols" : "public.orders.o_custkey",
           "pkTag" : 2,
           "probability" : 0.1995522848,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -338,7 +337,6 @@
           "pkTag" : 2,
           "probability" : 0.009253930116,
           "probabilityWithFailFilter" : 0.1994705347,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -361,7 +359,6 @@
           "localCols" : "public.nation.n_regionkey",
           "pkTag" : 1,
           "probability" : 0.2,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -416,7 +413,6 @@
           "localCols" : "public.customer.c_nationkey",
           "pkTag" : 5,
           "probability" : 0.1984266667,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -478,7 +474,6 @@
           "pkTag" : 3,
           "probability" : 0.1997838029,
           "probabilityWithFailFilter" : 0.1992492274,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -499,7 +494,6 @@
           "localCols" : "public.lineitem.l_orderkey",
           "pkTag" : 4,
           "probability" : 0.03023787683,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         }
       ],
@@ -517,7 +511,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 139,
+                    "id" : 140,
                     "data" : 149,
                     "type" : "ACTUAL"
                   }
@@ -549,7 +543,6 @@
           "localCols" : "public.lineitem.l_partkey",
           "pkTag" : 5,
           "probability" : 0.006874441259,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -558,7 +551,6 @@
           "localCols" : "public.lineitem.l_orderkey",
           "pkTag" : 6,
           "probability" : 0.06319234032,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         }
       ],
@@ -572,7 +564,6 @@
           "localCols" : "public.nation.n_regionkey",
           "pkTag" : 2,
           "probability" : 0.2,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -595,7 +586,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 140,
+                    "id" : 139,
                     "data" : 3,
                     "type" : "ACTUAL"
                   }
@@ -627,7 +618,6 @@
           "localCols" : "public.customer.c_nationkey",
           "pkTag" : 8,
           "probability" : 0.20122,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -689,7 +679,6 @@
           "pkTag" : 5,
           "probability" : 0.2005563538,
           "probabilityWithFailFilter" : 0.2014266301,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -712,7 +701,6 @@
           "localCols" : "public.lineitem.l_partkey",
           "pkTag" : 1,
           "probability" : 0.001009295618,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -720,7 +708,7 @@
           "groupKey" : [
             "public.lineitem.l_partkey"
           ],
-          "aggProbability" : 1,
+          "aggProbability" : 0.03252435199,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -878,7 +866,6 @@
           "localCols" : "public.customer.c_nationkey",
           "pkTag" : 6,
           "probability" : 0.07996,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -951,7 +938,6 @@
           "localCols" : "public.orders.o_custkey",
           "pkTag" : 4,
           "probability" : 0.07968866667,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1013,7 +999,6 @@
           "pkTag" : 5,
           "probability" : 0.07954825125,
           "probabilityWithFailFilter" : 0.07968457366,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1022,7 +1007,6 @@
           "localCols" : "public.lineitem.l_suppkey",
           "pkTag" : 6,
           "probability" : 0.03936060502,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         }
       ],
@@ -1036,7 +1020,6 @@
           "localCols" : "public.supplier.s_nationkey",
           "pkTag" : 7,
           "probability" : 0.0795,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1111,7 +1094,6 @@
           "localCols" : "public.nation.n_regionkey",
           "pkTag" : 0,
           "probability" : 0.2,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1166,7 +1148,6 @@
           "localCols" : "public.supplier.s_nationkey",
           "pkTag" : 2,
           "probability" : 0.2036,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1187,7 +1168,6 @@
           "localCols" : "public.partsupp.ps_suppkey",
           "pkTag" : 3,
           "probability" : 0.2036,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1196,7 +1176,6 @@
           "localCols" : "public.partsupp.ps_partkey",
           "pkTag" : 3,
           "probability" : 0.004242387033,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1204,7 +1183,7 @@
           "groupKey" : [
             "public.partsupp.ps_partkey"
           ],
-          "aggProbability" : 1,
+          "aggProbability" : 0.7322720695,
           "aggFilter" : {
             "constraintChainNodeType" : "FILTER",
             "root" : {
@@ -1389,9 +1368,9 @@
           "refCols" : "public.customer.c_custkey",
           "localCols" : "public.orders.o_custkey",
           "pkTag" : 1,
-          "probability" : 0.004244,
-          "pkDistinctProbability" : 0,
-          "type" : "INNER_JOIN"
+          "probability" : 0.008476,
+          "pkDistinctProbability" : 0.008476,
+          "type" : "ANTI_SEMI_JOIN"
         }
       ],
       "tableName" : "public.orders"
@@ -1428,7 +1407,6 @@
           "localCols" : "public.lineitem.l_orderkey",
           "pkTag" : 0,
           "probability" : 0.07643471029,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         }
       ],
@@ -1530,7 +1508,6 @@
           "localCols" : "public.supplier.s_nationkey",
           "pkTag" : 3,
           "probability" : 0.0397,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1585,7 +1562,6 @@
           "localCols" : "public.partsupp.ps_partkey",
           "pkTag" : 4,
           "probability" : 0.011165,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1594,7 +1570,7 @@
           "localCols" : "public.partsupp.ps_suppkey",
           "pkTag" : 4,
           "probability" : 0.01948051948,
-          "pkDistinctProbability" : 0,
+          "pkDistinctProbability" : 0.01948051948,
           "type" : "SEMI_JOIN"
         }
       ],
@@ -1666,8 +1642,8 @@
               {
                 "parameters" : [
                   {
-                    "id" : 95,
-                    "data" : -312,
+                    "id" : 96,
+                    "data" : -340,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -1700,7 +1676,6 @@
           "localCols" : "public.lineitem.l_suppkey",
           "pkTag" : 5,
           "probability" : 0.03728815257,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1709,8 +1684,6 @@
           "localCols" : "public.lineitem.l_orderkey",
           "pkTag" : 1,
           "probability" : 0.4831772067,
-          "probabilityWithFailFilter" : 0.09486144978,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         }
       ],
@@ -1726,7 +1699,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 96,
+                    "id" : 95,
                     "data" : 21,
                     "type" : "ACTUAL"
                   }
@@ -1758,7 +1731,6 @@
           "localCols" : "public.supplier.s_nationkey",
           "pkTag" : 4,
           "probability" : 0.0373,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1849,7 +1821,6 @@
           "localCols" : "public.supplier.s_nationkey",
           "pkTag" : 0,
           "probability" : 0.0406,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1870,7 +1841,6 @@
           "localCols" : "public.partsupp.ps_suppkey",
           "pkTag" : 0,
           "probability" : 0.0406,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -1911,7 +1881,7 @@
                 }
               ]
             },
-            "probability" : 1
+            "probability" : 0.00003078817734
           }
         }
       ],
@@ -1927,7 +1897,6 @@
           "localCols" : "public.lineitem.l_partkey",
           "pkTag" : 6,
           "probability" : 0.05437182304,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         }
       ],
@@ -2005,7 +1974,7 @@
                 }
               ]
             },
-            "probability" : 0.000006
+            "probability" : 0.000001499696311
           }
         }
       ],
@@ -2043,8 +2012,8 @@
           "localCols" : "public.orders.o_custkey",
           "pkTag" : 0,
           "probability" : 1,
-          "pkDistinctProbability" : 0.33336,
-          "type" : "INNER_JOIN"
+          "pkDistinctProbability" : 0.06739124135,
+          "type" : "OUTER_JOIN"
         }
       ],
       "tableName" : "public.orders"
@@ -2126,7 +2095,7 @@
                 "parameters" : [
                   {
                     "id" : 120,
-                    "data" : 313,
+                    "data" : 341,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -2160,7 +2129,7 @@
           "pkTag" : 3,
           "probability" : 0.01389925806,
           "probabilityWithFailFilter" : 0.01390857183,
-          "pkDistinctProbability" : 0,
+          "pkDistinctProbability" : 0.01389925806,
           "type" : "SEMI_JOIN"
         }
       ],
@@ -2210,7 +2179,6 @@
           "localCols" : "public.supplier.s_nationkey",
           "pkTag" : 1,
           "probability" : 0.0406,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -2231,7 +2199,6 @@
           "localCols" : "public.partsupp.ps_suppkey",
           "pkTag" : 1,
           "probability" : 0.0406,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         },
         {
@@ -2268,7 +2235,7 @@
                 }
               ]
             },
-            "probability" : 0.02732311705
+            "probability" : 0.02580049261
           }
         }
       ],
@@ -2394,8 +2361,7 @@
           "localCols" : "public.partsupp.ps_suppkey",
           "pkTag" : 2,
           "probability" : 0.9996,
-          "pkDistinctProbability" : 0,
-          "type" : "ANTI_SEMI_JOIN"
+          "type" : "ANTI_JOIN"
         },
         {
           "constraintChainNodeType" : "FK_JOIN",
@@ -2403,7 +2369,6 @@
           "localCols" : "public.partsupp.ps_partkey",
           "pkTag" : 0,
           "probability" : 0.1483055722,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         }
       ],
@@ -2884,7 +2849,6 @@
           "pkTag" : 2,
           "probability" : 0.001030535012,
           "probabilityWithFailFilter" : 0.002418896788,
-          "pkDistinctProbability" : 0,
           "type" : "INNER_JOIN"
         }
       ],

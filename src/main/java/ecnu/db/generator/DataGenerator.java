@@ -96,12 +96,12 @@ public class DataGenerator implements Callable<Integer> {
             KeysGenerator keysGenerator = new KeysGenerator(haveFkConstrainChains);
 
             int resultStart = STEP_SIZE * generatorId;
-            int tableSize = TableManager.getInstance().getTableSize(schemaName);
+            long tableSize = TableManager.getInstance().getTableSize(schemaName);
             List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
             String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
 
             while (resultStart < tableSize) {
-                int range = Math.min(resultStart + STEP_SIZE, tableSize) - resultStart;
+                int range = (int) (Math.min(resultStart + STEP_SIZE, tableSize) - resultStart);
                 //生成属性列数据
                 ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
                 //转换为字符串准备输出
