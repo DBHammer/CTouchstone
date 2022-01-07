@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RuleTable {
-    double scaleFactor;
+    double scaleFactor = 1;
 
     public void setScaleFactor(double scaleFactor) {
         this.scaleFactor = scaleFactor;

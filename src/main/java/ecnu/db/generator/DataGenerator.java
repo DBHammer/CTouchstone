@@ -4,6 +4,7 @@ import com.google.ortools.Loader;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.generator.joininfo.JoinStatus;
+import ecnu.db.generator.joininfo.RuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
@@ -21,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static ecnu.db.utils.CommonUtils.STEP_SIZE;
 
 @CommandLine.Command(name = "generate", description = "generate database according to gathered information",
         mixinStandardHelpOptions = true, sortOptions = false)
@@ -35,6 +35,8 @@ public class DataGenerator implements Callable<Integer> {
     private int generatorId;
     @CommandLine.Option(names = {"-n", "--num"}, description = "size of generators")
     private int generatorNum;
+    @CommandLine.Option(names = {"-l", "--step_size"}, description = "the size of each batch", defaultValue = "7000000")
+    private int stepSize;
 
     private Map<String, List<ConstraintChain>> schema2chains;
 
@@ -81,7 +83,6 @@ public class DataGenerator implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         init();
-        int stepRange = STEP_SIZE * (generatorNum - 1);
         long start = System.currentTimeMillis();
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
             logger.info("开始输出表数据{}", schemaName);
@@ -94,14 +95,26 @@ public class DataGenerator implements Callable<Integer> {
             ConstraintChainManager.getInstance().classifyConstraintChain(allChains,
                     haveFkConstrainChains, onlyPkConstrainChains, fkAndPkConstrainChains);
             KeysGenerator keysGenerator = new KeysGenerator(haveFkConstrainChains);
-
-            int resultStart = STEP_SIZE * generatorId;
             long tableSize = TableManager.getInstance().getTableSize(schemaName);
+            long resultStart;
+            long stepRange;
+            long batchSize;
+            if (stepSize * generatorNum > tableSize) {
+                batchSize = tableSize / generatorNum;
+                resultStart = batchSize * generatorId;
+                if (generatorId == generatorNum - 1) {
+                    batchSize = tableSize - resultStart;
+                }
+            } else {
+                batchSize = stepSize;
+                resultStart = stepSize * generatorId;
+            }
+            stepRange = stepSize * (generatorNum - 1);
             List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
             String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
-
+            int totolSize = 0;
             while (resultStart < tableSize) {
-                int range = (int) (Math.min(resultStart + STEP_SIZE, tableSize) - resultStart);
+                int range = (int) (Math.min(resultStart + batchSize, tableSize) - resultStart);
                 //生成属性列数据
                 ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
                 //转换为字符串准备输出
@@ -158,7 +171,14 @@ public class DataGenerator implements Callable<Integer> {
                     }
                 }
                 dataWriter.addWriteTask(schemaName, rowData);
+                totolSize += range;
                 resultStart += range + stepRange;
+            }
+            if (pkName != null && !pkName.isEmpty()) {
+                RuleTable ruleTable = RuleTableManager.getInstance().getRuleTable(pkName);
+                if (ruleTable != null) {
+                    ruleTable.setScaleFactor((double) tableSize / totolSize);
+                }
             }
             if (dataWriter.waitWriteFinish()) {
                 logger.info("输出表数据{}完成", schemaName);
