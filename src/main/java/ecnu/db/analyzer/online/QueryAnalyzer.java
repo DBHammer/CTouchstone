@@ -208,7 +208,7 @@ public class QueryAnalyzer {
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
             // deal with index join
             if (node.getRightNode().getType() == ExecutionNodeType.filter && node.getRightNode().getInfo() != null &&
-                    ((FilterNode) node.getRightNode()).isIndexScan()) {
+                    ((FilterNode) node.getRightNode()).isIndexScan()&&node.getRightNode().getTableName().equals(localTable)) {
                 long tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
                 long rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
                 BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
