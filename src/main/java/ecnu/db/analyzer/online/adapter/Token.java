@@ -1,6 +1,5 @@
 package ecnu.db.analyzer.online.adapter;
 
-import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectSymbol;
 import java_cup.runtime.ComplexSymbolFactory;
 
 public class Token extends ComplexSymbolFactory.ComplexSymbol {

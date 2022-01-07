@@ -22,15 +22,13 @@ import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
 import static ecnu.db.utils.CommonUtils.CSV_MAPPER;
 
 public class ColumnManager {
-    private static final ColumnManager INSTANCE = new ColumnManager();
-    private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class);
-    private final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
-    private File distributionInfoPath;
     public static final String COLUMN_STRING_INFO = "/stringTemplate.json";
     public static final String COLUMN_DISTRIBUTION_INFO = "/distribution.json";
     public static final String COLUMN_EQDISTRIBUTION_INFO = "/eq_distribution.json";
     public static final String COLUMN_BOUNDPARA_INFO = "/boundPara.json";
     public static final String COLUMN_METADATA_INFO = "/column.csv";
+    private static final ColumnManager INSTANCE = new ColumnManager();
+    private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class);
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
             .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
             .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
@@ -39,6 +37,8 @@ public class ColumnManager {
                     .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter())
             .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
             .toFormatter();
+    private final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
+    private File distributionInfoPath;
 
     // Private constructor suppresses
     // default public constructor
@@ -85,8 +85,8 @@ public class ColumnManager {
         return columns.get(columnName).getColumnType();
     }
 
-    public boolean isDateColumn(String columnName){
-        return columns.containsKey(columnName) && columns.get(columnName).getColumnType() ==ColumnType.DATE;
+    public boolean isDateColumn(String columnName) {
+        return columns.containsKey(columnName) && columns.get(columnName).getColumnType() == ColumnType.DATE;
     }
 
     public int getNdv(String columnName) {
@@ -131,13 +131,13 @@ public class ColumnManager {
         Map<String, List<Parameter>> boundParas = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
             if (column.getValue().getBucketBound2FreeSpace().size() > 1 ||
-                 column.getValue().getBucketBound2FreeSpace().get(0).getValue().compareTo(BigDecimal.ONE)<0) {
+                    column.getValue().getBucketBound2FreeSpace().get(0).getValue().compareTo(BigDecimal.ONE) < 0) {
                 bucket2Probabilities.put(column.getKey(), column.getValue().getBucketBound2FreeSpace());
             }
             if (column.getValue().getEqConstraint2Probability().size() > 0) {
                 eq2Probabilities.put(column.getKey(), column.getValue().getEqConstraint2Probability());
             }
-            if (column.getValue().getBoundPara().size() > 0) {
+            if (!column.getValue().getBoundPara().isEmpty()) {
                 boundParas.put(column.getKey(), column.getValue().getBoundPara());
             }
         }
@@ -178,13 +178,13 @@ public class ColumnManager {
         for (Map.Entry<String, List<Map.Entry<Long, BigDecimal>>> bucket : bucket2Probabilities.entrySet()) {
             columns.get(bucket.getKey()).setBucketBound2FreeSpace(bucket.getValue());
         }
-        content = CommonUtils.readFile(distributionInfoPath.getPath()+COLUMN_EQDISTRIBUTION_INFO);
+        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_EQDISTRIBUTION_INFO);
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, Map<Long, BigDecimal>> eq2Probability : eq2Probabilities.entrySet()) {
             columns.get(eq2Probability.getKey()).setEqConstraint2Probability(eq2Probability.getValue());
         }
-        content = CommonUtils.readFile(distributionInfoPath.getPath()+COLUMN_BOUNDPARA_INFO);
+        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_BOUNDPARA_INFO);
         Map<String, List<Parameter>> boundParas = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, List<Parameter>> boundPara : boundParas.entrySet()) {
@@ -225,14 +225,18 @@ public class ColumnManager {
                     specialValue = ThreadLocalRandom.current().nextInt();
                 }
                 case DECIMAL -> {
-                    int precision = CommonUtils.SAMPLE_DOUBLE_PRECISION;
-                    min = (long) (Double.parseDouble(sqlResult[index++]) * precision);
-                    range = (long) (Double.parseDouble(sqlResult[index++]) * precision) - min;
-                    specialValue = precision;
+                    specialValue = column.getSpecialValue();
+                    min = (long) (Double.parseDouble(sqlResult[index++]) * specialValue);
+                    range = (long) (Double.parseDouble(sqlResult[index++]) * specialValue) - min;
                 }
-                case DATE, DATETIME -> {
-                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000;
-                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) * 1000 - min;
+                case DATE -> {
+                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC)/(24*60*60);
+                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC)/(24*60*60) - min;
+                    specialValue = 0;
+                }
+                case DATETIME -> {
+                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC);
+                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) - min;
                     specialValue = 0;
                 }
                 default -> throw new TouchstoneException("未匹配到的类型");
@@ -250,10 +254,12 @@ public class ColumnManager {
 
     public void prepareGeneration(Collection<String> columnNames, int size) {
         columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
-    }
-
-    public List<String> getData(String columnName) {
-        return getColumn(columnName).output();
+        List<Integer> rowIndex = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            rowIndex.add(i);
+        }
+        Collections.shuffle(rowIndex);
+        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).shuffleRows(rowIndex));
     }
 
     public void insertBetweenProbability(String columnName, BigDecimal probability,

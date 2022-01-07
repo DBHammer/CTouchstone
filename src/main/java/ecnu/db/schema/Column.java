@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
+import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,14 +18,29 @@ import java.util.stream.IntStream;
  */
 @JsonPropertyOrder({"columnType", "nullPercentage", "specialValue", "min", "range", "minLength", "rangeLength"})
 public class Column {
+    @JsonIgnore
+    private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
+    @JsonIgnore
+    private final HashSet<Integer> likeParameterId = new HashSet<>();
     private ColumnType columnType;
     private long min;
+
+    public String getOriginalType() {
+        return originalType;
+    }
+
+    public void setOriginalType(String originalType) {
+        this.originalType = originalType;
+    }
+
+    private String originalType;
     private long range;
     private long specialValue;
     private float nullPercentage;
     private int minLength;
     private int rangeLength;
-
+    @JsonIgnore
+    private BigDecimal decimalPre;
     @JsonIgnore
     private List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace = new LinkedList<>();
     @JsonIgnore
@@ -35,11 +49,6 @@ public class Column {
     private List<Parameter> boundPara = new ArrayList<>();
     @JsonIgnore
     private StringTemplate stringTemplate;
-
-    @JsonIgnore
-    private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
-    @JsonIgnore
-    private final HashSet<Integer> likeParameterId = new HashSet<>();
     @JsonIgnore
     private boolean hasBetweenConstraint = false;
     @JsonIgnore
@@ -52,12 +61,12 @@ public class Column {
     public Column() {
     }
 
-    public void initStringTemplate() {
-        stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
-    }
-
     public Column(ColumnType columnType) {
         this.columnType = columnType;
+    }
+
+    public void initStringTemplate() {
+        stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
     }
 
     public void initBucketBound2FreeSpace() {
@@ -113,8 +122,12 @@ public class Column {
             default -> throw new UnsupportedOperationException();
         };
         parameters.parallelStream().forEach(parameter -> {
-            parameter.setData(bound);
-            parameter.setDataValue(transferDataToValue(bound));
+            long value = bound;
+            if (operator == CompareOperator.GT || operator == CompareOperator.LE) {
+                value--;
+            }
+            parameter.setData(value);
+            parameter.setDataValue(transferDataToValue(value));
         });
         if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
             if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(bound))) {
@@ -127,17 +140,8 @@ public class Column {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             dealZeroPb(parameters);
         } else {
-            BigDecimal tempProbability = new BigDecimal(probability.toString());
-            int index = parameters.size() - 1;
-            while (index >= 0) {
-                if (index > 0) {
-                    BigDecimal currentProbability = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(tempProbability.doubleValue()));
-                    eqRequest2ParameterIds.computeIfAbsent(currentProbability, i -> new LinkedList<>()).add(parameters.get(index--));
-                    tempProbability = tempProbability.subtract(currentProbability);
-                } else {
-                    eqRequest2ParameterIds.computeIfAbsent(tempProbability, i -> new LinkedList<>()).add(parameters.get(index--));
-                }
-            }
+            BigDecimal tempProbability = new BigDecimal(probability.toString()).divide(BigDecimal.valueOf(parameters.size()), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            eqRequest2ParameterIds.computeIfAbsent(tempProbability, i -> new LinkedList<>()).addAll(parameters);
         }
     }
 
@@ -150,8 +154,8 @@ public class Column {
             default -> throw new UnsupportedOperationException();
         }
         likeParameterId.addAll(parameters.stream()
-                .filter(parameter -> parameter.getType()== Parameter.ParameterType.LIKE ||
-                        parameter.getType()== Parameter.ParameterType.SUBSTRING)
+                .filter(parameter -> parameter.getType() == Parameter.ParameterType.LIKE ||
+                        parameter.getType() == Parameter.ParameterType.SUBSTRING)
                 .mapToInt(Parameter::getId).boxed().toList());
     }
 
@@ -201,28 +205,29 @@ public class Column {
         // 填充到bucket之后，重新调整剩余容量的记录treemap
         // 针对等值约束的赋值，采用逆序赋值法，即从bound开始，按照当前在bucket中的位置，分配对应的值，赋值最小从lowBound-1开始
         for (BigDecimal eqProbability : eqRequest2ParameterIds.descendingKeySet()) {
-            bucketBound2FreeSpace.sort(Map.Entry.comparingByValue());
-            Optional<Map.Entry<Long, BigDecimal>> freeSpace2BucketIdOptional = bucketBound2FreeSpace.stream().
-                    filter(bucket -> bucket.getValue().compareTo(eqProbability) > -1).findFirst();
-            if (freeSpace2BucketIdOptional.isPresent()) {
-                //重新调整freeSpace
-                Map.Entry<Long, BigDecimal> freeSpace2BucketId = freeSpace2BucketIdOptional.get();
-                Long bucketBound = freeSpace2BucketId.getKey();
-                bucketBound2FreeSpace.remove(freeSpace2BucketId);
-                bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bucketBound, freeSpace2BucketId.getValue().subtract(eqProbability)));
-                //顺序赋值
-                long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
-                eqConstraint2Probability.put(eqParameterData, eqProbability);
-                eqRequest2ParameterIds.get(eqProbability).forEach(parameter -> {
+            while (!eqRequest2ParameterIds.get(eqProbability).isEmpty()) {
+                bucketBound2FreeSpace.sort(Map.Entry.comparingByValue());
+                Optional<Map.Entry<Long, BigDecimal>> freeSpace2BucketIdOptional = bucketBound2FreeSpace.stream().
+                        filter(bucket -> bucket.getValue().compareTo(eqProbability) > -1).findFirst();
+                if (freeSpace2BucketIdOptional.isPresent()) {
+                    //重新调整freeSpace
+                    Map.Entry<Long, BigDecimal> freeSpace2BucketId = freeSpace2BucketIdOptional.get();
+                    Long bucketBound = freeSpace2BucketId.getKey();
+                    bucketBound2FreeSpace.remove(freeSpace2BucketId);
+                    bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bucketBound, freeSpace2BucketId.getValue().subtract(eqProbability)));
+                    //顺序赋值
+                    long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
+                    eqConstraint2Probability.put(eqParameterData, eqProbability);
+                    Parameter parameter = eqRequest2ParameterIds.get(eqProbability).remove(0);
                     parameter.setData(eqParameterData);
                     if (likeParameterId.contains(parameter.getId())) {
                         parameter.setDataValue(stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue()));
                     } else {
                         parameter.setDataValue(transferDataToValue(eqParameterData));
                     }
-                });
-            } else {
-                throw new UnsupportedOperationException("等值约束冲突，无法实例化");
+                } else {
+                    throw new UnsupportedOperationException("等值约束冲突，无法实例化");
+                }
             }
         }
 
@@ -255,7 +260,7 @@ public class Column {
         Arrays.fill(columnData, 0, nullSize, Long.MIN_VALUE);
         int currentIndex = nullSize;
         Map<Long, BigDecimal> newEqConstraint2Probability = eqConstraint2Probability;
-        if (boundPara.size() > 0) {
+        if (!boundPara.isEmpty()) {
             newEqConstraint2Probability = new HashMap<>(eqConstraint2Probability);
             for (Parameter parameter : boundPara) {
                 long paraData = parameter.getData();
@@ -300,18 +305,26 @@ public class Column {
             currentIndex += randomSize;
         }
 
-        // shuffle数组
-        long temp;
-        int swapIndex;
-        Random rnd = ThreadLocalRandom.current();
-
-        for (int index = columnData.length - 1; index >= currentIndex; index--) {
-            swapIndex = rnd.nextInt(index);
-            temp = columnData[swapIndex];
-            columnData[swapIndex] = columnData[index];
-            columnData[index] = temp;
-        }
+//        // shuffle数组
+//        long temp;
+//        int swapIndex;
+//        Random rnd = ThreadLocalRandom.current();
+//
+//        for (int index = columnData.length - 1; index > boundIndex; index--) {
+//            swapIndex = rnd.nextInt(index - boundIndex) + boundIndex;
+//            temp = columnData[swapIndex];
+//            columnData[swapIndex] = columnData[index];
+//            columnData[index] = temp;
+//        }
         columnData2ComputeData = false;
+    }
+
+    public void shuffleRows(List<Integer> rowIndexes) {
+        long[] tempIndex = new long[rowIndexes.size()];
+        for (int i = 0; i < tempIndex.length; i++) {
+            tempIndex[i] = columnData[rowIndexes.get(i)];
+        }
+        columnData = tempIndex;
     }
 
     /**
@@ -362,8 +375,8 @@ public class Column {
     public double[] calculate() {
         //lazy生成computeData
         if (!columnData2ComputeData) {
-            computeData = switch (columnType){
-                case DATE,DATETIME -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double)data).toArray();
+            computeData = switch (columnType) {
+                case DATE, DATETIME -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) data + min).toArray();
                 case DECIMAL -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
                 case INTEGER -> Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (specialValue * data) + min).toArray();
                 default -> throw new IllegalStateException("Unexpected value: " + columnType);
@@ -392,10 +405,10 @@ public class Column {
     public String transferDataToValue(long data) {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
-            case DECIMAL -> Double.toString(((double) (data + min)) / specialValue);
+            case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
             case VARCHAR -> stringTemplate.transferColumnData2Value(data);
-            case DATE -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
-            case DATETIME -> Instant.ofEpochMilli(data + min).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE);
+            case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min) * 24 * 60 * 60));
+            case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();
         };
     }
@@ -404,8 +417,8 @@ public class Column {
         this.columnData = columnData;
     }
 
-    public List<String> output() {
-        return Arrays.stream(columnData).parallel().mapToObj(this::transferDataToValue).toList();
+    public String output(int index) {
+        return transferDataToValue(columnData[index]);
     }
 
     public long getMin() {
@@ -421,6 +434,9 @@ public class Column {
     }
 
     public void setSpecialValue(long specialValue) {
+        if (columnType == ColumnType.DECIMAL) {
+            decimalPre = BigDecimal.ONE.divide(BigDecimal.valueOf(specialValue), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+        }
         this.specialValue = specialValue;
     }
 

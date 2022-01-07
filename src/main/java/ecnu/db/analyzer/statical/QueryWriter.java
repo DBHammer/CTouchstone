@@ -24,11 +24,11 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
  * @author alan
  */
 public class QueryWriter {
+    public static final String QUERY_DIR = "/queries/";
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
     private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
     private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
     private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
-    public static final String QUERY_DIR = "/queries/";
     private final String queryDir;
     private DbType dbType;
 
@@ -67,8 +67,8 @@ public class QueryWriter {
             if (cols != null && cols.size() != 1) {
                 String pattern = cols.stream().map(col -> col.split("\\.")[2]).collect(Collectors.joining(" .{1,2} "));
                 matcher = Pattern.compile(pattern).matcher(query);
-                if(matcher.find()){
-                    query = query.replace(matcher.group(), matcher.group()+" +'"+parameter.getId()+"' ");
+                if (matcher.find()) {
+                    query = query.replace(matcher.group(), matcher.group() + " +'" + parameter.getId() + "' ");
                 }
             }
         }
@@ -76,7 +76,7 @@ public class QueryWriter {
         // paramter data, column name -> start location and end location
         Map<String, List<parameterColumnName2Location>> literalMap = new HashMap<>();
         int lastPos = 0, pos;
-        String lastColumn ="";
+        String lastColumn = "";
         while (!lexer.isEOF()) {
             lexer.nextToken();
             // 读进一个关键字
@@ -84,31 +84,31 @@ public class QueryWriter {
             // 更新到最新的位置
             pos = lexer.pos();
             // 如果可能是列名
-            if(token == Token.IDENTIFIER) {
-                while(query.length() > pos && query.charAt(pos)=='.'){
+            if (token == Token.IDENTIFIER) {
+                while (query.length() > pos && query.charAt(pos) == '.') {
                     lexer.nextToken();
                     lexer.nextToken();
                     pos = lexer.pos();
                 }
                 String col = query.substring(lastPos, pos).trim();
-                if(!col.equals("DATE")){
+                if (!col.equals("DATE")) {
                     lastColumn = col;
                 }
-            }else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS) {
+            } else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS) {
                 String str = query.substring(lastPos, pos).trim();
                 if (!literalMap.containsKey(str)) {
                     literalMap.put(str, new ArrayList<>());
                 }
                 parameterColumnName2Location currentLocations = null;
                 for (parameterColumnName2Location parameterColumnName2Location : literalMap.get(str)) {
-                    if(parameterColumnName2Location.columnName.equals(lastColumn)){
+                    if (parameterColumnName2Location.columnName.equals(lastColumn)) {
                         currentLocations = parameterColumnName2Location;
                         break;
                     }
                 }
-                if(currentLocations!=null){
+                if (currentLocations != null) {
                     currentLocations.range.add(new AbstractMap.SimpleEntry<>(pos - str.length(), pos));
-                }else {
+                } else {
                     currentLocations = new parameterColumnName2Location();
                     currentLocations.columnName = lastColumn;
                     currentLocations.range.add(new AbstractMap.SimpleEntry<>(pos - str.length(), pos));
@@ -121,6 +121,9 @@ public class QueryWriter {
         // replacement
         List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
         TreeMap<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> replaceParams = new TreeMap<>();
+        List<Parameter> subPlanParameters = parameters.stream().filter(parameter -> parameter.isSubPlan()).toList();
+        parameters.removeAll(subPlanParameters);
+        parameters.addAll(subPlanParameters);
         for (Parameter parameter : parameters) {
             if (parameter.hasOnlyOneColumn() != null && parameter.hasOnlyOneColumn().size() != 1) {
                 continue;
@@ -138,23 +141,29 @@ public class QueryWriter {
                 String col = parameter.getOperand();
                 parameterColumnName2Location location = null;
                 for (parameterColumnName2Location match : matches) {
-                    if(col.contains(match.columnName)){
+                    if (col.contains(match.columnName)) {
                         location = match;
                         break;
                     }
                 }
-                if(location!=null){
+                if (location != null) {
                     var pair = location.range;
                     for (Map.Entry<Integer, Integer> range : pair) {
                         replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));
                     }
-                }else{
+                } else {
                     conflictArgs.add(parameter);
                 }
             } else {
-                var pair = matches.stream().findFirst().get().range;
-                for (Map.Entry<Integer, Integer> range : pair) {
-                    replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));
+                if(parameter.isSubPlan()){
+                    var subplanranges = matches.stream().findFirst().get().range;
+                    var subplanrange = subplanranges.get(subplanranges.size()-1);
+                    replaceParams.put(subplanrange.getKey(), new AbstractMap.SimpleEntry<>(parameter, subplanrange));
+                }else {
+                    var pair = matches.stream().findFirst().get().range;
+                    for (Map.Entry<Integer, Integer> range : pair) {
+                        replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));
+                    }
                 }
             }
         }
@@ -226,9 +235,9 @@ public class QueryWriter {
                     if (parameter != null) {
                         String parameterData = parameter.getDataValue();
                         try {
-                            if(parameterData.contains("interval")){
+                            if (parameterData.contains("interval")) {
                                 query = query.replaceAll(group.get(0), String.format("%s", parameterData));
-                            }else {
+                            } else {
                                 query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
                             }
                         } catch (IllegalArgumentException e) {
@@ -244,6 +253,6 @@ public class QueryWriter {
 
     private static class parameterColumnName2Location {
         public String columnName;
-        public List<Map.Entry<Integer,Integer>> range = new ArrayList<>();
+        public List<Map.Entry<Integer, Integer>> range = new ArrayList<>();
     }
 }

@@ -61,6 +61,7 @@ public abstract class ArithmeticNode {
 
     /**
      * 将计算树转换为SQL格式
+     *
      * @return sql格式的计算树
      */
     public abstract String toSQL();

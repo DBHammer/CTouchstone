@@ -25,6 +25,78 @@
       true
     ]
   },
+  "public.customer.c_phone" : {
+    "149986" : [
+      false,
+      true,
+      false
+    ],
+    "149987" : [
+      false,
+      true,
+      false
+    ],
+    "149990" : [
+      false,
+      true,
+      false
+    ],
+    "149991" : [
+      false,
+      true,
+      false
+    ],
+    "149988" : [
+      false,
+      true,
+      false
+    ],
+    "149989" : [
+      false,
+      true,
+      false
+    ],
+    "149994" : [
+      false,
+      true,
+      false
+    ],
+    "149995" : [
+      false,
+      true,
+      false
+    ],
+    "149992" : [
+      false,
+      true,
+      false
+    ],
+    "149993" : [
+      false,
+      true,
+      false
+    ],
+    "149998" : [
+      false,
+      true,
+      false
+    ],
+    "149999" : [
+      false,
+      true,
+      false
+    ],
+    "149996" : [
+      false,
+      true,
+      false
+    ],
+    "149997" : [
+      false,
+      true,
+      false
+    ]
+  },
   "public.part.p_name" : {
     "199995" : [
       false,

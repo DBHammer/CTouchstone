@@ -13,19 +13,21 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
 
 public class TableManager {
+    public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
     private static final TableManager INSTANCE = new TableManager();
+
+    public LinkedHashMap<String, Table> getSchemas() {
+        return schemas;
+    }
+
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
-    public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     private File schemaInfoPath;
 
     public TableManager() {
@@ -57,6 +59,25 @@ public class TableManager {
         return getSchema(tableName).getPrimaryKeys();
     }
 
+    /**
+     * 输出指定行的基数
+     *
+     * @param fkCol 外键列
+     * @return 外键行的基数
+     */
+    public int cardinalityConstraint(String fkCol) {
+        String[] cols = fkCol.split("\\.");
+        String tableName = cols[0] + "." + cols[1];
+        String pkCol = schemas.get(tableName).getForeignKeys().get(fkCol);
+        String[] pkCols = pkCol.split("\\.");
+        String pkTable = pkCols[0] + "." + pkCols[1];
+        double scale = CommonUtils.CardinalityScale;
+        if(tableName.equals("public.orders")){
+            scale = 1.5;
+        }
+        return (int) (scale * schemas.get(tableName).getTableSize() / schemas.get(pkTable).getTableSize());
+    }
+
 
     public boolean isPrimaryKey(String canonicalColumnName) {
         String[] nameArray = canonicalColumnName.split("\\.");
@@ -82,11 +103,11 @@ public class TableManager {
         return schemas.containsKey(tableName);
     }
 
-    public int getTableSize(String tableName) throws CannotFindSchemaException {
+    public long getTableSize(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getTableSize();
     }
 
-    public long getJoinTag(String tableName) throws CannotFindSchemaException {
+    public int getJoinTag(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getJoinTag();
     }
 
@@ -140,7 +161,12 @@ public class TableManager {
     }
 
     public String getPrimaryKeyColumn(String schemaName) throws CannotFindSchemaException {
-        return getSchema(schemaName).getPrimaryKeys();
+        List<String> pkNames = new ArrayList<>(getSchema(schemaName).getPrimaryKeysList());
+        var fks = getSchema(schemaName).getForeignKeys();
+        if (fks != null) {
+            pkNames.removeAll(fks.keySet());
+        }
+        return String.join(",", pkNames);
     }
 
     public Table getSchema(String tableName) throws CannotFindSchemaException {

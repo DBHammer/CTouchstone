@@ -11,10 +11,10 @@ import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.dbconnector.adapter.PgConnector;
 import ecnu.db.dbconnector.adapter.Tidb3Connector;
 import ecnu.db.dbconnector.adapter.Tidb4Connector;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainAggregateNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainManager;
+import ecnu.db.generator.constraintchain.ConstraintChain;
+import ecnu.db.generator.constraintchain.ConstraintChainManager;
+import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
+import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.MultiVarFilterOperation;
@@ -46,8 +46,8 @@ import static ecnu.db.utils.CommonUtils.MAPPER;
 @CommandLine.Command(name = "prepare", description = "get database information, instantiate queries, prepare for data generation",
         mixinStandardHelpOptions = true)
 public class TaskConfigurator implements Callable<Integer> {
-    private final Logger logger = LoggerFactory.getLogger(TaskConfigurator.class);
     public static final String SQL_FILE_POSTFIX = ".sql";
+    private final Logger logger = LoggerFactory.getLogger(TaskConfigurator.class);
     @CommandLine.ArgGroup(exclusive = false, multiplicity = "1")
     private TaskConfiguratorConfig taskConfiguratorConfig;
 

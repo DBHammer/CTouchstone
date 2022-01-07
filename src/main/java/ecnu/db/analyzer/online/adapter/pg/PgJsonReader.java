@@ -13,11 +13,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PgJsonReader {
-    private PgJsonReader() {
-    }
-
     private static ReadContext readContext;
 
+    private PgJsonReader() {
+    }
 
     static void setReadContext(String plan) {
         Configuration conf = Configuration.defaultConfiguration()
@@ -69,6 +68,13 @@ public class PgJsonReader {
 
     static List<String> readOutput(StringBuilder path) {
         return readContext.read(path + "['Output']");
+    }
+
+    static int readAggGroup(StringBuilder path) {
+        String childSelection = path + "['Plans'][0]";
+        double actualRows = readContext.read(childSelection + "['Actual Rows']");
+        int actualLoops = readContext.read(childSelection + "['Actual Loops']");
+        return (int) (actualLoops / actualRows);
     }
 
     static int readActualLoops(StringBuilder path) {
@@ -177,6 +183,10 @@ public class PgJsonReader {
     }
 
     static boolean isSemiJoin(StringBuilder path) {
-        return readContext.read(path + "['Join Type']").equals("Semi");
+        return readContext.read(path + "['Join Type']").equals("Semi") || readContext.read(path + "['Join Type']").equals("Anti");
+    }
+
+    static boolean isAntiJoin(StringBuilder path) {
+        return readContext.read(path + "['Join Type']").equals("Anti");
     }
 }

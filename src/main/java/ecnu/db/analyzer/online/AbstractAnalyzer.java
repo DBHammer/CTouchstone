@@ -39,6 +39,7 @@ public abstract class AbstractAnalyzer {
 
     /**
      * 分割查询plan
+     *
      * @param queryPlan 原始的查询plan
      * @return 分割后的多个查询plan
      */
@@ -50,7 +51,7 @@ public abstract class AbstractAnalyzer {
      *
      * @return 识别的表和过滤条件
      */
-    public abstract List<Map.Entry<String, String>>  splitQueryPlanForMultipleAggregate() throws IOException, TouchstoneException, SQLException;
+    public abstract List<Map.Entry<String, String>> splitQueryPlanForMultipleAggregate() throws IOException, TouchstoneException, SQLException;
 
     /**
      * 分析join信息

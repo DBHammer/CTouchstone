@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -25,28 +26,22 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 
 public class PgAnalyzer extends AbstractAnalyzer {
 
+    protected static final Logger logger = LoggerFactory.getLogger(PgAnalyzer.class);
     private static final String NUMERIC = "'[0-9]+'::numeric";
-
     private static final String DATE1 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}";
     private static final String DATE2 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}";
     private static final String DATE3 = "[0-9]{4}-[0-9]{2}-[0-9]{2}";
     private static final String DATE = String.format("'(%s|%s|%s)'::date", DATE1, DATE2, DATE3);
-
     private static final String TIMESTAMP1 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}";
     private static final String TIMESTAMP2 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}";
     private static final String TIMESTAMP3 = "[0-9]{4}-[0-9]{2}-[0-9]{2}";
-    public static final String  TIME_OR_DATE=String.format("(%s|%s|%s|%s|%s|%s)",DATE1,DATE2,DATE3,TIMESTAMP1,TIMESTAMP2,TIMESTAMP3);
+    public static final String TIME_OR_DATE = String.format("(%s|%s|%s|%s|%s|%s)", DATE1, DATE2, DATE3, TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final String TIMESTAMP = String.format("'(%s|%s|%s)'::timestamp without time zone", TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final Pattern REDUNDANCY = Pattern.compile(NUMERIC + "|" + DATE + "|" + TIMESTAMP);
-
     private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9_]+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
-
-
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
-    protected static final Logger logger = LoggerFactory.getLogger(PgAnalyzer.class);
-
     public StringBuilder pathForSplit = null;
 
     public PgAnalyzer() {
@@ -75,7 +70,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             if (canNotDeal(currentNodePath)) {
                 pathForSplit = currentNodePath;
                 String tableName = PgJsonReader.readTableName(currentNodePath.toString());
-                int tableSize = TableManager.getInstance().getTableSize(tableName);
+                long tableSize = TableManager.getInstance().getTableSize(tableName);
                 aliasDic.put(PgJsonReader.readAlias(currentNodePath.toString()), tableName);
                 ExecutionNode subNode = new FilterNode(currentNodePath.toString(), tableSize, null);
                 subNode.setTableName(tableName);
@@ -93,7 +88,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (node.getType() == ExecutionNodeType.aggregate) {
             assert leftNode != null;
             if (leftNode.getType() == ExecutionNodeType.join &&
-                    ((JoinNode) leftNode).getPkDistinctSize() > 0) {
+                    ((JoinNode) leftNode).getPkDistinctSize().compareTo(BigDecimal.ZERO) > 0) {
                 logger.debug("跳过外连接后的主键聚集");
                 node.setInfo(null);
             }
@@ -148,7 +143,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
 
-    private ExecutionNode getFilterNode(StringBuilder path, int rowCount) throws CannotFindSchemaException {
+    private ExecutionNode getFilterNode(StringBuilder path, long rowCount) throws CannotFindSchemaException {
         if (PgJsonReader.readJoinFilter(path) != null) {
             rowCount += PgJsonReader.readRowsRemovedByJoinFilter(path);
         }
@@ -180,7 +175,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         }
     }
 
-    private ExecutionNode transferFilter2AntiJoin(StringBuilder path, int rowCount) {
+    private ExecutionNode transferFilter2AntiJoin(StringBuilder path, long rowCount) {
         StringBuilder leftNodePath = PgJsonReader.move2LeftChild(path);
         List<String> leftNodeResult = PgJsonReader.readOutput(leftNodePath);
         List<String> outPut = PgJsonReader.readOutput(path);
@@ -199,7 +194,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         }
         joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
-        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, 0);
+        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, BigDecimal.ZERO);
     }
 
     private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
@@ -209,7 +204,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             case "Merge Join" -> PgJsonReader.readMergeJoin(path);
             default -> throw new UnsupportedOperationException();
         };
-        double pkDistinctProbability = 0;
+        BigDecimal pkDistinctProbability = BigDecimal.ZERO;
         if (PgJsonReader.isOutJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
@@ -217,14 +212,16 @@ public class PgAnalyzer extends AbstractAnalyzer {
             int pkRowCount = PgJsonReader.readRowCount(rightChildPath);
             int fkRowCount = PgJsonReader.readRowCount(leftChildPath);
             rowCount = fkRowCount;
-            pkDistinctProbability = ((double) joinRowCount - (double) fkRowCount) / (double) pkRowCount;
+            pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - joinRowCount)
+                    .divide(BigDecimal.valueOf(fkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
         }
         boolean isSemiJoin = PgJsonReader.isSemiJoin(path);
-        JoinNode joinNode = new JoinNode(path.toString(), rowCount, joinInfo, false, isSemiJoin, pkDistinctProbability);
-        if(isSemiJoin) {
-            joinNode.setPkDistinctSize(joinNode.getOutputRows());
+        if (PgJsonReader.isAntiJoin(path)) {
+            StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
+            int pkRowCount = PgJsonReader.readRowCount(leftChildPath);
+            rowCount = pkRowCount - rowCount;
         }
-        return joinNode;
+        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), isSemiJoin, pkDistinctProbability);
     }
 
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
@@ -277,7 +274,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
             String aggOutPut = PgJsonReader.readOutput(aggPath).get(0);
             aggFilterInfo = aggFilterInfo.replace("(SubPlan 1)", aggOutPut);
             rowsAfterFilter = PgJsonReader.readRowCount(parentPath);
-            rowCount = rowsAfterFilter + PgJsonReader.readRowsRemovedByJoinFilter(parentPath);
+            if (!aggOutPut.toLowerCase(Locale.ROOT).contains("min") && !aggOutPut.toLowerCase(Locale.ROOT).contains("max")) {
+                rowCount = PgJsonReader.readAggGroup(aggPath);
+            } else {
+                rowCount = rowsAfterFilter;
+            }
         } else {
             throw new UnsupportedOperationException();
         }

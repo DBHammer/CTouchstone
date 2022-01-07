@@ -1,11 +1,9 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChain;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainFilterNode;
-import ecnu.db.generator.constraintchain.chain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
+import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -22,8 +20,8 @@ import static ecnu.db.analyzer.TaskConfigurator.queryInstantiation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryInstantiationMultiVarTest {
-    Map<String, List<ConstraintChain>> query2chains;
     private final static int samplingSize = 10_000;
+    Map<String, List<ConstraintChain>> query2chains;
 
     @BeforeEach
     public void setUp() throws IOException {

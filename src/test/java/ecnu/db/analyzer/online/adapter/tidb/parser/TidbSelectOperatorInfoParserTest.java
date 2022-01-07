@@ -10,7 +10,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.io.StringReader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TidbSelectOperatorInfoParserTest {
@@ -18,12 +17,12 @@ public class TidbSelectOperatorInfoParserTest {
     private TidbSelectOperatorInfoParser parser;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         parser = new TidbSelectOperatorInfoParser(lexer, new ComplexSymbolFactory());
     }
 
     @ParameterizedTest
-    @CsvSource(delimiter = ';', value ={
+    @CsvSource(delimiter = ';', value = {
             "ge(db.table.col1, 2);" +
                     "and(ge(db.table.col1, {id:0, data:2}))",
             "ge(mul(db.table.col1, plus(db.table.col2, 3)), 2);" +
@@ -37,6 +36,6 @@ public class TidbSelectOperatorInfoParserTest {
     })
     void testTidbParse(String input, String output) throws Exception {
         LogicNode node = parser.parseSelectOperatorInfo(input);
-        assertEquals(output, node.toString().replaceAll(System.lineSeparator()," "));
+        assertEquals(output, node.toString().replaceAll(System.lineSeparator(), " "));
     }
 }

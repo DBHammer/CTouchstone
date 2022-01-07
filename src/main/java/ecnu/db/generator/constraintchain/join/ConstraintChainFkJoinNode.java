@@ -1,6 +1,8 @@
-package ecnu.db.generator.constraintchain.chain;
+package ecnu.db.generator.constraintchain.join;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.generator.constraintchain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 
 import java.math.BigDecimal;
 
@@ -10,28 +12,22 @@ import java.math.BigDecimal;
 public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private String refCols;
     private String localCols;
-    private long pkTag;
-    @JsonIgnore
-    private long pkDistinctSize = 0;
+    private int pkTag;
     private BigDecimal probability;
     private BigDecimal probabilityWithFailFilter;
-    private boolean antiOrNot = false;
+    private BigDecimal pkDistinctProbability;
+    private ConstraintNodeJoinType type = ConstraintNodeJoinType.INNER_JOIN;
 
-    public double getPkDistinctProbability() {
-        return pkDistinctProbability;
-    }
-
-    public void setPkDistinctProbability(double pkDistinctProbability) {
-        this.pkDistinctProbability = pkDistinctProbability;
-    }
-
-    private double pkDistinctProbability;
+    @JsonIgnore
+    public int joinStatusIndex;
+    @JsonIgnore
+    public int joinStatusLocation;
 
     public ConstraintChainFkJoinNode() {
         super(ConstraintChainNodeType.FK_JOIN);
     }
 
-    public ConstraintChainFkJoinNode(String localCols, String refCols, long pkTag, BigDecimal probability) {
+    public ConstraintChainFkJoinNode(String localCols, String refCols, int pkTag, BigDecimal probability) {
         super(ConstraintChainNodeType.FK_JOIN);
         this.refCols = refCols;
         this.pkTag = pkTag;
@@ -39,16 +35,32 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         this.probability = probability;
     }
 
+    public ConstraintNodeJoinType getType() {
+        return type;
+    }
+
+    public void setType(ConstraintNodeJoinType type) {
+        this.type = type;
+    }
+
+    public BigDecimal getPkDistinctProbability() {
+        return pkDistinctProbability;
+    }
+
+    public void setPkDistinctProbability(BigDecimal pkDistinctProbability) {
+        this.pkDistinctProbability = pkDistinctProbability;
+    }
+
     @Override
     public String toString() {
         return String.format("{pkTag:%d,refCols:%s,probability:%s,pkDistinctProbability:%f,probabilityWithFailFilter:%s}", pkTag, refCols, probability, pkDistinctProbability, probabilityWithFailFilter);
     }
 
-    public long getPkTag() {
+    public int getPkTag() {
         return pkTag;
     }
 
-    public void setPkTag(long pkTag) {
+    public void setPkTag(int pkTag) {
         this.pkTag = pkTag;
     }
 
@@ -76,31 +88,11 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         this.refCols = refCols;
     }
 
-    public void setAntiJoin() {
-        this.antiOrNot = true;
-    }
-
-    public void setAntiJoin(boolean antiOrNot) {
-        this.antiOrNot = antiOrNot;
-    }
-
-    public boolean getAntiJoin() {
-        return this.antiOrNot;
+    public BigDecimal getProbabilityWithFailFilter() {
+        return probabilityWithFailFilter;
     }
 
     public void setProbabilityWithFailFilter(BigDecimal probabilityWithFailFilter) {
         this.probabilityWithFailFilter = probabilityWithFailFilter.stripTrailingZeros();
-    }
-
-    public void setPkDistinctSize(long pkDistinctSize) {
-        this.pkDistinctSize = pkDistinctSize;
-    }
-
-    public long getPkDistinctSize() {
-        return pkDistinctSize;
-    }
-
-    public BigDecimal getProbabilityWithFailFilter() {
-        return probabilityWithFailFilter;
     }
 }

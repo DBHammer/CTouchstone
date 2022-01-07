@@ -3,25 +3,27 @@ package ecnu.db.schema;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.utils.exception.TouchstoneException;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
  * @author wangqingshuai
  */
 public class Table {
-    private int tableSize;
+    private long tableSize;
     private List<String> primaryKeys;
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new HashMap<>();
     @JsonIgnore
-    private long joinTag = 1;
+    private int joinTag = 0;
 
     public Table() {
     }
 
-    public Table(List<String> canonicalColumnNames, int tableSize, List<String> primaryKeys) {
+    public Table(List<String> canonicalColumnNames, long tableSize, List<String> primaryKeys) {
         this.canonicalColumnNames = canonicalColumnNames;
         this.tableSize = tableSize;
         this.primaryKeys = primaryKeys;
@@ -40,14 +42,8 @@ public class Table {
         return canonicalColumnNamesNotKey;
     }
 
-    public synchronized long getJoinTag() {
-        long temp = joinTag;
-        joinTag *= 4;
-        return temp;
-    }
-
-    public void setJoinTag(int joinTag) {
-        this.joinTag = joinTag;
+    public synchronized int getJoinTag() {
+        return joinTag++;
     }
 
 
@@ -92,16 +88,12 @@ public class Table {
     }
 
 
-    public int getTableSize() {
+    public long getTableSize() {
         return tableSize;
     }
 
-    public void setTableSize(int tableSize) {
+    public void setTableSize(long tableSize) {
         this.tableSize = tableSize;
-    }
-
-    public void setPrimaryKeys(List<String> primaryKeys) {
-        this.primaryKeys = primaryKeys;
     }
 
     public Map<String, String> getForeignKeys() {
@@ -120,6 +112,15 @@ public class Table {
         return String.join(",", primaryKeys);
     }
 
+    @JsonIgnore
+    public List<String> getPrimaryKeysList() {
+        return primaryKeys;
+    }
+
+    public void setPrimaryKeys(List<String> primaryKeys) {
+        this.primaryKeys = primaryKeys;
+    }
+
     public synchronized void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
         if (this.primaryKeys == null) {
             this.primaryKeys = Arrays.asList(primaryKeys.split(","));
@@ -135,6 +136,30 @@ public class Table {
                 throw new TouchstoneException("query中使用了多列主键的部分主键");
             }
         }
+    }
+
+    public void toSQL(DbConnector dbConnector, String tableName) throws SQLException, TouchstoneException {
+        StringBuilder head = new StringBuilder("CREATE TABLE ");
+        head.append(tableName).append(" (");
+        List<String> allColumns = new ArrayList<>(canonicalColumnNames);
+        List<String> tempPrimayKeys = new ArrayList<>(primaryKeys);
+        tempPrimayKeys.removeAll(foreignKeys.keySet());
+        allColumns.removeAll(tempPrimayKeys);
+        allColumns.removeAll(foreignKeys.keySet());
+        List<String> foreignKeysList = new ArrayList<>(foreignKeys.keySet());
+        Collections.sort(foreignKeysList);
+        allColumns.addAll(0, foreignKeysList);
+        allColumns.addAll(0, tempPrimayKeys);
+        for (String canonicalColumnName : allColumns) {
+            String columnName = canonicalColumnName.split("\\.")[2].toUpperCase();
+            Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
+            String addColumn = columnName + " " + column.getOriginalType() + ",";
+            head.append(addColumn);
+        }
+        head = new StringBuilder(head.substring(0, head.length() - 1));
+        head.append(");");
+        System.out.println(head);
+        dbConnector.executeSql(head.toString());
     }
 
     @Override

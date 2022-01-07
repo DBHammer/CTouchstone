@@ -1,0 +1,297 @@
+package ecnu.db.generator.constraintchain;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.generator.ConstructCpModel;
+import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
+import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
+import ecnu.db.generator.constraintchain.filter.Parameter;
+import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
+import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
+import ecnu.db.generator.joininfo.JoinStatus;
+import ecnu.db.schema.TableManager;
+import ecnu.db.utils.exception.schema.CannotFindColumnException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigDecimal;
+import java.util.*;
+
+/**
+ * @author wangqingshuai
+ */
+public class ConstraintChain {
+
+    private final List<ConstraintChainNode> nodes = new ArrayList<>();
+    private final Logger logger = LoggerFactory.getLogger(ConstraintChain.class);
+
+    @JsonIgnore
+    private final Set<String> joinTables = new HashSet<>();
+    private String tableName;
+
+    public ConstraintChain() {
+    }
+
+    public ConstraintChain(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public void addJoinTable(String tableName) {
+        joinTables.add(tableName);
+    }
+
+    public Set<String> getJoinTables() {
+        return joinTables;
+    }
+
+    public void addNode(ConstraintChainNode node) {
+        nodes.add(node);
+    }
+
+    public List<ConstraintChainNode> getNodes() {
+        return nodes;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    @JsonIgnore
+    public List<Parameter> getParameters() {
+        return nodes.stream().filter(ConstraintChainFilterNode.class::isInstance)
+                .map(ConstraintChainFilterNode.class::cast)
+                .map(ConstraintChainFilterNode::getParameters)
+                .flatMap(Collection::stream).toList();
+    }
+
+    @Override
+    public String toString() {
+        return "{tableName:" + tableName + ",nodes:" + nodes + "}";
+    }
+
+    /**
+     * 给定range空间 计算filter的状态
+     *
+     * @param range 批大小
+     * @return filter状态
+     */
+    public boolean[] evaluateFilterStatus(int range) {
+        if (nodes.get(0).getConstraintChainNodeType() == ConstraintChainNodeType.FILTER) {
+            try {
+                return ((ConstraintChainFilterNode) nodes.get(0)).evaluate();
+            } catch (CannotFindColumnException e) {
+                e.printStackTrace();
+                return new boolean[0];
+            }
+        } else {
+            boolean[] ret = new boolean[range];
+            Arrays.fill(ret, true);
+            return ret;
+        }
+    }
+
+    public boolean hasCardinalityConstraint() {
+        boolean hasCardinalityConstraint;
+        hasCardinalityConstraint = nodes.stream()
+                .filter(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
+                .map(ConstraintChainFkJoinNode.class::cast)
+                .anyMatch(node -> node.getType().hasCardinalityConstraint());
+        hasCardinalityConstraint |= nodes.stream()
+                .filter(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE)
+                .map(ConstraintChainAggregateNode.class::cast)
+                .anyMatch(node -> node.getGroupKey() != null);
+        return hasCardinalityConstraint;
+    }
+
+    public void computePkStatus(List<List<Map.Entry<boolean[], Long>>> fkStatus, boolean[] filterStatus, boolean[][] pkStatus) {
+        for (ConstraintChainNode node : nodes) {
+            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN) {
+                ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
+                int joinStatusIndex = fkJoinNode.joinStatusIndex;
+                int joinStatusLocation = fkJoinNode.joinStatusLocation;
+                boolean status = !fkJoinNode.getType().isAnti();
+                for (int i = 0; i < fkStatus.size(); i++) {
+                    if (filterStatus[i]) {
+                        filterStatus[i] = fkStatus.get(i).get(joinStatusIndex).getKey()[joinStatusLocation] == status;
+                    }
+                }
+            } else if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
+                pkStatus[((ConstraintChainPkJoinNode) node).getPkTag()] = filterStatus;
+                break;
+            }
+        }
+    }
+
+    public void addConstraint2Model(int filterIndex, int filterSize, int unFilterSize,
+                                    List<Map<Integer, Long>> statusHash2Size,
+                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
+        // 每一组填充状态是否能到达这个算子
+        boolean[] canBeInput = new boolean[filterStatus2PkStatus.size()];
+        Arrays.fill(canBeInput, true);
+        for (ConstraintChainNode node : nodes) {
+            // filter的状态 根据其filter status对应的index的位置获得
+            switch (node.getConstraintChainNodeType()) {
+                case FILTER -> {
+                    int i = 0;
+                    for (Map.Entry<JoinStatus, List<boolean[]>> status2PkStatus : filterStatus2PkStatus) {
+                        canBeInput[i++] = status2PkStatus.getKey().status()[filterIndex];
+                    }
+                }
+                case FK_JOIN -> {
+                    ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
+                    if (!fkJoinNode.getType().isSemi()) {
+                        if (fkJoinNode.getProbabilityWithFailFilter() != null) {
+                            int indexJoinSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).intValue();
+                            ConstructCpModel.addIndexJoinFkConstraint(indexJoinSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
+                        }
+                        filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        ConstructCpModel.addEqJoinFkConstraint(filterSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
+                    }
+                    if (fkJoinNode.getType().hasCardinalityConstraint()) {
+                        // 获取join对应的位置
+                        int joinStatusIndex = fkJoinNode.joinStatusIndex;
+                        int joinStatusLocation = fkJoinNode.joinStatusLocation;
+                        int pkSize = fkJoinNode.getPkDistinctProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        int cardinalityBound = TableManager.getInstance().cardinalityConstraint(fkJoinNode.getLocalCols());
+                        logger.info("SEMI JOIN/OUTER JOIN, 为第{}个表的第{}个状态, Cardinality为{}", joinStatusIndex, joinStatusLocation, pkSize);
+                        ConstructCpModel.addCardinalityConstraint(joinStatusIndex, joinStatusLocation,
+                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2PkStatus);
+                    }
+                }
+                case AGGREGATE -> {
+                    ConstraintChainAggregateNode aggregateNode = (ConstraintChainAggregateNode) node;
+                    if (aggregateNode.joinStatusIndex >= 0) {
+                        int pkSize = aggregateNode.getAggProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        logger.info("Aggregation, 为第{}个表, Cardinality为{}", aggregateNode.joinStatusIndex, pkSize);
+                        int cardinalityBound = TableManager.getInstance().cardinalityConstraint(aggregateNode.getGroupKey().get(0));
+                        ConstructCpModel.addAggCardinalityConstraint(aggregateNode.joinStatusIndex,
+                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2PkStatus);
+                    }
+                }
+                default -> {
+                }
+            }
+        }
+    }
+
+    public StringBuilder presentConstraintChains(Map<String, SubGraph> subGraphHashMap, String color) {
+        String lastNodeInfo = "";
+        double lastProbability = 0;
+        String conditionColor = String.format("[style=filled, color=\"%s\"];%n", color);
+        String tableColor = String.format("[shape=box,style=filled, color=\"%s\"];%n", color);
+        StringBuilder graph = new StringBuilder();
+        for (ConstraintChainNode node : nodes) {
+            String currentNodeInfo;
+            double currentProbability = 0;
+            switch (node.constraintChainNodeType) {
+                case FILTER -> {
+                    currentNodeInfo = String.format("\"%s\"", node);
+                    currentProbability = ((ConstraintChainFilterNode) node).getProbability().doubleValue();
+                    graph.append("\t").append(currentNodeInfo).append(conditionColor);
+                }
+                case FK_JOIN -> {
+                    ConstraintChainFkJoinNode fkJoinNode = ((ConstraintChainFkJoinNode) node);
+                    String pkCols = fkJoinNode.getRefCols().split("\\.")[2];
+                    currentNodeInfo = String.format("\"Fk%s%d\"", pkCols, fkJoinNode.getPkTag());
+                    String subGraphTag = String.format("cluster%s%d", pkCols, fkJoinNode.getPkTag());
+                    currentProbability = fkJoinNode.getProbability().doubleValue();
+                    subGraphHashMap.putIfAbsent(subGraphTag, new SubGraph(subGraphTag));
+                    subGraphHashMap.get(subGraphTag).fkInfo = currentNodeInfo + conditionColor;
+                    subGraphHashMap.get(subGraphTag).joinLabel = switch (fkJoinNode.getType()) {
+                        case INNER_JOIN -> "eq join";
+                        case SEMI_JOIN -> "semi join: " + fkJoinNode.getPkDistinctProbability();
+                        case OUTER_JOIN -> "outer join: " + fkJoinNode.getPkDistinctProbability();
+                        case ANTI_SEMI_JOIN -> "anti semi join";
+                        case ANTI_JOIN -> "anti join";
+                    };
+                    if (fkJoinNode.getProbabilityWithFailFilter() != null) {
+                        subGraphHashMap.get(subGraphTag).joinLabel = String.format("%s filterWithCannotJoin: %2$,.4f",
+                                subGraphHashMap.get(subGraphTag).joinLabel,
+                                fkJoinNode.getProbabilityWithFailFilter());
+                    }
+                }
+                case PK_JOIN -> {
+                    ConstraintChainPkJoinNode pkJoinNode = ((ConstraintChainPkJoinNode) node);
+                    String locPks = pkJoinNode.getPkColumns()[0];
+                    currentNodeInfo = String.format("\"Pk%s%d\"", locPks, pkJoinNode.getPkTag());
+                    String localSubGraph = String.format("cluster%s%d", locPks, pkJoinNode.getPkTag());
+                    subGraphHashMap.putIfAbsent(localSubGraph, new SubGraph(localSubGraph));
+                    subGraphHashMap.get(localSubGraph).pkInfo = currentNodeInfo + conditionColor;
+                }
+                case AGGREGATE -> {
+                    ConstraintChainAggregateNode aggregateNode = ((ConstraintChainAggregateNode) node);
+                    List<String> keys = aggregateNode.getGroupKey();
+                    currentProbability = aggregateNode.getAggProbability().doubleValue();
+                    currentNodeInfo = String.format("\"GroupKey:%s\"", keys == null ? "" : String.join(",", keys));
+                    graph.append("\t").append(currentNodeInfo).append(conditionColor);
+                    if (aggregateNode.getAggFilter() != null) {
+                        if (!lastNodeInfo.isBlank()) {
+                            graph.append(String.format("\t%s->%s[label=\"%3$,.4f\"];%n", lastNodeInfo, currentNodeInfo, lastProbability));
+                        } else {
+                            graph.append(String.format("\t\"%s\"%s", tableName, tableColor));
+                            graph.append(String.format("\t\"%s\"->%s[label=\"1.0\"]%n", tableName, currentNodeInfo));
+                        }
+                        lastNodeInfo = currentNodeInfo;
+                        lastProbability = currentProbability;
+                        ConstraintChainFilterNode aggFilter = aggregateNode.getAggFilter();
+                        currentNodeInfo = String.format("\"%s\"", aggFilter);
+                        graph.append("\t").append(currentNodeInfo).append(conditionColor);
+                        currentProbability = aggFilter.getProbability().doubleValue();
+                    }
+                }
+                default -> throw new UnsupportedOperationException();
+            }
+            if (!lastNodeInfo.isBlank()) {
+                graph.append(String.format("\t%s->%s[label=\"%3$,.4f\"];%n", lastNodeInfo, currentNodeInfo, lastProbability));
+            } else {
+                graph.append(String.format("\t\"%s\"%s", tableName, tableColor));
+                graph.append(String.format("\t\"%s\"->%s[label=\"1.0\"]%n", tableName, currentNodeInfo));
+            }
+            lastNodeInfo = currentNodeInfo;
+            lastProbability = currentProbability;
+        }
+        if (!lastNodeInfo.startsWith("\"Pk")) {
+            graph.append("\t").append("RESULT").append(conditionColor);
+            graph.append(String.format("\t%s->RESULT[label=\"%2$,.4f\"]%n", lastNodeInfo, lastProbability));
+        }
+        return graph;
+    }
+
+    @JsonIgnore
+    public int getJoinTag() {
+        int joinTag = Integer.MIN_VALUE;
+        for (ConstraintChainNode node : nodes) {
+            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
+                if (joinTag == Integer.MIN_VALUE) {
+                    joinTag = ((ConstraintChainPkJoinNode) node).getPkTag();
+                } else {
+                    throw new UnsupportedOperationException("约束链中存在双主键");
+                }
+            }
+        }
+        return joinTag;
+    }
+
+    static class SubGraph {
+        private final String joinTag;
+        String pkInfo;
+        String fkInfo;
+        String joinLabel;
+
+        public SubGraph(String joinTag) {
+            this.joinTag = joinTag;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("""
+                    subgraph "%s" {
+                            %s
+                            %slabel="%s";labelloc=b;
+                    }""".indent(4), joinTag, pkInfo, fkInfo, joinLabel);
+        }
+    }
+}

@@ -1,62 +1,62 @@
-ColumnName,columnType,nullPercentage,specialValue,min,range,minLength,rangeLength
-public.lineitem.l_orderkey, INTEGER,0.0,4,1,1500000,0,0
-public.lineitem.l_partkey, INTEGER,0.0,1,1,200000,0,0
-public.lineitem.l_suppkey, INTEGER,0.0,1,1,10000,0,0
-public.lineitem.l_linenumber, INTEGER,0.0,1,1,7,0,0
-public.lineitem.l_quantity, DECIMAL,0.0,1000000,1000000,49000000,0,0
-public.lineitem.l_extendedprice, DECIMAL,0.0,1000000,901000000,104048500000,0,0
-public.lineitem.l_discount, DECIMAL,0.0,1000000,0,100000,0,0
-public.lineitem.l_tax, DECIMAL,0.0,1000000,0,80000,0,0
-public.lineitem.l_returnflag, VARCHAR,0.0,798021140,0,3,1,0
-public.lineitem.l_linestatus, VARCHAR,0.0,955231464,0,2,1,0
-public.lineitem.l_shipdate, DATE,0.0,0,694310400000,218160000000,0,0
-public.lineitem.l_commitdate, DATE,0.0,0,696816000000,212976000000,0,0
-public.lineitem.l_receiptdate, DATE,0.0,0,694483200000,220579200000,0,0
-public.lineitem.l_shipinstruct, VARCHAR,0.0,796262578,0,4,4,13
-public.lineitem.l_shipmode, VARCHAR,0.0,2071310131,0,7,3,4
-public.lineitem.l_comment, VARCHAR,0.0,-42281923,0,4580667,10,33
-public.customer.c_custkey, INTEGER,0.0,1,1,150000,0,0
-public.customer.c_name, VARCHAR,0.0,1997300404,0,150000,18,0
-public.customer.c_address, VARCHAR,0.0,-1895410641,0,150000,10,30
-public.customer.c_nationkey, INTEGER,0.0,1,0,25,0,0
-public.customer.c_phone, VARCHAR,0.0,852305401,0,150000,15,0
-public.customer.c_acctbal, DECIMAL,0.0,1000000,-999990000,10999980000,0,0
-public.customer.c_mktsegment, VARCHAR,0.0,-1707846109,0,5,8,2
-public.customer.c_comment, VARCHAR,0.0,-2074699447,0,149968,29,87
-public.orders.o_orderkey, INTEGER,0.0,4,1,1500000,0,0
-public.orders.o_custkey, INTEGER,0.0,1,1,99996,0,0
-public.orders.o_orderstatus, VARCHAR,0.0,1625088850,0,3,1,0
-public.orders.o_totalprice, DECIMAL,0.0,1000000,857710000,554427450000,0,0
-public.orders.o_orderdate, DATE,0.0,0,694224000000,207792000000,0,0
-public.orders.o_orderpriority, VARCHAR,0.0,1066332674,0,5,5,10
-public.orders.o_clerk, VARCHAR,0.0,-1875233257,0,1000,15,0
-public.orders.o_shippriority, INTEGER,0.0,1,0,1,0,0
-public.orders.o_comment, VARCHAR,0.0,870344413,0,1482071,19,59
-public.nation.n_nationkey, INTEGER,0.0,1,0,25,0,0
-public.nation.n_name, VARCHAR,0.0,-1223138456,0,25,4,10
-public.nation.n_regionkey, INTEGER,0.0,1,0,5,0,0
-public.nation.n_comment, VARCHAR,0.0,1331895858,0,25,31,83
-public.supplier.s_suppkey, INTEGER,0.0,1,1,10000,0,0
-public.supplier.s_name, VARCHAR,0.0,-800677273,0,10000,18,0
-public.supplier.s_address, VARCHAR,0.0,319908906,0,10000,10,30
-public.supplier.s_nationkey, INTEGER,0.0,1,0,25,0,0
-public.supplier.s_phone, VARCHAR,0.0,1735387975,0,10000,15,0
-public.supplier.s_acctbal, DECIMAL,0.0,1000000,-998220000,10997940000,0,0
-public.supplier.s_comment, VARCHAR,0.0,747126147,0,10000,25,75
-public.partsupp.ps_partkey, INTEGER,0.0,1,1,200000,0,0
-public.partsupp.ps_suppkey, INTEGER,0.0,1,1,10000,0,0
-public.partsupp.ps_availqty, INTEGER,0.0,1,1,9999,0,0
-public.partsupp.ps_supplycost, DECIMAL,0.0,1000000,1000000,999000000,0,0
-public.partsupp.ps_comment, VARCHAR,0.0,132768194,0,799124,49,149
-public.part.p_partkey, INTEGER,0.0,1,1,200000,0,0
-public.part.p_name, VARCHAR,0.0,-1264242372,0,199997,21,29
-public.part.p_mfgr, VARCHAR,0.0,-539792996,0,5,14,0
-public.part.p_brand, VARCHAR,0.0,-610971852,0,25,8,0
-public.part.p_type, VARCHAR,0.0,-2123163101,0,150,16,9
-public.part.p_size, INTEGER,0.0,1,1,50,0,0
-public.part.p_container, VARCHAR,0.0,2035539495,0,40,6,4
-public.part.p_retailprice, DECIMAL,0.0,1000000,901000000,1197989999,0,0
-public.part.p_comment, VARCHAR,0.0,-974025933,0,131753,5,17
-public.region.r_regionkey, INTEGER,0.0,1,0,5,0,0
-public.region.r_name, VARCHAR,0.0,884663861,0,5,4,7
-public.region.r_comment, VARCHAR,0.0,-1085449960,0,5,31,84
+ColumnName,columnType,nullPercentage,specialValue,min,range,minLength,rangeLength,originalType
+public.lineitem.l_orderkey, INTEGER,0.0,4,1,1500000,0,0,"INTEGER NOT NULL"
+public.lineitem.l_partkey, INTEGER,0.0,1,1,200000,0,0,"INTEGER NOT NULL"
+public.lineitem.l_suppkey, INTEGER,0.0,1,1,10000,0,0,"INTEGER NOT NULL"
+public.lineitem.l_linenumber, INTEGER,0.0,1,1,7,0,0,"INTEGER NOT NULL"
+public.lineitem.l_quantity, DECIMAL,0.0,100,100,4900,0,0,"DECIMAL(15,2) NOT NULL"
+public.lineitem.l_extendedprice, DECIMAL,0.0,100,90100,10404850,0,0,"DECIMAL(15,2) NOT NULL"
+public.lineitem.l_discount, DECIMAL,0.0,100,0,10,0,0,"DECIMAL(15,2) NOT NULL"
+public.lineitem.l_tax, DECIMAL,0.0,100,0,8,0,0,"DECIMAL(15,2) NOT NULL"
+public.lineitem.l_returnflag, VARCHAR,0.0,-272739426,0,3,1,0,"CHAR(1) NOT NULL"
+public.lineitem.l_linestatus, VARCHAR,0.0,-1769208194,0,2,1,0,"CHAR(1) NOT NULL"
+public.lineitem.l_shipdate, DATE,0.0,0,8036,2525,0,0,"DATE NOT NULL"
+public.lineitem.l_commitdate, DATE,0.0,0,8065,2465,0,0,"DATE NOT NULL"
+public.lineitem.l_receiptdate, DATE,0.0,0,8038,2553,0,0,"DATE NOT NULL"
+public.lineitem.l_shipinstruct, VARCHAR,0.0,-347425372,0,4,4,13,"CHAR(25) NOT NULL"
+public.lineitem.l_shipmode, VARCHAR,0.0,1693707192,0,7,3,4,"CHAR(10) NOT NULL"
+public.lineitem.l_comment, VARCHAR,0.0,-2022670057,0,4580667,10,33,"VARCHAR(44) NOT NULL"
+public.customer.c_custkey, INTEGER,0.0,1,1,150000,0,0,"INTEGER NOT NULL"
+public.customer.c_name, VARCHAR,0.0,1878124019,0,150000,18,0,"VARCHAR(25) NOT NULL"
+public.customer.c_address, VARCHAR,0.0,856549683,0,150000,10,30,"VARCHAR(40) NOT NULL"
+public.customer.c_nationkey, INTEGER,0.0,1,0,25,0,0,"INTEGER NOT NULL"
+public.customer.c_phone, VARCHAR,0.0,303509201,0,150000,15,0,"CHAR(15) NOT NULL"
+public.customer.c_acctbal, DECIMAL,0.0,100,-99999,1099998,0,0,"DECIMAL(15,2) NOT NULL"
+public.customer.c_mktsegment, VARCHAR,0.0,-2103232468,0,5,8,2,"CHAR(10) NOT NULL"
+public.customer.c_comment, VARCHAR,0.0,411627972,0,149968,29,87,"VARCHAR(117) NOT NULL"
+public.orders.o_orderkey, INTEGER,0.0,4,1,1500000,0,0,"INTEGER NOT NULL"
+public.orders.o_custkey, INTEGER,0.0,1,1,99996,0,0,"INTEGER NOT NULL"
+public.orders.o_orderstatus, VARCHAR,0.0,1986135204,0,3,1,0,"CHAR(1) NOT NULL"
+public.orders.o_totalprice, DECIMAL,0.0,100,85771,55442745,0,0,"DECIMAL(15,2) NOT NULL"
+public.orders.o_orderdate, DATE,0.0,0,8035,2405,0,0,"DATE NOT NULL"
+public.orders.o_orderpriority, VARCHAR,0.0,852663323,0,5,5,10,"CHAR(15) NOT NULL"
+public.orders.o_clerk, VARCHAR,0.0,27545374,0,1000,15,0,"CHAR(15) NOT NULL"
+public.orders.o_shippriority, INTEGER,0.0,1,0,1,0,0,"INTEGER NOT NULL"
+public.orders.o_comment, VARCHAR,0.0,-1524332733,0,1482071,19,59,"VARCHAR(79) NOT NULL"
+public.nation.n_nationkey, INTEGER,0.0,1,0,25,0,0,"INTEGER NOT NULL"
+public.nation.n_name, VARCHAR,0.0,-1257316763,0,25,4,10,"CHAR(25) NOT NULL"
+public.nation.n_regionkey, INTEGER,0.0,1,0,5,0,0,"INTEGER NOT NULL"
+public.nation.n_comment, VARCHAR,0.0,1617001518,0,25,31,83,"VARCHAR(152) DEFAULT NULL"
+public.supplier.s_suppkey, INTEGER,0.0,1,1,10000,0,0,"INTEGER NOT NULL"
+public.supplier.s_name, VARCHAR,0.0,-776397217,0,10000,18,0,"CHAR(25) NOT NULL"
+public.supplier.s_address, VARCHAR,0.0,-2045278259,0,10000,10,30,"VARCHAR(40) NOT NULL"
+public.supplier.s_nationkey, INTEGER,0.0,1,0,25,0,0,"INTEGER NOT NULL"
+public.supplier.s_phone, VARCHAR,0.0,-1932112729,0,10000,15,0,"CHAR(15) NOT NULL"
+public.supplier.s_acctbal, DECIMAL,0.0,100,-99822,1099793,0,0,"DECIMAL(15,2) NOT NULL"
+public.supplier.s_comment, VARCHAR,0.0,538225328,0,10000,25,75,"VARCHAR(101) NOT NULL"
+public.partsupp.ps_partkey, INTEGER,0.0,1,1,200000,0,0,"INTEGER NOT NULL"
+public.partsupp.ps_suppkey, INTEGER,0.0,1,1,10000,0,0,"INTEGER NOT NULL"
+public.partsupp.ps_availqty, INTEGER,0.0,1,1,9999,0,0,"INTEGER NOT NULL"
+public.partsupp.ps_supplycost, DECIMAL,0.0,100,100,99900,0,0,"DECIMAL(15,2) NOT NULL"
+public.partsupp.ps_comment, VARCHAR,0.0,-943905884,0,799124,49,149,"VARCHAR(199) NOT NULL"
+public.part.p_partkey, INTEGER,0.0,1,1,200000,0,0,"INTEGER NOT NULL"
+public.part.p_name, VARCHAR,0.0,-363316556,0,199997,21,29,"VARCHAR(55) NOT NULL"
+public.part.p_mfgr, VARCHAR,0.0,651559400,0,5,14,0,"CHAR(25) NOT NULL"
+public.part.p_brand, VARCHAR,0.0,-871940642,0,25,8,0,"CHAR(10) NOT NULL"
+public.part.p_type, VARCHAR,0.0,155855448,0,150,16,9,"VARCHAR(25) NOT NULL"
+public.part.p_size, INTEGER,0.0,1,1,50,0,0,"INTEGER NOT NULL"
+public.part.p_container, VARCHAR,0.0,-1050886516,0,40,6,4,"CHAR(10) NOT NULL"
+public.part.p_retailprice, DECIMAL,0.0,100,90100,119798,0,0,"DECIMAL(15,2) NOT NULL"
+public.part.p_comment, VARCHAR,0.0,-598870453,0,131753,5,17,"VARCHAR(23) NOT NULL"
+public.region.r_regionkey, INTEGER,0.0,1,0,5,0,0,"INTEGER NOT NULL"
+public.region.r_name, VARCHAR,0.0,872241046,0,5,4,7,"CHAR(25) NOT NULL"
+public.region.r_comment, VARCHAR,0.0,-1030161402,0,5,31,84,"VARCHAR(152) DEFAULT NULL"

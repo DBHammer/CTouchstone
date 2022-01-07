@@ -2,8 +2,14 @@ package ecnu.db.analyzer.online;
 
 import ecnu.db.analyzer.online.node.*;
 import ecnu.db.dbconnector.DbConnector;
-import ecnu.db.generator.constraintchain.chain.*;
+import ecnu.db.generator.constraintchain.ConstraintChain;
+import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
+import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
+import ecnu.db.generator.constraintchain.filter.Parameter;
+import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
+import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
+import ecnu.db.generator.constraintchain.join.ConstraintNodeJoinType;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -95,7 +101,7 @@ public class QueryAnalyzer {
      * @throws TouchstoneException 节点分析出错
      * @throws SQLException        无法收集多列主键的ndv
      */
-    private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
+    private long analyzeNode(ExecutionNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException, SQLException {
         return switch (node.getType()) {
             case join -> analyzeJoinNode((JoinNode) node, constraintChain, lastNodeLineCount);
             case filter -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
@@ -103,7 +109,7 @@ public class QueryAnalyzer {
         };
     }
 
-    private int analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
+    private long analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException {
         LogicNode root = analyzeSelectInfo(node.getInfo());
         BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
         ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, root);
@@ -111,7 +117,7 @@ public class QueryAnalyzer {
         return node.getOutputRows();
     }
 
-    private int analyzeAggregateNode(AggNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
+    private long analyzeAggregateNode(AggNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException {
         // multiple aggregation
         if (!constraintChain.getTableName().equals(node.getTableName())) {
             return STOP_CONSTRUCT;
@@ -127,14 +133,14 @@ public class QueryAnalyzer {
         if (node.getAggFilter() != null) {
             ExecutionNode aggNode = node.getAggFilter();
             LogicNode root = analyzeSelectInfo(aggNode.getInfo());
-            BigDecimal filterProbability = BigDecimal.valueOf(aggNode.getOutputRows()).divide(BigDecimal.valueOf(node.getOutputRows()), BIG_DECIMAL_DEFAULT_PRECISION);
+            BigDecimal filterProbability = BigDecimal.valueOf(aggNode.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             aggregateNode.setAggFilter(new ConstraintChainFilterNode(filterProbability, root));
         }
         constraintChain.addNode(aggregateNode);
         return node.getOutputRows();
     }
 
-    private int analyzeJoinNode(JoinNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
+    private long analyzeJoinNode(JoinNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException, SQLException {
         String[] joinColumnInfos = abstractAnalyzer.analyzeJoinInfo(node.getInfo());
         String localTable = joinColumnInfos[0];
         String localCol = joinColumnInfos[1];
@@ -174,7 +180,8 @@ public class QueryAnalyzer {
             } else {
                 constraintChain.addJoinTable(externalTable);
             }
-            if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount && node.getPkDistinctSize() == 0) {
+            if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount &&
+                    node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0) {
                 logger.debug("由于输入的主键为全集，跳过节点{}", node.getInfo());
                 node.setJoinTag(SKIP_JOIN_TAG);
             } else {
@@ -187,7 +194,7 @@ public class QueryAnalyzer {
         } else {
             constraintChain.addJoinTable(externalTable);
             logger.debug("{} wait join tag", node.getInfo());
-            long fkJoinTag = node.getJoinTag();
+            int fkJoinTag = node.getJoinTag();
             logger.debug("{} get join tag", node.getInfo());
             if (fkJoinTag == SKIP_JOIN_TAG) {
                 logger.debug("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
@@ -199,19 +206,28 @@ public class QueryAnalyzer {
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             BigDecimal probability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
-            if (node.isAntiJoin()) {
-                fkJoinNode.setAntiJoin();
-            }
-            fkJoinNode.setPkDistinctProbability(node.getPkDistinctSize());
+            // deal with index join
             if (node.getRightNode().getType() == ExecutionNodeType.filter && node.getRightNode().getInfo() != null &&
-                    ((FilterNode) node.getRightNode()).isIndexScan()) {
-                int tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
-                int rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
+                    ((FilterNode) node.getRightNode()).isIndexScan()&&node.getRightNode().getTableName().equals(localTable)) {
+                long tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
+                long rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
                 BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
-            if(node.isSemiJoin()){
-                fkJoinNode.setPkDistinctSize(node.getOutputRows());
+            if (node.isSemiJoin()) {
+                if (node.isAntiJoin()) {
+                    fkJoinNode.setType(ConstraintNodeJoinType.ANTI_SEMI_JOIN);
+                } else {
+                    fkJoinNode.setType(ConstraintNodeJoinType.SEMI_JOIN);
+                }
+                fkJoinNode.setPkDistinctProbability(fkJoinNode.getProbability());
+            } else {
+                if (node.getPkDistinctSize() != null && node.getPkDistinctSize().compareTo(BigDecimal.ZERO) > 0) {
+                    fkJoinNode.setType(ConstraintNodeJoinType.OUTER_JOIN);
+                    fkJoinNode.setPkDistinctProbability(node.getPkDistinctSize());
+                } else if (node.isAntiJoin()) {
+                    fkJoinNode.setType(ConstraintNodeJoinType.ANTI_JOIN);
+                }
             }
             constraintChain.addNode(fkJoinNode);
             return node.getOutputRows();
@@ -230,7 +246,7 @@ public class QueryAnalyzer {
         }
         ExecutionNode headNode = path.get(0);
         ConstraintChain constraintChain;
-        int lastNodeLineCount;
+        long lastNodeLineCount;
         //分析约束链的第一个node
         if (headNode.getType() == ExecutionNodeType.filter) {
             constraintChain = new ConstraintChain(headNode.getTableName());
@@ -355,6 +371,13 @@ public class QueryAnalyzer {
             if (!allNodes.isEmpty()) {
                 for (ExecutionNode node : allNodes) {
                     logger.error("can not input {}", node);
+                }
+            }
+        }
+        if (constraintChains.size() > 1) {
+            for (ConstraintChain constraintChain : constraintChains.get(0)) {
+                for (Parameter parameter : constraintChain.getParameters()) {
+                    parameter.setSubPlan(true);
                 }
             }
         }

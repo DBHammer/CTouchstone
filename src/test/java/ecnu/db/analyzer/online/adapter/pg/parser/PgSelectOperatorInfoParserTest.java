@@ -10,7 +10,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.io.StringReader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class PgSelectOperatorInfoParserTest {
@@ -23,7 +22,7 @@ class PgSelectOperatorInfoParserTest {
     }
 
     @ParameterizedTest
-    @CsvSource(delimiter = ';', value ={
+    @CsvSource(delimiter = ';', value = {
             "(db1.table.col1 >= 2);" +
                     "and(ge(db1.table.col1, {id:0, data:2}))",
             "((db1.table.col1 * (db1.table.col2 + 3.0)) >= 2);" +
@@ -45,6 +44,6 @@ class PgSelectOperatorInfoParserTest {
     })
     void testPgParse(String input, String output) throws Exception {
         LogicNode node = parser.parseSelectOperatorInfo(input);
-        assertEquals(output, node.toString().replaceAll(System.lineSeparator()," "));
+        assertEquals(output, node.toString().replaceAll(System.lineSeparator(), " "));
     }
 }

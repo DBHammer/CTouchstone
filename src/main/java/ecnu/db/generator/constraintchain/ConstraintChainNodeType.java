@@ -1,4 +1,4 @@
-package ecnu.db.generator.constraintchain.chain;
+package ecnu.db.generator.constraintchain;
 
 /**
  * @author wangqingshuai
