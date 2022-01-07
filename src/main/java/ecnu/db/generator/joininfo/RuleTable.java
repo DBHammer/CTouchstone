@@ -4,6 +4,12 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RuleTable {
+    double scaleFactor;
+
+    public void setScaleFactor(double scaleFactor) {
+        this.scaleFactor = scaleFactor;
+    }
+
     Map<JoinStatus, List<Map.Entry<Long, Long>>> rules = new HashMap<>();
 
     Map<Integer, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
@@ -40,11 +46,9 @@ public class RuleTable {
             for (Map.Entry<Long, Long> range : status2KeyList.getValue()) {
                 size += range.getValue() - range.getKey();
             }
-            mergedSize.put(status2KeyList.getKey(), size);
+            mergedSize.put(status2KeyList.getKey(), (long) (size * scaleFactor));
             ruleCounter.put(status2KeyList.getKey(), 0L);
         }
-        System.out.println(mergedRules);
-        System.out.println(mergedSize);
         return mergedSize;
     }
 
@@ -52,16 +56,12 @@ public class RuleTable {
         int statusHash = Arrays.hashCode(status);
         List<Map.Entry<Long, Long>> ranges = mergedRules.get(statusHash);
         long currentSize = 0;
+        // 近似处理跨表参照关系
         if (index < 0) {
-            long currentIndex = ruleCounter.get(statusHash);
-            long totalSize = mergedSize.get(statusHash);
-            long validRange = totalSize - currentIndex;
-            if (validRange > 0) {
-                index = ThreadLocalRandom.current().nextLong(validRange) + currentIndex;
-            } else {
-                index = ThreadLocalRandom.current().nextLong(totalSize);
-            }
+            var range = ranges.get(ThreadLocalRandom.current().nextInt(ranges.size()));
+            return range.getKey() + ThreadLocalRandom.current().nextLong(Math.min(48, range.getValue() - range.getKey()));
         }
+
         //todo may be error for other benchmark
         while (true) {
             for (Map.Entry<Long, Long> range : ranges) {
@@ -72,7 +72,6 @@ public class RuleTable {
                     currentSize = nextSize;
                 }
             }
-            System.out.println("error overhead");
         }
     }
 

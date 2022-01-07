@@ -104,7 +104,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         // 处理range scan
         if (nodeTypeRef.isRangeScanNode(nodeType) && matches.isEmpty()) {
             String canonicalTableName = rawNode.operatorInfo;
-            int tableSize = TableManager.getInstance().getTableSize(canonicalTableName);
+            long tableSize = TableManager.getInstance().getTableSize(canonicalTableName);
             // 含有decided by的operator info表示join的index range scan
             if (tableSize != rawNode.rowCount && !rawNode.operatorInfo.contains("decided by")) {
                 String rangeInfo = matchPattern(RANGE, rawNode.operatorInfo).get(0).get(0);
@@ -138,7 +138,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             }
         } else if (nodeTypeRef.isRangeScanNode(nodeType) && !matches.isEmpty()) {
             String canonicalTableName = rawNode.operatorInfo;
-            int rowCount = TableManager.getInstance().getTableSize(canonicalTableName);
+            long rowCount = TableManager.getInstance().getTableSize(canonicalTableName);
             ExecutionNode scanNode = new FilterNode(rawNode.id, rowCount, null);
             scanNode.setTableName(canonicalTableName);
             return scanNode;
@@ -182,7 +182,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             if (rawNode.right != null) {
                 matches = matchPattern(EQ_OPERATOR, rawNode.left.operatorInfo);
                 String canonicalTblName = rawNode.right.operatorInfo;
-                int tableSize = TableManager.getInstance().getTableSize(canonicalTblName);
+                long tableSize = TableManager.getInstance().getTableSize(canonicalTblName);
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (!matches.isEmpty() && nodeTypeRef.isTableScanNode(rawNode.right.nodeType)) {
                     node = new FilterNode(rawNode.id, TableManager.getInstance().getTableSize(canonicalTblName), null);
@@ -198,7 +198,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
             // 处理IndexReader后接一个IndexScan的情况
             else if (nodeTypeRef.isIndexScanNode(rawNode.left.nodeType)) {
                 String canonicalTblName = rawNode.left.operatorInfo;
-                int tableSize = TableManager.getInstance().getTableSize(canonicalTblName);
+                long tableSize = TableManager.getInstance().getTableSize(canonicalTblName);
                 // 处理IndexJoin没有selection的下推到tikv情况
                 if (rawNode.left.rowCount != tableSize) {
                     node = new FilterNode(rawNode.left.id, tableSize, null);

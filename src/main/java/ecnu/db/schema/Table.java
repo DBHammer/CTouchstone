@@ -13,7 +13,7 @@ import java.util.*;
  * @author wangqingshuai
  */
 public class Table {
-    private int tableSize;
+    private long tableSize;
     private List<String> primaryKeys;
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new HashMap<>();
@@ -23,7 +23,7 @@ public class Table {
     public Table() {
     }
 
-    public Table(List<String> canonicalColumnNames, int tableSize, List<String> primaryKeys) {
+    public Table(List<String> canonicalColumnNames, long tableSize, List<String> primaryKeys) {
         this.canonicalColumnNames = canonicalColumnNames;
         this.tableSize = tableSize;
         this.primaryKeys = primaryKeys;
@@ -88,11 +88,11 @@ public class Table {
     }
 
 
-    public int getTableSize() {
+    public long getTableSize() {
         return tableSize;
     }
 
-    public void setTableSize(int tableSize) {
+    public void setTableSize(long tableSize) {
         this.tableSize = tableSize;
     }
 

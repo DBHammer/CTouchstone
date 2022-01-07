@@ -73,7 +73,7 @@ public class TableManager {
         String pkTable = pkCols[0] + "." + pkCols[1];
         double scale = CommonUtils.CardinalityScale;
         if(tableName.equals("public.orders")){
-            scale = 2;
+            scale = 1.5;
         }
         return (int) (scale * schemas.get(tableName).getTableSize() / schemas.get(pkTable).getTableSize());
     }
@@ -103,7 +103,7 @@ public class TableManager {
         return schemas.containsKey(tableName);
     }
 
-    public int getTableSize(String tableName) throws CannotFindSchemaException {
+    public long getTableSize(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getTableSize();
     }
 

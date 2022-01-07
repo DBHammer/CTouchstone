@@ -20,7 +20,7 @@ public class ExecutionNode {
     /**
      * 节点输出的数据量
      */
-    private int outputRows;
+    private long outputRows;
     /**
      * 指向右节点
      */
@@ -39,7 +39,7 @@ public class ExecutionNode {
     private String id;
 
 
-    ExecutionNode(String id, ExecutionNodeType type, int outputRows, String info) {
+    ExecutionNode(String id, ExecutionNodeType type, long outputRows, String info) {
         this.type = type;
         this.info = info;
         this.id = id;
@@ -86,7 +86,7 @@ public class ExecutionNode {
         this.info = info;
     }
 
-    public int getOutputRows() {
+    public long getOutputRows() {
         return outputRows;
     }
 

@@ -134,11 +134,7 @@ public class KeysGenerator {
                 RuleTable ruleTable = RuleTableManager.getInstance().getRuleTable(refCols.get(fkIndex));
                 for (int rangeIndex = resultRangeStart; rangeIndex < resultRangeStart + step; rangeIndex++) {
                     if (result[rangeIndex] == 0) {
-                        if (refCols.get(fkIndex).contains("public.orders.o_orderkey")) {
-                            cardinalityRangeForFk.add(new RandomFkGenerate(-1L, -1L, 0));
-                        } else {
-                            cardinalityRangeForFk.add(new RandomFkGenerate(-1L, -1L, 0));
-                        }
+                        cardinalityRangeForFk.add(new RandomFkGenerate(-1L, -1L, 0));
                     } else {
                         int ruleHash = Arrays.hashCode(allStatus.get(rangeIndex % allStatus.size()).get(fkIndex));
                         long currentCounter = ruleTable.getRuleCounter().get(ruleHash);

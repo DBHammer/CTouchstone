@@ -101,7 +101,7 @@ public class QueryAnalyzer {
      * @throws TouchstoneException 节点分析出错
      * @throws SQLException        无法收集多列主键的ndv
      */
-    private int analyzeNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
+    private long analyzeNode(ExecutionNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException, SQLException {
         return switch (node.getType()) {
             case join -> analyzeJoinNode((JoinNode) node, constraintChain, lastNodeLineCount);
             case filter -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
@@ -109,7 +109,7 @@ public class QueryAnalyzer {
         };
     }
 
-    private int analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
+    private long analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException {
         LogicNode root = analyzeSelectInfo(node.getInfo());
         BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
         ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, root);
@@ -117,7 +117,7 @@ public class QueryAnalyzer {
         return node.getOutputRows();
     }
 
-    private int analyzeAggregateNode(AggNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException {
+    private long analyzeAggregateNode(AggNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException {
         // multiple aggregation
         if (!constraintChain.getTableName().equals(node.getTableName())) {
             return STOP_CONSTRUCT;
@@ -140,7 +140,7 @@ public class QueryAnalyzer {
         return node.getOutputRows();
     }
 
-    private int analyzeJoinNode(JoinNode node, ConstraintChain constraintChain, int lastNodeLineCount) throws TouchstoneException, SQLException {
+    private long analyzeJoinNode(JoinNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException, SQLException {
         String[] joinColumnInfos = abstractAnalyzer.analyzeJoinInfo(node.getInfo());
         String localTable = joinColumnInfos[0];
         String localCol = joinColumnInfos[1];
@@ -209,8 +209,8 @@ public class QueryAnalyzer {
             // deal with index join
             if (node.getRightNode().getType() == ExecutionNodeType.filter && node.getRightNode().getInfo() != null &&
                     ((FilterNode) node.getRightNode()).isIndexScan()) {
-                int tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
-                int rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
+                long tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
+                long rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
                 BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
@@ -246,7 +246,7 @@ public class QueryAnalyzer {
         }
         ExecutionNode headNode = path.get(0);
         ConstraintChain constraintChain;
-        int lastNodeLineCount;
+        long lastNodeLineCount;
         //分析约束链的第一个node
         if (headNode.getType() == ExecutionNodeType.filter) {
             constraintChain = new ConstraintChain(headNode.getTableName());

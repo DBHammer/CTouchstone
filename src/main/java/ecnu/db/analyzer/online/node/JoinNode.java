@@ -15,7 +15,7 @@ public class JoinNode extends ExecutionNode {
     private long rowsRemoveByFilterAfterJoin;
     private String indexJoinFilter;
 
-    public JoinNode(String id, int outputRows, String info, boolean antiJoin, boolean semiJoin, BigDecimal pkDistinctProbability) {
+    public JoinNode(String id, long outputRows, String info, boolean antiJoin, boolean semiJoin, BigDecimal pkDistinctProbability) {
         super(id, ExecutionNodeType.join, outputRows, info);
         this.antiJoin = antiJoin;
         this.semiJoin = semiJoin;

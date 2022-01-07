@@ -14,7 +14,7 @@ public class RandomFkGenerate implements FkGenerate {
         this.maxIndex = maxIndex;
         this.currentIndex = minIndex;
         if (maxIndex > minIndex) {
-            zipfDistribution = new ZipfDistribution((int) (maxIndex - minIndex), 0.5);
+            zipfDistribution = new ZipfDistribution((int) (maxIndex - minIndex), 0.0001);
         }
     }
 

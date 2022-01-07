@@ -70,7 +70,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             if (canNotDeal(currentNodePath)) {
                 pathForSplit = currentNodePath;
                 String tableName = PgJsonReader.readTableName(currentNodePath.toString());
-                int tableSize = TableManager.getInstance().getTableSize(tableName);
+                long tableSize = TableManager.getInstance().getTableSize(tableName);
                 aliasDic.put(PgJsonReader.readAlias(currentNodePath.toString()), tableName);
                 ExecutionNode subNode = new FilterNode(currentNodePath.toString(), tableSize, null);
                 subNode.setTableName(tableName);
@@ -143,7 +143,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
 
-    private ExecutionNode getFilterNode(StringBuilder path, int rowCount) throws CannotFindSchemaException {
+    private ExecutionNode getFilterNode(StringBuilder path, long rowCount) throws CannotFindSchemaException {
         if (PgJsonReader.readJoinFilter(path) != null) {
             rowCount += PgJsonReader.readRowsRemovedByJoinFilter(path);
         }
@@ -175,7 +175,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         }
     }
 
-    private ExecutionNode transferFilter2AntiJoin(StringBuilder path, int rowCount) {
+    private ExecutionNode transferFilter2AntiJoin(StringBuilder path, long rowCount) {
         StringBuilder leftNodePath = PgJsonReader.move2LeftChild(path);
         List<String> leftNodeResult = PgJsonReader.readOutput(leftNodePath);
         List<String> outPut = PgJsonReader.readOutput(path);

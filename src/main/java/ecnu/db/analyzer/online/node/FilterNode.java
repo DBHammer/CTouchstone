@@ -8,7 +8,7 @@ public class FilterNode extends ExecutionNode {
     private boolean isIndexScan = false;
     private String filterInfoWithQuote;
 
-    public FilterNode(String id, int outputRows, String info) {
+    public FilterNode(String id, long outputRows, String info) {
         super(id, ExecutionNodeType.filter, outputRows, info);
     }
 
