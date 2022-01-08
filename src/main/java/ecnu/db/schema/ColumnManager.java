@@ -253,6 +253,9 @@ public class ColumnManager {
     }
 
     public void prepareGeneration(Collection<String> columnNames, int size) {
+        if(columnNames.isEmpty()) {
+            return;
+        }
         columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
         List<Integer> rowIndex = new ArrayList<>();
         for (int i = 0; i < size; i++) {
