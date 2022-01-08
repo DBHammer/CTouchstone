@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 /**
@@ -144,17 +145,17 @@ public class ConstraintChain {
                     ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
                     if (!fkJoinNode.getType().isSemi()) {
                         if (fkJoinNode.getProbabilityWithFailFilter() != null) {
-                            int indexJoinSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).intValue();
+                            int indexJoinSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
                             ConstructCpModel.addIndexJoinFkConstraint(indexJoinSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
                         }
-                        filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
                         ConstructCpModel.addEqJoinFkConstraint(filterSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
                     }
                     if (fkJoinNode.getType().hasCardinalityConstraint()) {
                         // 获取join对应的位置
                         int joinStatusIndex = fkJoinNode.joinStatusIndex;
                         int joinStatusLocation = fkJoinNode.joinStatusLocation;
-                        int pkSize = fkJoinNode.getPkDistinctProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        int pkSize = fkJoinNode.getPkDistinctProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
                         int cardinalityBound = TableManager.getInstance().cardinalityConstraint(fkJoinNode.getLocalCols());
                         logger.info("SEMI JOIN/OUTER JOIN, 为第{}个表的第{}个状态, Cardinality为{}", joinStatusIndex, joinStatusLocation, pkSize);
                         ConstructCpModel.addCardinalityConstraint(joinStatusIndex, joinStatusLocation,
@@ -164,7 +165,7 @@ public class ConstraintChain {
                 case AGGREGATE -> {
                     ConstraintChainAggregateNode aggregateNode = (ConstraintChainAggregateNode) node;
                     if (aggregateNode.joinStatusIndex >= 0) {
-                        int pkSize = aggregateNode.getAggProbability().multiply(BigDecimal.valueOf(filterSize)).intValue();
+                        int pkSize = aggregateNode.getAggProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
                         logger.info("Aggregation, 为第{}个表, Cardinality为{}", aggregateNode.joinStatusIndex, pkSize);
                         int cardinalityBound = TableManager.getInstance().cardinalityConstraint(aggregateNode.getGroupKey().get(0));
                         ConstructCpModel.addAggCardinalityConstraint(aggregateNode.joinStatusIndex,

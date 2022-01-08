@@ -7,6 +7,7 @@ import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -265,14 +266,14 @@ public class Column {
             for (Parameter parameter : boundPara) {
                 long paraData = parameter.getData();
                 BigDecimal paraProbability = newEqConstraint2Probability.get(paraData);
-                int eqSize = paraProbability.multiply(BigDecimal.valueOf(sizeWithoutNull)).intValue();
+                int eqSize = paraProbability.multiply(BigDecimal.valueOf(sizeWithoutNull)).setScale(0, RoundingMode.HALF_UP).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, paraData);
                 newEqConstraint2Probability.remove(paraData);
             }
         }
         if (newEqConstraint2Probability.size() > 0) {
             for (Map.Entry<Long, BigDecimal> entry : newEqConstraint2Probability.entrySet()) {
-                int eqSize = entry.getValue().multiply(BigDecimal.valueOf(sizeWithoutNull)).intValue();
+                int eqSize = entry.getValue().multiply(BigDecimal.valueOf(sizeWithoutNull)).setScale(0, RoundingMode.HALF_UP).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, entry.getKey());
             }
         }
@@ -286,7 +287,7 @@ public class Column {
                 randomSize = size - currentIndex;
             } else {
                 //todo 确定左边界
-                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue() - (currentIndex - nullSize);
+                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).setScale(0, RoundingMode.HALF_UP).intValue() - (currentIndex - nullSize);
             }
             try {
                 //todo

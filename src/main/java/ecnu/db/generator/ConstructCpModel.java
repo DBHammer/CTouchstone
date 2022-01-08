@@ -1,5 +1,6 @@
 package ecnu.db.generator;
 
+import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
@@ -14,6 +15,10 @@ import java.util.stream.IntStream;
 
 public class ConstructCpModel {
     static Logger logger = LoggerFactory.getLogger(ConstructCpModel.class);
+
+    static {
+        Loader.loadNativeLibraries();
+    }
 
     private static BigDecimal pkRange;
     private static CpModel model;
@@ -125,7 +130,7 @@ public class ConstructCpModel {
                 indexJoinVars.add(vars[i]);
             }
         });
-        logger.info("输出的数据量为:{}, 为第{}个表的第{}个状态", indexJoinSize, joinStatusIndex, joinStatusLocation);
+        logger.info("indexjoin输出的数据量为:{}, 为第{}个表的第{}个状态", indexJoinSize, joinStatusIndex, joinStatusLocation);
         model.addEquality(LinearExpr.sum(indexJoinVars.toArray(IntVar[]::new)), indexJoinSize);
     }
 
@@ -146,7 +151,7 @@ public class ConstructCpModel {
             hash2Index.computeIfAbsent(fkHash, v -> new ArrayList<>());
             hash2Index.get(fkHash).add(vars[anchor + i]);
             cardinalityVars.add(vars[anchor + i]);
-            model.addLessOrEqual(vars[i], LinearExpr.scalProd(new IntVar[]{vars[anchor + i]}, new int[]{cardinalityBound}));
+            model.addLessOrEqual(vars[i], LinearExpr.affine(vars[anchor + i], cardinalityBound, 0));
         });
         model.addEquality(LinearExpr.sum(cardinalityVars.toArray(IntVar[]::new)), pkCardinalitySize);
         var pkStatusHash2Size = statusHash2Size.get(joinStatusIndex);
@@ -173,7 +178,7 @@ public class ConstructCpModel {
                 hash2Index.computeIfAbsent(fkHash, v -> new ArrayList<>());
                 hash2Index.get(fkHash).add(vars[anchor + i]);
                 cardinalityVars.add(vars[anchor + i]);
-                model.addLessOrEqual(vars[i], LinearExpr.scalProd(new IntVar[]{vars[anchor + i]}, new int[]{cardinalityBound}));
+                model.addLessOrEqual(vars[i], LinearExpr.affine(vars[anchor + i], cardinalityBound, 0));
             }
         });
         model.addEquality(LinearExpr.sum(cardinalityVars.toArray(IntVar[]::new)), pkCardinalitySize);

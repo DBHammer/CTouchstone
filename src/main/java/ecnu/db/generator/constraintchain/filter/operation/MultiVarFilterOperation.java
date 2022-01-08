@@ -12,6 +12,7 @@ import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -145,7 +146,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         if (probability.equals(BigDecimal.ONE)) {
             pos = vector.length - 1;
         } else {
-            pos = probability.multiply(BigDecimal.valueOf(vector.length)).intValue();
+            pos = probability.multiply(BigDecimal.valueOf(vector.length)).setScale(0, RoundingMode.HALF_UP).intValue();
         }
         double PosthSmallestNumber = select(vector, 0, vector.length-1, pos+1);
         System.out.println("排序" + (System.currentTimeMillis() - start));
