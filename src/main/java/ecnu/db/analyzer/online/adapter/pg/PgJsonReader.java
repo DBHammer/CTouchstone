@@ -112,7 +112,11 @@ public class PgJsonReader {
                 throw new UnsupportedOperationException();
             }
         } else {
-            indexCond = "Index Cond: " + indexCond;
+            if(joinFilter!=null){
+                indexCond = "joinFilter Cond: " + joinFilter;
+            }else {
+                indexCond = "Index Cond: " + indexCond;
+            }
         }
         return indexCond;
     }
