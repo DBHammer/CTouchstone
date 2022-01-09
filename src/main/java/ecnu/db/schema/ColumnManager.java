@@ -30,7 +30,10 @@ public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
     private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class);
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
-            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
+                    .appendFraction(ChronoField.MILLI_OF_SECOND, 2, 3, true) // min 2 max 3
+                    .toFormatter())
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss").toFormatter())
             .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
                     .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
                     .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
@@ -207,39 +210,50 @@ public class ColumnManager {
         int index = 0;
         for (String canonicalColumnName : canonicalColumnNames) {
             Column column = columns.get(canonicalColumnName);
+            String minResult = sqlResult[index++];
+            String maxResult = sqlResult[index++];
             long min;
             long range;
             long specialValue;
-            switch (column.getColumnType()) {
-                case INTEGER -> {
-                    min = Long.parseLong(sqlResult[index++]);
-                    long maxBound = Long.parseLong(sqlResult[index++]);
-                    range = Long.parseLong(sqlResult[index++]);
-                    specialValue = (int) ((maxBound - min + 1) / range);
+            if (minResult == null) {
+                min = -1;
+                range = -1;
+                specialValue = 0;
+                if (column.getColumnType().isHasCardinalityConstraint()) {
+                    index++;
                 }
-                case VARCHAR -> {
-                    column.setMinLength(Integer.parseInt(sqlResult[index++]));
-                    column.setRangeLength(Integer.parseInt(sqlResult[index++]) - column.getMinLength());
-                    min = 0;
-                    range = Integer.parseInt(sqlResult[index++]);
-                    specialValue = ThreadLocalRandom.current().nextInt();
+            } else {
+                switch (column.getColumnType()) {
+                    case INTEGER -> {
+                        min = Long.parseLong(minResult);
+                        long maxBound = Long.parseLong(maxResult);
+                        range = Long.parseLong(sqlResult[index++]);
+                        specialValue = (int) ((maxBound - min + 1) / range);
+                    }
+                    case VARCHAR -> {
+                        column.setMinLength(Integer.parseInt(minResult));
+                        column.setRangeLength(Integer.parseInt(maxResult) - column.getMinLength());
+                        min = 0;
+                        range = Integer.parseInt(sqlResult[index++]);
+                        specialValue = ThreadLocalRandom.current().nextInt();
+                    }
+                    case DECIMAL -> {
+                        specialValue = column.getSpecialValue();
+                        min = (long) (Double.parseDouble(minResult) * specialValue);
+                        range = (long) (Double.parseDouble(maxResult) * specialValue) - min;
+                    }
+                    case DATE -> {
+                        min = LocalDateTime.parse(minResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60);
+                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60) - min;
+                        specialValue = 0;
+                    }
+                    case DATETIME -> {
+                        min = LocalDateTime.parse(minResult, FMT).toEpochSecond(ZoneOffset.UTC);
+                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) - min;
+                        specialValue = 0;
+                    }
+                    default -> throw new TouchstoneException("未匹配到的类型");
                 }
-                case DECIMAL -> {
-                    specialValue = column.getSpecialValue();
-                    min = (long) (Double.parseDouble(sqlResult[index++]) * specialValue);
-                    range = (long) (Double.parseDouble(sqlResult[index++]) * specialValue) - min;
-                }
-                case DATE -> {
-                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC)/(24*60*60);
-                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC)/(24*60*60) - min;
-                    specialValue = 0;
-                }
-                case DATETIME -> {
-                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC);
-                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) - min;
-                    specialValue = 0;
-                }
-                default -> throw new TouchstoneException("未匹配到的类型");
             }
             column.setMin(min);
             column.setRange(range);
@@ -253,7 +267,7 @@ public class ColumnManager {
     }
 
     public void prepareGeneration(Collection<String> columnNames, int size) {
-        if(columnNames.isEmpty()) {
+        if (columnNames.isEmpty()) {
             return;
         }
         columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));

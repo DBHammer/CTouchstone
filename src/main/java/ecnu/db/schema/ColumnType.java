@@ -29,4 +29,8 @@ public enum ColumnType {
             }
         };
     }
+
+    public boolean isHasCardinalityConstraint() {
+        return this == INTEGER || this == VARCHAR;
+    }
 }

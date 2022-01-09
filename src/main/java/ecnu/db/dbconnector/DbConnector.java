@@ -82,6 +82,7 @@ public abstract class DbConnector {
                 case Types.INTEGER -> originalType = "INTEGER" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 //case Types.DECIMAL -> originalType = "DECIMAL" + rs.getInt("DECIMAL_DIGITS") + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.DATE -> originalType = "DATE" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                case Types.TIMESTAMP -> originalType = "TIMESTAMP" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.NUMERIC -> originalType = "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 default -> throw new UnsupportedOperationException();
             }
@@ -115,7 +116,7 @@ public abstract class DbConnector {
                     infos[i - 1] = rs.getString(i).trim().toLowerCase();
                 } catch (NullPointerException e) {
                     logger.error("所查列数据为空");
-                    infos[i - 1] = "0";
+                    infos[i - 1] = null;
                 }
             }
             return infos;
@@ -135,10 +136,8 @@ public abstract class DbConnector {
 
     public List<String[]> explainQuery(String sql) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
-            for (String command : preExecutionCommands()) {
-                stmt.execute(command);
-            }
-            ResultSet rs = stmt.executeQuery(String.format(getExplainFormat(), sql));
+            String query =String.format(getExplainFormat(), sql);
+            ResultSet rs = stmt.executeQuery(query);
             ArrayList<String[]> result = new ArrayList<>();
             while (rs.next()) {
                 String[] infos = new String[sqlInfoColumns.length];
