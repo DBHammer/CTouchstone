@@ -92,8 +92,8 @@ class QueryInstantiationBasicTest {
         ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
         ColumnManager.getInstance().loadColumnMetaData();
         ColumnManager.getInstance().loadColumnDistribution();
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(allColumns), 10_000);
-        ColumnManager.getInstance().prepareGeneration(new HashSet<>(lineColumns), 400_0000);
+        ColumnManager.getInstance().prepareParameterInit(new HashSet<>(allColumns), 10_000);
+        ColumnManager.getInstance().prepareParameterInit(new HashSet<>(lineColumns), 400_0000);
         // **********************************
         // *    test query instantiation    *
         // **********************************
