@@ -193,6 +193,18 @@ in_compare_expr ::=
                                                                                     }
                                                                                     RESULT = operation;
                                                                                   :}
+        |LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN      {:
+                                                                                            List<Parameter> parameterList = new ArrayList<>();
+                                                                                            for (String argument: arguments) {
+                                                                                                Parameter parameter = new Parameter(parameterId++, col, argument);
+                                                                                                parameterList.add(parameter);
+                                                                                            }
+                                                                                            UniVarFilterOperation operation = new UniVarFilterOperation(col, inornotin, parameterList);
+                                                                                            if(inornotin == CompareOperator.NOT_IN){
+                                                                                                operation.setOperator(CompareOperator.NOT_IN);
+                                                                                            }
+                                                                                            RESULT = operation;
+                                                                                          :}
         |LPAREN SUBSTRING LPAREN CANONICAL_COLUMN_NAME:col INTEGER:leftInt INTEGER:rightInt RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN {:
                                                                                    List<Parameter> parameterList = new ArrayList<>();
                                                                                    for (String argument: arguments) {
