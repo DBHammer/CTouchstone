@@ -287,6 +287,7 @@ public class Column {
             for (Map.Entry<Long, BigDecimal> entry : newEqConstraint2Probability.entrySet()) {
                 int eqSize = entry.getValue().multiply(BigDecimal.valueOf(sizeWithoutNull)).setScale(0, RoundingMode.HALF_UP).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, entry.getKey());
+                nullSize += eqSize;
             }
         }
         //赋值随机数据
