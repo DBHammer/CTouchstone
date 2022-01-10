@@ -82,6 +82,7 @@ public abstract class DbConnector {
                 case Types.INTEGER -> originalType = "INTEGER" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 //case Types.DECIMAL -> originalType = "DECIMAL" + rs.getInt("DECIMAL_DIGITS") + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.DATE -> originalType = "DATE" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                case Types.BIGINT -> originalType = "BIGINT"+ " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.TIMESTAMP -> originalType = "TIMESTAMP" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.NUMERIC -> originalType = "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 default -> throw new UnsupportedOperationException();
