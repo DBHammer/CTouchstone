@@ -220,11 +220,23 @@ public class Column {
                     long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
                     eqConstraint2Probability.put(eqParameterData, eqProbability);
                     Parameter parameter = eqRequest2ParameterIds.get(eqProbability).remove(0);
+                    String tempValue = parameter.getDataValue();
                     parameter.setData(eqParameterData);
+                    String newValue;
                     if (likeParameterId.contains(parameter.getId())) {
-                        parameter.setDataValue(stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue()));
+                        newValue = stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue());
                     } else {
-                        parameter.setDataValue(transferDataToValue(eqParameterData));
+                        newValue = transferDataToValue(eqParameterData);
+                    }
+                    parameter.setDataValue(newValue);
+                    Iterator<Parameter> parameterIterator = eqRequest2ParameterIds.get(eqProbability).iterator();
+                    while (parameterIterator.hasNext()){
+                        Parameter parameter1 = parameterIterator.next();
+                        if(parameter1.getDataValue().equals(tempValue)){
+                            parameter1.setData(eqParameterData);
+                            parameter1.setDataValue(newValue);
+                            parameterIterator.remove();
+                        }
                     }
                 } else {
                     throw new UnsupportedOperationException("等值约束冲突，无法实例化");
