@@ -118,7 +118,7 @@ public class Column {
             probability = BigDecimal.ONE.subtract(probability);
         }
         bound = switch (operator) {
-            case LT, GE -> (long) probability.multiply(BigDecimal.valueOf(range)).doubleValue();
+            case LT, GE -> probability.multiply(BigDecimal.valueOf(range)).setScale(0, RoundingMode.HALF_UP).longValue();
             case GT, LE -> probability.multiply(BigDecimal.valueOf(range)).longValue();
             default -> throw new UnsupportedOperationException();
         };
