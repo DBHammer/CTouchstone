@@ -122,19 +122,38 @@ public class Column {
             case GT, LE -> probability.multiply(BigDecimal.valueOf(range)).longValue();
             default -> throw new UnsupportedOperationException();
         };
+        if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
+            long finalBound = bound;
+            if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(finalBound))) {
+                this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
+            } else {
+                do {
+                    long finalBound1 = bound;
+                    var range = bucketBound2FreeSpace.stream().filter(bucket -> bucket.getKey().equals(finalBound1)).findFirst();
+                    if (range.isPresent()) {
+                        var realRange = range.get();
+                        if (realRange.getValue().compareTo(probability) == 0) {
+                            break;
+                        } else {
+                            bound--;
+                        }
+                    } else {
+                        this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
+                        break;
+                    }
+                } while (true);
+            }
+        }
+        long finalBound = bound;
         parameters.parallelStream().forEach(parameter -> {
-            long value = bound;
+            long value = finalBound;
             if (operator == CompareOperator.GT || operator == CompareOperator.LE) {
                 value--;
             }
             parameter.setData(value);
             parameter.setDataValue(transferDataToValue(value));
         });
-        if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
-            if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(bound))) {
-                this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
-            }
-        }
+
     }
 
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
@@ -230,9 +249,9 @@ public class Column {
                     }
                     parameter.setDataValue(newValue);
                     Iterator<Parameter> parameterIterator = eqRequest2ParameterIds.get(eqProbability).iterator();
-                    while (parameterIterator.hasNext()){
+                    while (parameterIterator.hasNext()) {
                         Parameter parameter1 = parameterIterator.next();
-                        if(parameter1.getDataValue().equals(tempValue)){
+                        if (parameter1.getDataValue().equals(tempValue)) {
                             parameter1.setData(eqParameterData);
                             parameter1.setDataValue(newValue);
                             parameterIterator.remove();
@@ -420,7 +439,7 @@ public class Column {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
-            case VARCHAR -> stringTemplate.transferColumnData2Value(data, bucketBound2FreeSpace.size()>1, range);
+            case VARCHAR -> stringTemplate.transferColumnData2Value(data, bucketBound2FreeSpace.size() > 1, range);
             case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min) * 24 * 60 * 60));
             case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();

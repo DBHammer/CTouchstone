@@ -84,6 +84,7 @@ public class TaskConfigurator implements Callable<Integer> {
         filterOperations.stream()
                 .filter(UniVarFilterOperation.class::isInstance)
                 .map(UniVarFilterOperation.class::cast)
+                .sorted(Comparator.comparing(AbstractFilterOperation::getProbability))
                 .forEach(UniVarFilterOperation::instantiateParameter);
 
         // init eq params
