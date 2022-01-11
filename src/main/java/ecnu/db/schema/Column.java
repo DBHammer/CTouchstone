@@ -420,7 +420,7 @@ public class Column {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
-            case VARCHAR -> stringTemplate.transferColumnData2Value(data, !bucketBound2FreeSpace.isEmpty(), range);
+            case VARCHAR -> stringTemplate.transferColumnData2Value(data, bucketBound2FreeSpace.size()>1, range);
             case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min) * 24 * 60 * 60));
             case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();
