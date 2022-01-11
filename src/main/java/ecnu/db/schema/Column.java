@@ -312,6 +312,9 @@ public class Column {
         //赋值随机数据
         int i = 0;
         long lastBound = 0;
+        while (eqConstraint2Probability.containsKey(lastBound)){
+            lastBound++;
+        }
         bucketBound2FreeSpace.sort(Map.Entry.comparingByKey());
         for (Map.Entry<Long, BigDecimal> bucket2Probability : bucketBound2FreeSpace) {
             int randomSize;
@@ -331,6 +334,9 @@ public class Column {
                     randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
                 }
                 lastBound = bound;
+                while (eqConstraint2Probability.containsKey(lastBound)){
+                    lastBound++;
+                }
                 System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);
             } catch (Exception e) {
                 e.printStackTrace();
