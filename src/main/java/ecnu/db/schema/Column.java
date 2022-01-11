@@ -300,6 +300,7 @@ public class Column {
                 int eqSize = paraProbability.multiply(BigDecimal.valueOf(sizeWithoutNull)).setScale(0, RoundingMode.HALF_UP).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, paraData);
                 newEqConstraint2Probability.remove(paraData);
+                nullSize += eqSize;
             }
         }
         if (newEqConstraint2Probability.size() > 0) {
