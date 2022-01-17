@@ -112,9 +112,9 @@ public class PgJsonReader {
                 throw new UnsupportedOperationException();
             }
         } else {
-            if(joinFilter!=null){
+            if (joinFilter != null) {
                 indexCond = "joinFilter Cond: " + joinFilter;
-            }else {
+            } else {
                 indexCond = "Index Cond: " + indexCond;
             }
         }
@@ -140,7 +140,15 @@ public class PgJsonReader {
     }
 
     static int readRowsRemoved(StringBuilder path) {
-        double actualRows = readContext.read(path + "['Rows Removed by Filter']");
+        Object rows = readContext.read(path + "['Rows Removed by Filter']");
+        double actualRows;
+        if (rows instanceof Double temp) {
+            actualRows = temp;
+        } else if (rows instanceof Integer temp) {
+            actualRows = temp.doubleValue();
+        }else {
+            throw new UnsupportedOperationException();
+        }
         int actualLoops = readContext.read(path + "['Actual Loops']");
         return (int) Math.ceil(actualRows * actualLoops);
     }
@@ -165,7 +173,15 @@ public class PgJsonReader {
     }
 
     static int readRowCount(StringBuilder path) {
-        double actualRows = readContext.read(path + "['Actual Rows']");
+        Object rows = readContext.read(path + "['Actual Rows']");
+        double actualRows;
+        if (rows instanceof Double temp) {
+            actualRows = temp;
+        } else if (rows instanceof Integer temp) {
+            actualRows = temp.doubleValue();
+        }else {
+            throw new UnsupportedOperationException();
+        }
         int actualLoops = readContext.read(path + "['Actual Loops']");
         return (int) Math.ceil(actualRows * actualLoops);
     }
