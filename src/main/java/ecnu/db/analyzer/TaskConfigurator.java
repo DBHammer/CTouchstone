@@ -149,8 +149,8 @@ public class TaskConfigurator implements Callable<Integer> {
             case POSTGRESQL -> {
                 dbConnector = new PgConnector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new PgAnalyzer();
-                queryWriter.setDbType(DbType.postgresql);
-                queryReader.setDbType(DbType.postgresql);
+                queryWriter.setDbType(DbType.mysql);
+                queryReader.setDbType(DbType.mysql);
             }
             default -> throw new TouchstoneException("不支持的数据库类型");
         }
@@ -170,7 +170,7 @@ public class TaskConfigurator implements Callable<Integer> {
                 logger.info("表{}的列元数据信息已经load", canonicalTableName);
             } else {
                 Table table = new Table(dbConnector.getColumnMetadata(canonicalTableName),
-                        dbConnector.getTableSize(canonicalTableName), dbConnector.getPrimaryKeyList(canonicalTableName));
+                        dbConnector.getTableSize(canonicalTableName));
                 TableManager.getInstance().addSchema(canonicalTableName, table);
                 logger.info("获取表{}的列元数据信息成功", canonicalTableName);
                 logger.info("开始获取表{}的数据分布", canonicalTableName);
