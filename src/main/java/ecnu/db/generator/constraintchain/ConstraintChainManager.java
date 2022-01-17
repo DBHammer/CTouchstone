@@ -5,7 +5,6 @@ import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Table;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.schema.CannotFindSchemaException;
@@ -36,37 +35,6 @@ public class ConstraintChainManager {
 
     public static ConstraintChainManager getInstance() {
         return INSTANCE;
-    }
-
-    public void setResultDir(String resultDir) {
-        this.resultDir = resultDir;
-    }
-
-    public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
-        return CommonUtils.MAPPER.readValue(readFile(resultDir + CONSTRAINT_CHAINS_INFO), new TypeReference<>() {
-        });
-    }
-
-
-    /**
-     * 清理不影响键值填充的约束链
-     *
-     * @param query2chains query和约束链的map
-     */
-    public void cleanConstrainChains(Map<String, List<ConstraintChain>> query2chains) {
-        for (var query2ConstraintChains : query2chains.entrySet()) {
-            Iterator<ConstraintChain> constraintChainIterator = query2ConstraintChains.getValue().iterator();
-            while (constraintChainIterator.hasNext()) {
-                ConstraintChain constraintChain = constraintChainIterator.next();
-                if (constraintChain.getNodes().stream().allMatch(
-                        node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER ||
-                                (node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE &&
-                                        ((ConstraintChainAggregateNode) node).getGroupKey() == null))) {
-                    logger.info("由于没有参与Join和与键值有关的Aggregation, 移除查询{}中的约束链{}", query2ConstraintChains.getKey(), constraintChain);
-                    constraintChainIterator.remove();
-                }
-            }
-        }
     }
 
     /**
@@ -107,7 +75,7 @@ public class ConstraintChainManager {
                         String fkCol = aggregateNode.getGroupKey().get(0);
                         String[] cols = fkCol.split("\\.");
                         try {
-                            String remoteCol = TableManager.getInstance().getSchema(cols[0]+"."+cols[1]).getForeignKeys().get(fkCol);
+                            String remoteCol = TableManager.getInstance().getSchema(cols[0] + "." + cols[1]).getForeignKeys().get(fkCol);
                             aggregateNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(remoteCol);
                         } catch (CannotFindSchemaException e) {
                             e.printStackTrace();
@@ -154,6 +122,50 @@ public class ConstraintChainManager {
         return allDiffStatus;
     }
 
+    public static List<StringBuilder> generateAttRows(List<String> attColumnNames, int range) {
+        List<Column> columns = attColumnNames.stream().map(col -> ColumnManager.getInstance().getColumn(col)).toList();
+        return IntStream.range(0, range).parallel()
+                .mapToObj(
+                        rowId -> {
+                            StringBuilder row = new StringBuilder(columns.get(0).output(rowId));
+                            for (int i = 1; i < columns.size(); i++) {
+                                row.append(',').append(columns.get(i).output(rowId));
+                            }
+                            return row;
+                        }
+                ).toList();
+    }
+
+    public void setResultDir(String resultDir) {
+        this.resultDir = resultDir;
+    }
+
+    public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
+        return CommonUtils.MAPPER.readValue(readFile(resultDir + CONSTRAINT_CHAINS_INFO), new TypeReference<>() {
+        });
+    }
+
+    /**
+     * 清理不影响键值填充的约束链
+     *
+     * @param query2chains query和约束链的map
+     */
+    public void cleanConstrainChains(Map<String, List<ConstraintChain>> query2chains) {
+        for (var query2ConstraintChains : query2chains.entrySet()) {
+            Iterator<ConstraintChain> constraintChainIterator = query2ConstraintChains.getValue().iterator();
+            while (constraintChainIterator.hasNext()) {
+                ConstraintChain constraintChain = constraintChainIterator.next();
+                if (constraintChain.getNodes().stream().allMatch(
+                        node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER ||
+                                (node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE &&
+                                        ((ConstraintChainAggregateNode) node).getGroupKey() == null))) {
+                    logger.info("由于没有参与Join和与键值有关的Aggregation, 移除查询{}中的约束链{}", query2ConstraintChains.getKey(), constraintChain);
+                    constraintChainIterator.remove();
+                }
+            }
+        }
+    }
+
     /**
      * 对一组约束链进行分类
      *
@@ -183,7 +195,6 @@ public class ConstraintChainManager {
         logger.debug("含有外键约束的链有{}条，不需要推导主键信息的约束链有{}条，需要推导主键信息的约束链有{}条",
                 haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
     }
-
 
     public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
         String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
@@ -232,20 +243,6 @@ public class ConstraintChainManager {
 
     private boolean graphIsExists(File[] array, String graphName) {
         return Arrays.stream(array).map(File::getName).anyMatch(fileName -> fileName.equals(graphName));
-    }
-
-    public static List<StringBuilder> generateAttRows(List<String> attColumnNames, int range) {
-        List<Column> columns = attColumnNames.stream().map(col -> ColumnManager.getInstance().getColumn(col)).toList();
-        return IntStream.range(0, range).parallel()
-                .mapToObj(
-                        rowId -> {
-                            StringBuilder row = new StringBuilder(columns.get(0).output(rowId));
-                            for (int i = 1; i < columns.size(); i++) {
-                                row.append(',').append(columns.get(i).output(rowId));
-                            }
-                            return row;
-                        }
-                ).toList();
     }
 
     private String removeData(String graph) {

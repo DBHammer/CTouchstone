@@ -7,15 +7,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RuleTableManager {
+    private static final RuleTableManager INSTANCE = new RuleTableManager();
     private final Map<String, RuleTable> ruleTableMap = new HashMap<>();
 
-    private static final RuleTableManager INSTANCE = new RuleTableManager();
+    private RuleTableManager() {
+    }
 
     public static RuleTableManager getInstance() {
         return INSTANCE;
-    }
-
-    private RuleTableManager() {
     }
 
     public RuleTable getRuleTable(String colName) {

@@ -2,8 +2,6 @@ package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.ColumnType;
-import ecnu.db.utils.CommonUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +25,7 @@ public class Parameter {
      */
     private long data;
 
-    private ParameterType type  = ParameterType.ACTUAL;
+    private ParameterType type = ParameterType.ACTUAL;
     /**
      * 操作数
      */
@@ -42,6 +40,26 @@ public class Parameter {
     @JsonIgnore
     private boolean isSubPlan = false;
 
+    public Parameter() {
+    }
+
+    public Parameter(Integer id, String operand, String dataValue) {
+        this.id = id;
+        this.operand = operand;
+        if (operand != null) {
+            Matcher matcher = CanonicalColumnName.matcher(operand);
+            List<String> cols = new ArrayList<>();
+            if (matcher.find()) {
+                cols.add(matcher.group());
+            }
+            if (cols.size() == 1 && ColumnManager.getInstance().isDateColumn((cols.get(0)))) {
+                dataValue = dataValue.split(" ")[0];
+            }
+        }
+
+        this.dataValue = dataValue;
+    }
+
     public ParameterType getType() {
         return type;
     }
@@ -50,34 +68,14 @@ public class Parameter {
         this.type = type;
     }
 
-    public Parameter() {
-    }
-
-    public Parameter(Integer id, String operand, String dataValue) {
-        this.id = id;
-        this.operand = operand;
-        if(operand!=null){
-            Matcher matcher = CanonicalColumnName.matcher(operand);
-            List<String> cols = new ArrayList<>();
-            if(matcher.find()){
-                cols.add(matcher.group());
-            }
-            if(cols.size()==1 &&  ColumnManager.getInstance().isDateColumn((cols.get(0)))){
-                dataValue = dataValue.split(" ")[0];
-            }
-        }
-
-        this.dataValue = dataValue;
-    }
-
-    public List<String> hasOnlyOneColumn(){
-        if(operand==null){
+    public List<String> hasOnlyOneColumn() {
+        if (operand == null) {
             return null;
         }
         Matcher matcher = CanonicalColumnName.matcher(operand);
         List<String> cols = new ArrayList<>();
-        while (matcher.find()){
-           cols.add(matcher.group());
+        while (matcher.find()) {
+            cols.add(matcher.group());
         }
         return cols;
     }
@@ -95,10 +93,10 @@ public class Parameter {
     }
 
     @JsonIgnore
-    public String getRealDataValue(){
-        if(type==ParameterType.SUBSTRING){
-            return dataValue.replace("%","");
-        }else {
+    public String getRealDataValue() {
+        if (type == ParameterType.SUBSTRING) {
+            return dataValue.replace("%", "");
+        } else {
             return dataValue;
         }
     }
@@ -108,10 +106,10 @@ public class Parameter {
     }
 
     public void setDataValue(String dataValue) {
-        if(type==ParameterType.SUBSTRING){
-            dataValue = dataValue.replace("%","");
-            int length = this.dataValue.replace("%","").length();
-            dataValue = dataValue.substring(0,length);
+        if (type == ParameterType.SUBSTRING) {
+            dataValue = dataValue.replace("%", "");
+            int length = this.dataValue.replace("%", "").length();
+            dataValue = dataValue.substring(0, length);
         }
         this.dataValue = dataValue;
     }
@@ -149,7 +147,7 @@ public class Parameter {
         isSubPlan = subPlan;
     }
 
-    public enum ParameterType{
+    public enum ParameterType {
         ACTUAL,
         VIRTUAL,
         LIKE,

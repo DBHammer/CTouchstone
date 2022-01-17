@@ -22,19 +22,17 @@ public class TableManager {
     public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
     private static final TableManager INSTANCE = new TableManager();
-
-    public LinkedHashMap<String, Table> getSchemas() {
-        return schemas;
-    }
-
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
     private File schemaInfoPath;
-
     public TableManager() {
     }
 
     public static TableManager getInstance() {
         return INSTANCE;
+    }
+
+    public LinkedHashMap<String, Table> getSchemas() {
+        return schemas;
     }
 
     public void setResultDir(String resultDir) {
@@ -72,7 +70,7 @@ public class TableManager {
         String[] pkCols = pkCol.split("\\.");
         String pkTable = pkCols[0] + "." + pkCols[1];
         double scale = CommonUtils.CardinalityScale;
-        if(tableName.equals("public.orders")){
+        if (tableName.equals("public.orders")) {
             scale = 1.5;
         }
         return (int) (scale * schemas.get(tableName).getTableSize() / schemas.get(pkTable).getTableSize());

@@ -13,23 +13,14 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class ConstraintChainAggregateNode extends ConstraintChainNode {
-    private List<String> groupKey;
-    private BigDecimal aggProbability;
-    ConstraintChainFilterNode aggFilter;
     private final Logger logger = LoggerFactory.getLogger(ConstraintChainAggregateNode.class);
-
     @JsonIgnore
     public int joinStatusIndex;
     @JsonIgnore
     public int joinStatusLocation;
-
-    public BigDecimal getAggProbability() {
-        return aggProbability;
-    }
-
-    public void setAggProbability(BigDecimal aggProbability) {
-        this.aggProbability = aggProbability.stripTrailingZeros();
-    }
+    ConstraintChainFilterNode aggFilter;
+    private List<String> groupKey;
+    private BigDecimal aggProbability;
 
     public ConstraintChainAggregateNode(List<String> groupKeys, BigDecimal aggProbability) {
         super(ConstraintChainNodeType.AGGREGATE);
@@ -39,6 +30,14 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
 
     public ConstraintChainAggregateNode() {
         super(ConstraintChainNodeType.AGGREGATE);
+    }
+
+    public BigDecimal getAggProbability() {
+        return aggProbability;
+    }
+
+    public void setAggProbability(BigDecimal aggProbability) {
+        this.aggProbability = aggProbability.stripTrailingZeros();
     }
 
     public boolean removeAgg() {

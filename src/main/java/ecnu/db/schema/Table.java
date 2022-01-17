@@ -113,11 +113,6 @@ public class Table {
         return String.join(",", primaryKeys);
     }
 
-    @JsonIgnore
-    public List<String> getPrimaryKeysList() {
-        return primaryKeys;
-    }
-
     public void setPrimaryKeys(List<String> primaryKeys) {
         this.primaryKeys = primaryKeys;
     }
@@ -137,6 +132,11 @@ public class Table {
                 throw new TouchstoneException("query中使用了多列主键的部分主键");
             }
         }
+    }
+
+    @JsonIgnore
+    public List<String> getPrimaryKeysList() {
+        return primaryKeys;
     }
 
     public void toSQL(DbConnector dbConnector, String tableName) throws SQLException, TouchstoneException {

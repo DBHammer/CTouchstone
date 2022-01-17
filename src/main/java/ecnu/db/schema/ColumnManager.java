@@ -266,7 +266,7 @@ public class ColumnManager {
         }
     }
 
-    public void prepareParameterInit(Collection<String> columnNames, int size){
+    public void prepareParameterInit(Collection<String> columnNames, int size) {
         columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
     }
 

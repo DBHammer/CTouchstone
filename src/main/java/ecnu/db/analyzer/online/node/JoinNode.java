@@ -11,7 +11,7 @@ public class JoinNode extends ExecutionNode {
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
      */
     private int joinTag = Integer.MIN_VALUE;
-    private BigDecimal pkDistinctProbability;
+    private final BigDecimal pkDistinctProbability;
     private long rowsRemoveByFilterAfterJoin;
     private String indexJoinFilter;
 

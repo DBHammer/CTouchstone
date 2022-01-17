@@ -146,7 +146,7 @@ public class PgJsonReader {
             actualRows = temp;
         } else if (rows instanceof Integer temp) {
             actualRows = temp.doubleValue();
-        }else {
+        } else {
             throw new UnsupportedOperationException();
         }
         int actualLoops = readContext.read(path + "['Actual Loops']");
@@ -179,7 +179,7 @@ public class PgJsonReader {
             actualRows = temp;
         } else if (rows instanceof Integer temp) {
             actualRows = temp.doubleValue();
-        }else {
+        } else {
             throw new UnsupportedOperationException();
         }
         int actualLoops = readContext.read(path + "['Actual Loops']");

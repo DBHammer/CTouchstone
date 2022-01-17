@@ -25,15 +25,6 @@ public class Column {
     private final HashSet<Integer> likeParameterId = new HashSet<>();
     private ColumnType columnType;
     private long min;
-
-    public String getOriginalType() {
-        return originalType;
-    }
-
-    public void setOriginalType(String originalType) {
-        this.originalType = originalType;
-    }
-
     private String originalType;
     private long range;
     private long specialValue;
@@ -58,12 +49,18 @@ public class Column {
     private boolean columnData2ComputeData = false;
     @JsonIgnore
     private double[] computeData;
-
     public Column() {
     }
-
     public Column(ColumnType columnType) {
         this.columnType = columnType;
+    }
+
+    public String getOriginalType() {
+        return originalType;
+    }
+
+    public void setOriginalType(String originalType) {
+        this.originalType = originalType;
     }
 
     public void initStringTemplate() {
@@ -312,7 +309,7 @@ public class Column {
         //赋值随机数据
         int i = 0;
         long lastBound = 0;
-        while (eqConstraint2Probability.containsKey(lastBound)){
+        while (eqConstraint2Probability.containsKey(lastBound)) {
             lastBound++;
         }
         bucketBound2FreeSpace.sort(Map.Entry.comparingByKey());
@@ -334,7 +331,7 @@ public class Column {
                     randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
                 }
                 lastBound = bound;
-                while (eqConstraint2Probability.containsKey(lastBound)){
+                while (eqConstraint2Probability.containsKey(lastBound)) {
                     lastBound++;
                 }
                 System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);

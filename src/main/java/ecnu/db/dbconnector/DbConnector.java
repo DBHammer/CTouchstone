@@ -78,13 +78,13 @@ public abstract class DbConnector {
                     new Column(ColumnType.getColumnType(rs.getInt("DATA_TYPE"))));
             String originalType;
             switch (rs.getInt("DATA_TYPE")) {
-                case Types.CHAR -> originalType = "CHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
-                case Types.VARCHAR -> originalType = "VARCHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
-                case Types.INTEGER -> originalType = "INTEGER" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
-                case Types.DATE -> originalType = "DATE" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
-                case Types.BIGINT -> originalType = "BIGINT"+ " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
-                case Types.TIMESTAMP -> originalType = "TIMESTAMP" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
-                case Types.NUMERIC -> originalType = "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
+                case Types.CHAR -> originalType = "CHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
+                case Types.VARCHAR -> originalType = "VARCHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
+                case Types.INTEGER -> originalType = "INTEGER" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
+                case Types.DATE -> originalType = "DATE" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
+                case Types.BIGINT -> originalType = "BIGINT" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
+                case Types.TIMESTAMP -> originalType = "TIMESTAMP" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
+                case Types.NUMERIC -> originalType = "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
                 default -> throw new UnsupportedOperationException();
             }
             ColumnManager.getInstance().getColumn(canonicalColumnName).setOriginalType(originalType);
@@ -126,7 +126,7 @@ public abstract class DbConnector {
 
     public List<String[]> explainQuery(String sql) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
-            String query =String.format(getExplainFormat(), sql);
+            String query = String.format(getExplainFormat(), sql);
             ResultSet rs = stmt.executeQuery(query);
             ArrayList<String[]> result = new ArrayList<>();
             while (rs.next()) {

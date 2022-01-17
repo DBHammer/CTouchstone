@@ -5,18 +5,14 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class RuleTable {
     double scaleFactor = 1;
+    Map<JoinStatus, List<Map.Entry<Long, Long>>> rules = new HashMap<>();
+    Map<Integer, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
+    Map<Integer, Long> mergedSize = new HashMap<>();
+    Map<Integer, Long> ruleCounter = new HashMap<>();
 
     public void setScaleFactor(double scaleFactor) {
         this.scaleFactor = scaleFactor;
     }
-
-    Map<JoinStatus, List<Map.Entry<Long, Long>>> rules = new HashMap<>();
-
-    Map<Integer, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
-
-    Map<Integer, Long> mergedSize = new HashMap<>();
-
-    Map<Integer, Long> ruleCounter = new HashMap<>();
 
     public Map<Integer, Long> getRuleCounter() {
         return ruleCounter;

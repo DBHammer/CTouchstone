@@ -155,11 +155,11 @@ public class QueryWriter {
                     conflictArgs.add(parameter);
                 }
             } else {
-                if(parameter.isSubPlan()){
+                if (parameter.isSubPlan()) {
                     var subplanranges = matches.stream().findFirst().get().range;
-                    var subplanrange = subplanranges.get(subplanranges.size()-1);
+                    var subplanrange = subplanranges.get(subplanranges.size() - 1);
                     replaceParams.put(subplanrange.getKey(), new AbstractMap.SimpleEntry<>(parameter, subplanrange));
-                }else {
+                } else {
                     var pair = matches.stream().findFirst().get().range;
                     for (Map.Entry<Integer, Integer> range : pair) {
                         replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));

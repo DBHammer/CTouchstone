@@ -15,14 +15,13 @@ import java.util.stream.IntStream;
 
 public class ConstructCpModel {
     static Logger logger = LoggerFactory.getLogger(ConstructCpModel.class);
+    private static BigDecimal pkRange;
+    private static CpModel model;
+    private static IntVar[] vars;
 
     static {
         Loader.loadNativeLibraries();
     }
-
-    private static BigDecimal pkRange;
-    private static CpModel model;
-    private static IntVar[] vars;
 
     private ConstructCpModel() {
     }
