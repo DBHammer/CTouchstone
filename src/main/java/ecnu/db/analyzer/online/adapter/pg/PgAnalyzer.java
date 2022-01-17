@@ -85,17 +85,17 @@ public class PgAnalyzer extends AbstractAnalyzer {
             return null;
         }
         // todo 不一定是主键
-        if (node.getType() == ExecutionNodeType.aggregate) {
+        if (node.getType() == ExecutionNodeType.AGGREGATE) {
             assert leftNode != null;
-            if (leftNode.getType() == ExecutionNodeType.join &&
+            if (leftNode.getType() == ExecutionNodeType.JOIN &&
                     ((JoinNode) leftNode).getPkDistinctSize().compareTo(BigDecimal.ZERO) > 0) {
                 logger.debug("跳过外连接后的主键聚集");
                 node.setInfo(null);
             }
         }
-        if (node.getType() == ExecutionNodeType.join) {
+        if (node.getType() == ExecutionNodeType.JOIN) {
             assert rightNode != null;
-            if (rightNode.getType() == ExecutionNodeType.filter && rightNode.getInfo() != null && ((FilterNode) rightNode).isIndexScan()) {
+            if (rightNode.getType() == ExecutionNodeType.FILTER && rightNode.getInfo() != null && ((FilterNode) rightNode).isIndexScan()) {
                 long rowsRemoveByFilterAfterJoin = PgJsonReader.readRowsRemoved(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath)));
                 ((JoinNode) node).setRowsRemoveByFilterAfterJoin(rowsRemoveByFilterAfterJoin);
                 String indexJoinFilter = PgJsonReader.readFilterInfo(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath)));

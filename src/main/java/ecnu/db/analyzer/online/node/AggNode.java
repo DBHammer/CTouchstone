@@ -7,7 +7,7 @@ public class AggNode extends ExecutionNode {
     private FilterNode aggFilter;
 
     public AggNode(String id, int outputRows, String info) {
-        super(id, ExecutionNodeType.aggregate, outputRows, info);
+        super(id, ExecutionNodeType.AGGREGATE, outputRows, info);
     }
 
     public FilterNode getAggFilter() {

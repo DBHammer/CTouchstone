@@ -103,9 +103,9 @@ public class QueryAnalyzer {
      */
     private long analyzeNode(ExecutionNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException, SQLException {
         return switch (node.getType()) {
-            case join -> analyzeJoinNode((JoinNode) node, constraintChain, lastNodeLineCount);
-            case filter -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
-            case aggregate -> analyzeAggregateNode((AggNode) node, constraintChain, lastNodeLineCount);
+            case JOIN -> analyzeJoinNode((JoinNode) node, constraintChain, lastNodeLineCount);
+            case FILTER -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
+            case AGGREGATE -> analyzeAggregateNode((AggNode) node, constraintChain, lastNodeLineCount);
         };
     }
 
@@ -207,7 +207,7 @@ public class QueryAnalyzer {
             BigDecimal probability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
             // deal with index join
-            if (node.getRightNode().getType() == ExecutionNodeType.filter && node.getRightNode().getInfo() != null &&
+            if (node.getRightNode().getType() == ExecutionNodeType.FILTER && node.getRightNode().getInfo() != null &&
                     ((FilterNode) node.getRightNode()).isIndexScan() && node.getRightNode().getTableName().equals(localTable)) {
                 long tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
                 long rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
@@ -248,7 +248,7 @@ public class QueryAnalyzer {
         ConstraintChain constraintChain;
         long lastNodeLineCount;
         //分析约束链的第一个node
-        if (headNode.getType() == ExecutionNodeType.filter) {
+        if (headNode.getType() == ExecutionNodeType.FILTER) {
             constraintChain = new ConstraintChain(headNode.getTableName());
             FilterNode filterNode = (FilterNode) headNode;
             if (filterNode.getInfo() != null) {
