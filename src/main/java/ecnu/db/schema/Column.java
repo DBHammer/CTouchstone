@@ -168,8 +168,7 @@ public class Column {
     public void insertUniVarProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         switch (operator) {
             case NE, NOT_LIKE, NOT_IN -> eqRequest2ParameterIds.computeIfAbsent(BigDecimal.ONE.subtract(probability), i -> new LinkedList<>()).add(parameters.get(0));
-            case EQ, LIKE -> eqRequest2ParameterIds.computeIfAbsent(probability, i -> new LinkedList<>()).add(parameters.get(0));
-            case IN -> insertEqualProbability(probability, parameters);
+            case EQ, LIKE, IN -> insertEqualProbability(probability, parameters);
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
         }
