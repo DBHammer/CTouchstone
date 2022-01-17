@@ -21,12 +21,13 @@ public class Table {
     private int joinTag = 0;
 
     public Table() {
+        this.primaryKeys = new ArrayList<>();
     }
 
-    public Table(List<String> canonicalColumnNames, long tableSize, List<String> primaryKeys) {
+    public Table(List<String> canonicalColumnNames, long tableSize) {
         this.canonicalColumnNames = canonicalColumnNames;
         this.tableSize = tableSize;
-        this.primaryKeys = primaryKeys;
+        this.primaryKeys = new ArrayList<>();
     }
 
     public List<String> getCanonicalColumnNames() {
@@ -122,8 +123,8 @@ public class Table {
     }
 
     public synchronized void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
-        if (this.primaryKeys == null) {
-            this.primaryKeys = Arrays.asList(primaryKeys.split(","));
+        if (this.primaryKeys.isEmpty()) {
+            this.primaryKeys.addAll(List.of(primaryKeys.split(",")));
         } else {
             Set<String> newKeys = new HashSet<>(Arrays.asList(primaryKeys.split(",")));
             Set<String> keys = new HashSet<>(this.primaryKeys);

@@ -65,6 +65,7 @@ public abstract class DbConnector {
 
     protected abstract String[] preExecutionCommands();
 
+    // todo 简化逻辑
     public List<String> getColumnMetadata(String canonicalTableName) throws SQLException, TouchstoneException {
         String[] schemaAndTable = canonicalTableName.split("\\.");
         List<String> columnNames = new ArrayList<>();
@@ -80,7 +81,6 @@ public abstract class DbConnector {
                 case Types.CHAR -> originalType = "CHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.VARCHAR -> originalType = "VARCHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.INTEGER -> originalType = "INTEGER" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
-                //case Types.DECIMAL -> originalType = "DECIMAL" + rs.getInt("DECIMAL_DIGITS") + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.DATE -> originalType = "DATE" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.BIGINT -> originalType = "BIGINT"+ " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
                 case Types.TIMESTAMP -> originalType = "TIMESTAMP" + " " + (rs.getInt("NULLABLE")==0?"NOT NULL":"DEFAULT NULL");
@@ -93,17 +93,6 @@ public abstract class DbConnector {
             }
         }
         return columnNames;
-    }
-
-    public List<String> getPrimaryKeyList(String canonicalTableName) throws SQLException {
-        String[] schemaAndTable = canonicalTableName.split("\\.");
-        List<String> keys = new ArrayList<>();
-        DatabaseMetaData databaseMetaData = conn.getMetaData();
-        ResultSet rs = databaseMetaData.getPrimaryKeys(schemaAndTable[0], null, schemaAndTable[1]);
-        while (rs.next()) {
-            keys.add(canonicalTableName + "." + rs.getString("COLUMN_NAME").toLowerCase());
-        }
-        return keys;
     }
 
     public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames)
