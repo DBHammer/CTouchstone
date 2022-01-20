@@ -1,6 +1,7 @@
 package ecnu.db.analyzer;
 
 import com.alibaba.druid.DbType;
+import ecnu.db.LanguageManager;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.QueryAnalyzer;
 import ecnu.db.analyzer.online.adapter.pg.PgAnalyzer;
@@ -38,7 +39,8 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.MAPPER;
-
+import java.util.Locale;
+import java.util.ResourceBundle;
 /**
  * @author alan
  */
@@ -50,7 +52,7 @@ public class TaskConfigurator implements Callable<Integer> {
     private final Logger logger = LoggerFactory.getLogger(TaskConfigurator.class);
     @CommandLine.ArgGroup(exclusive = false, multiplicity = "1")
     private TaskConfiguratorConfig taskConfiguratorConfig;
-
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     /**
      * 1. 对于数值型的filter, 首先计算单元的filter, 然后计算多值的filter，对于bet操作，先记录阈值，然后选择合适的区间插入，
      * 等值约束也需选择合适的区间每个filter operation内部保存自己实例化后的结果
@@ -163,35 +165,35 @@ public class TaskConfigurator implements Callable<Integer> {
             throws IOException, TouchstoneException, SQLException {
         List<File> queryFiles = queryReader.loadQueryFiles();
         List<String> tableNames = queryReader.fetchTableNames(queryFiles);
-        logger.info("获取表名成功，表名为:{}", tableNames);
+        logger.info(rb.getString("GetTableNameSuccessfully"), tableNames);
         for (String canonicalTableName : tableNames) {
-            logger.info("开始获取表{}的列元数据信息", canonicalTableName);
+            logger.info(rb.getString("StartGettingColumnMetadata"), canonicalTableName);
             if (TableManager.getInstance().containSchema(canonicalTableName)) {
-                logger.info("表{}的列元数据信息已经load", canonicalTableName);
+                logger.info(rb.getString("ColumnMetadataHasLoaded"), canonicalTableName);
             } else {
                 Table table = new Table(dbConnector.getColumnMetadata(canonicalTableName),
                         dbConnector.getTableSize(canonicalTableName));
                 TableManager.getInstance().addSchema(canonicalTableName, table);
-                logger.info("获取表{}的列元数据信息成功", canonicalTableName);
-                logger.info("开始获取表{}的数据分布", canonicalTableName);
+                logger.info(rb.getString("GetColumnMetadataSuccessfully"), canonicalTableName);
+                logger.info(rb.getString("StartGettingTheDataDistributionOfTable"), canonicalTableName);
                 ColumnManager.getInstance().setDataRangeBySqlResult(table.getCanonicalColumnNames(),
                         dbConnector.getDataRange(canonicalTableName, table.getCanonicalColumnNames()));
-                logger.info("获取表{}的数据分布成功", canonicalTableName);
+                logger.info(rb.getString("GetTheDataDistributionOfTableSuccessfully"), canonicalTableName);
             }
 
         }
-        logger.info("获取表结构和数据分布成功");
-        logger.info("开始持久化表结构信息");
+        logger.info(rb.getString("ObtainTableStructureAndDataDistributionSuccessfully"));
+        logger.info(rb.getString("StartPersistingTableStructureInformation"));
         TableManager.getInstance().storeSchemaInfo();
-        logger.info("持久化表结构信息成功");
-        logger.info("开始持久化数据分布信息");
+        logger.info(rb.getString("PersistenceOfTableStructureInformationSucceeded"));
+        logger.info(rb.getString("StartPersistingDataDistributionInformation"));
         ColumnManager.getInstance().storeColumnMetaData();
-        logger.info("持久化数据分布信息成功");
+        logger.info(rb.getString("PersistentDataDistributionInformationSucceeded"));
         return queryFiles;
     }
 
     public Map<String, List<ConstraintChain>> checkQueryConstraintChains(Map<String, List<ConstraintChain>> query2constraintChains) {
-        logger.info("开始清理查询计划");
+        logger.info(rb.getString("StartCleaningUpTheQueryPlan"));
         for (Map.Entry<String, List<ConstraintChain>> query2constrainChain : query2constraintChains.entrySet()) {
             List<ConstraintChain> constraintChains = query2constrainChain.getValue();
             List<ConstraintChain> reduceConstraintChains = new LinkedList<>();
@@ -208,21 +210,21 @@ public class TaskConfigurator implements Callable<Integer> {
                             .map(ConstraintChainAggregateNode.class::cast)
                             .filter(ConstraintChainAggregateNode::removeAgg).toList();
                     if (!aggregateNodes.isEmpty()) {
-                        logger.info("{} remove some aggregation node on attributes {}", query2constrainChain.getKey(), aggregateNodes);
+                        logger.info(rb.getString("RemoveSomeAggregationNodeOnAttributes"), query2constrainChain.getKey(), aggregateNodes);
                         constraintChain.getNodes().removeAll(aggregateNodes);
                     }
                 }
             }
             constraintChains.removeAll(reduceConstraintChains);
             if (!reduceConstraintChains.isEmpty()) {
-                logger.error("remove some chains with filter on keys from {}", query2constrainChain.getKey());
+                logger.error(rb.getString("RemoveSomeChainsWithFilterOnKeysFrom"), query2constrainChain.getKey());
                 for (ConstraintChain reduceConstraintChain : reduceConstraintChains) {
                     logger.error(reduceConstraintChain.toString());
                 }
             }
             constraintChains.removeIf(constraintChain -> constraintChain.getNodes().isEmpty());
         }
-        logger.info("清理查询计划完成");
+        logger.info(rb.getString("CleanupQueryPlanCompleted"));
         return query2constraintChains;
     }
 
@@ -231,7 +233,7 @@ public class TaskConfigurator implements Callable<Integer> {
         List<File> queryFiles = querySchemaMetadataAndColumnMetadata(queryReader, dbConnector);
         Map<String, List<ConstraintChain>> query2constraintChains = new HashMap<>();
         Map<String, String> queryName2QueryTemplates = new HashMap<>();
-        logger.info("开始获取查询计划");
+        logger.info(rb.getString("StartGettingQueryPlans"));
         queryFiles = queryFiles.stream().filter(File::isFile)
                 .filter(queryFile -> queryFile.getName().endsWith(SQL_FILE_POSTFIX)).toList();
         queryFiles = new LinkedList<>(queryFiles);
@@ -241,7 +243,7 @@ public class TaskConfigurator implements Callable<Integer> {
             for (int i = 0; i < queries.size(); i++) {
                 String query = queries.get(i);
                 String queryCanonicalName = queryFile.getName().replace(SQL_FILE_POSTFIX, "_" + (i + 1) + SQL_FILE_POSTFIX);
-                logger.info("开始获取{}", queryCanonicalName);
+                logger.info(rb.getString("StartGetting"), queryCanonicalName);
                 queryAnalyzer.setAliasDic(queryReader.getTableAlias(query));
                 List<Parameter> parameters = new ArrayList<>();
                 List<List<ConstraintChain>> constraintChainsOfMultiplePlans = queryAnalyzer.extractQuery(query);
@@ -257,24 +259,24 @@ public class TaskConfigurator implements Callable<Integer> {
                 queryName2QueryTemplates.put(queryCanonicalName, queryWriter.templatizeSql(queryCanonicalName, query, parameters));
             }
         }
-        logger.info("获取查询计划完成");
-        logger.info("开始持久化表参照信息");
+        logger.info(rb.getString("GetQueryPlanDone"));
+        logger.info(rb.getString("StartPersistingTableReferenceInformation"));
         TableManager.getInstance().storeSchemaInfo();
-        logger.info("持久化表参照信息成功");
+        logger.info(rb.getString("PersistentTableReferenceInformationSucceeded"));
         query2constraintChains = checkQueryConstraintChains(query2constraintChains);
-        logger.info("开始实例化查询计划");
+        logger.info(rb.getString("StartInstantiatingTheQueryPlan"));
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
         Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
-        logger.info("实例化查询计划成功, 实例化的参数为{}", id2Parameter.values());
-        logger.info("开始持久化查询计划与新的数据分布");
+        logger.info(rb.getString("TheInstantiatedQueryPlanSucceed"), id2Parameter.values());
+        logger.info(rb.getString("StartPersistentQueryPlanWithNewDataDistribution"));
         ConstraintChainManager.getInstance().storeConstraintChain(query2constraintChains);
         ColumnManager.getInstance().storeColumnDistribution();
-        logger.info("持久化查询计划完成");
-        logger.info("开始填充查询模版");
+        logger.info(rb.getString("PersistentQueryPlanCompleted"));
+        logger.info(rb.getString("StartPopulatingTheQueryTemplate"));
         queryWriter.writeQuery(queryName2QueryTemplates, id2Parameter);
-        logger.info("填充查询模版完成");
+        logger.info(rb.getString("FillInTheQueryTemplateComplete"));
         if (id2Parameter.size() > 0) {
-            logger.info("未被成功替换的参数如下{}", id2Parameter.values());
+            logger.info(rb.getString("TheParametersThatWereNotSuccessfullyReplaced"), id2Parameter.values());
         }
     }
 
