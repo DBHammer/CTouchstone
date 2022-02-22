@@ -18,7 +18,7 @@
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
-            <version>2.6.0</version>
+            <version>2.7.0</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -63,7 +63,7 @@
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>4.6.2</version>
+            <version>4.6.3</version>
         </dependency>
 
         <!--query plan parser libs-->
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.27</version>
+            <version>8.0.28</version>
             <exclusions>
                 <exclusion>
                     <artifactId>protobuf-java</artifactId>
@@ -90,7 +90,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.3.1</version>
+            <version>42.3.3</version>
         </dependency>
 
         <dependency>
@@ -130,7 +130,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>2.0.206</version>
+            <version>2.1.210</version>
         </dependency>
     </dependencies>
 
@@ -139,7 +139,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.10.0</version>
                 <configuration>
                     <source>17</source>
                     <target>17</target>
