@@ -144,33 +144,23 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
 
     private ExecutionNode getFilterNode(StringBuilder path, long rowCount) throws CannotFindSchemaException {
-        if (PgJsonReader.readJoinFilter(path) != null) {
-            rowCount += PgJsonReader.readRowsRemovedByJoinFilter(path);
-        }
         String planId = path.toString();
         String filterInfo = PgJsonReader.readFilterInfo(path);
-        if (filterInfo != null) {
-            if (filterInfo.equals("(NOT (hashed SubPlan 1))")) {
-                return transferFilter2AntiJoin(path, rowCount);
-            } else {
-                String tableName = PgJsonReader.readTableName(path.toString());
-                aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
-                FilterNode node = new FilterNode(planId, rowCount, transColumnName(filterInfo));
-                node.setTableName(tableName);
-                if (nodeTypeRef.isIndexScanNode(PgJsonReader.readNodeType(path))) {
+        if ("(NOT (hashed SubPlan 1))".equals(filterInfo)) {
+            return transferFilter2AntiJoin(path, rowCount);
+        } else {
+            String tableName = PgJsonReader.readTableName(path.toString());
+            aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
+            FilterNode node = new FilterNode(planId, rowCount, transColumnName(filterInfo));
+            node.setTableName(tableName);
+            if (nodeTypeRef.isIndexScanNode(PgJsonReader.readNodeType(path))) {
+                if (filterInfo == null) {
+                    node.setOutputRows(TableManager.getInstance().getTableSize(tableName));
+                } else {
                     node.setIndexScan(true);
                     node.setFilterInfoWithQuote(transColumnName(removeRedundancy(filterInfo, true)));
                 }
-                return node;
             }
-        } else {
-            String tableName = PgJsonReader.readTableName(path.toString());
-            if (nodeTypeRef.isIndexScanNode(PgJsonReader.readNodeType(path))) {
-                rowCount = TableManager.getInstance().getTableSize(tableName);
-            }
-            aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
-            ExecutionNode node = new FilterNode(planId, rowCount, null);
-            node.setTableName(tableName);
             return node;
         }
     }
