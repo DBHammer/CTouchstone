@@ -198,47 +198,39 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (PgJsonReader.isOutJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
-            int joinRowCount = PgJsonReader.readRowCount(path);
             int pkRowCount = PgJsonReader.readRowCount(rightChildPath);
             int fkRowCount = PgJsonReader.readRowCount(leftChildPath);
-            rowCount = fkRowCount;
-            pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - joinRowCount)
+            pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - rowCount)
                     .divide(BigDecimal.valueOf(fkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
-        }
-        boolean isSemiJoin = PgJsonReader.isSemiJoin(path);
-        if (PgJsonReader.isAntiJoin(path)) {
+            rowCount = fkRowCount;
+        } else if (PgJsonReader.isAntiJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
-            int pkRowCount = PgJsonReader.readRowCount(leftChildPath);
-            rowCount = pkRowCount - rowCount;
+            rowCount = PgJsonReader.readRowCount(leftChildPath) - rowCount;
         }
-        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), isSemiJoin, pkDistinctProbability);
+        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), PgJsonReader.isSemiJoin(path), pkDistinctProbability);
     }
 
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
-        FilterNode aggFilter = null;
-        String aggFilterInfo = PgJsonReader.readFilterInfo(path);
-        if (aggFilterInfo == null) {
-            String subPlanIndex = PgJsonReader.readSubPlanIndex(path);
-            if (subPlanIndex != null) {
-                aggFilterInfo = "(" + removeRedundancy(PgJsonReader.readOutput(path).get(0), false) + "=" + subPlanIndex + ")";
-                aggFilter = new FilterNode(path.toString(), 1, transColumnName(aggFilterInfo));
-            }
-        } else {
-            aggFilter = new FilterNode(path.toString(), rowCount, transColumnName(aggFilterInfo));
-            rowCount += PgJsonReader.readRowsRemoved(path);
-        }
-
         List<String> groupKey = PgJsonReader.readGroupKey(path);
         String groupKeyInfo = null;
         String tableName = null;
+        String aggFilterInfo = PgJsonReader.readFilterInfo(path);
+        FilterNode aggFilter = null;
         if (groupKey != null) {
             //todo multiple table name
             groupKeyInfo = groupKey.stream().map(this::transColumnName).collect(Collectors.joining(";"));
             tableName = aliasDic.get(groupKey.get(0).split("\\.")[0]);
-        } else if (aggFilter == null) {
-            logger.debug("跳过无Group Key和过滤条件的聚集算子");
+            if (aggFilterInfo != null) {
+                aggFilter = new FilterNode(path.toString(), rowCount, transColumnName(aggFilterInfo));
+                rowCount += PgJsonReader.readRowsRemoved(path);
+            }
         } else {
-            tableName = getTableNameFromOutput(path);
+            String subPlanIndex = PgJsonReader.readSubPlanIndex(path);
+            if (aggFilterInfo == null && subPlanIndex != null) {
+                aggFilterInfo = "(" + removeRedundancy(PgJsonReader.readOutput(path).get(0), false) + "=" + subPlanIndex + ")";
+                aggFilter = new FilterNode(path.toString(), 1, transColumnName(aggFilterInfo));
+                tableName = getTableNameFromOutput(path);
+            }
         }
         AggNode node = new AggNode(path.toString(), rowCount, groupKeyInfo);
         node.setTableName(tableName);
@@ -297,6 +289,9 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     public String transColumnName(String filterInfo) {
+        if (filterInfo == null) {
+            return null;
+        }
         Matcher m = CanonicalColumnName.matcher(filterInfo);
         StringBuilder filter = new StringBuilder();
         while (m.find()) {
