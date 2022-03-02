@@ -72,24 +72,30 @@ public class QueryAnalyzer {
         if (TableManager.getInstance().isRefTable(pkTable, pkCol, fkTable + "." + fkCol)) {
             return false;
         }
-        if (!pkCol.contains(",")) {
-            if (ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol) ==
-                    ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol)) {
-                return TableManager.getInstance().getTableSize(pkTable) < TableManager.getInstance().getTableSize(fkTable);
-            } else {
-                int pkTableNdv = ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol);
-                int fkTableNdv = ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
-                return pkTableNdv > fkTableNdv;
-            }
+        int leftTableNdv;
+        int rightTableNdv;
+        if (pkCol.contains(",")) {
+            leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
+            rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
         } else {
-            int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
-            int rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
-            if (leftTableNdv == rightTableNdv) {
-                return TableManager.getInstance().getTableSize(pkTable) < TableManager.getInstance().getTableSize(fkTable);
-            } else {
-                return leftTableNdv > rightTableNdv;
-            }
+            leftTableNdv = ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol);
+            rightTableNdv = ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
         }
+        long leftTableSize = TableManager.getInstance().getTableSize(pkTable);
+        long rightTableSize = TableManager.getInstance().getTableSize(fkTable);
+        boolean isPrimaryKey;
+        if (leftTableNdv == rightTableNdv) {
+            if (leftTableSize == rightTableSize) {
+                throw new TouchstoneException("两个表无法区分主外键");
+            }
+            isPrimaryKey = leftTableSize < rightTableSize;
+        } else {
+            isPrimaryKey = leftTableNdv > rightTableNdv;
+        }
+        if ((isPrimaryKey && leftTableSize > leftTableNdv) || (!isPrimaryKey && rightTableSize > rightTableNdv)) {
+            throw new TouchstoneException("主键表的主键信息非unique");
+        }
+        return isPrimaryKey;
     }
 
     /**
