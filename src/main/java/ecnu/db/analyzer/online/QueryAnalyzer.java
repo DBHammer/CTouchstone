@@ -215,10 +215,22 @@ public class QueryAnalyzer {
             BigDecimal probability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
             // deal with index join
+            String leftTable = null;
+            String rightTable = null;
+            ExecutionNode childNode = null;
+            if (node.getLeftNode().getType() == ExecutionNodeType.FILTER && node.getLeftNode().getInfo() != null &&
+                    ((FilterNode) node.getLeftNode()).isIndexScan()) {
+                leftTable = node.getLeftNode().getTableName();
+                childNode = node.getLeftNode();
+            }
             if (node.getRightNode().getType() == ExecutionNodeType.FILTER && node.getRightNode().getInfo() != null &&
-                    ((FilterNode) node.getRightNode()).isIndexScan() && node.getRightNode().getTableName().equals(localTable)) {
-                long tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
-                long rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
+                    ((FilterNode) node.getRightNode()).isIndexScan()) {
+                rightTable = node.getRightNode().getTableName();
+                childNode = node.getRightNode();
+            }
+            if ((leftTable!=null&&leftTable.equals(localTable))||(rightTable!=null&&rightTable.equals(localTable))) {
+                long tableSize = TableManager.getInstance().getTableSize(childNode.getTableName());
+                long rowsRemovedByScanFilter = tableSize - childNode.getOutputRows();
                 BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
