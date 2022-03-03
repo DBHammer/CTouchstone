@@ -154,7 +154,7 @@ public class TaskConfigurator implements Callable<Integer> {
                 queryWriter.setDbType(DbType.mysql);
                 queryReader.setDbType(DbType.mysql);
             }
-            default -> throw new TouchstoneException("不支持的数据库类型");
+            default -> throw new TouchstoneException(rb.getString("UnsupportedDatabaseType"));
         }
         QueryAnalyzer analyzer = new QueryAnalyzer(abstractAnalyzer, dbConnector);
         extract(dbConnector, analyzer, queryReader, queryWriter, config.getSampleSize());

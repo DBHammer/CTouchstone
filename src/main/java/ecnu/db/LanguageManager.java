@@ -6,7 +6,7 @@ import java.util.ResourceBundle;
 
 public class LanguageManager {
     //private final Locale lc = Locale.getDefault();
-    private final Locale lc = new Locale("en", "US");
+    private final Locale lc = new Locale("zh", "CN");
     private final ResourceBundle rb = ResourceBundle.getBundle("messageResource", lc);
     private static final LanguageManager INSTANCE = new LanguageManager();
     public static LanguageManager getInstance() {

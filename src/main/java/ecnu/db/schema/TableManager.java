@@ -1,6 +1,7 @@
 package ecnu.db.schema;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import ecnu.db.LanguageManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.schema.CannotFindSchemaException;
@@ -24,6 +25,7 @@ public class TableManager {
     private static final TableManager INSTANCE = new TableManager();
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
     private File schemaInfoPath;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     public TableManager() {
     }
 
@@ -115,7 +117,7 @@ public class TableManager {
 
 
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
-        logger.debug("添加参照依赖： {}.{} 参照 {}.{}", localTable, localColumns, refTable, refColumns);
+        logger.debug(rb.getString("AddReferenceDependencies"), localTable, localColumns, refTable, refColumns);
         getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
     }
 

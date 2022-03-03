@@ -90,7 +90,7 @@ public class ExecutionNode {
         return outputRows;
     }
 
-    public void setOutputRows(int outputRows) {
+    public void setOutputRows(long outputRows) {
         this.outputRows = outputRows;
     }
 

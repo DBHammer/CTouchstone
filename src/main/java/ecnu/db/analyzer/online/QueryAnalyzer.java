@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.online;
 
+import ecnu.db.LanguageManager;
 import ecnu.db.analyzer.online.node.*;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.generator.constraintchain.ConstraintChain;
@@ -38,6 +39,7 @@ public class QueryAnalyzer {
     private final AbstractAnalyzer abstractAnalyzer;
     private final DbConnector dbConnector;
     protected double skipNodeThreshold = 0.01;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector) {
@@ -154,7 +156,7 @@ public class QueryAnalyzer {
         String externalCol = joinColumnInfos[3];
         if (localTable.equals(externalTable)) {
             node.setJoinTag(SKIP_SELF_JOIN);
-            logger.error("skip node {} due to self join", node.getInfo());
+            logger.error(rb.getString("SkipSelfJoinNode"), node.getInfo());
             return STOP_CONSTRUCT;
         }
         // 如果当前的join节点，不属于之前遍历的节点
@@ -188,7 +190,7 @@ public class QueryAnalyzer {
             }
             if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount &&
                     node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0) {
-                logger.debug("由于输入的主键为全集，跳过节点{}", node.getInfo());
+                logger.debug(rb.getString("SkipNodeDueToFullTableScan"), node.getInfo());
                 node.setJoinTag(SKIP_JOIN_TAG);
             } else {
                 node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
@@ -203,10 +205,10 @@ public class QueryAnalyzer {
             int fkJoinTag = node.getJoinTag();
             logger.debug("{} get join tag", node.getInfo());
             if (fkJoinTag == SKIP_JOIN_TAG) {
-                logger.debug("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
+                logger.debug(rb.getString("SkipNodeDueToFullPk"), node.getInfo());
                 return node.getOutputRows();
             } else if (fkJoinTag == SKIP_SELF_JOIN) {
-                logger.error("由于self join，跳过节点{}", node.getInfo());
+                logger.error(rb.getString("SkipSelfJoinNode"), node.getInfo());
                 return STOP_CONSTRUCT;
             }
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
@@ -248,7 +250,7 @@ public class QueryAnalyzer {
      */
     private ConstraintChain extractConstraintChain(List<ExecutionNode> path, Set<ExecutionNode> inputNodes) throws TouchstoneException, SQLException {
         if (path == null || path.isEmpty()) {
-            throw new TouchstoneException(String.format("非法的path输入 '%s'", path));
+            throw new TouchstoneException(String.format("invalid path input '%s'", path));
         }
         ExecutionNode headNode = path.get(0);
         ConstraintChain constraintChain;
@@ -270,7 +272,7 @@ public class QueryAnalyzer {
             }
             lastNodeLineCount = filterNode.getOutputRows();
         } else {
-            throw new TouchstoneException(String.format("底层节点 %s 只能为select或者scan", headNode.getId()));
+            throw new TouchstoneException(String.format(rb.getString("InvalidUnderlyingNode"), headNode.getId()));
         }
         inputNodes.add(headNode);
         for (ExecutionNode executionNode : path.subList(1, path.size())) {
@@ -290,8 +292,8 @@ public class QueryAnalyzer {
                 e.printStackTrace();
                 // 小于设置的阈值以后略去后续的节点
                 if (executionNode.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(executionNode.getTableName()) < skipNodeThreshold) {
-                    logger.error("提取约束链失败", e);
-                    logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), executionNode));
+                    logger.error(rb.getString("FailToExtractConstraintChain"), e);
+                    logger.info(String.format(rb.getString("SkipNodeDueToRatio"), e.getMessage(), executionNode));
                     return constraintChain;
                 }
             }
@@ -344,7 +346,7 @@ public class QueryAnalyzer {
             if (queryPlan != null && !queryPlan.isEmpty()) {
                 String queryPlanContent = queryPlan.stream().map(plan -> String.join("\t", plan))
                         .collect(Collectors.joining(System.lineSeparator()));
-                logger.error("查询树抽取失败");
+                logger.error(rb.getString("FailToExtractQueryTree"));
                 logger.error(queryPlanContent, e);
             }
         }
@@ -368,7 +370,7 @@ public class QueryAnalyzer {
                     }
                 }).filter(Objects::nonNull).toList()).get()));
             } catch (InterruptedException | ExecutionException e) {
-                logger.error("约束链构造失败", e);
+                logger.error(rb.getString("FailToConstructConstraintChain"), e);
                 Thread.currentThread().interrupt();
             } finally {
                 forkJoinPool.shutdown();
@@ -387,7 +389,7 @@ public class QueryAnalyzer {
                 }
             }
         }
-        logger.info("Status:获取完成");
+        logger.info(rb.getString("GetComplete"));
         return constraintChains;
     }
 

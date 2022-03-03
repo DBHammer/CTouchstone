@@ -4,6 +4,7 @@ import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.parser.Lexer;
 import com.alibaba.druid.sql.parser.Token;
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
@@ -31,6 +32,8 @@ public class QueryWriter {
     private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
     private final String queryDir;
     private DbType dbType;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+
 
     public QueryWriter(String resultDir) {
         this.queryDir = resultDir + QUERY_DIR;
@@ -180,11 +183,11 @@ public class QueryWriter {
         fragments.append(query.substring(currentPos));
         query = fragments.toString();
         if (!cannotFindArgs.isEmpty()) {
-            logger.warn("请注意{}中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName);
+            logger.warn(rb.getString("CannotReplace1"), queryCanonicalName);
             query = appendArgs("cannotFindArgs", cannotFindArgs) + query;
         }
         if (!conflictArgs.isEmpty()) {
-            logger.warn("请注意{}中有参数出现多次，无法智能替换，请查看该sql输出，手动替换;", queryCanonicalName);
+            logger.warn(rb.getString("CannotReplace2"), queryCanonicalName);
             query = appendArgs("conflictArgs", conflictArgs) + query;
         }
 

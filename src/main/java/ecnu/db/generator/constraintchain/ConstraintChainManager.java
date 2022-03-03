@@ -1,6 +1,7 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.schema.Column;
@@ -29,6 +30,7 @@ public class ConstraintChainManager {
     private static final String[] COLOR_LIST = {"#FFFFCC", "#CCFFFF", "#FFCCCC"};
     private static final String GRAPH_TEMPLATE = "digraph \"%s\" {rankdir=BT;" + System.lineSeparator() + "%s}";
     private String resultDir;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     private ConstraintChainManager() {
     }
@@ -159,7 +161,7 @@ public class ConstraintChainManager {
                         node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER ||
                                 (node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE &&
                                         ((ConstraintChainAggregateNode) node).getGroupKey() == null))) {
-                    logger.info("由于没有参与Join和与键值有关的Aggregation, 移除查询{}中的约束链{}", query2ConstraintChains.getKey(), constraintChain);
+                    logger.info(rb.getString("RemoveConstraintChain1"), query2ConstraintChains.getKey(), constraintChain);
                     constraintChainIterator.remove();
                 }
             }
@@ -192,7 +194,7 @@ public class ConstraintChainManager {
                 haveFkConstrainChains.add(constraintChain);
             }
         }
-        logger.debug("含有外键约束的链有{}条，不需要推导主键信息的约束链有{}条，需要推导主键信息的约束链有{}条",
+        logger.debug(rb.getString("ConstraintChainClassification"),
                 haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
     }
 
@@ -200,7 +202,7 @@ public class ConstraintChainManager {
         String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
         CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
         if (new File(resultDir + "/pic/").mkdir()) {
-            logger.info("创建约束链的图形化文件夹");
+            logger.info(rb.getString("CreateGraphicalFolderForConstraintChains"));
         }
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
             String path = resultDir + "/pic/" + stringListEntry.getKey() + ".dot";

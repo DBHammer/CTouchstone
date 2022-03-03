@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
+import ecnu.db.LanguageManager;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
@@ -43,6 +44,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
     public StringBuilder pathForSplit = null;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     public PgAnalyzer() {
         super();
@@ -317,7 +319,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     @Override
     public String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException {
         if (joinInfo.contains("other cond:")) {
-            throw new TouchstoneException("join中包含其他条件,暂不支持");
+            throw new TouchstoneException(rb.getString("UnsupportedOtherConditionsInJoin"));
         }
         joinInfo = transColumnName(joinInfo);
         String[] result = new String[4];
@@ -341,7 +343,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 String currRightTable = String.format("%s.%s", rightJoinInfos[0], rightJoinInfos[1]);
                 String currRightCol = rightJoinInfos[2];
                 if (!leftTable.equals(currLeftTable) || !rightTable.equals(currRightTable)) {
-                    logger.error("join中包含多个表的约束,暂不支持");
+                    logger.error(rb.getString("UnsupportedMulyiTablesInConstraints"));
                     break;
                 }
                 leftCols.add(currLeftCol);
@@ -408,7 +410,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         Set<String> tableNames = aliasDic.keySet().stream().filter(outPut::contains)
                 .map(alias -> aliasDic.get(alias)).collect(Collectors.toSet());
         if (tableNames.size() > 1) {
-            logger.error("不能识别多表");
+            logger.error(rb.getString("CannotRecognizeMultipleTables"));
             return null;
         } else {
             return tableNames.iterator().next();
