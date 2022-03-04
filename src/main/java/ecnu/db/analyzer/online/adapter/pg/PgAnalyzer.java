@@ -87,15 +87,8 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (node == null) {
             return null;
         }
-        // todo 不一定是主键
-        if (node.getType() == ExecutionNodeType.AGGREGATE) {
-            assert leftNode != null;
-            if (leftNode.getType() == ExecutionNodeType.JOIN &&
-                    ((JoinNode) leftNode).getPkDistinctSize().compareTo(BigDecimal.ZERO) > 0) {
-                logger.debug("跳过外连接后的主键聚集");
-                node.setInfo(null);
-            }
-        }
+        node.setLeftNode(leftNode);
+        node.setRightNode(rightNode);
         if (node.getType() == ExecutionNodeType.JOIN) {
             assert rightNode != null;
             if (rightNode.getType() == ExecutionNodeType.FILTER && rightNode.getInfo() != null && ((FilterNode) rightNode).isIndexScan()) {
@@ -105,8 +98,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 ((JoinNode) node).setIndexJoinFilter(removeRedundancy(indexJoinFilter, true));
             }
         }
-        node.setLeftNode(leftNode);
-        node.setRightNode(rightNode);
         //create agg node
         if (plansCount == 3) {
             StringBuilder thirdChildPath = PgJsonReader.skipNodes(PgJsonReader.move3ThirdChild(currentNodePath));
@@ -221,10 +212,17 @@ public class PgAnalyzer extends AbstractAnalyzer {
         };
         BigDecimal pkDistinctProbability = BigDecimal.ZERO;
         if (PgJsonReader.isOutJoin(path)) {
+            String joinType = PgJsonReader.readJoinType(path);
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
-            int pkRowCount = PgJsonReader.readRowCount(rightChildPath);
-            int fkRowCount = PgJsonReader.readRowCount(leftChildPath);
+            int pkRowCount, fkRowCount;
+            if (joinType.equals("Right")) {
+                pkRowCount = PgJsonReader.readRowCount(rightChildPath);
+                fkRowCount = PgJsonReader.readRowCount(leftChildPath);
+            } else {
+                fkRowCount = PgJsonReader.readRowCount(rightChildPath);
+                pkRowCount = PgJsonReader.readRowCount(leftChildPath);
+            }
             pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - rowCount)
                     .divide(BigDecimal.valueOf(fkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
             rowCount = fkRowCount;
@@ -340,10 +338,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    public String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException {
-        if (joinInfo.contains("other cond:")) {
-            throw new TouchstoneException(rb.getString("UnsupportedOtherConditionsInJoin"));
-        }
+    public String[] analyzeJoinInfo(String joinInfo) {
         joinInfo = transColumnName(joinInfo);
         String[] result = new String[4];
         Matcher eqCondition = JOIN_EQ_OPERATOR.matcher(joinInfo);
