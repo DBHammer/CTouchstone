@@ -160,16 +160,8 @@ public class QueryAnalyzer {
             return STOP_CONSTRUCT;
         }
         // 如果当前的join节点，不属于之前遍历的节点
-        Set<String> currentJoinTables = new HashSet<>(List.of(localTable, externalTable));
-        if (!currentJoinTables.contains(constraintChain.getTableName())) {
-            // 如果与之前join过的表一致，且本次join无效，则继续推进
-            if (currentJoinTables.removeAll(constraintChain.getJoinTables()) && node.getJoinTag() < 0) {
-                return lastNodeLineCount;
-            }
-            // 停止继续向上访问
-            else {
-                return STOP_CONSTRUCT;
-            }
+        if (!constraintChain.getTableName().equals(localTable) && !constraintChain.getTableName().equals(externalTable)) {
+            return STOP_CONSTRUCT;
         }
         //将本表的信息放在前面，交换位置
         if (constraintChain.getTableName().equals(externalTable)) {
