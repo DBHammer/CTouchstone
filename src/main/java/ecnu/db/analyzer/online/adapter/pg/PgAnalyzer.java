@@ -42,6 +42,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9_]+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
+    private static final Pattern HASH_SUB_PLAN = Pattern.compile("\\(NOT \\(hashed SubPlan [0-9]+\\)\\)");
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
     public StringBuilder pathForSplit = null;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
@@ -128,18 +129,31 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
     private ExecutionNode transferSubPlan2AntiJoin(StringBuilder path) {
         //todo multiple subPlans
-        if (nodeTypeRef.isFilterNode(PgJsonReader.readNodeType(path)) &&
-                "(NOT (hashed SubPlan 1))".equals(PgJsonReader.readFilterInfo(path))) {
-            String tableName = PgJsonReader.readTableName(path.toString());
-            aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
-            int outPutCount = PgJsonReader.readRowCount(path);
-            int removedCount = PgJsonReader.readRowsRemoved(path);
-            int rowCount = outPutCount + removedCount;
-            StringBuilder rightPath = PgJsonReader.move2RightChild(path);
-            FilterNode currentRightNode = new FilterNode(rightPath.toString(), rowCount, null);
-            currentRightNode.setTableName(tableName);
-            currentRightNode.setAdd();
-            return currentRightNode;
+        String filterInfo = PgJsonReader.readFilterInfo(path);
+        if (nodeTypeRef.isFilterNode(PgJsonReader.readNodeType(path)) && filterInfo != null) {
+            Matcher NotHashSubPlan = HASH_SUB_PLAN.matcher(filterInfo);
+            if (NotHashSubPlan.find()) {
+                int count = 1;
+                while (NotHashSubPlan.find()) {
+                    count++;
+                }
+                if (count == 1) {
+                    String tableName = PgJsonReader.readTableName(path.toString());
+                    aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
+                    int outPutCount = PgJsonReader.readRowCount(path);
+                    int removedCount = PgJsonReader.readRowsRemoved(path);
+                    int rowCount = outPutCount + removedCount;
+                    StringBuilder rightPath = PgJsonReader.move2RightChild(path);
+                    FilterNode currentRightNode = new FilterNode(rightPath.toString(), rowCount, null);
+                    currentRightNode.setTableName(tableName);
+                    currentRightNode.setAdd();
+                    return currentRightNode;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+            } else {
+                return null;
+            }
         }
         return null;
     }
@@ -148,8 +162,17 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private ExecutionNode getFilterNode(StringBuilder path, long rowCount) throws CannotFindSchemaException {
         String planId = path.toString();
         String filterInfo = PgJsonReader.readFilterInfo(path);
-        if ("(NOT (hashed SubPlan 1))".equals(filterInfo)) {
-            return transferFilter2AntiJoin(path, rowCount);
+        if (filterInfo != null && filterInfo.contains("(NOT (hashed SubPlan")) {
+            Matcher HashSubPlan = HASH_SUB_PLAN.matcher(filterInfo);
+            int count = 0;
+            while (HashSubPlan.find()) {
+                count++;
+            }
+            if (count == 1) {
+                return transferFilter2AntiJoin(path, rowCount);
+            } else {
+                throw new UnsupportedOperationException();
+            }
         } else {
             String tableName = PgJsonReader.readTableName(path.toString());
             aliasDic.put(PgJsonReader.readAlias(path.toString()), tableName);
