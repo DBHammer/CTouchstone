@@ -1,6 +1,7 @@
 package ecnu.db.analyzer.online;
 
 import ecnu.db.analyzer.online.node.ExecutionNode;
+import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
 import ecnu.db.utils.exception.TouchstoneException;
 
@@ -17,6 +18,8 @@ public abstract class AbstractAnalyzer {
 
     protected NodeTypeTool nodeTypeRef;
     protected Map<String, String> aliasDic = new HashMap<>();
+    protected String currentQuery;
+    protected DbConnector dbConnector;
 
     /**
      * 查询树的解析
@@ -65,5 +68,13 @@ public abstract class AbstractAnalyzer {
 
     public void setAliasDic(Map<String, String> aliasDic) {
         this.aliasDic = aliasDic;
+    }
+
+    public void getCurrentQuery(String query) {
+        this.currentQuery = query;
+    }
+
+    public void getDbConnector(DbConnector dbConnector) {
+        this.dbConnector = dbConnector;
     }
 }

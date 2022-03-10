@@ -181,12 +181,24 @@ public class PgJsonReader {
 
     // read logical join operator
 
-    static String readJoinType(StringBuilder path) {
+    private static String readJoinType(StringBuilder path) {
         return readContext.read(path + "['Join Type']");
     }
 
     static boolean isOutJoin(StringBuilder path) {
-        return readJoinType(path).equals("Right") || readJoinType(path).equals("Left");
+        return isLeftOuterJoin(path) || isRightOuterJoin(path) || isFullOuterJoin(path);
+    }
+
+    static boolean isLeftOuterJoin(StringBuilder path){
+        return readJoinType(path).equals("Left");
+    }
+
+    static boolean isRightOuterJoin(StringBuilder path){
+        return readJoinType(path).equals("Right");
+    }
+
+    static boolean isFullOuterJoin(StringBuilder path){
+        return readJoinType(path).equals("Full");
     }
 
     static boolean isSemiJoin(StringBuilder path) {
