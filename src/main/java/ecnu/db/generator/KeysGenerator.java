@@ -147,7 +147,6 @@ public class KeysGenerator {
                 cardinalityRangeForEachFk.add(cardinalityRangeForFk);
             }
         }
-//        System.out.println(cardinalityRangeForEachFk);
 
         List<List<Map.Entry<boolean[], Long>>> fkStatus2PkIndex = new ArrayList<>(range);
         Map<JoinStatus, Integer> filterStatus2JoinLocation = getAllVarLocation(filterHistogram, allStatus);

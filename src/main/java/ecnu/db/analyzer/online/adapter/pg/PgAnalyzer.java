@@ -250,7 +250,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
                         throw new UnsupportedOperationException();
                     }
                     subQueryCanMatch = subQuery;
-                    System.out.println(subQuery);
                 }
                 joinAccess = getJoinAccess(joinInfo, subQueryCanMatch);
             }
@@ -545,7 +544,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
             queryGetJoinAccess += " WHERE " + where;
         }
         int joinAccess = dbConnector.getJoinSuccess(queryGetJoinAccess);
-        System.out.println(joinAccess);
         return joinAccess;
     }
 }

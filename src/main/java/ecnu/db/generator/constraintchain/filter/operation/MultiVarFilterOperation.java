@@ -197,7 +197,6 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         }
         long start = System.currentTimeMillis();
         double[] vector = arithmeticTree.calculate();
-        System.out.println("计算" + (System.currentTimeMillis() - start));
         start = System.currentTimeMillis();
         int pos;
         if (probability.equals(BigDecimal.ONE)) {
@@ -206,7 +205,6 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             pos = probability.multiply(BigDecimal.valueOf(vector.length)).setScale(0, RoundingMode.HALF_UP).intValue();
         }
         double PosthSmallestNumber = select(vector, 0, vector.length - 1, pos + 1);
-        System.out.println("排序" + (System.currentTimeMillis() - start));
         long internalValue = (long) (PosthSmallestNumber * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         parameters.forEach(param -> param.setData(internalValue));
         //todo check parameter type

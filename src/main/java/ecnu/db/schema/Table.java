@@ -159,7 +159,6 @@ public class Table {
         }
         head = new StringBuilder(head.substring(0, head.length() - 1));
         head.append(");");
-        System.out.println(head);
         dbConnector.executeSql(head.toString());
     }
 
