@@ -63,6 +63,13 @@ public class PgJsonReader {
         return readContext.read(path + "['Alias']");
     }
 
+    static StringBuilder getRootPath() {
+        return new StringBuilder("$.[0]['Plan']");
+    }
+
+    static String formatPlan(String query){
+        return  "[{\"Plan\":" + query + "}]";
+    }
 
     // deal with subPlan
 
@@ -97,6 +104,15 @@ public class PgJsonReader {
             }
         }
         return null;
+    }
+
+    static String readTheWholePlan() {
+        LinkedHashMap<String, Object> data = readContext.read("$.[0]");
+        return "[" + JSONObject.toJSONString(data) + "]";
+    }
+
+    static String readSubPlanIndex(StringBuilder path, int index) {
+        return readSubPlanIndex(new StringBuilder(path).append("['Plans'][").append(index).append("]"));
     }
 
     static List<String> readOutput(StringBuilder path) {
@@ -189,15 +205,15 @@ public class PgJsonReader {
         return isLeftOuterJoin(path) || isRightOuterJoin(path) || isFullOuterJoin(path);
     }
 
-    static boolean isLeftOuterJoin(StringBuilder path){
+    static boolean isLeftOuterJoin(StringBuilder path) {
         return readJoinType(path).equals("Left");
     }
 
-    static boolean isRightOuterJoin(StringBuilder path){
+    static boolean isRightOuterJoin(StringBuilder path) {
         return readJoinType(path).equals("Right");
     }
 
-    static boolean isFullOuterJoin(StringBuilder path){
+    static boolean isFullOuterJoin(StringBuilder path) {
         return readJoinType(path).equals("Full");
     }
 

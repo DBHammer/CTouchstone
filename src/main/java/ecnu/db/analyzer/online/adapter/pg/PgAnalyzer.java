@@ -62,7 +62,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public ExecutionNode getExecutionTree(List<String[]> queryPlans) throws TouchstoneException, IOException, SQLException {
         String queryPlan = queryPlans.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
         PgJsonReader.setReadContext(queryPlan);
-        return getExecutionTreeRes(PgJsonReader.skipNodes(new StringBuilder("$.[0]['Plan']")));
+        return getExecutionTreeRes(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
     }
 
     public ExecutionNode getExecutionTreeRes(StringBuilder currentNodePath) throws TouchstoneException, IOException, SQLException {
@@ -412,13 +412,23 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public List<List<String[]>> splitQueryPlan(List<String[]> queryPlan) {
         String queryPlanString = queryPlan.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
         PgJsonReader.setReadContext(queryPlanString);
-        StringBuilder path = new StringBuilder("$.[0]['Plan']");
+        String queryPlanMainTree = PgJsonReader.readTheWholePlan();
+        StringBuilder path = PgJsonReader.getRootPath();
         if (PgJsonReader.hasInitPlan(path)) {
             List<List<String[]>> queryPlans = new LinkedList<>();
             for (int i = 0; i < PgJsonReader.readPlansCount(path); i++) {
-                String[] subQueryPlan = new String[]{"[{Plan:" + PgJsonReader.readPlan(path, i) + "}]"};
-                queryPlans.add(Collections.singletonList(subQueryPlan));
+                String subPlanName = PgJsonReader.readSubPlanIndex(path, i);
+                if (subPlanName != null) {
+                    String subQueryPlan = PgJsonReader.readPlan(path, i);
+                    if (i == PgJsonReader.readPlansCount(path) - 1) {
+                        queryPlanMainTree = queryPlanMainTree.replace(subQueryPlan, "");
+                    } else {
+                        queryPlanMainTree = queryPlanMainTree.replace(subQueryPlan + ",", "");
+                    }
+                    queryPlans.add(Collections.singletonList(new String[]{PgJsonReader.formatPlan(subQueryPlan)}));
+                }
             }
+            queryPlans.add(Collections.singletonList(new String[]{queryPlanMainTree}));
             return queryPlans;
         } else {
             return Collections.singletonList(queryPlan);
