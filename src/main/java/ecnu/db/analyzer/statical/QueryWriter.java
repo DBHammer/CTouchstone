@@ -31,13 +31,15 @@ public class QueryWriter {
     private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
     private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
     private final String queryDir;
+    private final String resultDir;
     private DbType dbType;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
 
     public QueryWriter(String resultDir) {
         this.queryDir = resultDir + QUERY_DIR;
-        if (new File(queryDir).mkdir()) {
+        this.resultDir = resultDir;
+        if (new File(resultDir).mkdir()) {
             logger.info("create query dir for output");
         }
     }
@@ -227,10 +229,11 @@ public class QueryWriter {
     public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {
         for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
             String query = queryName2QueryTemplate.getValue();
+            String path = resultDir + "\\workload" + "\\" + queryName2QueryTemplate.getKey().split("\\.")[0] + "\\" + queryName2QueryTemplate.getKey();
             List<List<String>> matches = matchPattern(PATTERN, query);
             if (matches.isEmpty()) {
                 String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-                CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
+                CommonUtils.writeFile(path, formatQuery);
             } else {
                 for (List<String> group : matches) {
                     int parameterId = Integer.parseInt(group.get(1));
@@ -248,7 +251,7 @@ public class QueryWriter {
                         }
                     }
                     String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-                    CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
+                    CommonUtils.writeFile(path, formatQuery);
                 }
             }
         }

@@ -143,8 +143,24 @@ public class ConstraintChainManager {
     }
 
     public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
-        return CommonUtils.MAPPER.readValue(readFile(resultDir + CONSTRAINT_CHAINS_INFO), new TypeReference<>() {
-        });
+        String path = resultDir + "\\workload";
+        File sqlDic = new File(path);
+        File[] sqlArray = sqlDic.listFiles();
+        assert sqlArray != null;
+        Map<String, List<ConstraintChain>> result = new HashMap<>();
+        for (File file : sqlArray) {
+            String graphPath = file.getPath();
+            File[] graphArray = file.listFiles();
+            assert graphArray != null;
+            for (File file1 : graphArray) {
+                if (file1.getName().contains("json")) {
+                    Map<String, List<ConstraintChain>> eachresult = CommonUtils.MAPPER.readValue(readFile(file1.getPath()), new TypeReference<>() {
+                    });
+                    result.putAll(eachresult);
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -199,14 +215,26 @@ public class ConstraintChainManager {
     }
 
     public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
-        String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
-        CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
-        if (new File(resultDir + "/pic/").mkdir()) {
-            logger.info(rb.getString("CreateGraphicalFolderForConstraintChains"));
+        File workLoadDic = new File(resultDir + "\\workload");
+        if (!workLoadDic.exists()) {
+            workLoadDic.mkdir();
         }
+        for (Map.Entry<String, List<ConstraintChain>> entry : query2constraintChains.entrySet()) {
+            String constraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(entry);
+            File sqlDic = new File(resultDir + "\\workload" + "\\" + entry.getKey().split("\\.")[0]);
+            if (!sqlDic.exists()) {
+                sqlDic.mkdir();
+            }
+            CommonUtils.writeFile(resultDir + "\\workload" + "\\" + entry.getKey().split("\\.")[0] + "\\" + entry.getKey() + ".json", constraintChainsContent);
+        }
+        //String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
+        //CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
+        /*if (new File(resultDir + "/pic/").mkdir()) {
+            logger.info(rb.getString("CreateGraphicalFolderForConstraintChains"));
+        }*/
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
-            String path = resultDir + "/pic/" + stringListEntry.getKey() + ".dot";
-            File file = new File(resultDir + "/pic/");
+            String path = resultDir + "\\workload" + "\\" + stringListEntry.getKey().split("\\.")[0] + "\\" + stringListEntry.getKey() + ".dot";
+            File file = new File(resultDir + "\\workload" + "\\" + stringListEntry.getKey().split("\\.")[0]);
             File[] array = file.listFiles();
             assert array != null;
             if (!graphIsExists(array, stringListEntry.getKey() + ".dot")) {
@@ -222,7 +250,7 @@ public class ConstraintChainManager {
                     Calendar date = Calendar.getInstance();
                     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                     String currentTime = format.format(date.getTime());
-                    String newPath = resultDir + "/pic/" + currentTime + "_" + stringListEntry.getKey() + ".dot";
+                    String newPath = resultDir + "\\workload" + "\\" + stringListEntry.getKey().split("\\.")[0] + "\\" + currentTime + stringListEntry.getKey() + ".dot";
                     CommonUtils.writeFile(newPath + "", graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());
                 }

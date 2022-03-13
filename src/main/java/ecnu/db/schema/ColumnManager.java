@@ -120,6 +120,10 @@ public class ColumnManager {
     }
 
     public void storeColumnDistribution() throws IOException {
+        File distribution = new File(distributionInfoPath + "\\distribution");
+        if(!distribution.exists()){
+            distribution.mkdir();
+        }
         Map<String, Map<Long, boolean[]>> columName2StringTemplate = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
             if (column.getValue().getColumnType() == ColumnType.VARCHAR &&
@@ -128,7 +132,7 @@ public class ColumnManager {
             }
         }
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columName2StringTemplate);
-        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_STRING_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_STRING_INFO, content);
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = new HashMap<>();
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = new HashMap<>();
         Map<String, List<Parameter>> boundParas = new HashMap<>();
@@ -145,11 +149,11 @@ public class ColumnManager {
             }
         }
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(bucket2Probabilities);
-        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_DISTRIBUTION_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO, content);
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(eq2Probabilities);
-        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_EQDISTRIBUTION_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_EQDISTRIBUTION_INFO, content);
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(boundParas);
-        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_BOUNDPARA_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_BOUNDPARA_INFO, content);
     }
 
     public void loadColumnMetaData() throws IOException {
@@ -169,25 +173,26 @@ public class ColumnManager {
     }
 
     public void loadColumnDistribution() throws IOException {
-        String content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_STRING_INFO);
+        File distribution = new File(distributionInfoPath + "\\distribution");
+        String content = CommonUtils.readFile(distribution.getPath() + COLUMN_STRING_INFO);
         Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, Map<Long, boolean[]>> template : columName2StringTemplate.entrySet()) {
             columns.get(template.getKey()).getStringTemplate().setLikeIndex2Status(template.getValue());
         }
-        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_DISTRIBUTION_INFO);
+        content = CommonUtils.readFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO);
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, List<Map.Entry<Long, BigDecimal>>> bucket : bucket2Probabilities.entrySet()) {
             columns.get(bucket.getKey()).setBucketBound2FreeSpace(bucket.getValue());
         }
-        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_EQDISTRIBUTION_INFO);
+        content = CommonUtils.readFile(distribution.getPath() + COLUMN_EQDISTRIBUTION_INFO);
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, Map<Long, BigDecimal>> eq2Probability : eq2Probabilities.entrySet()) {
             columns.get(eq2Probability.getKey()).setEqConstraint2Probability(eq2Probability.getValue());
         }
-        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_BOUNDPARA_INFO);
+        content = CommonUtils.readFile(distribution.getPath() + COLUMN_BOUNDPARA_INFO);
         Map<String, List<Parameter>> boundParas = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, List<Parameter>> boundPara : boundParas.entrySet()) {

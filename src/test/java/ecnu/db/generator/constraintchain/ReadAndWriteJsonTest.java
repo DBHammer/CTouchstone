@@ -30,7 +30,7 @@ class ReadAndWriteJsonTest {
 
     @Test
     void writeTestStringTemplate() throws IOException {
-        String content = readFile(dir + "stringTemplate.json");
+        String content = readFile(dir + "distribution/stringTemplate.json");
         Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columName2StringTemplate);
@@ -39,7 +39,7 @@ class ReadAndWriteJsonTest {
 
     @Test
     void writeTestDistribution() throws IOException {
-        String content = readFile(dir + "distribution.json");
+        String content = readFile(dir + "distribution/distribution.json");
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(bucket2Probabilities);
@@ -48,7 +48,7 @@ class ReadAndWriteJsonTest {
 
     @Test
     void writeTestEqDistribution() throws IOException {
-        String content = readFile(dir + "eq_distribution.json");
+        String content = readFile(dir + "distribution/eq_distribution.json");
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(eq2Probabilities);
@@ -57,7 +57,7 @@ class ReadAndWriteJsonTest {
 
     @Test
     void writeTestBoundPara() throws IOException {
-        String content = readFile(dir + "boundPara.json");
+        String content = readFile(dir + "distribution/boundPara.json");
         Map<String, List<Parameter>> boundPara = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(boundPara);
