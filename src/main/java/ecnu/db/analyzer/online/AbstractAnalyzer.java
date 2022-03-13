@@ -18,8 +18,6 @@ public abstract class AbstractAnalyzer {
 
     protected NodeTypeTool nodeTypeRef;
     protected Map<String, String> aliasDic = new HashMap<>();
-    protected String currentQuery;
-    protected DbConnector dbConnector;
 
     /**
      * 查询树的解析
@@ -70,11 +68,4 @@ public abstract class AbstractAnalyzer {
         this.aliasDic = aliasDic;
     }
 
-    public void getCurrentQuery(String query) {
-        this.currentQuery = query;
-    }
-
-    public void getDbConnector(DbConnector dbConnector) {
-        this.dbConnector = dbConnector;
-    }
 }

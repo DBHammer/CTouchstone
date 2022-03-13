@@ -1,10 +1,5 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
-import com.alibaba.druid.sql.SQLUtils;
-import com.alibaba.druid.sql.ast.SQLExpr;
-import com.alibaba.druid.sql.ast.statement.SQLSelectQueryBlock;
-import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
-import com.alibaba.druid.util.JdbcConstants;
 import ecnu.db.LanguageManager;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
@@ -209,7 +204,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return new JoinNode(path.toString(), rowCount, joinInfo, true, false, BigDecimal.ZERO);
     }
 
-    private ExecutionNode getJoinNode(StringBuilder path, int rowCount) throws SQLException {
+    private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
         String joinInfo = switch (PgJsonReader.readNodeType(path)) {
             case "Hash Join" -> PgJsonReader.readHashJoin(path);
             case "Nested Loop" -> PgJsonReader.readIndexJoin(path);
@@ -228,32 +223,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
             } else if (PgJsonReader.isLeftOuterJoin(path)) {
                 fkRowCount = PgJsonReader.readRowCount(rightChildPath);
                 pkRowCount = PgJsonReader.readRowCount(leftChildPath);
-            } else {
+            }else{
                 throw new UnsupportedOperationException();
             }
-            currentQuery = currentQuery.replace("\n", " ").replace("\\s+", " ");
-            String[] joinColumnInfos = analyzeJoinInfo(joinInfo);
-            String table1 = joinColumnInfos[0].split("\\.")[1];
-            String table2 = joinColumnInfos[2].split("\\.")[1];
-            List<String> subQuerys = new ArrayList<>();
-            if (isOuterJoin(currentQuery)) {
-                subQuerys = getSubQuery(currentQuery);
-            }
-            String subQueryCanMatch = null;
-            if (subQuerys.size() != 0) {
-                for (String subQuery : subQuerys) {
-                    int matcherCount = matcherCount(table1, table2, subQuery, path);//记录一个subQuery有几个匹配项
-                    if (matcherCount != 0 && matcherCount != 1) {
-                        throw new UnsupportedOperationException();
-                    }
-                    if (subQueryCanMatch != null) {
-                        throw new UnsupportedOperationException();
-                    }
-                    subQueryCanMatch = subQuery;
-                }
-                joinAccess = getJoinAccess(joinInfo, subQueryCanMatch);
-            }
-            pkDistinctProbability = BigDecimal.valueOf(pkRowCount + joinAccess - rowCount)
+            pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - rowCount)
                     .divide(BigDecimal.valueOf(fkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
             rowCount = fkRowCount;
         } else if (PgJsonReader.isAntiJoin(path)) {
@@ -324,7 +297,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return node;
     }
 
-    private ExecutionNode getExecutionNode(StringBuilder path) throws TouchstoneException, SQLException {
+    private ExecutionNode getExecutionNode(StringBuilder path) throws TouchstoneException{
         String nodeType = PgJsonReader.readNodeType(path);
         if (nodeType == null) {
             return null;
@@ -478,72 +451,5 @@ public class PgAnalyzer extends AbstractAnalyzer {
     @Override
     public LogicNode analyzeSelectOperator(String operatorInfo) throws Exception {
         return parser.parseSelectOperatorInfo(operatorInfo);
-    }
-
-    private List<String> getSubQuery(String query) {
-        List<String> allSubQuery = new ArrayList<>();
-        Matcher subQueryMatcher = SUB_QUERY.matcher(query);
-        while (subQueryMatcher.find()) {
-            String subQuery = subQueryMatcher.group();
-            allSubQuery.add(subQuery.substring(1, subQuery.length() - 1));
-        }
-        allSubQuery.removeIf(subQuery -> !isOuterJoin(subQuery));
-        if (allSubQuery.isEmpty()) {
-            return Collections.singletonList(query);
-        } else {
-            List<String> allQueries = new LinkedList<>();
-            String originQuery = query;
-            for (String subQuery : allSubQuery) {
-                query = query.replace(subQuery, "");
-                allQueries.addAll(getSubQuery(subQuery));
-            }
-            if (isOuterJoin(query)) {
-                allQueries.add(originQuery);
-            }
-            return allQueries;
-        }
-    }
-
-    /**
-     * check whether a query has an outer join operator or not
-     *
-     * @param query the input query
-     * @return the query has an outer join operator --> true || return false
-     */
-    private static boolean isOuterJoin(String query) {
-        return query.toLowerCase().contains("left join") || query.toLowerCase().contains("right join");
-    }
-
-    public int matcherCount(String table1, String table2, String query, StringBuilder path) {
-        List<String> patterns = null;
-        if (PgJsonReader.isLeftOuterJoin(path)) {
-            patterns = Arrays.asList(table1 + " LEFT JOIN", "LEFT JOIN " + table2,
-                    table2 + " RIGHT JOIN", "RIGHT JOIN " + table1);
-        } else if (PgJsonReader.isRightOuterJoin(path)) {
-            patterns = Arrays.asList(table1 + " RIGHT JOIN", "RIGHT JOIN " + table2,
-                    table2 + " LEFT JOIN", "LEFT JOIN " + table1);
-        }
-        if (patterns == null) {
-            throw new UnsupportedOperationException();
-        }
-        return patterns.stream().map(Pattern::compile)
-                .map(pattern -> pattern.matcher(query))
-                .mapToInt(Matcher::groupCount).sum();
-    }
-
-    public int getJoinAccess(String joinInfo, String query) throws SQLException {
-        StringBuilder selectExpr = new StringBuilder();
-        String[] joinKeys = analyzeJoinInfo(joinInfo);
-        selectExpr.append("SUM(CASE WHEN ").append(joinKeys[1]).append(" IS NULL THEN 0 ELSE 1 END)").append(',');
-        selectExpr.append("SUM(CASE WHEN ").append(joinKeys[3]).append(" IS NULL THEN 0 ELSE 1 END)").append(',');
-        SQLSelectStatement sqlSelectStatement = (SQLSelectStatement) SQLUtils.parseStatements(query, JdbcConstants.POSTGRESQL).get(0);
-        SQLSelectQueryBlock sqlSelectQueryBlock = sqlSelectStatement.getSelect().getQueryBlock();
-        String queryGetJoinAccess = "SELECT " + selectExpr.substring(0, selectExpr.length() - 1) + " FROM " + sqlSelectQueryBlock.getFrom();
-        SQLExpr where = sqlSelectQueryBlock.getWhere();
-        if (where != null) {
-            queryGetJoinAccess += " WHERE " + where;
-        }
-        int joinAccess = dbConnector.getJoinSuccess(queryGetJoinAccess);
-        return joinAccess;
     }
 }

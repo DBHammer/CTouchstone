@@ -335,8 +335,6 @@ public class QueryAnalyzer {
     public List<List<ConstraintChain>> extractQuery(String query) throws SQLException {
         List<String[]> queryPlan = dbConnector.explainQuery(query);
         List<List<String[]>> queryPlans = abstractAnalyzer.splitQueryPlan(queryPlan);
-        abstractAnalyzer.getCurrentQuery(query);
-        abstractAnalyzer.getDbConnector(dbConnector);
         List<ExecutionNode> executionTrees = new LinkedList<>();
         try {
             for (List<String[]> plan : queryPlans) {

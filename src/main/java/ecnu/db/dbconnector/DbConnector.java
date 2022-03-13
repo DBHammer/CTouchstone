@@ -150,14 +150,6 @@ public abstract class DbConnector {
         }
     }
 
-    public int getJoinSuccess(String query) throws SQLException {
-        try (Statement stmt = conn.createStatement()) {
-            ResultSet rs = stmt.executeQuery(query);
-            rs.next();
-            return Math.min(rs.getInt(1), rs.getInt(2));
-        }
-    }
-
     public Map<String, Integer> getMultiColNdvMap() {
         return this.multiColNdvMap;
     }
