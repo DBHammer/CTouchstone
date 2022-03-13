@@ -9,6 +9,8 @@ import ecnu.db.schema.ColumnType;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -24,39 +26,18 @@ class QueryWriterTest {
         queryWriter.setDbType(JdbcConstants.MYSQL);
     }
 
-    @Test
-    public void testTemplatizeSqlInt() throws SQLException, ClassNotFoundException {
-        String sql = "select * from test where a=5";
+    @ParameterizedTest
+    @CsvSource(quoteCharacter='#', value = {
+            "5, 5",
+            "1.5, 1.5",
+            "'5', 5",
+            "'1998-12-12 12:00:00.000000', 1998-12-12 12:00:00.000000"
+    })
+    void testTemplatizeSqlInt(String sqlValue, String dataValue) throws SQLException {
+        String sql = "select * from test where a=" + sqlValue;
         List<Parameter> parameters = new ArrayList<>();
-        parameters.add(new Parameter(0, null, "5"));
-        String modified = queryWriter.templatizeSql("q1", sql, parameters);
-        assertEquals("select * from test where a='0'", modified);
-    }
-
-    @Test
-    void testTemplatizeSqlFloat() throws SQLException, ClassNotFoundException {
-        String sql = "select * from test where a=1.5";
-        List<Parameter> parameters = new ArrayList<>();
-        parameters.add(new Parameter(0, null, "1.5"));
-        String modified = queryWriter.templatizeSql("q2", sql, parameters);
-        assertEquals("select * from test where a='0'", modified);
-    }
-
-    @Test
-    void testTemplatizeSqlStr() throws SQLException, ClassNotFoundException {
-        String sql = "select * from test where a='5'";
-        List<Parameter> parameters = new ArrayList<>();
-        parameters.add(new Parameter(0, null, "5"));
-        String modified = queryWriter.templatizeSql("q3", sql, parameters);
-        assertEquals("select * from test where a='0'", modified);
-    }
-
-    @Test
-    void testTemplatizeSqlDate() throws SQLException, ClassNotFoundException {
-        String sql = "select * from test where a='1998-12-12 12:00:00.000000'";
-        List<Parameter> parameters = new ArrayList<>();
-        parameters.add(new Parameter(0, null, "1998-12-12 12:00:00.000000"));
-        String modified = queryWriter.templatizeSql("q4", sql, parameters);
+        parameters.add(new Parameter(0, null, dataValue));
+        String modified = queryWriter.templatizeSql("Test Query", sql, parameters);
         assertEquals("select * from test where a='0'", modified);
     }
 
