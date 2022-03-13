@@ -173,7 +173,7 @@ public class ColumnManager {
     }
 
     public void loadColumnDistribution() throws IOException {
-        File distribution = new File(distributionInfoPath + "\\distribution");
+        File distribution = new File(distributionInfoPath + "/distribution");
         String content = CommonUtils.readFile(distribution.getPath() + COLUMN_STRING_INFO);
         Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
