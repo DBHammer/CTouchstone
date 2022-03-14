@@ -120,7 +120,7 @@ public class ColumnManager {
     }
 
     public void storeColumnDistribution() throws IOException {
-        File distribution = new File(distributionInfoPath + "\\distribution");
+        File distribution = new File(distributionInfoPath + "/distribution");
         if(!distribution.exists()){
             distribution.mkdir();
         }

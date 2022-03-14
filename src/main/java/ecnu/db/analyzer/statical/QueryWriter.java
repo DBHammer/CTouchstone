@@ -80,7 +80,8 @@ public class QueryWriter {
         Lexer lexer = new Lexer(query, null, dbType);
         // paramter data, column name -> start location and end location
         Map<String, List<parameterColumnName2Location>> literalMap = new HashMap<>();
-        int lastPos = 0, pos;
+        int lastPos = 0;
+        int pos;
         String lastColumn = "";
         while (!lexer.isEOF()) {
             lexer.nextToken();
@@ -126,7 +127,7 @@ public class QueryWriter {
         // replacement
         List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
         TreeMap<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> replaceParams = new TreeMap<>();
-        List<Parameter> subPlanParameters = parameters.stream().filter(parameter -> parameter.isSubPlan()).toList();
+        List<Parameter> subPlanParameters = parameters.stream().filter(Parameter::isSubPlan).toList();
         parameters.removeAll(subPlanParameters);
         parameters.addAll(subPlanParameters);
         for (Parameter parameter : parameters) {
@@ -178,7 +179,8 @@ public class QueryWriter {
             Map.Entry<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> entry = replaceParams.pollFirstEntry();
             Map.Entry<Parameter, Map.Entry<Integer, Integer>> pair = entry.getValue();
             Parameter parameter = pair.getKey();
-            int startPos = pair.getValue().getKey(), endPos = pair.getValue().getValue();
+            int startPos = pair.getValue().getKey();
+            int endPos = pair.getValue().getValue();
             fragments.append(query, currentPos, startPos).append(String.format("'%s'", parameter.getId()));
             currentPos = endPos;
         }
@@ -228,7 +230,7 @@ public class QueryWriter {
     public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {
         for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
             String query = queryName2QueryTemplate.getValue();
-            String path = resultDir + "\\workload" + "\\" + queryName2QueryTemplate.getKey().split("\\.")[0] + "\\" + queryName2QueryTemplate.getKey();
+            String path = resultDir + "/workload" + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey();
             List<List<String>> matches = matchPattern(PATTERN, query);
             if (matches.isEmpty()) {
                 String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
