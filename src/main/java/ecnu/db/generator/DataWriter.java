@@ -16,6 +16,11 @@ public class DataWriter {
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    public DataWriter(String outputPath, int generatorId) {
+        this.outputPath = outputPath;
+        this.generatorId = generatorId;
+    }
+
     public void addWriteTask(String schemaName, List<StringBuilder> rowData) {
         executorService.submit(() -> {
             try {
@@ -27,13 +32,8 @@ public class DataWriter {
         });
     }
 
-    public void reset(){
+    public void reset() {
         executorService = Executors.newSingleThreadExecutor();
-    }
-
-    public DataWriter(String outputPath, int generatorId) {
-        this.outputPath = outputPath;
-        this.generatorId = generatorId;
     }
 
     public boolean waitWriteFinish() throws InterruptedException {

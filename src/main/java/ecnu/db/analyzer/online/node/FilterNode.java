@@ -9,7 +9,7 @@ public class FilterNode extends ExecutionNode {
     private String filterInfoWithQuote;
 
     public FilterNode(String id, long outputRows, String info) {
-        super(id, ExecutionNodeType.filter, outputRows, info);
+        super(id, ExecutionNodeType.FILTER, outputRows, info);
     }
 
     public boolean isAdd() {

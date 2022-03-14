@@ -1,6 +1,6 @@
 package ecnu.db.generator;
 
-import com.google.ortools.Loader;
+
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.generator.joininfo.JoinStatus;
@@ -56,7 +56,6 @@ public class DataGenerator implements Callable<Integer> {
     }
 
     private void init() throws IOException {
-        Loader.loadNativeLibraries();
         //载入schema配置文件
         TableManager.getInstance().setResultDir(configPath);
         TableManager.getInstance().loadSchemaInfo();

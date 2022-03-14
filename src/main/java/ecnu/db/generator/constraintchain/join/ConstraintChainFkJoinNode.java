@@ -10,6 +10,10 @@ import java.math.BigDecimal;
  * @author wangqingshuai
  */
 public class ConstraintChainFkJoinNode extends ConstraintChainNode {
+    @JsonIgnore
+    public int joinStatusIndex;
+    @JsonIgnore
+    public int joinStatusLocation;
     private String refCols;
     private String localCols;
     private int pkTag;
@@ -17,11 +21,6 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private BigDecimal probabilityWithFailFilter;
     private BigDecimal pkDistinctProbability;
     private ConstraintNodeJoinType type = ConstraintNodeJoinType.INNER_JOIN;
-
-    @JsonIgnore
-    public int joinStatusIndex;
-    @JsonIgnore
-    public int joinStatusLocation;
 
     public ConstraintChainFkJoinNode() {
         super(ConstraintChainNodeType.FK_JOIN);

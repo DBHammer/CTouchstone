@@ -7,6 +7,7 @@ import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,15 +25,6 @@ public class Column {
     private final HashSet<Integer> likeParameterId = new HashSet<>();
     private ColumnType columnType;
     private long min;
-
-    public String getOriginalType() {
-        return originalType;
-    }
-
-    public void setOriginalType(String originalType) {
-        this.originalType = originalType;
-    }
-
     private String originalType;
     private long range;
     private long specialValue;
@@ -57,12 +49,18 @@ public class Column {
     private boolean columnData2ComputeData = false;
     @JsonIgnore
     private double[] computeData;
-
     public Column() {
     }
-
     public Column(ColumnType columnType) {
         this.columnType = columnType;
+    }
+
+    public String getOriginalType() {
+        return originalType;
+    }
+
+    public void setOriginalType(String originalType) {
+        this.originalType = originalType;
     }
 
     public void initStringTemplate() {
@@ -117,23 +115,42 @@ public class Column {
             probability = BigDecimal.ONE.subtract(probability);
         }
         bound = switch (operator) {
-            case LT, GE -> (long) probability.multiply(BigDecimal.valueOf(range)).doubleValue();
+            case LT, GE -> probability.multiply(BigDecimal.valueOf(range)).setScale(0, RoundingMode.HALF_UP).longValue();
             case GT, LE -> probability.multiply(BigDecimal.valueOf(range)).longValue();
             default -> throw new UnsupportedOperationException();
         };
+        if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
+            long finalBound = bound;
+            if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(finalBound))) {
+                this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
+            } else {
+                do {
+                    long finalBound1 = bound;
+                    var range = bucketBound2FreeSpace.stream().filter(bucket -> bucket.getKey().equals(finalBound1)).findFirst();
+                    if (range.isPresent()) {
+                        var realRange = range.get();
+                        if (realRange.getValue().compareTo(probability) == 0) {
+                            break;
+                        } else {
+                            bound--;
+                        }
+                    } else {
+                        this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
+                        break;
+                    }
+                } while (true);
+            }
+        }
+        long finalBound = bound;
         parameters.parallelStream().forEach(parameter -> {
-            long value = bound;
+            long value = finalBound;
             if (operator == CompareOperator.GT || operator == CompareOperator.LE) {
                 value--;
             }
             parameter.setData(value);
             parameter.setDataValue(transferDataToValue(value));
         });
-        if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
-            if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(bound))) {
-                this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
-            }
-        }
+
     }
 
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
@@ -148,8 +165,7 @@ public class Column {
     public void insertUniVarProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         switch (operator) {
             case NE, NOT_LIKE, NOT_IN -> eqRequest2ParameterIds.computeIfAbsent(BigDecimal.ONE.subtract(probability), i -> new LinkedList<>()).add(parameters.get(0));
-            case EQ, LIKE -> eqRequest2ParameterIds.computeIfAbsent(probability, i -> new LinkedList<>()).add(parameters.get(0));
-            case IN -> insertEqualProbability(probability, parameters);
+            case EQ, LIKE, IN -> insertEqualProbability(probability, parameters);
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
         }
@@ -219,11 +235,23 @@ public class Column {
                     long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
                     eqConstraint2Probability.put(eqParameterData, eqProbability);
                     Parameter parameter = eqRequest2ParameterIds.get(eqProbability).remove(0);
+                    String tempValue = parameter.getDataValue();
                     parameter.setData(eqParameterData);
+                    String newValue;
                     if (likeParameterId.contains(parameter.getId())) {
-                        parameter.setDataValue(stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue()));
+                        newValue = stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue());
                     } else {
-                        parameter.setDataValue(transferDataToValue(eqParameterData));
+                        newValue = transferDataToValue(eqParameterData);
+                    }
+                    parameter.setDataValue(newValue);
+                    Iterator<Parameter> parameterIterator = eqRequest2ParameterIds.get(eqProbability).iterator();
+                    while (parameterIterator.hasNext()) {
+                        Parameter parameter1 = parameterIterator.next();
+                        if (parameter1.getDataValue().equals(tempValue)) {
+                            parameter1.setData(eqParameterData);
+                            parameter1.setDataValue(newValue);
+                            parameterIterator.remove();
+                        }
                     }
                 } else {
                     throw new UnsupportedOperationException("等值约束冲突，无法实例化");
@@ -265,20 +293,25 @@ public class Column {
             for (Parameter parameter : boundPara) {
                 long paraData = parameter.getData();
                 BigDecimal paraProbability = newEqConstraint2Probability.get(paraData);
-                int eqSize = paraProbability.multiply(BigDecimal.valueOf(sizeWithoutNull)).intValue();
+                int eqSize = paraProbability.multiply(BigDecimal.valueOf(sizeWithoutNull)).setScale(0, RoundingMode.HALF_UP).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, paraData);
                 newEqConstraint2Probability.remove(paraData);
+                nullSize += eqSize;
             }
         }
         if (newEqConstraint2Probability.size() > 0) {
             for (Map.Entry<Long, BigDecimal> entry : newEqConstraint2Probability.entrySet()) {
-                int eqSize = entry.getValue().multiply(BigDecimal.valueOf(sizeWithoutNull)).intValue();
+                int eqSize = entry.getValue().multiply(BigDecimal.valueOf(sizeWithoutNull)).setScale(0, RoundingMode.HALF_UP).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, entry.getKey());
+                nullSize += eqSize;
             }
         }
         //赋值随机数据
         int i = 0;
         long lastBound = 0;
+        while (eqConstraint2Probability.containsKey(lastBound)) {
+            lastBound++;
+        }
         bucketBound2FreeSpace.sort(Map.Entry.comparingByKey());
         for (Map.Entry<Long, BigDecimal> bucket2Probability : bucketBound2FreeSpace) {
             int randomSize;
@@ -286,7 +319,7 @@ public class Column {
                 randomSize = size - currentIndex;
             } else {
                 //todo 确定左边界
-                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).intValue() - (currentIndex - nullSize);
+                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).setScale(0, RoundingMode.HALF_UP).intValue() - (currentIndex - nullSize);
             }
             try {
                 //todo
@@ -298,6 +331,9 @@ public class Column {
                     randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
                 }
                 lastBound = bound;
+                while (eqConstraint2Probability.containsKey(lastBound)) {
+                    lastBound++;
+                }
                 System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -406,7 +442,7 @@ public class Column {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
-            case VARCHAR -> stringTemplate.transferColumnData2Value(data);
+            case VARCHAR -> stringTemplate.transferColumnData2Value(data, bucketBound2FreeSpace.size() > 1, range);
             case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min) * 24 * 60 * 60));
             case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();

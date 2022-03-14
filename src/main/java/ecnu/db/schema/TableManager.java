@@ -1,6 +1,7 @@
 package ecnu.db.schema;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import ecnu.db.LanguageManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.schema.CannotFindSchemaException;
@@ -22,19 +23,18 @@ public class TableManager {
     public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
     private static final TableManager INSTANCE = new TableManager();
-
-    public LinkedHashMap<String, Table> getSchemas() {
-        return schemas;
-    }
-
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
     private File schemaInfoPath;
-
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     public TableManager() {
     }
 
     public static TableManager getInstance() {
         return INSTANCE;
+    }
+
+    public LinkedHashMap<String, Table> getSchemas() {
+        return schemas;
     }
 
     public void setResultDir(String resultDir) {
@@ -72,7 +72,7 @@ public class TableManager {
         String[] pkCols = pkCol.split("\\.");
         String pkTable = pkCols[0] + "." + pkCols[1];
         double scale = CommonUtils.CardinalityScale;
-        if(tableName.equals("public.orders")){
+        if (tableName.equals("public.orders")) {
             scale = 1.5;
         }
         return (int) (scale * schemas.get(tableName).getTableSize() / schemas.get(pkTable).getTableSize());
@@ -117,7 +117,7 @@ public class TableManager {
 
 
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
-        logger.debug("添加参照依赖： {}.{} 参照 {}.{}", localTable, localColumns, refTable, refColumns);
+        logger.debug(rb.getString("AddReferenceDependencies"), localTable, localColumns, refTable, refColumns);
         getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
     }
 

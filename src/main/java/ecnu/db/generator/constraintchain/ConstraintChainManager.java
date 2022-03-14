@@ -1,11 +1,11 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Table;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.schema.CannotFindSchemaException;
@@ -30,43 +30,13 @@ public class ConstraintChainManager {
     private static final String[] COLOR_LIST = {"#FFFFCC", "#CCFFFF", "#FFCCCC"};
     private static final String GRAPH_TEMPLATE = "digraph \"%s\" {rankdir=BT;" + System.lineSeparator() + "%s}";
     private String resultDir;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     private ConstraintChainManager() {
     }
 
     public static ConstraintChainManager getInstance() {
         return INSTANCE;
-    }
-
-    public void setResultDir(String resultDir) {
-        this.resultDir = resultDir;
-    }
-
-    public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
-        return CommonUtils.MAPPER.readValue(readFile(resultDir + CONSTRAINT_CHAINS_INFO), new TypeReference<>() {
-        });
-    }
-
-
-    /**
-     * 清理不影响键值填充的约束链
-     *
-     * @param query2chains query和约束链的map
-     */
-    public void cleanConstrainChains(Map<String, List<ConstraintChain>> query2chains) {
-        for (var query2ConstraintChains : query2chains.entrySet()) {
-            Iterator<ConstraintChain> constraintChainIterator = query2ConstraintChains.getValue().iterator();
-            while (constraintChainIterator.hasNext()) {
-                ConstraintChain constraintChain = constraintChainIterator.next();
-                if (constraintChain.getNodes().stream().allMatch(
-                        node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER ||
-                                (node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE &&
-                                        ((ConstraintChainAggregateNode) node).getGroupKey() == null))) {
-                    logger.info("由于没有参与Join和与键值有关的Aggregation, 移除查询{}中的约束链{}", query2ConstraintChains.getKey(), constraintChain);
-                    constraintChainIterator.remove();
-                }
-            }
-        }
     }
 
     /**
@@ -107,7 +77,7 @@ public class ConstraintChainManager {
                         String fkCol = aggregateNode.getGroupKey().get(0);
                         String[] cols = fkCol.split("\\.");
                         try {
-                            String remoteCol = TableManager.getInstance().getSchema(cols[0]+"."+cols[1]).getForeignKeys().get(fkCol);
+                            String remoteCol = TableManager.getInstance().getSchema(cols[0] + "." + cols[1]).getForeignKeys().get(fkCol);
                             aggregateNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(remoteCol);
                         } catch (CannotFindSchemaException e) {
                             e.printStackTrace();
@@ -154,6 +124,66 @@ public class ConstraintChainManager {
         return allDiffStatus;
     }
 
+    public static List<StringBuilder> generateAttRows(List<String> attColumnNames, int range) {
+        List<Column> columns = attColumnNames.stream().map(col -> ColumnManager.getInstance().getColumn(col)).toList();
+        return IntStream.range(0, range).parallel()
+                .mapToObj(
+                        rowId -> {
+                            StringBuilder row = new StringBuilder(columns.get(0).output(rowId));
+                            for (int i = 1; i < columns.size(); i++) {
+                                row.append(',').append(columns.get(i).output(rowId));
+                            }
+                            return row;
+                        }
+                ).toList();
+    }
+
+    public void setResultDir(String resultDir) {
+        this.resultDir = resultDir;
+    }
+
+    public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
+        String path = resultDir + "\\workload";
+        File sqlDic = new File(path);
+        File[] sqlArray = sqlDic.listFiles();
+        assert sqlArray != null;
+        Map<String, List<ConstraintChain>> result = new HashMap<>();
+        for (File file : sqlArray) {
+            String graphPath = file.getPath();
+            File[] graphArray = file.listFiles();
+            assert graphArray != null;
+            for (File file1 : graphArray) {
+                if (file1.getName().contains("json")) {
+                    Map<String, List<ConstraintChain>> eachresult = CommonUtils.MAPPER.readValue(readFile(file1.getPath()), new TypeReference<>() {
+                    });
+                    result.putAll(eachresult);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 清理不影响键值填充的约束链
+     *
+     * @param query2chains query和约束链的map
+     */
+    public void cleanConstrainChains(Map<String, List<ConstraintChain>> query2chains) {
+        for (var query2ConstraintChains : query2chains.entrySet()) {
+            Iterator<ConstraintChain> constraintChainIterator = query2ConstraintChains.getValue().iterator();
+            while (constraintChainIterator.hasNext()) {
+                ConstraintChain constraintChain = constraintChainIterator.next();
+                if (constraintChain.getNodes().stream().allMatch(
+                        node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER ||
+                                (node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE &&
+                                        ((ConstraintChainAggregateNode) node).getGroupKey() == null))) {
+                    logger.info(rb.getString("RemoveConstraintChain1"), query2ConstraintChains.getKey(), constraintChain);
+                    constraintChainIterator.remove();
+                }
+            }
+        }
+    }
+
     /**
      * 对一组约束链进行分类
      *
@@ -180,20 +210,31 @@ public class ConstraintChainManager {
                 haveFkConstrainChains.add(constraintChain);
             }
         }
-        logger.debug("含有外键约束的链有{}条，不需要推导主键信息的约束链有{}条，需要推导主键信息的约束链有{}条",
+        logger.debug(rb.getString("ConstraintChainClassification"),
                 haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
     }
 
-
     public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
-        String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
-        CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
-        if (new File(resultDir + "/pic/").mkdir()) {
-            logger.info("创建约束链的图形化文件夹");
+        File workLoadDic = new File(resultDir + "\\workload");
+        if (!workLoadDic.exists()) {
+            workLoadDic.mkdir();
         }
+        for (Map.Entry<String, List<ConstraintChain>> entry : query2constraintChains.entrySet()) {
+            String constraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(entry);
+            File sqlDic = new File(resultDir + "\\workload" + "\\" + entry.getKey().split("\\.")[0]);
+            if (!sqlDic.exists()) {
+                sqlDic.mkdir();
+            }
+            CommonUtils.writeFile(resultDir + "\\workload" + "\\" + entry.getKey().split("\\.")[0] + "\\" + entry.getKey() + ".json", constraintChainsContent);
+        }
+        //String allConstraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2constraintChains);
+        //CommonUtils.writeFile(resultDir + CONSTRAINT_CHAINS_INFO, allConstraintChainsContent);
+        /*if (new File(resultDir + "/pic/").mkdir()) {
+            logger.info(rb.getString("CreateGraphicalFolderForConstraintChains"));
+        }*/
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
-            String path = resultDir + "/pic/" + stringListEntry.getKey() + ".dot";
-            File file = new File(resultDir + "/pic/");
+            String path = resultDir + "\\workload" + "\\" + stringListEntry.getKey().split("\\.")[0] + "\\" + stringListEntry.getKey() + ".dot";
+            File file = new File(resultDir + "\\workload" + "\\" + stringListEntry.getKey().split("\\.")[0]);
             File[] array = file.listFiles();
             assert array != null;
             if (!graphIsExists(array, stringListEntry.getKey() + ".dot")) {
@@ -209,7 +250,7 @@ public class ConstraintChainManager {
                     Calendar date = Calendar.getInstance();
                     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                     String currentTime = format.format(date.getTime());
-                    String newPath = resultDir + "/pic/" + currentTime + "_" + stringListEntry.getKey() + ".dot";
+                    String newPath = resultDir + "\\workload" + "\\" + stringListEntry.getKey().split("\\.")[0] + "\\" + currentTime + stringListEntry.getKey() + ".dot";
                     CommonUtils.writeFile(newPath + "", graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());
                 }
@@ -232,20 +273,6 @@ public class ConstraintChainManager {
 
     private boolean graphIsExists(File[] array, String graphName) {
         return Arrays.stream(array).map(File::getName).anyMatch(fileName -> fileName.equals(graphName));
-    }
-
-    public static List<StringBuilder> generateAttRows(List<String> attColumnNames, int range) {
-        List<Column> columns = attColumnNames.stream().map(col -> ColumnManager.getInstance().getColumn(col)).toList();
-        return IntStream.range(0, range).parallel()
-                .mapToObj(
-                        rowId -> {
-                            StringBuilder row = new StringBuilder(columns.get(0).output(rowId));
-                            for (int i = 1; i < columns.size(); i++) {
-                                row.append(',').append(columns.get(i).output(rowId));
-                            }
-                            return row;
-                        }
-                ).toList();
     }
 
     private String removeData(String graph) {

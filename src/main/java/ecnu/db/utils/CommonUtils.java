@@ -45,13 +45,13 @@ public class CommonUtils {
     public static final int INIT_HASHMAP_SIZE = 16;
     public static final double CardinalityScale = 1.4;
     public static final CsvMapper CSV_MAPPER = new CsvMapper();
+    public static final DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault());
+    public static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault());
     private static final SimpleModule touchStoneJsonModule = new SimpleModule()
             .addDeserializer(ArithmeticNode.class, new ArithmeticNodeDeserializer())
             .addDeserializer(ConstraintChainNode.class, new ConstraintChainNodeDeserializer())
             .addDeserializer(BoolExprNode.class, new BoolExprNodeDeserializer());
     private static final DefaultPrettyPrinter dpf = new DefaultPrettyPrinter();
-    public static final DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault());
-    public static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault());
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)

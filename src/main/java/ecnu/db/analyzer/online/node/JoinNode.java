@@ -11,12 +11,12 @@ public class JoinNode extends ExecutionNode {
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
      */
     private int joinTag = Integer.MIN_VALUE;
-    private BigDecimal pkDistinctProbability;
+    private final BigDecimal pkDistinctProbability;
     private long rowsRemoveByFilterAfterJoin;
     private String indexJoinFilter;
 
     public JoinNode(String id, long outputRows, String info, boolean antiJoin, boolean semiJoin, BigDecimal pkDistinctProbability) {
-        super(id, ExecutionNodeType.join, outputRows, info);
+        super(id, ExecutionNodeType.JOIN, outputRows, info);
         this.antiJoin = antiJoin;
         this.semiJoin = semiJoin;
         this.pkDistinctProbability = pkDistinctProbability;

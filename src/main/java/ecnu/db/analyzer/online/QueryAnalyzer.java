@@ -1,5 +1,6 @@
 package ecnu.db.analyzer.online;
 
+import ecnu.db.LanguageManager;
 import ecnu.db.analyzer.online.node.*;
 import ecnu.db.dbconnector.DbConnector;
 import ecnu.db.generator.constraintchain.ConstraintChain;
@@ -38,6 +39,7 @@ public class QueryAnalyzer {
     private final AbstractAnalyzer abstractAnalyzer;
     private final DbConnector dbConnector;
     protected double skipNodeThreshold = 0.01;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector) {
@@ -72,24 +74,30 @@ public class QueryAnalyzer {
         if (TableManager.getInstance().isRefTable(pkTable, pkCol, fkTable + "." + fkCol)) {
             return false;
         }
-        if (!pkCol.contains(",")) {
-            if (ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol) ==
-                    ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol)) {
-                return TableManager.getInstance().getTableSize(pkTable) < TableManager.getInstance().getTableSize(fkTable);
-            } else {
-                int pkTableNdv = ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol);
-                int fkTableNdv = ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
-                return pkTableNdv > fkTableNdv;
-            }
+        int leftTableNdv;
+        int rightTableNdv;
+        if (pkCol.contains(",")) {
+            leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
+            rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
         } else {
-            int leftTableNdv = dbConnector.getMultiColNdv(pkTable, pkCol);
-            int rightTableNdv = dbConnector.getMultiColNdv(fkTable, fkCol);
-            if (leftTableNdv == rightTableNdv) {
-                return TableManager.getInstance().getTableSize(pkTable) < TableManager.getInstance().getTableSize(fkTable);
-            } else {
-                return leftTableNdv > rightTableNdv;
-            }
+            leftTableNdv = ColumnManager.getInstance().getNdv(pkTable + CANONICAL_NAME_CONTACT_SYMBOL + pkCol);
+            rightTableNdv = ColumnManager.getInstance().getNdv(fkTable + CANONICAL_NAME_CONTACT_SYMBOL + fkCol);
         }
+        long leftTableSize = TableManager.getInstance().getTableSize(pkTable);
+        long rightTableSize = TableManager.getInstance().getTableSize(fkTable);
+        boolean isPrimaryKey;
+        if (leftTableNdv == rightTableNdv) {
+            if (leftTableSize == rightTableSize) {
+                throw new TouchstoneException("两个表无法区分主外键");
+            }
+            isPrimaryKey = leftTableSize < rightTableSize;
+        } else {
+            isPrimaryKey = leftTableNdv > rightTableNdv;
+        }
+        if ((isPrimaryKey && leftTableSize > leftTableNdv) || (!isPrimaryKey && rightTableSize > rightTableNdv)) {
+            throw new TouchstoneException("主键表的主键信息非unique");
+        }
+        return isPrimaryKey;
     }
 
     /**
@@ -103,9 +111,9 @@ public class QueryAnalyzer {
      */
     private long analyzeNode(ExecutionNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException, SQLException {
         return switch (node.getType()) {
-            case join -> analyzeJoinNode((JoinNode) node, constraintChain, lastNodeLineCount);
-            case filter -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
-            case aggregate -> analyzeAggregateNode((AggNode) node, constraintChain, lastNodeLineCount);
+            case JOIN -> analyzeJoinNode((JoinNode) node, constraintChain, lastNodeLineCount);
+            case FILTER -> analyzeSelectNode(node, constraintChain, lastNodeLineCount);
+            case AGGREGATE -> analyzeAggregateNode((AggNode) node, constraintChain, lastNodeLineCount);
         };
     }
 
@@ -148,20 +156,12 @@ public class QueryAnalyzer {
         String externalCol = joinColumnInfos[3];
         if (localTable.equals(externalTable)) {
             node.setJoinTag(SKIP_SELF_JOIN);
-            logger.error("skip node {} due to self join", node.getInfo());
+            logger.error(rb.getString("SkipSelfJoinNode"), node.getInfo());
             return STOP_CONSTRUCT;
         }
         // 如果当前的join节点，不属于之前遍历的节点
-        Set<String> currentJoinTables = new HashSet<>(List.of(localTable, externalTable));
-        if (!currentJoinTables.contains(constraintChain.getTableName())) {
-            // 如果与之前join过的表一致，且本次join无效，则继续推进
-            if (currentJoinTables.removeAll(constraintChain.getJoinTables()) && node.getJoinTag() < 0) {
-                return lastNodeLineCount;
-            }
-            // 停止继续向上访问
-            else {
-                return STOP_CONSTRUCT;
-            }
+        if (!constraintChain.getTableName().equals(localTable) && !constraintChain.getTableName().equals(externalTable)) {
+            return STOP_CONSTRUCT;
         }
         //将本表的信息放在前面，交换位置
         if (constraintChain.getTableName().equals(externalTable)) {
@@ -182,7 +182,7 @@ public class QueryAnalyzer {
             }
             if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount &&
                     node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0) {
-                logger.debug("由于输入的主键为全集，跳过节点{}", node.getInfo());
+                logger.debug(rb.getString("SkipNodeDueToFullTableScan"), node.getInfo());
                 node.setJoinTag(SKIP_JOIN_TAG);
             } else {
                 node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
@@ -197,20 +197,32 @@ public class QueryAnalyzer {
             int fkJoinTag = node.getJoinTag();
             logger.debug("{} get join tag", node.getInfo());
             if (fkJoinTag == SKIP_JOIN_TAG) {
-                logger.debug("由于join节点对应的主键输入为全集，跳过节点{}", node.getInfo());
+                logger.debug(rb.getString("SkipNodeDueToFullPk"), node.getInfo());
                 return node.getOutputRows();
             } else if (fkJoinTag == SKIP_SELF_JOIN) {
-                logger.error("由于self join，跳过节点{}", node.getInfo());
+                logger.error(rb.getString("SkipSelfJoinNode"), node.getInfo());
                 return STOP_CONSTRUCT;
             }
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             BigDecimal probability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
             // deal with index join
-            if (node.getRightNode().getType() == ExecutionNodeType.filter && node.getRightNode().getInfo() != null &&
-                    ((FilterNode) node.getRightNode()).isIndexScan()&&node.getRightNode().getTableName().equals(localTable)) {
-                long tableSize = TableManager.getInstance().getTableSize(node.getRightNode().getTableName());
-                long rowsRemovedByScanFilter = tableSize - node.getRightNode().getOutputRows();
+            String leftTable = null;
+            String rightTable = null;
+            ExecutionNode childNode = null;
+            if (node.getLeftNode().getType() == ExecutionNodeType.FILTER && node.getLeftNode().getInfo() != null &&
+                    ((FilterNode) node.getLeftNode()).isIndexScan()) {
+                leftTable = node.getLeftNode().getTableName();
+                childNode = node.getLeftNode();
+            }
+            if (node.getRightNode().getType() == ExecutionNodeType.FILTER && node.getRightNode().getInfo() != null &&
+                    ((FilterNode) node.getRightNode()).isIndexScan()) {
+                rightTable = node.getRightNode().getTableName();
+                childNode = node.getRightNode();
+            }
+            if ((leftTable!=null&&leftTable.equals(localTable))||(rightTable!=null&&rightTable.equals(localTable))) {
+                long tableSize = TableManager.getInstance().getTableSize(childNode.getTableName());
+                long rowsRemovedByScanFilter = tableSize - childNode.getOutputRows();
                 BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
@@ -242,13 +254,13 @@ public class QueryAnalyzer {
      */
     private ConstraintChain extractConstraintChain(List<ExecutionNode> path, Set<ExecutionNode> inputNodes) throws TouchstoneException, SQLException {
         if (path == null || path.isEmpty()) {
-            throw new TouchstoneException(String.format("非法的path输入 '%s'", path));
+            throw new TouchstoneException(String.format("invalid path input '%s'", path));
         }
         ExecutionNode headNode = path.get(0);
         ConstraintChain constraintChain;
         long lastNodeLineCount;
         //分析约束链的第一个node
-        if (headNode.getType() == ExecutionNodeType.filter) {
+        if (headNode.getType() == ExecutionNodeType.FILTER) {
             constraintChain = new ConstraintChain(headNode.getTableName());
             FilterNode filterNode = (FilterNode) headNode;
             if (filterNode.getInfo() != null) {
@@ -264,7 +276,7 @@ public class QueryAnalyzer {
             }
             lastNodeLineCount = filterNode.getOutputRows();
         } else {
-            throw new TouchstoneException(String.format("底层节点 %s 只能为select或者scan", headNode.getId()));
+            throw new TouchstoneException(String.format(rb.getString("InvalidUnderlyingNode"), headNode.getId()));
         }
         inputNodes.add(headNode);
         for (ExecutionNode executionNode : path.subList(1, path.size())) {
@@ -284,8 +296,8 @@ public class QueryAnalyzer {
                 e.printStackTrace();
                 // 小于设置的阈值以后略去后续的节点
                 if (executionNode.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(executionNode.getTableName()) < skipNodeThreshold) {
-                    logger.error("提取约束链失败", e);
-                    logger.info(String.format("%s, 但节点行数与tableSize比值小于阈值，跳过节点%s", e.getMessage(), executionNode));
+                    logger.error(rb.getString("FailToExtractConstraintChain"), e);
+                    logger.info(String.format(rb.getString("SkipNodeDueToRatio"), e.getMessage(), executionNode));
                     return constraintChain;
                 }
             }
@@ -338,7 +350,7 @@ public class QueryAnalyzer {
             if (queryPlan != null && !queryPlan.isEmpty()) {
                 String queryPlanContent = queryPlan.stream().map(plan -> String.join("\t", plan))
                         .collect(Collectors.joining(System.lineSeparator()));
-                logger.error("查询树抽取失败");
+                logger.error(rb.getString("FailToExtractQueryTree"));
                 logger.error(queryPlanContent, e);
             }
         }
@@ -362,7 +374,7 @@ public class QueryAnalyzer {
                     }
                 }).filter(Objects::nonNull).toList()).get()));
             } catch (InterruptedException | ExecutionException e) {
-                logger.error("约束链构造失败", e);
+                logger.error(rb.getString("FailToConstructConstraintChain"), e);
                 Thread.currentThread().interrupt();
             } finally {
                 forkJoinPool.shutdown();
@@ -381,7 +393,7 @@ public class QueryAnalyzer {
                 }
             }
         }
-        logger.info("Status:获取完成");
+        logger.info(rb.getString("GetComplete"));
         return constraintChains;
     }
 

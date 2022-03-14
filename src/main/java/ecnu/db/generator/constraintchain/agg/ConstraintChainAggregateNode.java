@@ -1,6 +1,7 @@
 package ecnu.db.generator.constraintchain.agg;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
@@ -13,23 +14,15 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class ConstraintChainAggregateNode extends ConstraintChainNode {
-    private List<String> groupKey;
-    private BigDecimal aggProbability;
-    ConstraintChainFilterNode aggFilter;
     private final Logger logger = LoggerFactory.getLogger(ConstraintChainAggregateNode.class);
-
     @JsonIgnore
     public int joinStatusIndex;
     @JsonIgnore
     public int joinStatusLocation;
-
-    public BigDecimal getAggProbability() {
-        return aggProbability;
-    }
-
-    public void setAggProbability(BigDecimal aggProbability) {
-        this.aggProbability = aggProbability.stripTrailingZeros();
-    }
+    ConstraintChainFilterNode aggFilter;
+    private List<String> groupKey;
+    private BigDecimal aggProbability;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     public ConstraintChainAggregateNode(List<String> groupKeys, BigDecimal aggProbability) {
         super(ConstraintChainNodeType.AGGREGATE);
@@ -39,6 +32,14 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
 
     public ConstraintChainAggregateNode() {
         super(ConstraintChainNodeType.AGGREGATE);
+    }
+
+    public BigDecimal getAggProbability() {
+        return aggProbability;
+    }
+
+    public void setAggProbability(BigDecimal aggProbability) {
+        this.aggProbability = aggProbability.stripTrailingZeros();
     }
 
     public boolean removeAgg() {
@@ -59,7 +60,7 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
         }
         // 如果group key中包含主键 且无法支持 提示报错
         if (groupKey.stream().anyMatch(key -> TableManager.getInstance().isPrimaryKey(key))) {
-            logger.error("不能在查询中支持聚集算子 {}", this);
+            logger.error(rb.getString("AggOperatorCannotBeSupportedInQuery"), this);
         }
         return true;
     }

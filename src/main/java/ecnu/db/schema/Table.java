@@ -21,12 +21,13 @@ public class Table {
     private int joinTag = 0;
 
     public Table() {
+        this.primaryKeys = new ArrayList<>();
     }
 
-    public Table(List<String> canonicalColumnNames, long tableSize, List<String> primaryKeys) {
+    public Table(List<String> canonicalColumnNames, long tableSize) {
         this.canonicalColumnNames = canonicalColumnNames;
         this.tableSize = tableSize;
-        this.primaryKeys = primaryKeys;
+        this.primaryKeys = new ArrayList<>();
     }
 
     public List<String> getCanonicalColumnNames() {
@@ -112,18 +113,13 @@ public class Table {
         return String.join(",", primaryKeys);
     }
 
-    @JsonIgnore
-    public List<String> getPrimaryKeysList() {
-        return primaryKeys;
-    }
-
     public void setPrimaryKeys(List<String> primaryKeys) {
         this.primaryKeys = primaryKeys;
     }
 
     public synchronized void setPrimaryKeys(String primaryKeys) throws TouchstoneException {
-        if (this.primaryKeys == null) {
-            this.primaryKeys = Arrays.asList(primaryKeys.split(","));
+        if (this.primaryKeys.isEmpty()) {
+            this.primaryKeys.addAll(List.of(primaryKeys.split(",")));
         } else {
             Set<String> newKeys = new HashSet<>(Arrays.asList(primaryKeys.split(",")));
             Set<String> keys = new HashSet<>(this.primaryKeys);
@@ -136,6 +132,11 @@ public class Table {
                 throw new TouchstoneException("query中使用了多列主键的部分主键");
             }
         }
+    }
+
+    @JsonIgnore
+    public List<String> getPrimaryKeysList() {
+        return primaryKeys;
     }
 
     public void toSQL(DbConnector dbConnector, String tableName) throws SQLException, TouchstoneException {
@@ -158,7 +159,6 @@ public class Table {
         }
         head = new StringBuilder(head.substring(0, head.length() - 1));
         head.append(");");
-        System.out.println(head);
         dbConnector.executeSql(head.toString());
     }
 

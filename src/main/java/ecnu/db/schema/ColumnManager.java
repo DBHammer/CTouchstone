@@ -30,7 +30,10 @@ public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
     private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class);
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
-            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
+                    .appendFraction(ChronoField.MILLI_OF_SECOND, 2, 3, true) // min 2 max 3
+                    .toFormatter())
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss").toFormatter())
             .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
                     .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
                     .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
@@ -117,6 +120,10 @@ public class ColumnManager {
     }
 
     public void storeColumnDistribution() throws IOException {
+        File distribution = new File(distributionInfoPath + "\\distribution");
+        if(!distribution.exists()){
+            distribution.mkdir();
+        }
         Map<String, Map<Long, boolean[]>> columName2StringTemplate = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
             if (column.getValue().getColumnType() == ColumnType.VARCHAR &&
@@ -125,7 +132,7 @@ public class ColumnManager {
             }
         }
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columName2StringTemplate);
-        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_STRING_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_STRING_INFO, content);
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = new HashMap<>();
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = new HashMap<>();
         Map<String, List<Parameter>> boundParas = new HashMap<>();
@@ -142,11 +149,11 @@ public class ColumnManager {
             }
         }
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(bucket2Probabilities);
-        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_DISTRIBUTION_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO, content);
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(eq2Probabilities);
-        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_EQDISTRIBUTION_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_EQDISTRIBUTION_INFO, content);
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(boundParas);
-        CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_BOUNDPARA_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_BOUNDPARA_INFO, content);
     }
 
     public void loadColumnMetaData() throws IOException {
@@ -166,25 +173,26 @@ public class ColumnManager {
     }
 
     public void loadColumnDistribution() throws IOException {
-        String content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_STRING_INFO);
+        File distribution = new File(distributionInfoPath + "/distribution");
+        String content = CommonUtils.readFile(distribution.getPath() + COLUMN_STRING_INFO);
         Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, Map<Long, boolean[]>> template : columName2StringTemplate.entrySet()) {
             columns.get(template.getKey()).getStringTemplate().setLikeIndex2Status(template.getValue());
         }
-        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_DISTRIBUTION_INFO);
+        content = CommonUtils.readFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO);
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, List<Map.Entry<Long, BigDecimal>>> bucket : bucket2Probabilities.entrySet()) {
             columns.get(bucket.getKey()).setBucketBound2FreeSpace(bucket.getValue());
         }
-        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_EQDISTRIBUTION_INFO);
+        content = CommonUtils.readFile(distribution.getPath() + COLUMN_EQDISTRIBUTION_INFO);
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, Map<Long, BigDecimal>> eq2Probability : eq2Probabilities.entrySet()) {
             columns.get(eq2Probability.getKey()).setEqConstraint2Probability(eq2Probability.getValue());
         }
-        content = CommonUtils.readFile(distributionInfoPath.getPath() + COLUMN_BOUNDPARA_INFO);
+        content = CommonUtils.readFile(distribution.getPath() + COLUMN_BOUNDPARA_INFO);
         Map<String, List<Parameter>> boundParas = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, List<Parameter>> boundPara : boundParas.entrySet()) {
@@ -207,39 +215,50 @@ public class ColumnManager {
         int index = 0;
         for (String canonicalColumnName : canonicalColumnNames) {
             Column column = columns.get(canonicalColumnName);
+            String minResult = sqlResult[index++];
+            String maxResult = sqlResult[index++];
             long min;
             long range;
             long specialValue;
-            switch (column.getColumnType()) {
-                case INTEGER -> {
-                    min = Long.parseLong(sqlResult[index++]);
-                    long maxBound = Long.parseLong(sqlResult[index++]);
-                    range = Long.parseLong(sqlResult[index++]);
-                    specialValue = (int) ((maxBound - min + 1) / range);
+            if (minResult == null) {
+                min = -1;
+                range = -1;
+                specialValue = 0;
+                if (column.getColumnType().isHasCardinalityConstraint()) {
+                    index++;
                 }
-                case VARCHAR -> {
-                    column.setMinLength(Integer.parseInt(sqlResult[index++]));
-                    column.setRangeLength(Integer.parseInt(sqlResult[index++]) - column.getMinLength());
-                    min = 0;
-                    range = Integer.parseInt(sqlResult[index++]);
-                    specialValue = ThreadLocalRandom.current().nextInt();
+            } else {
+                switch (column.getColumnType()) {
+                    case INTEGER -> {
+                        min = Long.parseLong(minResult);
+                        long maxBound = Long.parseLong(maxResult);
+                        range = Long.parseLong(sqlResult[index++]);
+                        specialValue = (int) ((maxBound - min + 1) / range);
+                    }
+                    case VARCHAR -> {
+                        column.setMinLength(Integer.parseInt(minResult));
+                        column.setRangeLength(Integer.parseInt(maxResult) - column.getMinLength());
+                        min = 0;
+                        range = Integer.parseInt(sqlResult[index++]);
+                        specialValue = ThreadLocalRandom.current().nextInt();
+                    }
+                    case DECIMAL -> {
+                        specialValue = column.getSpecialValue();
+                        min = (long) (Double.parseDouble(minResult) * specialValue);
+                        range = (long) (Double.parseDouble(maxResult) * specialValue) - min;
+                    }
+                    case DATE -> {
+                        min = LocalDateTime.parse(minResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60);
+                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60) - min;
+                        specialValue = 0;
+                    }
+                    case DATETIME -> {
+                        min = LocalDateTime.parse(minResult, FMT).toEpochSecond(ZoneOffset.UTC);
+                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) - min;
+                        specialValue = 0;
+                    }
+                    default -> throw new TouchstoneException("未匹配到的类型");
                 }
-                case DECIMAL -> {
-                    specialValue = column.getSpecialValue();
-                    min = (long) (Double.parseDouble(sqlResult[index++]) * specialValue);
-                    range = (long) (Double.parseDouble(sqlResult[index++]) * specialValue) - min;
-                }
-                case DATE -> {
-                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC)/(24*60*60);
-                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC)/(24*60*60) - min;
-                    specialValue = 0;
-                }
-                case DATETIME -> {
-                    min = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC);
-                    range = LocalDateTime.parse(sqlResult[index++], FMT).toEpochSecond(ZoneOffset.UTC) - min;
-                    specialValue = 0;
-                }
-                default -> throw new TouchstoneException("未匹配到的类型");
             }
             column.setMin(min);
             column.setRange(range);
@@ -250,6 +269,10 @@ public class ColumnManager {
             column.initBucketBound2FreeSpace();
             column.setNullPercentage(Float.parseFloat(sqlResult[index++]));
         }
+    }
+
+    public void prepareParameterInit(Collection<String> columnNames, int size) {
+        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
     }
 
     public void prepareGeneration(Collection<String> columnNames, int size) {

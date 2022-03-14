@@ -33,7 +33,6 @@ public class BoundFkGenerate implements FkGenerate {
     @Override
     public long getValue() {
         if (currentCardinality == -1) {
-            System.out.println(this);
             return allCardinality.get(currentIndex - 1);
         } else {
             long fkStatusIndex = allCardinality.get(currentIndex);

@@ -17,11 +17,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class KeysGenerator {
-    Logger logger = LoggerFactory.getLogger(KeysGenerator.class);
-
     // 约束链中的外键对应的主键的位置。 主键名 -> 一组主键的join info status中对应的位置
     private final SortedMap<String, List<Integer>> involveFks;
-
     /**
      * * 约束链中涉及到的所有状态 组织结构如下
      * * pkCol1 ---- pkCol2 ----- pkCol3
@@ -29,9 +26,9 @@ public class KeysGenerator {
      * * status11--- status22---- status33
      */
     private final List<List<boolean[]>> allStatus;
-
     // 主键的状态Hash对应的size。 一组  主键状态hash -> 主键状态的大小
     private final List<Map<Integer, Long>> statusHash2Size;
+    Logger logger = LoggerFactory.getLogger(KeysGenerator.class);
 
     public KeysGenerator(List<ConstraintChain> haveFkConstrainChains) {
         // 统计所有的联合状态
@@ -150,7 +147,6 @@ public class KeysGenerator {
                 cardinalityRangeForEachFk.add(cardinalityRangeForFk);
             }
         }
-//        System.out.println(cardinalityRangeForEachFk);
 
         List<List<Map.Entry<boolean[], Long>>> fkStatus2PkIndex = new ArrayList<>(range);
         Map<JoinStatus, Integer> filterStatus2JoinLocation = getAllVarLocation(filterHistogram, allStatus);

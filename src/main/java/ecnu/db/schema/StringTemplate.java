@@ -6,12 +6,12 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 class StringTemplate {
+    private static final char[] randomCharSet = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray();
+    private static final char[] likeRandomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ-".toCharArray();
     int minLength;
     int rangeLength;
     long specialValue;
     Map<Long, boolean[]> likeIndex2Status = new HashMap<>();
-    private static final char[] randomCharSet = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray();
-    private static final char[] likeRandomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ-".toCharArray();
 
     public StringTemplate(int minLength, int rangeLength, long specialValue) {
         this.minLength = minLength;
@@ -63,7 +63,8 @@ class StringTemplate {
         this.likeIndex2Status = likeIndex2Status;
     }
 
-    public String transferColumnData2Value(long data) {
+    //todo deal with the like operator and the compare operator at the same time
+    public String transferColumnData2Value(long data, boolean compare, long range) {
         if (likeIndex2Status.size() > 0 && likeIndex2Status.containsKey(data)) {
             char[] value = getParameterBuilder(data);
             boolean[] status = likeIndex2Status.get(data);
@@ -79,6 +80,19 @@ class StringTemplate {
                 value[value.length / 2] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
             }
             value[firstChangeIndex] = likeRandomCharSet[value[firstChangeIndex] % likeRandomCharSet.length];
+            return new String(value);
+        } else if (compare) {
+            char[] value = getParameterBuilder(data);
+            int length = Long.toString(range).length();
+            String currentData = Long.toString(data);
+            int lengthCurrent = currentData.length();
+            int diff = length - lengthCurrent;
+            for (int i = 0; i < diff; i++) {
+                value[i] = '0';
+            }
+            for (int i = 0; i < lengthCurrent; i++) {
+                value[i + diff] = currentData.charAt(i);
+            }
             return new String(value);
         } else {
             return getParameterValue(data);

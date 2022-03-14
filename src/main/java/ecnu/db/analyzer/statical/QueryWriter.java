@@ -4,6 +4,7 @@ import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.parser.Lexer;
 import com.alibaba.druid.sql.parser.Token;
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
@@ -30,11 +31,15 @@ public class QueryWriter {
     private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
     private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
     private final String queryDir;
+    private final String resultDir;
     private DbType dbType;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+
 
     public QueryWriter(String resultDir) {
         this.queryDir = resultDir + QUERY_DIR;
-        if (new File(queryDir).mkdir()) {
+        this.resultDir = resultDir;
+        if (new File(resultDir).mkdir()) {
             logger.info("create query dir for output");
         }
     }
@@ -155,11 +160,11 @@ public class QueryWriter {
                     conflictArgs.add(parameter);
                 }
             } else {
-                if(parameter.isSubPlan()){
+                if (parameter.isSubPlan()) {
                     var subplanranges = matches.stream().findFirst().get().range;
-                    var subplanrange = subplanranges.get(subplanranges.size()-1);
+                    var subplanrange = subplanranges.get(subplanranges.size() - 1);
                     replaceParams.put(subplanrange.getKey(), new AbstractMap.SimpleEntry<>(parameter, subplanrange));
-                }else {
+                } else {
                     var pair = matches.stream().findFirst().get().range;
                     for (Map.Entry<Integer, Integer> range : pair) {
                         replaceParams.put(range.getKey(), new AbstractMap.SimpleEntry<>(parameter, range));
@@ -180,11 +185,11 @@ public class QueryWriter {
         fragments.append(query.substring(currentPos));
         query = fragments.toString();
         if (!cannotFindArgs.isEmpty()) {
-            logger.warn("请注意{}中有参数无法完成替换，请查看该sql输出，手动替换;", queryCanonicalName);
+            logger.warn(rb.getString("CannotReplace1"), queryCanonicalName);
             query = appendArgs("cannotFindArgs", cannotFindArgs) + query;
         }
         if (!conflictArgs.isEmpty()) {
-            logger.warn("请注意{}中有参数出现多次，无法智能替换，请查看该sql输出，手动替换;", queryCanonicalName);
+            logger.warn(rb.getString("CannotReplace2"), queryCanonicalName);
             query = appendArgs("conflictArgs", conflictArgs) + query;
         }
 
@@ -224,10 +229,11 @@ public class QueryWriter {
     public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {
         for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
             String query = queryName2QueryTemplate.getValue();
+            String path = resultDir + "\\workload" + "\\" + queryName2QueryTemplate.getKey().split("\\.")[0] + "\\" + queryName2QueryTemplate.getKey();
             List<List<String>> matches = matchPattern(PATTERN, query);
             if (matches.isEmpty()) {
                 String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-                CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
+                CommonUtils.writeFile(path, formatQuery);
             } else {
                 for (List<String> group : matches) {
                     int parameterId = Integer.parseInt(group.get(1));
@@ -245,7 +251,7 @@ public class QueryWriter {
                         }
                     }
                     String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-                    CommonUtils.writeFile(queryDir + queryName2QueryTemplate.getKey(), formatQuery);
+                    CommonUtils.writeFile(path, formatQuery);
                 }
             }
         }
