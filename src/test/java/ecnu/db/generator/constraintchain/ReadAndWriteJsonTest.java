@@ -17,8 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ReadAndWriteJsonTest {
     private static final String dir = "src/test/resources/data/query-instantiation/basic/";
 
-    //todo fix json item order
-    @Disabled
     @Test
     void writeTestConstraintChain() throws IOException {
         String content = readFile(dir + "constraintChain.json");
