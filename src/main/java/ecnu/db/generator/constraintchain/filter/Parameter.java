@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.schema.ColumnManager;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,7 +71,7 @@ public class Parameter {
 
     public List<String> hasOnlyOneColumn() {
         if (operand == null) {
-            return null;
+            return new LinkedList<>();
         }
         Matcher matcher = CanonicalColumnName.matcher(operand);
         List<String> cols = new ArrayList<>();

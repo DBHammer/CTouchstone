@@ -69,7 +69,7 @@ public class QueryWriter {
         }
         for (Parameter parameter : parameters) {
             List<String> cols = parameter.hasOnlyOneColumn();
-            if (cols != null && cols.size() != 1) {
+            if (cols.size() > 1) {
                 String pattern = cols.stream().map(col -> col.split("\\.")[2]).collect(Collectors.joining(" .{1,2} "));
                 matcher = Pattern.compile(pattern).matcher(query);
                 if (matcher.find()) {
@@ -130,7 +130,7 @@ public class QueryWriter {
         parameters.removeAll(subPlanParameters);
         parameters.addAll(subPlanParameters);
         for (Parameter parameter : parameters) {
-            if (parameter.hasOnlyOneColumn() != null && parameter.hasOnlyOneColumn().size() != 1) {
+            if (parameter.hasOnlyOneColumn().size() > 1) {
                 continue;
             }
 
@@ -198,15 +198,14 @@ public class QueryWriter {
 
 
     public String evaluate(String str, boolean isDate) throws SQLException {
-        Connection conn = DriverManager.getConnection("jdbc:h2:mem:h2DB;MODE=MYSQL;", "root", "root");
-        Statement statement = conn.createStatement();
-        String date = isDate ? "DATE " : " ";
-        ResultSet resultSet = statement.executeQuery("SELECT " + date + str);
-        String result = "";
-        if (resultSet.next()) {
-            result = resultSet.getString(1);
+        String h2ConnUrl = "jdbc:h2:mem:h2DB;MODE=MYSQL;";
+        try (Connection conn = DriverManager.getConnection(h2ConnUrl, "root", "root")) {
+            try (Statement statement = conn.createStatement();) {
+                String date = isDate ? "DATE " : " ";
+                ResultSet resultSet = statement.executeQuery("SELECT " + date + str);
+                return resultSet.next() ? "'" + resultSet.getString(1) + "'" : "";
+            }
         }
-        return "'" + result + "'";
     }
 
 
