@@ -230,7 +230,8 @@ public class QueryWriter {
             String query = queryName2QueryTemplate.getValue();
             String path = resultDir + WORKLOAD_DIR + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey();
             String pathOfTemplate = resultDir + WORKLOAD_DIR + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "Template.sql";
-            CommonUtils.writeFile(pathOfTemplate, query);
+            String templateSql = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
+            CommonUtils.writeFile(pathOfTemplate, templateSql);
             List<List<String>> matches = matchPattern(PATTERN, query);
             if (matches.isEmpty()) {
                 String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
