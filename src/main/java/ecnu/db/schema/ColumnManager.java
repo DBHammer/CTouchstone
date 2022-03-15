@@ -110,9 +110,9 @@ public class ColumnManager {
                 writer.write("#" + columnSchema.columnName(i));
             }
             writer.write("\n");
-            SequenceWriter seqW = CSV_MAPPER.writer(columnSchema).writeValues(writer);
+            SequenceWriter seqW = CSV_MAPPER.writerFor(Column.class).with(columnSchema).writeValues(writer);
             for (var column : columns.entrySet()) {
-                writer.write(column.getKey() + "# ");
+                writer.write(column.getKey() + "#");
                 seqW.write(column.getValue());
             }
             CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_METADATA_INFO, writer.toString());
@@ -162,7 +162,7 @@ public class ColumnManager {
             while ((line = bufferedReader.readLine()) != null) {
                 int commaIndex = line.indexOf('#');
                 String columnData = line.substring(commaIndex + 1);
-                Column column = CSV_MAPPER.readerWithSchemaFor(Column.class).readValue(columnData);
+                Column column = CSV_MAPPER.readerFor(Column.class).with(columnSchema).readValue(columnData);
                 if (column.getColumnType() == ColumnType.VARCHAR) {
                     column.initStringTemplate();
                 }
