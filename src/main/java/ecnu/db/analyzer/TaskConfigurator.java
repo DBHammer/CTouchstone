@@ -285,7 +285,7 @@ public class TaskConfigurator implements Callable<Integer> {
         private OthersConfig othersConfig;
         @CommandLine.Option(names = {"-t", "--db_type"}, required = true, description = "database version: ${COMPLETION-CANDIDATES}")
         private TouchstoneDbType dbType;
-        @CommandLine.Option(names = {"-l", "--load"})
+        @CommandLine.Option(names = {"-l", "--load"}, description = "load the configuration from the previous result")
         private boolean isLoad;
     }
 
@@ -314,7 +314,7 @@ public class TaskConfigurator implements Callable<Integer> {
         private String databasePwd;
         @CommandLine.Option(names = {"-D", "--database_name"}, description = "database name")
         private String databaseName;
-        @CommandLine.Option(names = {"-i", "--load_input"}, required = true, description = "the dir path of queries")
+        @CommandLine.Option(names = {"-q", "--query_input"}, required = true, description = "the dir path of queries")
         private String queriesDirectory;
         @CommandLine.Option(names = {"-o", "--output"}, required = true, description = "the dir path for output")
         private String resultDirectory;
