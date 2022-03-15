@@ -84,10 +84,9 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
             List<String> keys = table2keys.get(tableName);
             // if the first group attribute is fk, remove all its referenced table
             // todo 参照关系和groupkey可能不一致
-            if (keys.stream().anyMatch(key -> TableManager.getInstance().isForeignKey(key))) {
+            if (keys != null && keys.stream().anyMatch(key -> TableManager.getInstance().isForeignKey(key))) {
                 var tableNames = table2keys.keySet().stream()
-                        .filter(currentTable -> TableManager.getInstance().isRefTable(tableName, currentTable))
-                        .toList();
+                        .filter(currentTable -> TableManager.getInstance().isRefTable(tableName, currentTable)).toList();
                 for (String currentTable : tableNames) {
                     List<String> groupKeys = table2keys.get(currentTable);
                     logger.debug("remove invalid group key {} from node {}", groupKeys, this);
