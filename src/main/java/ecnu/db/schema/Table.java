@@ -162,6 +162,29 @@ public class Table {
         dbConnector.executeSql(head.toString());
     }
 
+    public String getSql(String tableName) throws SQLException, TouchstoneException {
+        StringBuilder head = new StringBuilder("CREATE TABLE ");
+        head.append(tableName).append(" (\n");
+        List<String> allColumns = new ArrayList<>(canonicalColumnNames);
+        List<String> tempPrimayKeys = new ArrayList<>(primaryKeys);
+        tempPrimayKeys.removeAll(foreignKeys.keySet());
+        allColumns.removeAll(tempPrimayKeys);
+        allColumns.removeAll(foreignKeys.keySet());
+        List<String> foreignKeysList = new ArrayList<>(foreignKeys.keySet());
+        Collections.sort(foreignKeysList);
+        allColumns.addAll(0, foreignKeysList);
+        allColumns.addAll(0, tempPrimayKeys);
+        for (String canonicalColumnName : allColumns) {
+            String columnName = canonicalColumnName.split("\\.")[2].toUpperCase();
+            Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
+            String addColumn = columnName + " " + column.getOriginalType() + ",";
+            head.append("  ").append(addColumn).append("\n");
+        }
+        head = new StringBuilder(head.substring(0, head.length() - 2));
+        head.append("\n);\n");
+        return head.toString();
+    }
+
     @Override
     public String toString() {
         return "Schema{tableSize=" + tableSize + '}';
