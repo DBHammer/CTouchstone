@@ -46,16 +46,16 @@ public class DDLGenerator implements Callable<Integer> {
         }
         CommonUtils.writeFile(CREATE_SCHEMA_PATH, createSchema.toString());
         //构建数据导入语句
-        StringBuilder importData = new StringBuilder();
+        StringBuilder importData = new StringBuilder("\\c demo;\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
-            String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM " + "'" + "./data " + tableName + "0.csv" + "'\n";
+            String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM " + "'" + "./data/" + tableName + "0" + "' DELIMITER ',';\n";
             importData.append(inData);
         }
         CommonUtils.writeFile(IMPORT_DATA, importData.toString());
         //构建createindex语句
         List<String> addFks = new ArrayList<>();
-        String createIndex = "";
+        String createIndex = "\\c " + dataBase + "\n";
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
             Table table = tableName2Schema.getValue();
