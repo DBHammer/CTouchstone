@@ -2,6 +2,7 @@ package ecnu.db;
 
 import ecnu.db.analyzer.TaskConfigurator;
 import ecnu.db.generator.DataGenerator;
+import ecnu.db.schema.DDLGenerator;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -10,7 +11,7 @@ import picocli.CommandLine.Command;
                 "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
                 "OS: ${os.name} ${os.version} ${os.arch}"},
         description = "tool for generating test database", sortOptions = false,
-        subcommands = {TaskConfigurator.class, DataGenerator.class},
+        subcommands = {TaskConfigurator.class, DataGenerator.class, DDLGenerator.class},
         mixinStandardHelpOptions = true,
         header = {
                 "@|green  _____                _         _ |@",
@@ -25,5 +26,4 @@ public class TouchstoneApp {
         int exitCode = new CommandLine(new TouchstoneApp()).execute(args);
         System.exit(exitCode);
     }
-
 }
