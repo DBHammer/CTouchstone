@@ -229,6 +229,8 @@ public class QueryWriter {
         for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
             String query = queryName2QueryTemplate.getValue();
             String path = resultDir + WORKLOAD_DIR + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey();
+            String pathOfTemplate = resultDir + WORKLOAD_DIR + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "Template.sql";
+            CommonUtils.writeFile(pathOfTemplate, query);
             List<List<String>> matches = matchPattern(PATTERN, query);
             if (matches.isEmpty()) {
                 String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();

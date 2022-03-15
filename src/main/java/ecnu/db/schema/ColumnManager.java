@@ -28,7 +28,7 @@ public class ColumnManager {
     public static final String COLUMN_BOUNDPARA_INFO = "/boundPara.json";
     public static final String COLUMN_METADATA_INFO = "/column.csv";
     private static final ColumnManager INSTANCE = new ColumnManager();
-    private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class);
+    private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class).withColumnSeparator('#');
     private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
             .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
                     .appendFraction(ChronoField.MILLI_OF_SECOND, 2, 3, true) // min 2 max 3
@@ -107,12 +107,12 @@ public class ColumnManager {
         try (StringWriter writer = new StringWriter()) {
             writer.write("ColumnName");
             for (int i = 0; i < columnSchema.size(); i++) {
-                writer.write("," + columnSchema.columnName(i));
+                writer.write("#" + columnSchema.columnName(i));
             }
             writer.write("\n");
             SequenceWriter seqW = CSV_MAPPER.writer(columnSchema).writeValues(writer);
             for (var column : columns.entrySet()) {
-                writer.write(column.getKey() + ", ");
+                writer.write(column.getKey() + "# ");
                 seqW.write(column.getValue());
             }
             CommonUtils.writeFile(distributionInfoPath.getPath() + COLUMN_METADATA_INFO, writer.toString());
@@ -160,7 +160,7 @@ public class ColumnManager {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(distributionInfoPath.getPath() + COLUMN_METADATA_INFO))) {
             String line = bufferedReader.readLine();
             while ((line = bufferedReader.readLine()) != null) {
-                int commaIndex = line.indexOf(',');
+                int commaIndex = line.indexOf('#');
                 String columnData = line.substring(commaIndex + 1);
                 Column column = CSV_MAPPER.readerWithSchemaFor(Column.class).readValue(columnData);
                 if (column.getColumnType() == ColumnType.VARCHAR) {
