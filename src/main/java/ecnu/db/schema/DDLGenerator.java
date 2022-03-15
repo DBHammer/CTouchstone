@@ -4,11 +4,9 @@ import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import picocli.CommandLine;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -34,17 +32,25 @@ public class DDLGenerator implements Callable<Integer> {
         ColumnManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnMetaData();
         //构建createschema语句
-        File configurationFile = new File(configPath);
-        StringBuilder createSchema = new StringBuilder();
+        createSchema();
+        //构建数据导入语句
+        importData();
+        //构建createindex语句
+        createIndex();
+        return null;
+    }
+
+    public void createSchema() throws SQLException, TouchstoneException, IOException {
         String createTable = "DROP DATABASE IF EXISTS "+ dataBase + ";\nCREATE DATABASE "+ dataBase + ";\n";
-        createSchema = new StringBuilder(createTable);
+        StringBuilder createSchema = new StringBuilder(createTable);
         createSchema.append("\\c ").append(dataBase).append("\n");
-        Map<String,Table> t2s = TableManager.getInstance().getSchemas();
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             createSchema.append(tableName2Schema.getValue().getSql(tableName2Schema.getKey())).append("\n");
         }
         CommonUtils.writeFile(CREATE_SCHEMA_PATH, createSchema.toString());
-        //构建数据导入语句
+    }
+
+    public void importData() throws IOException {
         StringBuilder importData = new StringBuilder("\\c " + dataBase +";\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
@@ -52,9 +58,10 @@ public class DDLGenerator implements Callable<Integer> {
             importData.append(inData);
         }
         CommonUtils.writeFile(IMPORT_DATA, importData.toString());
-        //构建createindex语句
+    }
+    public void createIndex() throws IOException {
         List<String> addFks = new ArrayList<>();
-        String createIndex = "\\c " + dataBase + "\n";
+        StringBuilder createIndex =  new StringBuilder("\\c " + dataBase + "\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
             Table table = tableName2Schema.getValue();
@@ -69,8 +76,7 @@ public class DDLGenerator implements Callable<Integer> {
                     String tableRef = foreignKey.getValue().split("\\.")[1].toUpperCase();
                     String indexName = tableName.split("\\.")[1] + "_" + key.split("_")[1].toLowerCase();
                     String simpleTableName = tableName.split("\\.")[1].toUpperCase();
-                    addFk = String.format("ALTER TABLE %s ADD FOREIGN KEY (%s) references %s;\nCREATE INDEX %s on %s(%s);\n", simpleTableName, key, tableRef, indexName, simpleTableName, key);
-                    //addFk = String.format("ALTER TABLE %s ADD FOREIGN KEY (%s) references %s;", simpleTableName, key, tableRef);
+                    addFk = String.format("ALTER TABLE %s ADD FOREIGN KEY (%s) references %s;%nCREATE INDEX %s on %s(%s);%n", simpleTableName, key, tableRef, indexName, simpleTableName, key);
                     addFks.add(addFk);
                 }
             }
@@ -78,17 +84,16 @@ public class DDLGenerator implements Callable<Integer> {
                 for (String pk : pks) {
                     pk = pk.split(",")[0].split("\\.")[2].toUpperCase();
                     String simpleTableName = tableName.split("\\.")[1].toUpperCase();
-                    addPk = String.format("ALTER TABLE %s ADD PRIMARY KEY (%s);\n", simpleTableName, pk);
+                    addPk = String.format("ALTER TABLE %s ADD PRIMARY KEY (%s);%n", simpleTableName, pk);
                 }
             }
             if (addPk != null) {
-                createIndex = createIndex + addPk + "\n";
+                createIndex.append(addPk + "\n");
             }
         }
         for (String addFk : addFks) {
-            createIndex = createIndex + addFk + "\n";
+            createIndex.append(addFk + "\n");
         }
-        CommonUtils.writeFile(CREATE_INDEX_PATH, createIndex);
-        return null;
+        CommonUtils.writeFile(CREATE_INDEX_PATH, createIndex.toString());
     }
 }
