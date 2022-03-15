@@ -36,9 +36,8 @@ public class DDLGenerator implements Callable<Integer> {
         //构建createschema语句
         File configurationFile = new File(configPath);
         StringBuilder createSchema = new StringBuilder();
-        String closeConnector = "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE datname='" + dataBase + "' AND pid <> pg_backend_pid();\n";
         String createTable = "DROP DATABASE IF EXISTS "+ dataBase + ";\nCREATE DATABASE "+ dataBase + ";\n";
-        createSchema = new StringBuilder(closeConnector + createTable);
+        createSchema = new StringBuilder(createTable);
         createSchema.append("\\c ").append(dataBase).append("\n");
         Map<String,Table> t2s = TableManager.getInstance().getSchemas();
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
@@ -46,7 +45,7 @@ public class DDLGenerator implements Callable<Integer> {
         }
         CommonUtils.writeFile(CREATE_SCHEMA_PATH, createSchema.toString());
         //构建数据导入语句
-        StringBuilder importData = new StringBuilder("\\c demo;\n");
+        StringBuilder importData = new StringBuilder("\\c " + dataBase +";\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
             String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM " + "'" + "./data/" + tableName + "0" + "' DELIMITER ',';\n";
