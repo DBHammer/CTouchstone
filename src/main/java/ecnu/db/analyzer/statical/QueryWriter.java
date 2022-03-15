@@ -25,19 +25,17 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
  * @author alan
  */
 public class QueryWriter {
-    public static final String QUERY_DIR = "/queries/";
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
     private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
     private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
     private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
-    private final String queryDir;
     private final String resultDir;
     private DbType dbType;
+    private static final String WORKLOAD_DIR = "/workload";
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
 
     public QueryWriter(String resultDir) {
-        this.queryDir = resultDir + QUERY_DIR;
         this.resultDir = resultDir;
         if (new File(resultDir).mkdir()) {
             logger.info("create query dir for output");
@@ -230,7 +228,7 @@ public class QueryWriter {
     public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {
         for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
             String query = queryName2QueryTemplate.getValue();
-            String path = resultDir + "/workload" + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey();
+            String path = resultDir + WORKLOAD_DIR + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey();
             List<List<String>> matches = matchPattern(PATTERN, query);
             if (matches.isEmpty()) {
                 String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();

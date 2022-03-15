@@ -31,7 +31,7 @@ public class ConstraintChainManager {
     private static final String GRAPH_TEMPLATE = "digraph \"%s\" {rankdir=BT;" + System.lineSeparator() + "%s}";
     private String resultDir;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
-
+    private static final String WORKLOAD_DIR = "/workload";
     private ConstraintChainManager() {
     }
 
@@ -214,21 +214,21 @@ public class ConstraintChainManager {
     }
 
     public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
-        File workLoadDic = new File(resultDir + "/workload");
+        File workLoadDic = new File(resultDir + WORKLOAD_DIR);
         if (!workLoadDic.exists()) {
             workLoadDic.mkdir();
         }
         for (Map.Entry<String, List<ConstraintChain>> entry : query2constraintChains.entrySet()) {
             String constraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(entry);
-            File sqlDic = new File(resultDir + "/workload" + "/" + entry.getKey().split("\\.")[0]);
+            File sqlDic = new File(resultDir + WORKLOAD_DIR + "/" + entry.getKey().split("\\.")[0]);
             if (!sqlDic.exists()) {
                 sqlDic.mkdir();
             }
-            CommonUtils.writeFile(resultDir + "/workload" + "/" + entry.getKey().split("\\.")[0] + "/" + entry.getKey() + ".json", constraintChainsContent);
+            CommonUtils.writeFile(resultDir + WORKLOAD_DIR + "/" + entry.getKey().split("\\.")[0] + "/" + entry.getKey() + ".json", constraintChainsContent);
         }
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
             String path = resultDir + "/workload" + "/" + stringListEntry.getKey().split("\\.")[0] + "/" + stringListEntry.getKey() + ".dot";
-            File file = new File(resultDir + "/workload" + "/" + stringListEntry.getKey().split("\\.")[0]);
+            File file = new File(resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0]);
             File[] array = file.listFiles();
             assert array != null;
             if (!graphIsExists(array, stringListEntry.getKey() + ".dot")) {
@@ -243,7 +243,7 @@ public class ConstraintChainManager {
                     Calendar date = Calendar.getInstance();
                     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                     String currentTime = format.format(date.getTime());
-                    String newPath = resultDir + "/workload" + "/" + stringListEntry.getKey().split("\\.")[0] + "/" + currentTime + stringListEntry.getKey() + ".dot";
+                    String newPath = resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0] + "/" + currentTime + stringListEntry.getKey() + ".dot";
                     CommonUtils.writeFile(newPath + "", graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());
                 }

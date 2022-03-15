@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ReadAndWriteJsonTest {
     private static final String dir = "src/test/resources/data/query-instantiation/basic/";
+    private static final String DISTRIBUTION_DIR = "/distribution";
 
     @Test
     void writeTestConstraintChain() throws IOException {
@@ -28,7 +29,7 @@ class ReadAndWriteJsonTest {
 
     @Test
     void writeTestStringTemplate() throws IOException {
-        String content = readFile(dir + "distribution/stringTemplate.json");
+        String content = readFile(dir + DISTRIBUTION_DIR + "/stringTemplate.json");
         Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columName2StringTemplate);
@@ -37,7 +38,7 @@ class ReadAndWriteJsonTest {
 
     @Test
     void writeTestDistribution() throws IOException {
-        String content = readFile(dir + "distribution/distribution.json");
+        String content = readFile(dir + DISTRIBUTION_DIR + "/distribution.json");
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(bucket2Probabilities);
@@ -46,7 +47,7 @@ class ReadAndWriteJsonTest {
 
     @Test
     void writeTestEqDistribution() throws IOException {
-        String content = readFile(dir + "distribution/eq_distribution.json");
+        String content = readFile(dir + DISTRIBUTION_DIR + "/eq_distribution.json");
         Map<String, Map<Long, BigDecimal>> eq2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(eq2Probabilities);
@@ -55,7 +56,7 @@ class ReadAndWriteJsonTest {
 
     @Test
     void writeTestBoundPara() throws IOException {
-        String content = readFile(dir + "distribution/boundPara.json");
+        String content = readFile(dir + DISTRIBUTION_DIR + "/boundPara.json");
         Map<String, List<Parameter>> boundPara = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(boundPara);
