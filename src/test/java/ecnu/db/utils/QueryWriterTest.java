@@ -27,7 +27,7 @@ class QueryWriterTest {
     }
 
     @ParameterizedTest
-    @CsvSource(quoteCharacter='#', value = {
+    @CsvSource(quoteCharacter = '#', value = {
             "5, 5",
             "1.5, 1.5",
             "'5', 5",
@@ -38,7 +38,8 @@ class QueryWriterTest {
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, dataValue));
         String modified = queryWriter.templatizeSql("Test Query", sql, parameters);
-        assertEquals("select * from test where a='0'", modified);
+        modified = modified.replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
+        assertEquals("select * from test where a = '0'", modified);
     }
 
     @Test
@@ -50,7 +51,8 @@ class QueryWriterTest {
         parameters.add(new Parameter(0, "db.test.a", "5"));
         parameters.add(new Parameter(1, "db.test.b", "5"));
         String modified = queryWriter.templatizeSql("q5", sql, parameters);
-        assertEquals("select * from test where a='0' or b='1'", modified);
+        modified = modified.replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
+        assertEquals("select * from test where a = '0' or b = '1'", modified.replace('\n', ' '));
     }
 
     @Test
@@ -60,6 +62,7 @@ class QueryWriterTest {
         Parameter parameter = new Parameter(0, "db.test.b", "6");
         parameters.add(parameter);
         String modified = queryWriter.templatizeSql("q6", sql, parameters);
-        assertEquals("-- cannotFindArgs:{id:0,data:'6',operand:db.test.b}" + System.lineSeparator() + "select * from test where a='5' or b='5'", modified);
+        modified = modified.replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
+        assertEquals("-- cannotFindArgs:{id:0,data:'6',operand:db.test.b} select * from test where a = '5' or b = '5'", modified);
     }
 }
