@@ -220,6 +220,7 @@ public class Column {
         // 将等值的概率请求从大到小排序，首先为请求最大的安排空间，每次选择能放下的bucket中最小的。
         // 填充到bucket之后，重新调整剩余容量的记录treemap
         // 针对等值约束的赋值，采用逆序赋值法，即从bound开始，按照当前在bucket中的位置，分配对应的值，赋值最小从lowBound-1开始
+        // todo add the values reused for the eq request
         for (BigDecimal eqProbability : eqRequest2ParameterIds.descendingKeySet()) {
             while (!eqRequest2ParameterIds.get(eqProbability).isEmpty()) {
                 bucketBound2FreeSpace.sort(Map.Entry.comparingByValue());
@@ -235,7 +236,6 @@ public class Column {
                     long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
                     eqConstraint2Probability.put(eqParameterData, eqProbability);
                     Parameter parameter = eqRequest2ParameterIds.get(eqProbability).remove(0);
-                    String tempValue = parameter.getDataValue();
                     parameter.setData(eqParameterData);
                     String newValue;
                     if (likeParameterId.contains(parameter.getId())) {
@@ -244,15 +244,6 @@ public class Column {
                         newValue = transferDataToValue(eqParameterData);
                     }
                     parameter.setDataValue(newValue);
-                    Iterator<Parameter> parameterIterator = eqRequest2ParameterIds.get(eqProbability).iterator();
-                    while (parameterIterator.hasNext()) {
-                        Parameter parameter1 = parameterIterator.next();
-                        if (parameter1.getDataValue().equals(tempValue)) {
-                            parameter1.setData(eqParameterData);
-                            parameter1.setDataValue(newValue);
-                            parameterIterator.remove();
-                        }
-                    }
                 } else {
                     throw new UnsupportedOperationException("等值约束冲突，无法实例化");
                 }
