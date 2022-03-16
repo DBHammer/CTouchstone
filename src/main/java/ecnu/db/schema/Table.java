@@ -162,7 +162,7 @@ public class Table {
         dbConnector.executeSql(head.toString());
     }
 
-    public String getSql(String tableName) throws SQLException, TouchstoneException {
+    public String getSql(String tableName) {
         StringBuilder head = new StringBuilder("CREATE TABLE ");
         head.append(tableName).append(" (\n");
         List<String> allColumns = new ArrayList<>(canonicalColumnNames);
