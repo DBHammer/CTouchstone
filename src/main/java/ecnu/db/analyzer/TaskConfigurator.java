@@ -39,8 +39,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.MAPPER;
-import java.util.Locale;
-import java.util.ResourceBundle;
+
 /**
  * @author alan
  */
@@ -52,6 +51,7 @@ public class TaskConfigurator implements Callable<Integer> {
     private final Logger logger = LoggerFactory.getLogger(TaskConfigurator.class);
     @CommandLine.ArgGroup(exclusive = false, multiplicity = "1")
     private TaskConfiguratorConfig taskConfiguratorConfig;
+    private static final String WORKLOAD_DIR = "/workload";
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     /**
      * 1. 对于数值型的filter, 首先计算单元的filter, 然后计算多值的filter，对于bet操作，先记录阈值，然后选择合适的区间插入，
@@ -125,7 +125,7 @@ public class TaskConfigurator implements Callable<Integer> {
                     cliConfigInfo.databaseUser, cliConfigInfo.databasePwd, cliConfigInfo.databaseName));
         }
         QueryReader queryReader = new QueryReader(config.getDefaultSchemaName(), config.getQueriesDirectory());
-        QueryWriter queryWriter = new QueryWriter(config.getResultDirectory());
+        QueryWriter queryWriter = new QueryWriter();
         TableManager.getInstance().setResultDir(config.getResultDirectory());
         ColumnManager.getInstance().setResultDir(config.getResultDirectory());
         ConstraintChainManager.getInstance().setResultDir(config.getResultDirectory());
@@ -157,7 +157,7 @@ public class TaskConfigurator implements Callable<Integer> {
             default -> throw new TouchstoneException(rb.getString("UnsupportedDatabaseType"));
         }
         QueryAnalyzer analyzer = new QueryAnalyzer(abstractAnalyzer, dbConnector);
-        extract(dbConnector, analyzer, queryReader, queryWriter, config.getSampleSize());
+        extract(dbConnector, analyzer, queryReader, queryWriter, config.getResultDirectory());
         return 0;
     }
 
@@ -229,7 +229,7 @@ public class TaskConfigurator implements Callable<Integer> {
     }
 
     public void extract(DbConnector dbConnector, QueryAnalyzer queryAnalyzer, QueryReader queryReader,
-                        QueryWriter queryWriter, int samplingSize) throws IOException, TouchstoneException, SQLException {
+                        QueryWriter queryWriter, String resultDir) throws IOException, TouchstoneException, SQLException {
         List<File> queryFiles = querySchemaMetadataAndColumnMetadata(queryReader, dbConnector);
         Map<String, List<ConstraintChain>> query2constraintChains = new HashMap<>();
         Map<String, String> queryName2QueryTemplates = new HashMap<>();
@@ -264,19 +264,28 @@ public class TaskConfigurator implements Callable<Integer> {
         TableManager.getInstance().storeSchemaInfo();
         logger.info(rb.getString("PersistentTableReferenceInformationSucceeded"));
         query2constraintChains = checkQueryConstraintChains(query2constraintChains);
-        logger.info(rb.getString("StartInstantiatingTheQueryPlan"));
-        List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
-        Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, samplingSize);
-        logger.info(rb.getString("TheInstantiatedQueryPlanSucceed"), id2Parameter.values());
-        logger.info(rb.getString("StartPersistentQueryPlanWithNewDataDistribution"));
+        logger.info(rb.getString("StartPersistentQueryPlan"));
         ConstraintChainManager.getInstance().storeConstraintChain(query2constraintChains);
-        ColumnManager.getInstance().storeColumnDistribution();
         logger.info(rb.getString("PersistentQueryPlanCompleted"));
-        logger.info(rb.getString("StartPopulatingTheQueryTemplate"));
-        queryWriter.writeQuery(queryName2QueryTemplates, id2Parameter);
+        logger.info(rb.getString("StartQueryTemplating"));
+        writeTemplateQuery(queryName2QueryTemplates, resultDir);
         logger.info(rb.getString("FillInTheQueryTemplateComplete"));
-        if (id2Parameter.size() > 0) {
-            logger.info(rb.getString("TheParametersThatWereNotSuccessfullyReplaced"), id2Parameter.values());
+    }
+
+    public void writeTemplateQuery(Map<String, String> queryName2QueryTemplates, String resultDir) throws IOException {
+        String path = resultDir + WORKLOAD_DIR;
+        File file = new File(path);
+        if (!file.exists()) {
+            file.mkdir();
+        }
+        for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
+            String currentPath = path + '/' + queryName2QueryTemplate.getKey().split("\\.")[0];
+            File currentFile = new File(currentPath);
+            if (!currentFile.exists()) {
+                currentFile.mkdir();
+            }
+            String pathOfTemplate = currentPath + '/' + queryName2QueryTemplate.getKey().split("\\.")[0] + "Template.sql";
+            CommonUtils.writeFile(pathOfTemplate, queryName2QueryTemplate.getValue());
         }
     }
 
@@ -318,8 +327,6 @@ public class TaskConfigurator implements Callable<Integer> {
         private String queriesDirectory;
         @CommandLine.Option(names = {"-o", "--output"}, required = true, description = "the dir path for output")
         private String resultDirectory;
-        @CommandLine.Option(names = {"--sample_size"}, defaultValue = "4000000", description = "sample size for query instantiation")
-        private int sampleSize;
         @CommandLine.Option(names = {"--skip_threshold"}, description = "skip threshold, if passsing this threshold, then we will skip the node")
         private Double skipNodeThreshold;
     }

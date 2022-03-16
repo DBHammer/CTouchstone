@@ -7,7 +7,6 @@ public class TaskConfiguratorConfig {
     private DatabaseConnectorConfig databaseConnectorConfig;
     private String resultDirectory;
     private String queriesDirectory;
-    private int sampleSize = 4000_000;
     private Double skipNodeThreshold = 0.01;
     private String defaultSchemaName;
 
@@ -49,13 +48,5 @@ public class TaskConfiguratorConfig {
 
     public void setSkipNodeThreshold(Double skipNodeThreshold) {
         this.skipNodeThreshold = skipNodeThreshold;
-    }
-
-    public int getSampleSize() {
-        return sampleSize;
-    }
-
-    public void setSampleSize(int sampleSize) {
-        this.sampleSize = sampleSize;
     }
 }

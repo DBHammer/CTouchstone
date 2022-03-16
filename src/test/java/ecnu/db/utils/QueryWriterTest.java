@@ -19,7 +19,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryWriterTest {
-    final static QueryWriter queryWriter = new QueryWriter("");
+    final static QueryWriter queryWriter = new QueryWriter();
 
     @BeforeAll
     static void setUp() {

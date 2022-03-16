@@ -6,12 +6,9 @@ import com.alibaba.druid.sql.parser.Lexer;
 import com.alibaba.druid.sql.parser.Token;
 import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.filter.Parameter;
-import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -19,28 +16,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ecnu.db.analyzer.online.adapter.pg.PgAnalyzer.TIME_OR_DATE;
-import static ecnu.db.utils.CommonUtils.matchPattern;
+
 
 /**
  * @author alan
  */
 public class QueryWriter {
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
-    private static final Pattern PATTERN = Pattern.compile("'([0-9]+)'");
     private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
     private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
-    private final String resultDir;
     private DbType dbType;
-    private static final String WORKLOAD_DIR = "/workload";
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
-
-
-    public QueryWriter(String resultDir) {
-        this.resultDir = resultDir;
-        if (new File(resultDir).mkdir()) {
-            logger.info("create query dir for output");
-        }
-    }
 
     public void setDbType(DbType dbType) {
         this.dbType = dbType;
@@ -123,7 +109,8 @@ public class QueryWriter {
         }
 
         // replacement
-        List<Parameter> cannotFindArgs = new ArrayList<>(), conflictArgs = new ArrayList<>();
+        List<Parameter> cannotFindArgs = new ArrayList<>();
+        List<Parameter> conflictArgs = new ArrayList<>();
         TreeMap<Integer, Map.Entry<Parameter, Map.Entry<Integer, Integer>>> replaceParams = new TreeMap<>();
         List<Parameter> subPlanParameters = parameters.stream().filter(Parameter::isSubPlan).toList();
         parameters.removeAll(subPlanParameters);
@@ -192,8 +179,7 @@ public class QueryWriter {
             logger.warn(rb.getString("CannotReplace2"), queryCanonicalName);
             query = appendArgs("conflictArgs", conflictArgs) + query;
         }
-
-        return query;
+        return SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION);
     }
 
 
@@ -223,40 +209,6 @@ public class QueryWriter {
                         parameter.getOperand()))
                 .collect(Collectors.joining(","));
         return String.format("-- %s:%s%s", title, argsString, System.lineSeparator());
-    }
-
-    public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {
-        for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
-            String query = queryName2QueryTemplate.getValue();
-            String path = resultDir + WORKLOAD_DIR + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey();
-            String pathOfTemplate = resultDir + WORKLOAD_DIR + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "/" + queryName2QueryTemplate.getKey().split("\\.")[0] + "Template.sql";
-            String templateSql = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-            CommonUtils.writeFile(pathOfTemplate, templateSql);
-            List<List<String>> matches = matchPattern(PATTERN, query);
-            if (matches.isEmpty()) {
-                String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-                CommonUtils.writeFile(path, formatQuery);
-            } else {
-                for (List<String> group : matches) {
-                    int parameterId = Integer.parseInt(group.get(1));
-                    Parameter parameter = id2Parameter.remove(parameterId);
-                    if (parameter != null) {
-                        String parameterData = parameter.getDataValue();
-                        try {
-                            if (parameterData.contains("interval")) {
-                                query = query.replaceAll(group.get(0), String.format("%s", parameterData));
-                            } else {
-                                query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
-                            }
-                        } catch (IllegalArgumentException e) {
-                            logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
-                        }
-                    }
-                    String formatQuery = SQLUtils.format(query, dbType, SQLUtils.DEFAULT_LCASE_FORMAT_OPTION) + System.lineSeparator();
-                    CommonUtils.writeFile(path, formatQuery);
-                }
-            }
-        }
     }
 
     private static class parameterColumnName2Location {
