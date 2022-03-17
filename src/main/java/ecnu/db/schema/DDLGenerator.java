@@ -34,6 +34,7 @@ public class DDLGenerator implements Callable<Integer> {
 
     @Override
     public Integer call() throws IOException {
+        init();
         //构建createschema语句
         createSchema();
         //构建数据导入语句
@@ -82,17 +83,18 @@ public class DDLGenerator implements Callable<Integer> {
                     addFks.add(String.format("ALTER TABLE %s ADD FOREIGN KEY (%s) references %s;%nCREATE INDEX %s on %s(%s);%n", simpleTableName, key, tableRef, indexName, simpleTableName, key));
                 }
             }
-            String addPk = null;
+            List<String> addPks = new ArrayList<>();
             if (!pks.isEmpty()) {
                 for (String pk : pks) {
                     pk = pk.split(",")[0].split("\\.")[2].toUpperCase();
                     String simpleTableName = tableName.split("\\.")[1].toUpperCase();
-                    // todo 复合主键会覆盖之前的创建
-                    addPk = String.format("ALTER TABLE %s ADD PRIMARY KEY (%s);%n", simpleTableName, pk);
+                    addPks.add(String.format("ALTER TABLE %s ADD PRIMARY KEY (%s);%n", simpleTableName, pk));
                 }
             }
-            if (addPk != null) {
-                createIndex.append(addPk).append("\n");
+            if (!addPks.isEmpty()) {
+                for (String addPk : addPks) {
+                    createIndex.append(addPk).append("\n");
+                }
             }
         }
         for (String addFk : addFks) {
