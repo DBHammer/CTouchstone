@@ -8,11 +8,10 @@ import ecnu.db.utils.exception.TouchstoneException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author wangqingshuai 数据库驱动连接器
@@ -22,6 +21,7 @@ public abstract class DbConnector {
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
     private final int[] sqlInfoColumns;
     private final Connection conn;
+    private final static List<Field> ALL_FIELDS = Arrays.stream(Types.class.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers())).toList();
 
     protected DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig)
             throws TouchstoneException, SQLException {
@@ -93,6 +93,19 @@ public abstract class DbConnector {
             }
         }
         return columnNames;
+    }
+
+    private static String getTypeName(int type) {
+        for (Field field : ALL_FIELDS) {
+            try {
+                if (field.getInt(null) == type) {
+                    return field.getName();
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames)
