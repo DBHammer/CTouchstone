@@ -65,7 +65,6 @@ public abstract class DbConnector {
 
     protected abstract String[] preExecutionCommands();
 
-    // todo 简化逻辑
     public List<String> getColumnMetadata(String canonicalTableName) throws SQLException, TouchstoneException {
         String[] schemaAndTable = canonicalTableName.split("\\.");
         List<String> columnNames = new ArrayList<>();
@@ -74,19 +73,13 @@ public abstract class DbConnector {
         while (rs.next()) {
             String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
             columnNames.add(canonicalColumnName);
-            ColumnManager.getInstance().addColumn(canonicalColumnName,
-                    new Column(ColumnType.getColumnType(rs.getInt("DATA_TYPE"))));
-            String originalType;
-            switch (rs.getInt("DATA_TYPE")) {
-                case Types.CHAR -> originalType = "CHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
-                case Types.VARCHAR -> originalType = "VARCHAR(" + rs.getInt("CHAR_OCTET_LENGTH") + ")" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
-                case Types.INTEGER -> originalType = "INTEGER" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
-                case Types.DATE -> originalType = "DATE" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
-                case Types.BIGINT -> originalType = "BIGINT" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
-                case Types.TIMESTAMP -> originalType = "TIMESTAMP" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
-                case Types.NUMERIC -> originalType = "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")" + " " + (rs.getInt("NULLABLE") == 0 ? "NOT NULL" : "DEFAULT NULL");
-                default -> throw new UnsupportedOperationException();
-            }
+            int columnType=rs.getInt("DATA_TYPE");
+            ColumnManager.getInstance().addColumn(canonicalColumnName, new Column(ColumnType.getColumnType(columnType)));
+            String originalType = switch (columnType) {
+                case Types.CHAR, Types.VARCHAR -> getTypeName(columnType) + "(" + rs.getInt("CHAR_OCTET_LENGTH") + ")";
+                case Types.NUMERIC -> "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")";
+                default -> getTypeName(columnType);
+            } + (rs.getInt("NULLABLE") == 0 ? " NOT NULL" : " DEFAULT NULL");
             ColumnManager.getInstance().getColumn(canonicalColumnName).setOriginalType(originalType);
             if (ColumnManager.getInstance().getColumnType(canonicalColumnName) == ColumnType.DECIMAL) {
                 ColumnManager.getInstance().setSpecialValue(canonicalColumnName, (int) Math.pow(10, rs.getInt("DECIMAL_DIGITS")));
