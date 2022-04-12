@@ -128,6 +128,15 @@ public class TaskConfigurator implements Callable<Integer> {
         QueryWriter queryWriter = new QueryWriter();
         TableManager.getInstance().setResultDir(config.getResultDirectory());
         ColumnManager.getInstance().setResultDir(config.getResultDirectory());
+        File resultDir = new File(config.getResultDirectory());
+        if (!resultDir.exists() || !resultDir.isDirectory()) {
+            if (resultDir.mkdirs()) {
+                logger.info(rb.getString("createResultDir"), config.getResultDirectory());
+            } else {
+                logger.error(rb.getString("createResultDirFail"), config.getResultDirectory());
+                System.exit(-1);
+            }
+        }
         ConstraintChainManager.getInstance().setResultDir(config.getResultDirectory());
         if (taskConfiguratorConfig.isLoad) {
             TableManager.getInstance().loadSchemaInfo();
