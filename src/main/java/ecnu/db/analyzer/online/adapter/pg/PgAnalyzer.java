@@ -29,7 +29,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
 
     protected static final Logger logger = LoggerFactory.getLogger(PgAnalyzer.class);
     private static final String NUMERIC = "'[0-9]+'::numeric";
-    private static final String INTEGER = "'[0-9]+'::integer";
+    private static final String INTEGER = "'(0|[1-9][0-9]*|-[1-9][0-9]*)'::integer";
     private static final String DATE1 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}";
     private static final String DATE2 = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}";
     private static final String DATE3 = "[0-9]{4}-[0-9]{2}-[0-9]{2}";

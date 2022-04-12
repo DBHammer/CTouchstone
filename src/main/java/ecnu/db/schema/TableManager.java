@@ -86,7 +86,7 @@ public class TableManager {
         if (table == null) {
             return false;
         }
-        return table.getPrimaryKeys().contains(canonicalColumnName);
+        return table.getPrimaryKeysList().contains(canonicalColumnName);
     }
 
     public boolean isForeignKey(String canonicalColumnName) {
