@@ -165,7 +165,7 @@ public class PgJsonReader {
             } else if (joinFilter != null) {
                 indexCond = "joinFilter Cond: " + joinFilter;
             } else {
-                throw new UnsupportedOperationException();
+                indexCond = "needReadDeep";
             }
         } else {
             if (joinFilter != null) {

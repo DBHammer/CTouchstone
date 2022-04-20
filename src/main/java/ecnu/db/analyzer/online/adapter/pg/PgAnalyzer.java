@@ -212,6 +212,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
             case "Merge Join" -> PgJsonReader.readMergeJoin(path);
             default -> throw new UnsupportedOperationException();
         };
+        if(joinInfo.equals("needReadDeep")){
+            joinInfo = readDeep(path);
+            System.out.println(joinInfo);
+        }
         BigDecimal pkDistinctProbability = BigDecimal.ZERO;
         if (PgJsonReader.isOutJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
@@ -237,6 +241,51 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), PgJsonReader.isSemiJoin(path), pkDistinctProbability);
     }
 
+    String readDeep(StringBuilder path){
+        String currentJoinCond = null;
+        StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
+        StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
+        String leftType = PgJsonReader.readNodeType(leftChildPath);
+        String rightType = PgJsonReader.readNodeType(rightChildPath);
+        if(rightType.equals("Nested Loop")){
+            String joinCond = PgJsonReader.readIndexJoin(rightChildPath);
+            if(joinCond.equals("needReadDeep")){
+                currentJoinCond = readDeep(rightChildPath);
+            }else{
+                joinCond = joinCond.replace("Index Cond: (","");
+                joinCond = joinCond.substring(0,(joinCond.length()-1));
+                String table1 = PgJsonReader.readTableName(PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(rightChildPath)).toString()).split("\\.")[1];
+                String table2 = PgJsonReader.readTableName(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(rightChildPath)).toString()).split("\\.")[1];
+                List<String> joinCondList = List.of(joinCond.split("AND"));
+                for (String eachCond : joinCondList) {
+                    if(!eachCond.contains(table1)||!eachCond.contains(table2)){
+                        currentJoinCond = eachCond;
+                    }
+                }
+            }
+        }else if(leftType.equals("Nested Loop")){
+            String joinCond = PgJsonReader.readIndexJoin(leftChildPath);
+            if(joinCond.equals("needReadDeep")){
+                currentJoinCond = readDeep(leftChildPath);
+            }else{
+                String table1 = PgJsonReader.readTableName(PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(leftChildPath)).toString()).split("\\.")[1];
+                String table2 = PgJsonReader.readTableName(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(leftChildPath)).toString()).split("\\.")[1];
+                List<String> joinCondList = List.of(joinCond.split("AND"));
+                for (String eachCond : joinCondList) {
+                    if(!eachCond.contains(table1)||!eachCond.contains(table2)){
+                        currentJoinCond = eachCond;
+                    }
+                }
+            }
+        }else{
+            throw new UnsupportedOperationException();
+        }
+        assert currentJoinCond != null;
+        if(!currentJoinCond.contains("Index Cond:")){
+            currentJoinCond = "Index Cond:" + currentJoinCond;
+        }
+        return currentJoinCond;
+    }
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
         List<String> groupKey = PgJsonReader.readGroupKey(path);
         String groupKeyInfo = null;

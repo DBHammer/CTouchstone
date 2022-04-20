@@ -189,7 +189,7 @@ public class QueryAnalyzer {
                 constraintChain.addJoinTable(externalTable);
             }
             boolean pkAllRowsInput = TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount;
-            boolean fkColIsNotNull = ColumnManager.getInstance().getNullPercentage(externalCol) == 0;
+            boolean fkColIsNotNull = ColumnManager.getInstance().getNullPercentage(externalTable + "." + externalCol) == 0;
             boolean joinIsNotOuterJoin = node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0;
             if (pkAllRowsInput && fkColIsNotNull && joinIsNotOuterJoin) {
                 logger.debug(rb.getString("SkipNodeDueToFullTableScan"), node.getInfo());
