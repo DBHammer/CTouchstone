@@ -49,7 +49,6 @@ public class QueryWriter {
         matcher = NumberCompute.matcher(query);
         while (matcher.find()) {
             String dateCompute = matcher.group();
-            String resultData = evaluate(dateCompute, false);
             query = query.replaceFirst(dateCompute, evaluate(dateCompute, false));
         }
         for (Parameter parameter : parameters) {
