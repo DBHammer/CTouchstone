@@ -180,8 +180,10 @@ public class QueryAnalyzer {
             } else {
                 constraintChain.addJoinTable(externalTable);
             }
-            if (TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount &&
-                    node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0) {
+            boolean pkAllRowsInput = TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount;
+            boolean fkColIsNotNull = ColumnManager.getInstance().getNullPercentage(externalCol) == 0;
+            boolean joinIsNotOuterJoin = node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0;
+            if (pkAllRowsInput && fkColIsNotNull && joinIsNotOuterJoin) {
                 logger.debug(rb.getString("SkipNodeDueToFullTableScan"), node.getInfo());
                 node.setJoinTag(SKIP_JOIN_TAG);
             } else {
