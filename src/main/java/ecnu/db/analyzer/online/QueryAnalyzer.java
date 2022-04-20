@@ -119,7 +119,7 @@ public class QueryAnalyzer {
 
     private long analyzeSelectNode(ExecutionNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException {
         LogicNode root = analyzeSelectInfo(node.getInfo());
-        BigDecimal ratio = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
+        BigDecimal ratio = computeFilterProbability(node.getOutputRows(), lastNodeLineCount);
         ConstraintChainFilterNode filterNode = new ConstraintChainFilterNode(ratio, root);
         constraintChain.addNode(filterNode);
         return node.getOutputRows();
@@ -135,17 +135,25 @@ public class QueryAnalyzer {
         if (node.getInfo() != null) {
             groupKeys = new ArrayList<>(Arrays.stream(node.getInfo().trim().split(";")).toList());
         }
-        BigDecimal aggProbability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
+        BigDecimal aggProbability = computeFilterProbability(node.getOutputRows(), lastNodeLineCount);
         ConstraintChainAggregateNode aggregateNode = new ConstraintChainAggregateNode(groupKeys, aggProbability);
 
         if (node.getAggFilter() != null) {
             ExecutionNode aggNode = node.getAggFilter();
             LogicNode root = analyzeSelectInfo(aggNode.getInfo());
-            BigDecimal filterProbability = BigDecimal.valueOf(aggNode.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
+            BigDecimal filterProbability = computeFilterProbability(aggNode.getOutputRows(), lastNodeLineCount);
             aggregateNode.setAggFilter(new ConstraintChainFilterNode(filterProbability, root));
         }
         constraintChain.addNode(aggregateNode);
         return node.getOutputRows();
+    }
+
+    private BigDecimal computeFilterProbability(long outputRowCount, long inputRowCount) {
+        if (inputRowCount == 0) {
+            return BigDecimal.ZERO;
+        } else {
+            return BigDecimal.valueOf(outputRowCount).divide(BigDecimal.valueOf(inputRowCount), BIG_DECIMAL_DEFAULT_PRECISION);
+        }
     }
 
     private long analyzeJoinNode(JoinNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException, SQLException {
@@ -206,7 +214,7 @@ public class QueryAnalyzer {
                 return STOP_CONSTRUCT;
             }
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
-            BigDecimal probability = BigDecimal.valueOf(node.getOutputRows()).divide(BigDecimal.valueOf(lastNodeLineCount), BIG_DECIMAL_DEFAULT_PRECISION);
+            BigDecimal probability = computeFilterProbability(node.getOutputRows(), lastNodeLineCount);
             ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
             // deal with index join
             String leftTable = null;
@@ -225,7 +233,7 @@ public class QueryAnalyzer {
             if ((leftTable!=null&&leftTable.equals(localTable))||(rightTable!=null&&rightTable.equals(localTable))) {
                 long tableSize = TableManager.getInstance().getTableSize(childNode.getTableName());
                 long rowsRemovedByScanFilter = tableSize - childNode.getOutputRows();
-                BigDecimal probabilityWithFailFilter = new BigDecimal(node.getRowsRemoveByFilterAfterJoin()).divide(BigDecimal.valueOf(rowsRemovedByScanFilter), BIG_DECIMAL_DEFAULT_PRECISION);
+                BigDecimal probabilityWithFailFilter = computeFilterProbability(node.getRowsRemoveByFilterAfterJoin(), rowsRemovedByScanFilter);
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
             if (node.isSemiJoin()) {
@@ -272,8 +280,7 @@ public class QueryAnalyzer {
                     int rowsAfterFilter = dbConnector.getRowsAfterFilter(filterNode.getTableName(), result.toSQL());
                     filterNode.setOutputRows(rowsAfterFilter);
                 }
-                BigDecimal tableSize = BigDecimal.valueOf(TableManager.getInstance().getTableSize(filterNode.getTableName()));
-                BigDecimal ratio = BigDecimal.valueOf(filterNode.getOutputRows()).divide(tableSize, BIG_DECIMAL_DEFAULT_PRECISION);
+                BigDecimal ratio = computeFilterProbability(filterNode.getOutputRows(), TableManager.getInstance().getTableSize(filterNode.getTableName()));
                 constraintChain.addNode(new ConstraintChainFilterNode(ratio, result));
             }
             lastNodeLineCount = filterNode.getOutputRows();
