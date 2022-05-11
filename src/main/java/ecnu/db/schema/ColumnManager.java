@@ -231,6 +231,7 @@ public class ColumnManager {
                     }
                     case VARCHAR -> {
                         column.setMinLength(Integer.parseInt(minResult));
+                        //todo avg length
                         column.setRangeLength(Integer.parseInt(maxResult) - column.getMinLength());
                         min = 0;
                         range = Integer.parseInt(sqlResult[index++]);
@@ -239,16 +240,16 @@ public class ColumnManager {
                     case DECIMAL -> {
                         specialValue = column.getSpecialValue();
                         min = (long) (Double.parseDouble(minResult) * specialValue);
-                        range = (long) (Double.parseDouble(maxResult) * specialValue) - min;
+                        range = (long) (Double.parseDouble(maxResult) * specialValue) - min + 1;
                     }
                     case DATE -> {
                         min = LocalDateTime.parse(minResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60);
-                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60) - min;
+                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60) - min + 1;
                         specialValue = 0;
                     }
                     case DATETIME -> {
                         min = LocalDateTime.parse(minResult, FMT).toEpochSecond(ZoneOffset.UTC);
-                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) - min;
+                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) - min + 1;
                         specialValue = 0;
                     }
                     default -> throw new TouchstoneException("未匹配到的类型");
