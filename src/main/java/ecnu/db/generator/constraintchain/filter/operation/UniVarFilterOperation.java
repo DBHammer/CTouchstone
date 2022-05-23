@@ -49,40 +49,6 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         }
     }
 
-    /**
-     * merge operation
-     */
-    public static void merge(List<BoolExprNode> toMergeNodes,
-                             Map<String, Collection<UniVarFilterOperation>> col2uniFilters,
-                             boolean isAnd) {
-        for (var col2uniFilter : col2uniFilters.entrySet()) {
-            Collection<UniVarFilterOperation> filters = col2uniFilter.getValue();
-            Map<CompareOperator, List<UniVarFilterOperation>> typ2Filter = filters.stream()
-                    .map(filter -> new AbstractMap.SimpleEntry<>(filter.getOperator(), filter))
-                    .collect(Collectors.groupingBy(AbstractMap.SimpleEntry::getKey,
-                            Collectors.mapping(AbstractMap.SimpleEntry::getValue, Collectors.toList())));
-            if (typ2Filter.size() == 1) {
-                toMergeNodes.addAll(typ2Filter.values().stream().flatMap(Collection::stream).toList());
-                continue;
-            }
-            RangeFilterOperation newFilter = null;
-            try {
-                newFilter = new RangeFilterOperation(col2uniFilter.getKey());
-                newFilter.addLessParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.LE, new ArrayList<>()).stream(),
-                                typ2Filter.getOrDefault(LT, new ArrayList<>()).stream())
-                        .flatMap(filter -> filter.getParameters().stream()).toList());
-                newFilter.addGreaterParameters(Stream.concat(typ2Filter.getOrDefault(GE, new ArrayList<>()).stream(),
-                                typ2Filter.getOrDefault(CompareOperator.GT, new ArrayList<>()).stream())
-                        .flatMap(filter -> filter.getParameters().stream()).toList());
-                newFilter.setLessOperator(isAnd, typ2Filter);
-                newFilter.setGreaterOperator(isAnd, typ2Filter);
-            } catch (IllegalQueryColumnNameException e) {
-                e.printStackTrace();
-            }
-            toMergeNodes.add(newFilter);
-        }
-    }
-
     @Override
     public boolean hasKeyColumn() {
         return TableManager.getInstance().isPrimaryKey(canonicalColumnName) || TableManager.getInstance().isForeignKey(canonicalColumnName);
