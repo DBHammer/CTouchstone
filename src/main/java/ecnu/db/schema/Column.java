@@ -126,7 +126,7 @@ public class Column {
             pvAndPbList.putIfAbsent(probability, new ArrayList<>());
             pvAndPbList.get(probability).addAll(parameters);
         } else {
-            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? 0 : range + 1;
+            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? -1 : range + 1;
             for (Parameter parameter : parameters) {
                 parameter.setData(dataIndex);
                 parameter.setDataValue(transferDataToValue(dataIndex));
