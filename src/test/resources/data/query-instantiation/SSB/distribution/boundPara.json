@@ -1,0 +1,18 @@
+{
+  "public.date.d_year" : [
+    {
+      "id" : 10,
+      "data" : 2,
+      "type" : "ACTUAL",
+      "equalPredicate" : true
+    }
+  ],
+  "public.date.d_weeknuminyear" : [
+    {
+      "id" : 9,
+      "data" : 2,
+      "type" : "ACTUAL",
+      "equalPredicate" : true
+    }
+  ]
+}
