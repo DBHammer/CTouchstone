@@ -62,7 +62,7 @@ class QueryWriterTest {
         Parameter parameter = new Parameter(0, "db.test.b", "6");
         parameters.add(parameter);
         String modified = queryWriter.templatizeSql("q6", sql, parameters);
-        modified = modified.replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
+        modified = modified.replace(System.lineSeparator(), " ").replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
         assertEquals("-- cannotFindArgs:{id:0,data:'6',operand:db.test.b} select * from test where a = '5' or b = '5'", modified);
     }
 }

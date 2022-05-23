@@ -11,7 +11,6 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 /**
@@ -33,24 +32,36 @@ public class Column {
     private int rangeLength;
     @JsonIgnore
     private BigDecimal decimalPre;
-    @JsonIgnore
-    private List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace = new LinkedList<>();
-    @JsonIgnore
-    private Map<Long, BigDecimal> eqConstraint2Probability = new HashMap<>();
+
     @JsonIgnore
     private List<Parameter> boundPara = new ArrayList<>();
     @JsonIgnore
     private StringTemplate stringTemplate;
-    @JsonIgnore
-    private boolean hasBetweenConstraint = false;
     @JsonIgnore
     private long[] columnData;
     @JsonIgnore
     private boolean columnData2ComputeData = false;
     @JsonIgnore
     private double[] computeData;
+    @JsonIgnore
+    public TreeMap<BigDecimal, List<Parameter>> pvAndPbList = new TreeMap<>();
+
+    @JsonIgnore
+    public SortedMap<Long, BigDecimal> paraData2Probability = new TreeMap<>();
+
     public Column() {
     }
+
+    public void initPvAndPbList() {
+        pvAndPbList.clear();
+        Parameter parameterEnd = new Parameter();
+        parameterEnd.setId(-1);
+        parameterEnd.setData(range);
+        parameterEnd.setDataValue(transferDataToValue(range));
+        pvAndPbList.put(BigDecimal.ONE, new ArrayList<>(List.of(parameterEnd)));
+    }
+
+
     public Column(ColumnType columnType) {
         this.columnType = columnType;
     }
@@ -67,9 +78,6 @@ public class Column {
         stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
     }
 
-    public void initBucketBound2FreeSpace() {
-        bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(range, BigDecimal.ONE));
-    }
 
     public ColumnType getColumnType() {
         return columnType;
@@ -110,59 +118,97 @@ public class Column {
      * @param parameters  参数
      */
     private void insertNonEqProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
-        long bound;
         if (operator == CompareOperator.GE || operator == CompareOperator.GT) {
             probability = BigDecimal.ONE.subtract(probability);
         }
-        bound = switch (operator) {
-            case LT, GE -> probability.multiply(BigDecimal.valueOf(range)).setScale(0, RoundingMode.HALF_UP).longValue();
-            case GT, LE -> probability.multiply(BigDecimal.valueOf(range)).longValue();
-            default -> throw new UnsupportedOperationException();
-        };
         if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
-            long finalBound = bound;
-            if (bucketBound2FreeSpace.stream().noneMatch(bucket -> bucket.getKey().equals(finalBound))) {
-                this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
-            } else {
-                do {
-                    long finalBound1 = bound;
-                    var range = bucketBound2FreeSpace.stream().filter(bucket -> bucket.getKey().equals(finalBound1)).findFirst();
-                    if (range.isPresent()) {
-                        var realRange = range.get();
-                        if (realRange.getValue().compareTo(probability) == 0) {
-                            break;
-                        } else {
-                            bound--;
-                        }
-                    } else {
-                        this.bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bound, probability));
-                        break;
-                    }
-                } while (true);
+            pvAndPbList.putIfAbsent(probability, new ArrayList<>());
+            pvAndPbList.get(probability).addAll(parameters);
+        } else {
+            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? 0 : range + 1;
+            for (Parameter parameter : parameters) {
+                parameter.setData(dataIndex);
+                parameter.setDataValue(transferDataToValue(dataIndex));
             }
         }
-        long finalBound = bound;
-        parameters.parallelStream().forEach(parameter -> {
-            long value = finalBound;
-            if (operator == CompareOperator.GT || operator == CompareOperator.LE) {
-                value--;
-            }
-            parameter.setData(value);
-            parameter.setDataValue(transferDataToValue(value));
-        });
-
     }
 
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             dealZeroPb(parameters);
         } else {
-            BigDecimal tempProbability = new BigDecimal(probability.toString()).divide(BigDecimal.valueOf(parameters.size()), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
-            eqRequest2ParameterIds.computeIfAbsent(tempProbability, i -> new LinkedList<>()).addAll(parameters);
+            // 标记该参数为等值的参数
+            parameters.forEach(parameter -> parameter.setEqualPredicate(true));
+            BigDecimal minRange = BigDecimal.TEN;
+            BigDecimal minCDF = BigDecimal.ZERO;
+            for (BigDecimal currentCDF : pvAndPbList.keySet()) {
+                BigDecimal currentRange = getRange(currentCDF);
+                // 当前空间可以被完全利用
+                if (currentRange.compareTo(probability) == 0) {
+                    pvAndPbList.get(currentCDF).addAll(parameters);
+                    return;
+                } else {
+                    // 找到可以放置的最小空间
+                    boolean enoughCapacity = currentRange.compareTo(probability) > 0;
+                    boolean isMinRange = minRange.compareTo(currentRange) > 0;
+                    // 如果cdf中包含等值的参数 则该range为一个等值的range，不可分割
+                    boolean isNonEqualRange = isNonEqualRange(pvAndPbList.get(currentCDF));
+                    if (enoughCapacity && isMinRange && isNonEqualRange) {
+                        minRange = currentRange;
+                        minCDF = currentCDF;
+                    }
+                }
+            }
+            // 如果没有找到
+            if (minCDF.compareTo(BigDecimal.ZERO) == 0) {
+                throw new TouchstoneException("不存在可以放置的range");
+            } else {
+                BigDecimal remainCapacity = minRange.subtract(probability);
+                BigDecimal eqCDf = minCDF.subtract(remainCapacity);
+                pvAndPbList.put(eqCDf, parameters);
+            }
         }
     }
 
-    public void insertUniVarProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
+    private boolean isNonEqualRange(List<Parameter> parameters) {
+        return parameters.stream().noneMatch(Parameter::isEqualPredicate);
+    }
+
+    private BigDecimal getRange(BigDecimal currentCDF) {
+        BigDecimal lastCDf = pvAndPbList.lowerKey(currentCDF);
+        if (lastCDf == null) {
+            lastCDf = BigDecimal.ZERO;
+        }
+        return currentCDF.subtract(lastCDf);
+    }
+
+    public void initAllParameters() {
+        long remainCardinality = range - pvAndPbList.size();
+        BigDecimal remainRange = pvAndPbList.entrySet().stream()
+                // 找到所有的非等值的range右边界
+                .filter(e -> isNonEqualRange(e.getValue()))
+                // 确定其range大小
+                .map(e -> getRange(e.getKey()))
+                // 计算range的和
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+        long dataIndex = 0;
+        for (var CDF2Parameters : pvAndPbList.entrySet()) {
+            dataIndex++;
+            BigDecimal range = getRange(CDF2Parameters.getKey());
+            if (isNonEqualRange(CDF2Parameters.getValue())) {
+                dataIndex += cardinalityPercentage.multiply(range).intValue();
+            }
+            paraData2Probability.put(dataIndex, range);
+            for (Parameter parameter : CDF2Parameters.getValue()) {
+                parameter.setData(dataIndex);
+                parameter.setDataValue(transferDataToValue(dataIndex));
+            }
+        }
+
+    }
+
+    public void applyUniVarConstraint(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) throws TouchstoneException {
         switch (operator) {
             case NE, NOT_LIKE, NOT_IN -> eqRequest2ParameterIds.computeIfAbsent(BigDecimal.ONE.subtract(probability), i -> new LinkedList<>()).add(parameters.get(0));
             case EQ, LIKE, IN -> insertEqualProbability(probability, parameters);
@@ -186,7 +232,6 @@ public class Column {
     public void insertBetweenProbability(BigDecimal probability,
                                          CompareOperator lessOperator, List<Parameter> lessParameters,
                                          CompareOperator greaterOperator, List<Parameter> greaterParameters) {
-        hasBetweenConstraint = true;
         long betweenRange = probability.multiply(BigDecimal.valueOf(range)).longValue();
         long start = ThreadLocalRandom.current().nextLong(range - betweenRange);
         long end = start + betweenRange;
@@ -202,69 +247,6 @@ public class Column {
         });
     }
 
-    public void initEqParameter() {
-        if (eqRequest2ParameterIds.isEmpty()) {
-            return;
-        }
-        if (hasBetweenConstraint) {
-            throw new UnsupportedOperationException("当前不支持为存在between约束的列分配等值");
-        }
-        //初始化每个bucket的剩余容量和等值容量
-        Map<Long, AtomicInteger> bucketId2EqNum = new HashMap<>();
-        bucketBound2FreeSpace.sort(Map.Entry.comparingByKey());
-        BigDecimal lastBound = BigDecimal.ZERO;
-        for (Map.Entry<Long, BigDecimal> currentBound : bucketBound2FreeSpace) {
-            currentBound.setValue(currentBound.getValue().subtract(lastBound));
-            bucketId2EqNum.put(currentBound.getKey(), new AtomicInteger(0));
-        }
-        // 将等值的概率请求从大到小排序，首先为请求最大的安排空间，每次选择能放下的bucket中最小的。
-        // 填充到bucket之后，重新调整剩余容量的记录treemap
-        // 针对等值约束的赋值，采用逆序赋值法，即从bound开始，按照当前在bucket中的位置，分配对应的值，赋值最小从lowBound-1开始
-        // todo add the values reused for the eq request
-        for (BigDecimal eqProbability : eqRequest2ParameterIds.descendingKeySet()) {
-            while (!eqRequest2ParameterIds.get(eqProbability).isEmpty()) {
-                bucketBound2FreeSpace.sort(Map.Entry.comparingByValue());
-                Optional<Map.Entry<Long, BigDecimal>> freeSpace2BucketIdOptional = bucketBound2FreeSpace.stream().
-                        filter(bucket -> bucket.getValue().compareTo(eqProbability) > -1).findFirst();
-                if (freeSpace2BucketIdOptional.isPresent()) {
-                    //重新调整freeSpace
-                    Map.Entry<Long, BigDecimal> freeSpace2BucketId = freeSpace2BucketIdOptional.get();
-                    Long bucketBound = freeSpace2BucketId.getKey();
-                    bucketBound2FreeSpace.remove(freeSpace2BucketId);
-                    bucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(bucketBound, freeSpace2BucketId.getValue().subtract(eqProbability)));
-                    //顺序赋值
-                    long eqParameterData = bucketBound - bucketId2EqNum.get(bucketBound).incrementAndGet();
-                    eqConstraint2Probability.put(eqParameterData, eqProbability);
-                    Parameter parameter = eqRequest2ParameterIds.get(eqProbability).remove(0);
-                    parameter.setData(eqParameterData);
-                    String newValue;
-                    if (likeParameterId.contains(parameter.getId())) {
-                        newValue = stringTemplate.getLikeValue(eqParameterData, parameter.getDataValue());
-                    } else {
-                        newValue = transferDataToValue(eqParameterData);
-                    }
-                    parameter.setDataValue(newValue);
-                } else {
-                    throw new UnsupportedOperationException("等值约束冲突，无法实例化");
-                }
-            }
-        }
-
-        var bucketId2CardinalityList = bucketId2EqNum.entrySet().stream().filter(e -> e.getValue().get() > 0).toList();
-        List<Map.Entry<Long, BigDecimal>> newbucketBound2FreeSpace = new ArrayList<>();
-        for (var bucketId2Cardinality : bucketId2CardinalityList) {
-            var spaceIterator = bucketBound2FreeSpace.iterator();
-            while (spaceIterator.hasNext()) {
-                var space = spaceIterator.next();
-                if (space.getKey().equals(bucketId2Cardinality.getKey())) {
-                    spaceIterator.remove();
-                    long newSpaceBound = space.getKey() - bucketId2Cardinality.getValue().get();
-                    newbucketBound2FreeSpace.add(new AbstractMap.SimpleEntry<>(newSpaceBound, space.getValue()));
-                }
-            }
-        }
-        bucketBound2FreeSpace.addAll(newbucketBound2FreeSpace);
-    }
 
     /**
      * 在column中维护数据
@@ -275,74 +257,40 @@ public class Column {
         columnData = new long[size];
         int nullSize = (int) (size * nullPercentage);
         int sizeWithoutNull = size - nullSize;
-        // 使用Long.MIN_VALUE来代指null
+        //使用Long.MIN_VALUE来代指null;
         Arrays.fill(columnData, 0, nullSize, Long.MIN_VALUE);
         int currentIndex = nullSize;
-        Map<Long, BigDecimal> newEqConstraint2Probability = eqConstraint2Probability;
-        if (!boundPara.isEmpty()) {
-            newEqConstraint2Probability = new HashMap<>(eqConstraint2Probability);
-            for (Parameter parameter : boundPara) {
-                long paraData = parameter.getData();
-                BigDecimal paraProbability = newEqConstraint2Probability.get(paraData);
-                int eqSize = paraProbability.multiply(BigDecimal.valueOf(sizeWithoutNull)).setScale(0, RoundingMode.HALF_UP).intValue();
+        List<Long> boundParaData = new ArrayList<>();
+        for (Parameter parameter : boundPara) {
+            long paraData = parameter.getData();
+            if (paraData2Probability.containsKey(paraData)) {
+                boundParaData.add(paraData);
+                BigDecimal paraProbability = paraData2Probability.get(paraData);
+                int eqSize = paraProbability.multiply(BigDecimal.valueOf(size)).setScale(0, RoundingMode.HALF_UP).intValue();
                 Arrays.fill(columnData, currentIndex, currentIndex += eqSize, paraData);
-                newEqConstraint2Probability.remove(paraData);
-                nullSize += eqSize;
             }
         }
-        if (newEqConstraint2Probability.size() > 0) {
-            for (Map.Entry<Long, BigDecimal> entry : newEqConstraint2Probability.entrySet()) {
-                int eqSize = entry.getValue().multiply(BigDecimal.valueOf(sizeWithoutNull)).setScale(0, RoundingMode.HALF_UP).intValue();
-                Arrays.fill(columnData, currentIndex, currentIndex += eqSize, entry.getKey());
-                nullSize += eqSize;
-            }
-        }
-        //赋值随机数据
-        int i = 0;
-        long lastBound = 0;
-        while (eqConstraint2Probability.containsKey(lastBound)) {
-            lastBound++;
-        }
-        bucketBound2FreeSpace.sort(Map.Entry.comparingByKey());
-        for (Map.Entry<Long, BigDecimal> bucket2Probability : bucketBound2FreeSpace) {
-            int randomSize;
-            if (++i == bucketBound2FreeSpace.size()) {
-                randomSize = size - currentIndex;
-            } else {
-                //todo 确定左边界
-                randomSize = BigDecimal.valueOf(sizeWithoutNull).multiply(bucket2Probability.getValue()).setScale(0, RoundingMode.HALF_UP).intValue() - (currentIndex - nullSize);
-            }
-            try {
-                //todo
-                long[] randomData;
-                long bound = bucket2Probability.getKey();
-                if (bound == lastBound) {
-                    throw new UnsupportedOperationException();
+        long lastParaData = 0;
+        for (Map.Entry<Long, BigDecimal> data2Probability : paraData2Probability.entrySet()) {
+            long currentParaData = data2Probability.getKey();
+            if (!boundParaData.contains(currentParaData)) {
+                BigDecimal currentPb = data2Probability.getValue();
+                int randomSize = BigDecimal.valueOf(size).multiply(currentPb).setScale(0, RoundingMode.HALF_UP).intValue();
+                if (currentParaData - lastParaData == 1) {
+                    Arrays.fill(columnData, currentIndex, currentIndex += randomSize, currentParaData);
                 } else {
-                    randomData = ThreadLocalRandom.current().longs(randomSize, lastBound, bound).toArray();
+                    long[] randomData;
+                    try {
+                        randomData = ThreadLocalRandom.current().longs(randomSize, lastParaData + 1, currentParaData).toArray();
+                        System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);
+                        currentIndex += randomSize;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-                lastBound = bound;
-                while (eqConstraint2Probability.containsKey(lastBound)) {
-                    lastBound++;
-                }
-                System.arraycopy(randomData, 0, columnData, currentIndex, randomSize);
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-            currentIndex += randomSize;
+            lastParaData = currentParaData;
         }
-
-//        // shuffle数组
-//        long temp;
-//        int swapIndex;
-//        Random rnd = ThreadLocalRandom.current();
-//
-//        for (int index = columnData.length - 1; index > boundIndex; index--) {
-//            swapIndex = rnd.nextInt(index - boundIndex) + boundIndex;
-//            temp = columnData[swapIndex];
-//            columnData[swapIndex] = columnData[index];
-//            columnData[index] = temp;
-//        }
         columnData2ComputeData = false;
     }
 
@@ -433,7 +381,7 @@ public class Column {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
-            case VARCHAR -> stringTemplate.transferColumnData2Value(data, bucketBound2FreeSpace.size() > 1, range);
+            case VARCHAR -> stringTemplate.transferColumnData2Value(data, range);
             case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min) * 24 * 60 * 60));
             case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();
@@ -467,21 +415,6 @@ public class Column {
         this.specialValue = specialValue;
     }
 
-    public List<Map.Entry<Long, BigDecimal>> getBucketBound2FreeSpace() {
-        return bucketBound2FreeSpace;
-    }
-
-    public void setBucketBound2FreeSpace(List<Map.Entry<Long, BigDecimal>> bucketBound2FreeSpace) {
-        this.bucketBound2FreeSpace = bucketBound2FreeSpace;
-    }
-
-    public Map<Long, BigDecimal> getEqConstraint2Probability() {
-        return eqConstraint2Probability;
-    }
-
-    public void setEqConstraint2Probability(Map<Long, BigDecimal> eqConstraint2Probability) {
-        this.eqConstraint2Probability = eqConstraint2Probability;
-    }
 
     public StringTemplate getStringTemplate() {
         return stringTemplate;
@@ -499,4 +432,13 @@ public class Column {
     public void addBoundPara(List<Parameter> parameter) {
         this.boundPara.addAll(parameter);
     }
+
+    public SortedMap<Long, BigDecimal> getParaData2Probability() {
+        return paraData2Probability;
+    }
+
+    public void setParaData2Probability(SortedMap<Long, BigDecimal> paraData2Probability) {
+        this.paraData2Probability = paraData2Probability;
+    }
+
 }

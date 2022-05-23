@@ -24,7 +24,6 @@ import static ecnu.db.utils.CommonUtils.CSV_MAPPER;
 public class ColumnManager {
     public static final String COLUMN_STRING_INFO = "/stringTemplate.json";
     public static final String COLUMN_DISTRIBUTION_INFO = "/distribution.json";
-    public static final String COLUMN_EQDISTRIBUTION_INFO = "/eq_distribution.json";
     public static final String COLUMN_BOUNDPARA_INFO = "/boundPara.json";
     public static final String COLUMN_METADATA_INFO = "/column.csv";
     private static final ColumnManager INSTANCE = new ColumnManager();
@@ -52,16 +51,17 @@ public class ColumnManager {
         return INSTANCE;
     }
 
-    public void setData(String columnName, long[] data) {
-        getColumn(columnName).setColumnData(data);
-    }
-
     public void setSpecialValue(String columnName, int specialValue) {
         getColumn(columnName).setSpecialValue(specialValue);
     }
 
-    public void insertUniVarProbability(String columnName, BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
-        getColumn(columnName).insertUniVarProbability(probability, operator, parameters);
+    public void applyUniVarConstraint(String columnName, BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
+        try {
+            getColumn(columnName).applyUniVarConstraint(probability, operator, parameters);
+        } catch (TouchstoneException e) {
+            logger.error(e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public void setResultDir(String resultDir) {
@@ -70,6 +70,10 @@ public class ColumnManager {
 
     public Column getColumn(String columnName) {
         return columns.get(columnName);
+    }
+
+    public void initAllParameters(){
+        columns.values().forEach(Column::initAllParameters);
     }
 
     public boolean[] evaluate(String columnName, CompareOperator operator, List<Parameter> parameters) {
@@ -133,25 +137,18 @@ public class ColumnManager {
         }
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columName2StringTemplate);
         CommonUtils.writeFile(distribution.getPath() + COLUMN_STRING_INFO, content);
-        Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = new HashMap<>();
-        Map<String, Map<Long, BigDecimal>> eq2Probabilities = new HashMap<>();
+        Map<String, Map<Long, BigDecimal>> paraData2Probability = new HashMap<>();
         Map<String, List<Parameter>> boundParas = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
-            if (column.getValue().getBucketBound2FreeSpace().size() > 1 ||
-                    column.getValue().getBucketBound2FreeSpace().get(0).getValue().compareTo(BigDecimal.ONE) < 0) {
-                bucket2Probabilities.put(column.getKey(), column.getValue().getBucketBound2FreeSpace());
-            }
-            if (column.getValue().getEqConstraint2Probability().size() > 0) {
-                eq2Probabilities.put(column.getKey(), column.getValue().getEqConstraint2Probability());
+            if (column.getValue().getParaData2Probability().size() > 1) {
+                paraData2Probability.put(column.getKey(), column.getValue().getParaData2Probability());
             }
             if (!column.getValue().getBoundPara().isEmpty()) {
                 boundParas.put(column.getKey(), column.getValue().getBoundPara());
             }
         }
-        content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(bucket2Probabilities);
+        content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(paraData2Probability);
         CommonUtils.writeFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO, content);
-        content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(eq2Probabilities);
-        CommonUtils.writeFile(distribution.getPath() + COLUMN_EQDISTRIBUTION_INFO, content);
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(boundParas);
         CommonUtils.writeFile(distribution.getPath() + COLUMN_BOUNDPARA_INFO, content);
     }
@@ -166,7 +163,6 @@ public class ColumnManager {
                 if (column.getColumnType() == ColumnType.VARCHAR) {
                     column.initStringTemplate();
                 }
-                column.initBucketBound2FreeSpace();
                 columns.put(line.substring(0, commaIndex), column);
             }
         }
@@ -181,16 +177,10 @@ public class ColumnManager {
             columns.get(template.getKey()).getStringTemplate().setLikeIndex2Status(template.getValue());
         }
         content = CommonUtils.readFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO);
-        Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        Map<String, SortedMap<Long, BigDecimal>> paraData2Probability = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
-        for (Map.Entry<String, List<Map.Entry<Long, BigDecimal>>> bucket : bucket2Probabilities.entrySet()) {
-            columns.get(bucket.getKey()).setBucketBound2FreeSpace(bucket.getValue());
-        }
-        content = CommonUtils.readFile(distribution.getPath() + COLUMN_EQDISTRIBUTION_INFO);
-        Map<String, Map<Long, BigDecimal>> eq2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
-        });
-        for (Map.Entry<String, Map<Long, BigDecimal>> eq2Probability : eq2Probabilities.entrySet()) {
-            columns.get(eq2Probability.getKey()).setEqConstraint2Probability(eq2Probability.getValue());
+        for (Map.Entry<String, SortedMap<Long, BigDecimal>> paraData : paraData2Probability.entrySet()) {
+            columns.get(paraData.getKey()).setParaData2Probability(paraData.getValue());
         }
         content = CommonUtils.readFile(distribution.getPath() + COLUMN_BOUNDPARA_INFO);
         Map<String, List<Parameter>> boundParas = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
@@ -198,10 +188,6 @@ public class ColumnManager {
         for (Map.Entry<String, List<Parameter>> boundPara : boundParas.entrySet()) {
             columns.get(boundPara.getKey()).setBoundPara(boundPara.getValue());
         }
-    }
-
-    public void initAllEqParameter() {
-        columns.values().parallelStream().forEach(Column::initEqParameter);
     }
 
     /**
@@ -266,7 +252,6 @@ public class ColumnManager {
             if (column.getColumnType() == ColumnType.VARCHAR) {
                 column.initStringTemplate();
             }
-            column.initBucketBound2FreeSpace();
             column.setNullPercentage(Float.parseFloat(sqlResult[index++]));
         }
     }

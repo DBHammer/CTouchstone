@@ -15,7 +15,7 @@ import static ecnu.db.utils.CommonUtils.readFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ReadAndWriteJsonTest {
-    private static final String dir = "src/test/resources/data/query-instantiation/basic/";
+    private static final String dir = "src/test/resources/data/query-instantiation/TPCH/";
     private static final String DISTRIBUTION_DIR = "/distribution";
 
     @Test
@@ -37,6 +37,7 @@ class ReadAndWriteJsonTest {
     }
 
     @Test
+    @Disabled
     void writeTestDistribution() throws IOException {
         String content = readFile(dir + DISTRIBUTION_DIR + "/distribution.json");
         Map<String, List<Map.Entry<Long, BigDecimal>>> bucket2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {

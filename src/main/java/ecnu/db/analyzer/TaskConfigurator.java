@@ -83,14 +83,18 @@ public class TaskConfigurator implements Callable<Integer> {
         List<AbstractFilterOperation> filterOperations = allFilterOperations.stream().flatMap(Collection::stream).toList();
 
         // uni-var operation
-        filterOperations.stream()
+        List<UniVarFilterOperation> uniFilters = filterOperations.stream()
                 .filter(UniVarFilterOperation.class::isInstance)
-                .map(UniVarFilterOperation.class::cast)
+                .map(UniVarFilterOperation.class::cast).toList();
+        ColumnManager.getInstance().initAllPvAndPbList();
+        uniFilters.stream()
+                .filter(uniFilter -> !uniFilter.getOperator().isEqual())
+                .forEach(UniVarFilterOperation::applyConstraint);
+        uniFilters.stream()
+                .filter(uniFilter -> uniFilter.getOperator().isEqual())
                 .sorted(Comparator.comparing(AbstractFilterOperation::getProbability))
-                .forEach(UniVarFilterOperation::instantiateParameter);
-
-        // init eq params
-        ColumnManager.getInstance().initAllEqParameter();
+                .forEach(UniVarFilterOperation::applyConstraint);
+        ColumnManager.getInstance().initAllParameters();
 
         // multi-var non-eq sampling
         Set<String> prepareSamplingColumnName = filterOperations.parallelStream()

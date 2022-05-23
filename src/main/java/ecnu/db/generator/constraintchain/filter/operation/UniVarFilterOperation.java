@@ -8,6 +8,7 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.util.*;
@@ -99,8 +100,8 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     /**
      * 初始化等值filter的参数
      */
-    public void instantiateParameter() {
-        ColumnManager.getInstance().insertUniVarProbability(canonicalColumnName, probability, operator, parameters);
+    public void applyConstraint() {
+        ColumnManager.getInstance().applyUniVarConstraint(canonicalColumnName, probability, operator, parameters);
     }
 
     @Override

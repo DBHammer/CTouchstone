@@ -3,6 +3,7 @@ package ecnu.db.generator.constraintchain.filter.operation;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
+import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.util.ArrayList;
@@ -57,12 +58,12 @@ public class RangeFilterOperation extends UniVarFilterOperation {
     }
 
     @Override
-    public void instantiateParameter() {
+    public void applyConstraint() {
         if (!lessParameters.isEmpty() && !greaterParameters.isEmpty()) {
             ColumnManager.getInstance().insertBetweenProbability(canonicalColumnName, probability,
                     lessOperator, lessParameters, greaterOperator, greaterParameters);
         } else {
-            super.instantiateParameter();
+            super.applyConstraint();
         }
     }
 

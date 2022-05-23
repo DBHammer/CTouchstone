@@ -9,6 +9,7 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -41,7 +42,7 @@ class QueryInstantiationBasicTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        String content = readFile("src/test/resources/data/query-instantiation/basic/constraintChain.json");
+        String content = readFile("src/test/resources/data/query-instantiation/TPCH/constraintChain.json");
         query2chains = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
     }
@@ -88,8 +89,9 @@ class QueryInstantiationBasicTest {
     }
 
     @Test
+    @Disabled
     void computeTest() throws Exception {
-        ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/basic");
+        ColumnManager.getInstance().setResultDir("src/test/resources/data/query-instantiation/TPCH");
         ColumnManager.getInstance().loadColumnMetaData();
         ColumnManager.getInstance().loadColumnDistribution();
         ColumnManager.getInstance().prepareParameterInit(new HashSet<>(allColumns), 10_000);
