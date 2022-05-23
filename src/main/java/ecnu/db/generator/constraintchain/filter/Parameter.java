@@ -29,6 +29,7 @@ public class Parameter {
     private ParameterType type = ParameterType.ACTUAL;
 
 
+    @JsonIgnore
     public boolean isEqualPredicate() {
         return isEqualPredicate;
     }

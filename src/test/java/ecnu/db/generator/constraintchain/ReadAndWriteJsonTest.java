@@ -47,15 +47,6 @@ class ReadAndWriteJsonTest {
     }
 
     @Test
-    void writeTestEqDistribution() throws IOException {
-        String content = readFile(dir + DISTRIBUTION_DIR + "/eq_distribution.json");
-        Map<String, Map<Long, BigDecimal>> eq2Probabilities = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
-        });
-        String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(eq2Probabilities);
-        assertEquals(content, contentWrite);
-    }
-
-    @Test
     void writeTestBoundPara() throws IOException {
         String content = readFile(dir + DISTRIBUTION_DIR + "/boundPara.json");
         Map<String, List<Parameter>> boundPara = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
