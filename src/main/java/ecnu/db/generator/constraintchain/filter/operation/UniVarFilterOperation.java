@@ -15,6 +15,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.GE;
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.LT;
+
 
 /**
  * @author wangqingshuai
@@ -37,6 +40,14 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         this.parameters = parameters;
     }
 
+    public void amendParameters() {
+        if (operator == GE || operator == LT) {
+            for (Parameter parameter : parameters) {
+                parameter.setData(parameter.getData() + 1);
+                parameter.setDataValue(ColumnManager.getInstance().getColumn(canonicalColumnName).transferDataToValue(parameter.getData()));
+            }
+        }
+    }
 
     /**
      * merge operation
@@ -58,9 +69,9 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
             try {
                 newFilter = new RangeFilterOperation(col2uniFilter.getKey());
                 newFilter.addLessParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.LE, new ArrayList<>()).stream(),
-                                typ2Filter.getOrDefault(CompareOperator.LT, new ArrayList<>()).stream())
+                                typ2Filter.getOrDefault(LT, new ArrayList<>()).stream())
                         .flatMap(filter -> filter.getParameters().stream()).toList());
-                newFilter.addGreaterParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.GE, new ArrayList<>()).stream(),
+                newFilter.addGreaterParameters(Stream.concat(typ2Filter.getOrDefault(GE, new ArrayList<>()).stream(),
                                 typ2Filter.getOrDefault(CompareOperator.GT, new ArrayList<>()).stream())
                         .flatMap(filter -> filter.getParameters().stream()).toList());
                 newFilter.setLessOperator(isAnd, typ2Filter);

@@ -96,6 +96,9 @@ public class TaskConfigurator implements Callable<Integer> {
                 .forEach(UniVarFilterOperation::applyConstraint);
         ColumnManager.getInstance().initAllParameters();
 
+        // 修正>=和<的参数边界，对其+1，因为数据生成为左开右闭
+        uniFilters.forEach(UniVarFilterOperation::amendParameters);
+
         // multi-var non-eq sampling
         Set<String> prepareSamplingColumnName = filterOperations.parallelStream()
                 .filter(MultiVarFilterOperation.class::isInstance)
