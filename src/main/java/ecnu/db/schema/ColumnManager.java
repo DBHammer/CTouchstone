@@ -7,6 +7,8 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -41,6 +43,7 @@ public class ColumnManager {
             .toFormatter();
     private final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
     private File distributionInfoPath;
+    private Logger logger = LoggerFactory.getLogger(ColumnManager.class);
 
     // Private constructor suppresses
     // default public constructor
@@ -62,6 +65,10 @@ public class ColumnManager {
             logger.error(e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public void initAllPvAndPbList(){
+        columns.values().forEach(Column::initPvAndPbList);
     }
 
     public void setResultDir(String resultDir) {
@@ -155,7 +162,8 @@ public class ColumnManager {
 
     public void loadColumnMetaData() throws IOException {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(distributionInfoPath.getPath() + COLUMN_METADATA_INFO))) {
-            String line = bufferedReader.readLine();
+            bufferedReader.readLine();
+            String line;
             while ((line = bufferedReader.readLine()) != null) {
                 int commaIndex = line.indexOf(",");
                 String columnData = line.substring(commaIndex + 1);

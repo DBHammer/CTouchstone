@@ -27,6 +27,19 @@ public class Parameter {
     private long data;
 
     private ParameterType type = ParameterType.ACTUAL;
+
+
+    public boolean isEqualPredicate() {
+        return isEqualPredicate;
+    }
+
+    public void setEqualPredicate(boolean equalPredicate) {
+        isEqualPredicate = equalPredicate;
+    }
+
+    @JsonIgnore
+    private boolean isEqualPredicate = false;
+
     /**
      * 操作数
      */

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
+import ecnu.db.utils.exception.TouchstoneException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -16,7 +17,7 @@ import java.util.stream.IntStream;
 /**
  * @author wangqingshuai
  */
-@JsonPropertyOrder({"columnType", "nullPercentage", "specialValue", "min", "range", "minLength", "rangeLength"})
+@JsonPropertyOrder({"columnType", "nullPercentage", "specialValue", "min", "range", "minLength", "rangeLength", "originalType"})
 public class Column {
     @JsonIgnore
     private final TreeMap<BigDecimal, List<Parameter>> eqRequest2ParameterIds = new TreeMap<>();
@@ -133,7 +134,7 @@ public class Column {
         }
     }
 
-    private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) {
+    private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) throws TouchstoneException {
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
             dealZeroPb(parameters);
         } else {
