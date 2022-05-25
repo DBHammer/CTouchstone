@@ -2,18 +2,15 @@ package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.GE;
 import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.LT;
@@ -46,6 +43,10 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
                 parameter.setData(parameter.getData() + 1);
                 parameter.setDataValue(ColumnManager.getInstance().getColumn(canonicalColumnName).transferDataToValue(parameter.getData()));
             }
+        }
+        for (Parameter parameter : parameters) {
+            String value = ColumnManager.getInstance().getColumn(canonicalColumnName).transferDataToValue(parameter.getData());
+            parameter.setDataValue(value);
         }
     }
 

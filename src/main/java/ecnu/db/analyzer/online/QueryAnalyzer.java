@@ -189,7 +189,7 @@ public class QueryAnalyzer {
                 constraintChain.addJoinTable(externalTable);
             }
             boolean pkAllRowsInput = TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount;
-            boolean fkColIsNotNull = ColumnManager.getInstance().getNullPercentage(externalTable + "." + externalCol) == 0;
+            boolean fkColIsNotNull = ColumnManager.getInstance().getNullPercentage(externalTable + "." + externalCol).compareTo(BigDecimal.ZERO) == 0;
             boolean joinIsNotOuterJoin = node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0;
             if (pkAllRowsInput && fkColIsNotNull && joinIsNotOuterJoin) {
                 logger.debug(rb.getString("SkipNodeDueToFullTableScan"), node.getInfo());
@@ -230,7 +230,7 @@ public class QueryAnalyzer {
                 rightTable = node.getRightNode().getTableName();
                 childNode = node.getRightNode();
             }
-            if ((leftTable!=null&&leftTable.equals(localTable))||(rightTable!=null&&rightTable.equals(localTable))) {
+            if ((leftTable != null && leftTable.equals(localTable)) || (rightTable != null && rightTable.equals(localTable))) {
                 long tableSize = TableManager.getInstance().getTableSize(childNode.getTableName());
                 long rowsRemovedByScanFilter = tableSize - childNode.getOutputRows();
                 BigDecimal probabilityWithFailFilter = computeFilterProbability(node.getRowsRemoveByFilterAfterJoin(), rowsRemovedByScanFilter);

@@ -85,4 +85,13 @@ public enum CompareOperator {
             default -> throw new UnsupportedOperationException();
         };
     }
+
+    public boolean isMultiEqual() {
+        return switch (this) {
+            case IN, NOT_IN -> true;
+            case GT, LT, GE, LE, EQ, LIKE, NE, NOT_LIKE -> false;
+            default -> throw new UnsupportedOperationException();
+        };
+    }
+
 }

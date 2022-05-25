@@ -5,8 +5,6 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
-import java.util.Arrays;
-
 /**
  * @author wangqingshuai
  */
@@ -30,8 +28,7 @@ public class ColumnNode extends ArithmeticNode {
 
     @Override
     public double[] calculate() {
-        double[] columnValue = ColumnManager.getInstance().calculate(canonicalColumnName);
-        return Arrays.copyOf(columnValue, columnValue.length);
+        return ColumnManager.getInstance().calculate(canonicalColumnName);
     }
 
     @JsonIgnore
