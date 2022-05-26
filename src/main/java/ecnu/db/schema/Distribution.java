@@ -33,6 +33,7 @@ public class Distribution {
         if (nullPercentage.compareTo(BigDecimal.ONE) < 0) {
             Parameter pve = new Parameter();
             pve.setData(range);
+            pve.setId(-1);
             pvAndPbList.put(BigDecimal.ONE.subtract(nullPercentage), new ArrayList<>(List.of(pve)));
             paraData2Probability.put(range, BigDecimal.ONE.subtract(nullPercentage));
         }
