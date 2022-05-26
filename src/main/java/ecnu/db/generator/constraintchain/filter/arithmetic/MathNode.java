@@ -55,7 +55,9 @@ public class MathNode extends ArithmeticNode {
     @Override
     public List<String> getColumns() {
         List<String> columnNames = leftNode.getColumns();
-        columnNames.addAll(rightNode.getColumns());
+        if (rightNode != null) {
+            columnNames.addAll(rightNode.getColumns());
+        }
         return columnNames;
     }
 
