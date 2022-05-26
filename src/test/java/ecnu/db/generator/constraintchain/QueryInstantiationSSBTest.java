@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
@@ -36,9 +37,7 @@ class QueryInstantiationSSBTest {
         ColumnManager.getInstance().loadColumnDistribution();
 
         // load constraintChain configuration
-        String content = readFile(configPath + "constraintChain.json");
-        Map<String, List<ConstraintChain>> query2chains = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
-        });
+        Map<String, List<ConstraintChain>> query2chains = loadConstrainChainResult(configPath);
         List<ConstraintChain> constraintChains = query2chains.values().stream().flatMap(Collection::stream).toList();
 
         // 筛选所有的filterNode
@@ -65,5 +64,25 @@ class QueryInstantiationSSBTest {
             double rate = filterNode.getProbability().subtract(realFilterProbability).doubleValue();
             assertEquals(0, rate, 0.00005, filterNode.toString());
         }
+    }
+
+    private Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
+        String path = resultDir + "/workload";
+        File sqlDic = new File(path);
+        File[] sqlArray = sqlDic.listFiles();
+        assert sqlArray != null;
+        Map<String, List<ConstraintChain>> result = new HashMap<>();
+        for (File file : sqlArray) {
+            File[] graphArray = file.listFiles();
+            assert graphArray != null;
+            for (File file1 : graphArray) {
+                if (file1.getName().contains("json")) {
+                    Map<String, List<ConstraintChain>> eachresult = CommonUtils.MAPPER.readValue(readFile(file1.getPath()), new TypeReference<>() {
+                    });
+                    result.putAll(eachresult);
+                }
+            }
+        }
+        return result;
     }
 }
