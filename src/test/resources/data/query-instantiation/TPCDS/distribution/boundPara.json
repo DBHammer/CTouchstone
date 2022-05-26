@@ -1,0 +1,47 @@
+{
+  "public.customer_demographics.cd_education_status" : {
+    "0" : 2,
+    "0.05714285714" : 3,
+    "0.12857142857" : 1
+  },
+  "public.customer_demographics.cd_gender" : {
+    "0.05714285714" : 2,
+    "0.12857142857" : 1
+  },
+  "public.customer_demographics.cd_marital_status" : {
+    "0" : 2,
+    "0.12857142857" : 1
+  },
+  "public.date_dim.d_dow" : {
+    "0.0016427329597" : 1
+  },
+  "public.date_dim.d_moy" : {
+    "0.0012457391610" : 1,
+    "0.0018206956970" : 3,
+    "0.0022450683784" : 2
+  },
+  "public.date_dim.d_qoy" : {
+    "0" : 1
+  },
+  "public.date_dim.d_year" : {
+    "0" : 195,
+    "0.0012457391610" : 192,
+    "0.0016427329597" : 200,
+    "0.0018206956970" : 194,
+    "0.0022450683784" : 193
+  },
+  "public.item.i_brand" : {
+    "0" : 1,
+    "0.040111111110" : 2
+  },
+  "public.item.i_category" : {
+    "0" : 4,
+    "0.040111111110" : 5,
+    "0.051888888890" : 6
+  },
+  "public.item.i_class" : {
+    "0" : 1,
+    "0.040111111110" : 2,
+    "0.051888888890" : 3
+  }
+}

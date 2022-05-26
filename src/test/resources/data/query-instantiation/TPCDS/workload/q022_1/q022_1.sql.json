@@ -1,0 +1,185 @@
+{
+  "q022_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.customer_address.ca_address_sk",
+          "localCols" : "public.catalog_sales.cs_ship_addr_sk",
+          "pkTag" : 5,
+          "probability" : 0.02572651067,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.call_center.cc_call_center_sk",
+          "localCols" : "public.catalog_sales.cs_call_center_sk",
+          "pkTag" : 0,
+          "probability" : 0.9973844577,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.date_dim.d_date_sk",
+          "localCols" : "public.catalog_sales.cs_ship_date_sk",
+          "pkTag" : 18,
+          "probability" : 0.02430452297,
+          "type" : "INNER_JOIN"
+        }
+      ],
+      "tableName" : "public.catalog_sales"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 90,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  }
+                ],
+                "operator" : "EQ",
+                "probability" : 0.02652,
+                "canonicalColumnName" : "public.customer_address.ca_state",
+                "type" : "UNI_FILTER_OPERATION",
+                "columns" : [
+                  "public.customer_address.ca_state"
+                ]
+              }
+            ]
+          },
+          "probability" : 0.02652
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "ca_address_sk"
+          ],
+          "pkTag" : 5
+        }
+      ],
+      "tableName" : "public.customer_address"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 85,
+                    "data" : -1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 86,
+                    "data" : -1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 87,
+                    "data" : -1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 88,
+                    "data" : -1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 89,
+                    "data" : -1,
+                    "type" : "ACTUAL"
+                  }
+                ],
+                "operator" : "IN",
+                "probability" : 0,
+                "canonicalColumnName" : "public.call_center.cc_county",
+                "type" : "UNI_FILTER_OPERATION",
+                "columns" : [
+                  "public.call_center.cc_county"
+                ]
+              }
+            ]
+          },
+          "probability" : 1
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "cc_call_center_sk"
+          ],
+          "pkTag" : 0
+        }
+      ],
+      "tableName" : "public.call_center"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "AND",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 91,
+                        "data" : 72984,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 0.0008487453627,
+                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "type" : "UNI_FILTER_OPERATION",
+                    "columns" : [
+                      "public.date_dim.d_date"
+                    ]
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 92,
+                        "data" : 73050,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "LE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "type" : "UNI_FILTER_OPERATION",
+                    "columns" : [
+                      "public.date_dim.d_date"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.0008487453627
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "d_date_sk"
+          ],
+          "pkTag" : 18
+        }
+      ],
+      "tableName" : "public.date_dim"
+    }
+  ]
+}

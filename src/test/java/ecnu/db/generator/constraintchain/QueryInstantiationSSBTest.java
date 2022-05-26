@@ -29,7 +29,7 @@ class QueryInstantiationSSBTest {
     private static final BigDecimal sampleSize = BigDecimal.valueOf(400_0000L);
 
     @ParameterizedTest
-    @ValueSource(strings = {"src/test/resources/data/query-instantiation/SSB/"})
+    @ValueSource(strings = {"src/test/resources/data/query-instantiation/SSB/", "src/test/resources/data/query-instantiation/TPCDS/"})
     void computeTestForSSB(String configPath) throws Exception {
         // load column configuration
         ColumnManager.getInstance().setResultDir(configPath);

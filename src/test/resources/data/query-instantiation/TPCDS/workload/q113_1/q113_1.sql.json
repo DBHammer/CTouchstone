@@ -1,0 +1,66 @@
+{
+  "q113_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.date_dim.d_date_sk",
+          "localCols" : "public.store_sales.ss_sold_date_sk",
+          "pkTag" : 75,
+          "probability" : 0.761574418,
+          "type" : "INNER_JOIN"
+        }
+      ],
+      "tableName" : "public.store_sales"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 552,
+                    "data" : 200,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 553,
+                    "data" : 192,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 554,
+                    "data" : 193,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 555,
+                    "data" : 8,
+                    "type" : "ACTUAL"
+                  }
+                ],
+                "operator" : "IN",
+                "probability" : 0.02000027379,
+                "canonicalColumnName" : "public.date_dim.d_year",
+                "type" : "UNI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability" : 0.02000027379
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "d_date_sk"
+          ],
+          "pkTag" : 75
+        }
+      ],
+      "tableName" : "public.date_dim"
+    }
+  ]
+}
