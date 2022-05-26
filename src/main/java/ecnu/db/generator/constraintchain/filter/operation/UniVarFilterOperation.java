@@ -87,6 +87,11 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters);
     }
 
+    @Override
+    public List<String> getColumns() {
+        return new ArrayList<>(List.of(canonicalColumnName));
+    }
+
     @JsonIgnore
     @Override
     public boolean isDifferentTable(String tableName) {

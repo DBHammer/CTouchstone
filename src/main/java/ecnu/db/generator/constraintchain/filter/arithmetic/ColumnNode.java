@@ -5,6 +5,9 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author wangqingshuai
  */
@@ -40,6 +43,11 @@ public class ColumnNode extends ArithmeticNode {
     @Override
     public String toSQL() {
         return canonicalColumnName;
+    }
+
+    @Override
+    public List<String> getColumns() {
+        return new ArrayList<>(List.of(canonicalColumnName));
     }
 
     @Override

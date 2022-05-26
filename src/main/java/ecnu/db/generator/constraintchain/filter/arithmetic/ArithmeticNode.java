@@ -2,6 +2,8 @@ package ecnu.db.generator.constraintchain.filter.arithmetic;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.util.List;
+
 /**
  * @author wangqingshuai
  */
@@ -65,4 +67,7 @@ public abstract class ArithmeticNode {
      * @return sql格式的计算树
      */
     public abstract String toSQL();
+
+
+    public abstract List<String> getColumns();
 }

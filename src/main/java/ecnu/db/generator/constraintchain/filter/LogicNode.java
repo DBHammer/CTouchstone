@@ -113,6 +113,12 @@ public class LogicNode extends BoolExprNode {
         return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();
     }
 
+    @JsonIgnore
+    @Override
+    public List<String> getColumns() {
+        return children.stream().map(BoolExprNode::getColumns).flatMap(Collection::stream).toList();
+    }
+
     @Override
     public void reverse() {
         if (type == AND || type == OR) {
