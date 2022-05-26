@@ -54,7 +54,7 @@ class QueryInstantiationSSBTest {
                 .flatMap(Collection::stream).collect(Collectors.toSet());
 
         // 生成测试数据集
-        ColumnManager.getInstance().prepareParameterInit(new HashSet<>(columnNames), sampleSize.intValue());
+        ColumnManager.getInstance().prepareParameterInit(columnNames, sampleSize.intValue());
 
         //验证每个filterNode的执行结果
         for (ConstraintChainFilterNode filterNode : filterNodes) {
