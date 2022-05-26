@@ -13,10 +13,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 1,
+                        "id" : 0,
                         "data" : 8,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -27,10 +26,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 3,
+                        "id" : 2,
                         "data" : 52,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
@@ -41,10 +39,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 2,
+                        "id" : 1,
                         "data" : 12,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -79,10 +76,9 @@
               {
                 "parameters" : [
                   {
-                    "id" : 0,
+                    "id" : 3,
                     "data" : 3,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -120,9 +116,8 @@
                     "parameters" : [
                       {
                         "id" : 5,
-                        "data" : 10,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "data" : 11,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -135,8 +130,7 @@
                       {
                         "id" : 8,
                         "data" : 51,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -149,8 +143,7 @@
                       {
                         "id" : 7,
                         "data" : 0,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -163,8 +156,7 @@
                       {
                         "id" : 6,
                         "data" : 12,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -201,8 +193,7 @@
                   {
                     "id" : 4,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -240,9 +231,8 @@
                     "parameters" : [
                       {
                         "id" : 11,
-                        "data" : 9,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "data" : 10,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -255,8 +245,7 @@
                       {
                         "id" : 14,
                         "data" : 51,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -269,8 +258,7 @@
                       {
                         "id" : 13,
                         "data" : 0,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -283,8 +271,7 @@
                       {
                         "id" : 12,
                         "data" : 12,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -324,8 +311,7 @@
                       {
                         "id" : 9,
                         "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -338,8 +324,7 @@
                       {
                         "id" : 10,
                         "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -398,8 +383,7 @@
                   {
                     "id" : 16,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -433,8 +417,7 @@
                   {
                     "id" : 15,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -494,8 +477,7 @@
                       {
                         "id" : 18,
                         "data" : 992,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -508,8 +490,7 @@
                       {
                         "id" : 19,
                         "data" : 1001,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -545,14 +526,7 @@
                   {
                     "id" : 17,
                     "data" : 3,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
-                  },
-                  {
-                    "id" : 22,
-                    "data" : 3,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -609,8 +583,7 @@
                   {
                     "id" : 21,
                     "data" : 992,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -644,8 +617,7 @@
                   {
                     "id" : 20,
                     "data" : 2,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -710,8 +682,7 @@
                   {
                     "id" : 23,
                     "data" : 2,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -745,8 +716,7 @@
                   {
                     "id" : 22,
                     "data" : 3,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -783,8 +753,7 @@
                       {
                         "id" : 24,
                         "data" : 3,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -797,8 +766,7 @@
                       {
                         "id" : 25,
                         "data" : 8,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -865,8 +833,7 @@
                   {
                     "id" : 27,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -900,8 +867,7 @@
                   {
                     "id" : 26,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -938,8 +904,7 @@
                       {
                         "id" : 28,
                         "data" : 3,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -952,8 +917,7 @@
                       {
                         "id" : 29,
                         "data" : 8,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -1021,10 +985,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 32,
+                        "id" : 34,
                         "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1035,10 +998,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 33,
+                        "id" : 35,
                         "data" : -1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1077,8 +1039,7 @@
                       {
                         "id" : 30,
                         "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1091,8 +1052,7 @@
                       {
                         "id" : 31,
                         "data" : -1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1129,10 +1089,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 34,
+                        "id" : 32,
                         "data" : 3,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
@@ -1143,10 +1102,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 35,
+                        "id" : 33,
                         "data" : 8,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
@@ -1216,14 +1174,7 @@
                       {
                         "id" : 37,
                         "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
-                      },
-                      {
-                        "id" : 30,
-                        "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1236,8 +1187,7 @@
                       {
                         "id" : 38,
                         "data" : -1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1273,8 +1223,7 @@
                   {
                     "id" : 36,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1311,14 +1260,7 @@
                       {
                         "id" : 39,
                         "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
-                      },
-                      {
-                        "id" : 32,
-                        "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1331,8 +1273,7 @@
                       {
                         "id" : 40,
                         "data" : -1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1399,8 +1340,7 @@
                   {
                     "id" : 42,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1434,8 +1374,7 @@
                   {
                     "id" : 41,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1472,8 +1411,7 @@
                       {
                         "id" : 43,
                         "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1486,8 +1424,7 @@
                       {
                         "id" : 44,
                         "data" : -1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1562,20 +1499,7 @@
                   {
                     "id" : 46,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
-                  },
-                  {
-                    "id" : 15,
-                    "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
-                  },
-                  {
-                    "id" : 42,
-                    "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1609,8 +1533,7 @@
                   {
                     "id" : 45,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1647,8 +1570,7 @@
                       {
                         "id" : 49,
                         "data" : 4,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1660,9 +1582,8 @@
                     "parameters" : [
                       {
                         "id" : 50,
-                        "data" : 1991,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "data" : -1,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1701,14 +1622,7 @@
                       {
                         "id" : 47,
                         "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
-                      },
-                      {
-                        "id" : 43,
-                        "data" : 1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1721,8 +1635,7 @@
                       {
                         "id" : 48,
                         "data" : -1,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1797,14 +1710,7 @@
                   {
                     "id" : 52,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
-                  },
-                  {
-                    "id" : 27,
-                    "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1838,20 +1744,7 @@
                   {
                     "id" : 51,
                     "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
-                  },
-                  {
-                    "id" : 45,
-                    "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
-                  },
-                  {
-                    "id" : 41,
-                    "data" : 1,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
@@ -1886,16 +1779,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 53,
+                        "id" : 54,
                         "data" : 4,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
-                      },
-                      {
-                        "id" : 49,
-                        "data" : 4,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : true
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1906,10 +1792,9 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 54,
-                        "data" : 1991,
-                        "type" : "ACTUAL",
-                        "equalPredicate" : false
+                        "id" : 55,
+                        "data" : -1,
+                        "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
@@ -1943,10 +1828,9 @@
               {
                 "parameters" : [
                   {
-                    "id" : 55,
+                    "id" : 53,
                     "data" : 2,
-                    "type" : "ACTUAL",
-                    "equalPredicate" : true
+                    "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
