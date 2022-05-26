@@ -31,7 +31,10 @@ public class Distribution {
         this.range = range;
         // 初始化pvAndPblist 插入pve
         if (nullPercentage.compareTo(BigDecimal.ONE) < 0) {
-            pvAndPbList.put(BigDecimal.ONE.subtract(nullPercentage), new ArrayList<>(List.of(new Parameter(-1, null, null))));
+            Parameter pve = new Parameter();
+            pve.setData(range);
+            pvAndPbList.put(BigDecimal.ONE.subtract(nullPercentage), new ArrayList<>(List.of(pve)));
+            paraData2Probability.put(range, BigDecimal.ONE.subtract(nullPercentage));
         }
     }
 
@@ -199,6 +202,7 @@ public class Distribution {
             cardinalityPercentage = BigDecimal.ZERO;
         }
         long dataIndex = 0;
+        paraData2Probability.clear();
         for (var CDF2Parameters : pvAndPbList.entrySet()) {
             dataIndex++;
             BigDecimal rangeSize = getRange(CDF2Parameters.getKey());
@@ -270,12 +274,18 @@ public class Distribution {
             Arrays.fill(columnData, currentIndex, currentIndex + generateSize, pv2Offset.getValue());
             currentIndex += generateSize;
         }
+        // 概率误差可能会导致attributeData略微大于size
+        while (attributeData.size() > size) {
+            attributeData.remove(attributeData.size() - 1);
+        }
         // 复制最后部分
         for (int i = attributeIndex; i < attributeData.size(); i++) {
             columnData[currentIndex++] = attributeData.get(i);
         }
         // 使用Long.MIN_VALUE标记结尾的null值
-        Arrays.fill(columnData, currentIndex, size - 1, Long.MIN_VALUE);
+        if (currentIndex < size - 1) {
+            Arrays.fill(columnData, currentIndex, size - 1, Long.MIN_VALUE);
+        }
         return columnData;
     }
 
