@@ -80,6 +80,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
+    @JsonIgnore
     public List<String> getColumns() {
         return new ArrayList<>(List.of(canonicalColumnName));
     }

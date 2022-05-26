@@ -46,6 +46,7 @@ public class ColumnNode extends ArithmeticNode {
     }
 
     @Override
+    @JsonIgnore
     public List<String> getColumns() {
         return new ArrayList<>(List.of(canonicalColumnName));
     }

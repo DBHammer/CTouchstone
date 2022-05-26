@@ -59,6 +59,7 @@ public abstract class BoolExprNode {
      *
      * @return 所有的参数
      */
+    @JsonIgnore
     public abstract List<String> getColumns();
 
     /**

@@ -69,5 +69,6 @@ public abstract class ArithmeticNode {
     public abstract String toSQL();
 
 
+    @JsonIgnore
     public abstract List<String> getColumns();
 }
