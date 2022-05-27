@@ -6,6 +6,7 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.File;
@@ -22,8 +23,11 @@ class QueryInstantiationSSBTest {
     private static final BigDecimal sampleSize = BigDecimal.valueOf(400_0000L);
 
     @ParameterizedTest
-    @ValueSource(strings = {"src/test/resources/data/query-instantiation/SSB/", "src/test/resources/data/query-instantiation/TPCDS/"})
-    void computeTestForSSB(String configPath) throws Exception {
+    @CsvSource(delimiter = ';', value = {
+            "src/test/resources/data/query-instantiation/SSB/;0.000005",
+            "src/test/resources/data/query-instantiation/TPCDS/;0.000005"
+    })
+    void computeTestForSSB(String configPath, double delta) throws Exception {
         // load column configuration
         ColumnManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnMetaData();
@@ -60,7 +64,7 @@ class QueryInstantiationSSBTest {
             BigDecimal bSatisfyRowCount = BigDecimal.valueOf(satisfyRowCount);
             BigDecimal realFilterProbability = bSatisfyRowCount.divide(sampleSize, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
             double rate = filterNode.getProbability().subtract(realFilterProbability).doubleValue();
-            assertEquals(0, rate, 0.00001, filterNode.toString());
+            assertEquals(0, rate, delta, filterNode.toString());
         });
     }
 
