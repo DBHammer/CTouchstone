@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.web_returns.wr_returned_date_sk",
-          "pkTag" : 62,
+          "pkTag" : 70,
           "probability" : 0.007524769031,
           "type" : "INNER_JOIN"
         }
@@ -26,26 +26,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 508,
-                        "data" : 73016,
+                        "id" : 569,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.0004380621227,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 509,
-                        "data" : 73050,
+                        "id" : 570,
+                        "data" : 34,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.0004380621227,
                     "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -60,7 +60,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 62
+          "pkTag" : 70
         }
       ],
       "tableName" : "public.date_dim"

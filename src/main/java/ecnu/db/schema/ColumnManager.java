@@ -43,7 +43,7 @@ public class ColumnManager {
             .toFormatter();
     private final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
     private File distributionInfoPath;
-    private Logger logger = LoggerFactory.getLogger(ColumnManager.class);
+    private final Logger logger = LoggerFactory.getLogger(ColumnManager.class);
 
     // Private constructor suppresses
     // default public constructor
@@ -150,7 +150,7 @@ public class ColumnManager {
         Map<String, SortedMap<BigDecimal, Long>> offset2Pvs = new TreeMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
             Distribution columnDistribution = column.getValue().getDistribution();
-            if (columnDistribution.getParaData2Probability().size() > 1) {
+            if (columnDistribution.hasConstraints()) {
                 paraData2Probability.put(column.getKey(), columnDistribution.getParaData2Probability());
             }
             if (!columnDistribution.getOffset2Pv().isEmpty()) {

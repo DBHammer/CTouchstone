@@ -40,17 +40,14 @@
                 "parameters" : [
                   {
                     "id" : 39,
-                    "data" : 199,
+                    "data" : 8,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
                 "probability" : 0.004996646087,
                 "canonicalColumnName" : "public.date_dim.d_year",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.date_dim.d_year"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
@@ -77,7 +74,7 @@
                 "parameters" : [
                   {
                     "id" : 33,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
@@ -107,12 +104,9 @@
                   }
                 ],
                 "operator" : "IN",
-                "probability" : 0,
+                "probability" : 1,
                 "canonicalColumnName" : "public.store.s_state",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.store.s_state"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
@@ -149,10 +143,7 @@
                     "operator" : "EQ",
                     "probability" : 0.01428571429,
                     "canonicalColumnName" : "public.customer_demographics.cd_gender",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.customer_demographics.cd_gender"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
@@ -165,10 +156,7 @@
                     "operator" : "EQ",
                     "probability" : 0.01428571429,
                     "canonicalColumnName" : "public.customer_demographics.cd_education_status",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.customer_demographics.cd_education_status"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
@@ -181,10 +169,7 @@
                     "operator" : "EQ",
                     "probability" : 0.01428571429,
                     "canonicalColumnName" : "public.customer_demographics.cd_marital_status",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.customer_demographics.cd_marital_status"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }

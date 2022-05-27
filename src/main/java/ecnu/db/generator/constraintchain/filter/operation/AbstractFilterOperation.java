@@ -30,9 +30,6 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
 
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
-        if (probability.compareTo(BigDecimal.ONE) == 0 && !isTrue()) {
-            probability = BigDecimal.ZERO;
-        }
         if (isReverse) {
             probability = BigDecimal.ONE.subtract(probability);
         }
@@ -49,7 +46,6 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
 
     @Override
     public boolean isTrue() {
-        probability = isReverse ? BigDecimal.ZERO : BigDecimal.ONE;
         return switch (operator) {
             case LE, GE, GT, LT -> true;
             case EQ, LIKE, IN -> isReverse;

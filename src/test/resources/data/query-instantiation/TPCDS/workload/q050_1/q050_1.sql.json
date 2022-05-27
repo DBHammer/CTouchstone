@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 30,
+          "pkTag" : 36,
           "probability" : 0.2350729273,
           "type" : "INNER_JOIN"
         }
@@ -26,8 +26,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 203,
-                        "data" : 3,
+                        "id" : 254,
+                        "data" : 14,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -42,7 +42,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 206,
+                            "id" : 257,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -55,7 +55,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 207,
+                            "id" : 258,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -73,7 +73,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 204,
+                            "id" : 255,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -86,7 +86,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 205,
+                            "id" : 256,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -109,7 +109,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 30
+          "pkTag" : 36
         }
       ],
       "tableName" : "public.date_dim"

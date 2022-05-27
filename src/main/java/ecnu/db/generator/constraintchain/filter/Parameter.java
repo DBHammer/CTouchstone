@@ -55,6 +55,18 @@ public class Parameter {
     @JsonIgnore
     private boolean isSubPlan = false;
 
+    @JsonIgnore
+    private boolean canMerge = true;
+
+    @JsonIgnore
+    public boolean isCanMerge() {
+        return canMerge;
+    }
+
+    public void setCanMerge(boolean canMerge) {
+        this.canMerge = canMerge;
+    }
+
     public Parameter() {
     }
 

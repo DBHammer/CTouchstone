@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.web_sales.ws_ship_hdemo_sk",
-          "pkTag" : 1,
+          "pkTag" : 2,
           "probability" : 0.1020422686,
           "type" : "INNER_JOIN"
         },
@@ -42,26 +42,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 196,
-                        "data" : 43,
+                        "id" : 247,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.01666666667,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.web_page.wp_char_count",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 197,
-                        "data" : 43,
+                        "id" : 248,
+                        "data" : 2,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.01666666667,
                     "canonicalColumnName" : "public.web_page.wp_char_count",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -91,7 +91,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 193,
+                    "id" : 244,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -110,7 +110,7 @@
           "pkColumns" : [
             "hd_demo_sk"
           ],
-          "pkTag" : 1
+          "pkTag" : 2
         }
       ],
       "tableName" : "public.household_demographics"
@@ -128,26 +128,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 194,
-                        "data" : 22,
+                        "id" : 245,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.08333333333,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.time_dim.t_hour",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 195,
-                        "data" : 25,
+                        "id" : 246,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.08333333333,
                     "canonicalColumnName" : "public.time_dim.t_hour",
                     "type" : "UNI_FILTER_OPERATION"
                   }

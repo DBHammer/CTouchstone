@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.catalog_sales.cs_sold_date_sk",
-          "pkTag" : 29,
+          "pkTag" : 35,
           "probability" : 0.1989711891,
           "type" : "INNER_JOIN"
         },
@@ -39,12 +39,12 @@
               {
                 "parameters" : [
                   {
-                    "id" : 189,
+                    "id" : 240,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 190,
+                    "id" : 241,
                     "data" : -1,
                     "type" : "ACTUAL"
                   }
@@ -78,8 +78,8 @@
               {
                 "parameters" : [
                   {
-                    "id" : 188,
-                    "data" : 199,
+                    "id" : 239,
+                    "data" : 8,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -97,7 +97,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 29
+          "pkTag" : 35
         }
       ],
       "tableName" : "public.date_dim"
@@ -115,26 +115,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 191,
-                        "data" : 57600,
+                        "id" : 242,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.3333449074,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.time_dim.t_time",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 192,
-                        "data" : 86401,
+                        "id" : 243,
+                        "data" : 28801,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.3333449074,
                     "canonicalColumnName" : "public.time_dim.t_time",
                     "type" : "UNI_FILTER_OPERATION"
                   }

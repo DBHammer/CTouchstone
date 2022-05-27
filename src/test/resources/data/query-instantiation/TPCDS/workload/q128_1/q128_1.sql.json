@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.catalog_sales.cs_sold_date_sk",
-          "pkTag" : 87,
+          "pkTag" : 95,
           "probability" : 0.2284377627,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_demographics.cd_demo_sk",
           "localCols" : "public.catalog_sales.cs_bill_cdemo_sk",
-          "pkTag" : 5,
+          "pkTag" : 6,
           "probability" : 0.01402958968,
           "type" : "INNER_JOIN"
         },
@@ -45,26 +45,26 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 605,
-                            "data" : 72584,
+                            "id" : 666,
+                            "data" : 0,
                             "type" : "ACTUAL"
                           }
                         ],
                         "operator" : "GE",
-                        "probability" : 0.006269764131,
+                        "probability" : 1,
                         "canonicalColumnName" : "public.date_dim.d_date",
                         "type" : "UNI_FILTER_OPERATION"
                       },
                       {
                         "parameters" : [
                           {
-                            "id" : 606,
-                            "data" : 73050,
+                            "id" : 667,
+                            "data" : 466,
                             "type" : "ACTUAL"
                           }
                         ],
                         "operator" : "LE",
-                        "probability" : 1,
+                        "probability" : 0.006269764131,
                         "canonicalColumnName" : "public.date_dim.d_date",
                         "type" : "UNI_FILTER_OPERATION"
                       }
@@ -73,7 +73,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 607,
+                        "id" : 668,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -94,7 +94,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 87
+          "pkTag" : 95
         }
       ],
       "tableName" : "public.date_dim"
@@ -112,7 +112,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 602,
+                        "id" : 663,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -125,7 +125,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 604,
+                        "id" : 665,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -138,7 +138,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 603,
+                        "id" : 664,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -159,7 +159,7 @@
           "pkColumns" : [
             "cd_demo_sk"
           ],
-          "pkTag" : 5
+          "pkTag" : 6
         }
       ],
       "tableName" : "public.customer_demographics"
@@ -177,7 +177,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 608,
+                        "id" : 669,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -190,7 +190,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 609,
+                        "id" : 670,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }

@@ -42,12 +42,12 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 76,
-                        "data" : 1,
+                        "id" : 78,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       },
                       {
-                        "id" : 77,
+                        "id" : 79,
                         "data" : 3,
                         "type" : "ACTUAL"
                       }
@@ -55,36 +55,30 @@
                     "operator" : "IN",
                     "probability" : 0.004298484579,
                     "canonicalColumnName" : "public.date_dim.d_dow",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.date_dim.d_dow"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 78,
-                        "data" : 200,
-                        "type" : "ACTUAL"
-                      },
-                      {
-                        "id" : 79,
-                        "data" : 192,
-                        "type" : "ACTUAL"
-                      },
-                      {
                         "id" : 80,
-                        "data" : 7,
+                        "data" : 17,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 81,
+                        "data" : 17,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 82,
+                        "data" : 17,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "IN",
                     "probability" : 0.004298484579,
                     "canonicalColumnName" : "public.date_dim.d_year",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.date_dim.d_year"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
@@ -113,37 +107,34 @@
                 "parameters" : [
                   {
                     "id" : 71,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 72,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 73,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 74,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 75,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "IN",
-                "probability" : 0,
+                "probability" : 1,
                 "canonicalColumnName" : "public.store.s_city",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.store.s_city"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
@@ -172,7 +163,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 81,
+                        "id" : 76,
                         "data" : 3,
                         "type" : "ACTUAL"
                       }
@@ -180,15 +171,12 @@
                     "operator" : "EQ",
                     "probability" : 0.25,
                     "canonicalColumnName" : "public.household_demographics.hd_dep_count",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.household_demographics.hd_dep_count"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 82,
+                        "id" : 77,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -196,10 +184,7 @@
                     "operator" : "EQ",
                     "probability" : 0,
                     "canonicalColumnName" : "public.household_demographics.hd_vehicle_count",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.household_demographics.hd_vehicle_count"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }

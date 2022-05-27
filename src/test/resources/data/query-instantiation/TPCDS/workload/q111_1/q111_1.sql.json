@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 73,
+          "pkTag" : 81,
           "probability" : 0.1904111368,
           "type" : "INNER_JOIN"
         }
@@ -26,26 +26,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 545,
-                        "data" : 2401,
+                        "id" : 606,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.004996646087,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.date_dim.d_month_seq",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 546,
-                        "data" : 2402,
+                        "id" : 607,
+                        "data" : 1,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.004996646087,
                     "canonicalColumnName" : "public.date_dim.d_month_seq",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -60,7 +60,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 73
+          "pkTag" : 81
         }
       ],
       "tableName" : "public.date_dim"

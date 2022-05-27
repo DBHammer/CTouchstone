@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.catalog_sales.cs_sold_date_sk",
-          "pkTag" : 22,
+          "pkTag" : 27,
           "probability" : 0.0215435074,
           "type" : "INNER_JOIN"
         },
@@ -22,7 +22,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_address.ca_address_sk",
           "localCols" : "public.catalog_sales.cs_bill_addr_sk",
-          "pkTag" : 8,
+          "pkTag" : 9,
           "probability" : 0.3689320388,
           "type" : "INNER_JOIN"
         }
@@ -42,8 +42,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 117,
-                        "data" : 194,
+                        "id" : 158,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -55,7 +55,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 118,
+                        "id" : 159,
                         "data" : 3,
                         "type" : "ACTUAL"
                       }
@@ -76,7 +76,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 22
+          "pkTag" : 27
         }
       ],
       "tableName" : "public.date_dim"
@@ -91,7 +91,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 116,
+                    "id" : 157,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -125,7 +125,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 119,
+                    "id" : 160,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -144,7 +144,7 @@
           "pkColumns" : [
             "ca_address_sk"
           ],
-          "pkTag" : 8
+          "pkTag" : 9
         }
       ],
       "tableName" : "public.customer_address"

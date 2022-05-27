@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.store.s_store_sk",
           "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 11,
+          "pkTag" : 15,
           "probability" : 0.7957828138,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 49,
+          "pkTag" : 57,
           "probability" : 0.08317336889,
           "type" : "INNER_JOIN"
         },
@@ -22,7 +22,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.store_sales.ss_hdemo_sk",
-          "pkTag" : 12,
+          "pkTag" : 13,
           "probability" : 0.8420754479,
           "type" : "INNER_JOIN"
         }
@@ -42,26 +42,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 424,
-                        "data" : 3,
+                        "id" : 487,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.9166666667,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.store.s_number_employees",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 425,
-                        "data" : 10,
+                        "id" : 488,
+                        "data" : 7,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.9166666667,
                     "canonicalColumnName" : "public.store.s_number_employees",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -76,7 +76,7 @@
           "pkColumns" : [
             "s_store_sk"
           ],
-          "pkTag" : 11
+          "pkTag" : 15
         }
       ],
       "tableName" : "public.store"
@@ -94,7 +94,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 420,
+                        "id" : 481,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -107,18 +107,18 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 421,
-                        "data" : 200,
+                        "id" : 482,
+                        "data" : 16,
                         "type" : "ACTUAL"
                       },
                       {
-                        "id" : 422,
-                        "data" : 192,
+                        "id" : 483,
+                        "data" : 16,
                         "type" : "ACTUAL"
                       },
                       {
-                        "id" : 423,
-                        "data" : 5,
+                        "id" : 484,
+                        "data" : 16,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -138,7 +138,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 49
+          "pkTag" : 57
         }
       ],
       "tableName" : "public.date_dim"
@@ -156,7 +156,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 426,
+                        "id" : 485,
                         "data" : 2,
                         "type" : "ACTUAL"
                       }
@@ -169,7 +169,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 427,
+                        "id" : 486,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -190,7 +190,7 @@
           "pkColumns" : [
             "hd_demo_sk"
           ],
-          "pkTag" : 12
+          "pkTag" : 13
         }
       ],
       "tableName" : "public.household_demographics"

@@ -32,17 +32,14 @@
                 "parameters" : [
                   {
                     "id" : 58,
-                    "data" : 199,
+                    "data" : 8,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
                 "probability" : 0.004996646087,
                 "canonicalColumnName" : "public.date_dim.d_year",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.date_dim.d_year"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
@@ -69,52 +66,49 @@
                 "parameters" : [
                   {
                     "id" : 50,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 51,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 52,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 53,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 54,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 55,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 56,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 57,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "IN",
-                "probability" : 0,
+                "probability" : 1,
                 "canonicalColumnName" : "public.store.s_state",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.store.s_state"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },

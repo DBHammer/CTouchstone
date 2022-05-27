@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ecnu.db.analyzer.TaskConfigurator.queryInstantiation;
+import static ecnu.db.analyzer.QueryInstantiate.queryInstantiation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryInstantiationMultiVarTest {

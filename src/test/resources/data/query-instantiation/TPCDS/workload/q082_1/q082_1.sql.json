@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.store.s_store_sk",
           "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 10,
+          "pkTag" : 14,
           "probability" : 0.9548556383,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.store_sales.ss_hdemo_sk",
-          "pkTag" : 11,
+          "pkTag" : 12,
           "probability" : 0.2441478783,
           "type" : "INNER_JOIN"
         },
@@ -22,7 +22,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 46,
+          "pkTag" : 54,
           "probability" : 0.03765020544,
           "type" : "INNER_JOIN"
         }
@@ -39,18 +39,18 @@
               {
                 "parameters" : [
                   {
-                    "id" : 395,
-                    "data" : -1,
+                    "id" : 461,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 396,
+                    "id" : 462,
                     "data" : -1,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "IN",
-                "probability" : 0,
+                "probability" : 1,
                 "canonicalColumnName" : "public.store.s_city",
                 "type" : "UNI_FILTER_OPERATION"
               }
@@ -63,7 +63,7 @@
           "pkColumns" : [
             "s_store_sk"
           ],
-          "pkTag" : 10
+          "pkTag" : 14
         }
       ],
       "tableName" : "public.store"
@@ -81,7 +81,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 393,
+                        "id" : 454,
                         "data" : 3,
                         "type" : "ACTUAL"
                       }
@@ -94,7 +94,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 394,
+                        "id" : 455,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -115,7 +115,7 @@
           "pkColumns" : [
             "hd_demo_sk"
           ],
-          "pkTag" : 11
+          "pkTag" : 12
         }
       ],
       "tableName" : "public.household_demographics"
@@ -133,7 +133,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 397,
+                        "id" : 456,
                         "data" : 0,
                         "type" : "ACTUAL"
                       }
@@ -146,18 +146,18 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 399,
-                        "data" : 200,
+                        "id" : 458,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       },
                       {
-                        "id" : 400,
-                        "data" : 192,
+                        "id" : 459,
+                        "data" : 2,
                         "type" : "ACTUAL"
                       },
                       {
-                        "id" : 401,
-                        "data" : 193,
+                        "id" : 460,
+                        "data" : 9,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -169,7 +169,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 398,
+                        "id" : 457,
                         "data" : 32,
                         "type" : "ACTUAL"
                       }
@@ -190,7 +190,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 46
+          "pkTag" : 54
         }
       ],
       "tableName" : "public.date_dim"

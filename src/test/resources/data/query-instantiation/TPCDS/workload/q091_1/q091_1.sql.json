@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.web_sales.ws_sold_date_sk",
-          "pkTag" : 54,
+          "pkTag" : 62,
           "probability" : 0.009698575448,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_address.ca_address_sk",
           "localCols" : "public.web_sales.ws_bill_addr_sk",
-          "pkTag" : 15,
+          "pkTag" : 16,
           "probability" : 0.3597534757,
           "type" : "INNER_JOIN"
         }
@@ -34,8 +34,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 478,
-                        "data" : 194,
+                        "id" : 539,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -47,7 +47,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 479,
+                        "id" : 540,
                         "data" : 3,
                         "type" : "ACTUAL"
                       }
@@ -68,7 +68,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 54
+          "pkTag" : 62
         }
       ],
       "tableName" : "public.date_dim"
@@ -83,7 +83,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 477,
+                    "id" : 538,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -102,7 +102,7 @@
           "pkColumns" : [
             "ca_address_sk"
           ],
-          "pkTag" : 15
+          "pkTag" : 16
         }
       ],
       "tableName" : "public.customer_address"

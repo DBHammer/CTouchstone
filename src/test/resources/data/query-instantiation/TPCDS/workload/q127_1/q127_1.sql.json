@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_demographics.cd_demo_sk",
           "localCols" : "public.catalog_sales.cs_bill_cdemo_sk",
-          "pkTag" : 4,
+          "pkTag" : 5,
           "probability" : 0.01397039849,
           "type" : "INNER_JOIN"
         },
@@ -42,7 +42,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 590,
+                        "id" : 651,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -55,7 +55,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 592,
+                        "id" : 653,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -68,7 +68,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 591,
+                        "id" : 652,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -89,7 +89,7 @@
           "pkColumns" : [
             "cd_demo_sk"
           ],
-          "pkTag" : 4
+          "pkTag" : 5
         }
       ],
       "tableName" : "public.customer_demographics"
@@ -104,32 +104,32 @@
               {
                 "parameters" : [
                   {
-                    "id" : 584,
+                    "id" : 645,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 585,
+                    "id" : 646,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 586,
+                    "id" : 647,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 587,
+                    "id" : 648,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 588,
+                    "id" : 649,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 589,
+                    "id" : 650,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -147,7 +147,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_address.ca_address_sk",
           "localCols" : "public.customer.c_current_addr_sk",
-          "pkTag" : 17,
+          "pkTag" : 18,
           "probability" : 0.1984737535,
           "type" : "INNER_JOIN"
         },
@@ -171,37 +171,37 @@
               {
                 "parameters" : [
                   {
-                    "id" : 595,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  },
-                  {
-                    "id" : 596,
-                    "data" : 2,
-                    "type" : "ACTUAL"
-                  },
-                  {
-                    "id" : 597,
+                    "id" : 656,
                     "data" : 3,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 598,
+                    "id" : 657,
+                    "data" : 2,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 658,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 659,
                     "data" : 4,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 599,
+                    "id" : 660,
                     "data" : 4,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 600,
+                    "id" : 661,
                     "data" : 4,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 601,
+                    "id" : 662,
                     "data" : 4,
                     "type" : "ACTUAL"
                   }
@@ -220,7 +220,7 @@
           "pkColumns" : [
             "ca_address_sk"
           ],
-          "pkTag" : 17
+          "pkTag" : 18
         }
       ],
       "tableName" : "public.customer_address"
@@ -238,7 +238,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 593,
+                        "id" : 654,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -251,7 +251,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 594,
+                        "id" : 655,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }

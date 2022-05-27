@@ -29,14 +29,16 @@ public class Distribution {
 
     public Distribution(BigDecimal nullPercentage, long range) {
         this.range = range;
-        // 初始化pvAndPblist 插入pve
-        if (nullPercentage.compareTo(BigDecimal.ONE) < 0) {
-            Parameter pve = new Parameter();
-            pve.setData(range);
-            pve.setId(-1);
-            pvAndPbList.put(BigDecimal.ONE.subtract(nullPercentage), new ArrayList<>(List.of(pve)));
-            paraData2Probability.put(range, BigDecimal.ONE.subtract(nullPercentage));
-        }
+        // 初始化pvAndPbList 插入pve
+        Parameter pve = new Parameter();
+        pve.setData(range);
+        pve.setId(-1);
+        pvAndPbList.put(BigDecimal.ONE.subtract(nullPercentage), new ArrayList<>(List.of(pve)));
+        paraData2Probability.put(range, BigDecimal.ONE.subtract(nullPercentage));
+    }
+
+    public boolean hasConstraints() {
+        return pvAndPbList.size() > 1 || pvAndPbList.lastEntry().getValue().size() > 1;
     }
 
     private void dealZeroPb(List<Parameter> parameters) {
@@ -89,10 +91,8 @@ public class Distribution {
                 rangePb2CDFBound.put(getRange(currentCDF2Pb.getKey()), currentCDF2Pb.getKey());
             }
         }
-        // todo 使用CPModel求解
-        while (rangePb2CDFBound.size() > 0) {
-            BigDecimal assignRange = rangePb2CDFBound.firstKey();
-            BigDecimal cdfBound = rangePb2CDFBound.remove(assignRange);
+        BigDecimal assignRange = rangePb2CDFBound.floorKey(probability);
+        while (assignRange != null) {
             // 如果只剩下最后一个无法复用的range，则退出
             boolean canNotAssign = probability.compareTo(assignRange) < 0;
             boolean withoutRemain = tempParameterList.size() == 1 && probability.compareTo(assignRange) > 0;
@@ -100,8 +100,10 @@ public class Distribution {
                 break;
             }
             probability = probability.subtract(assignRange);
+            BigDecimal cdfBound = rangePb2CDFBound.remove(assignRange);
             pvAndPbList.get(cdfBound).add(tempParameterList.remove(0));
             hasUsedEqRange.add(cdfBound);
+            assignRange = rangePb2CDFBound.floorKey(probability);
         }
         return probability;
     }
@@ -127,10 +129,13 @@ public class Distribution {
         adjustNullPercentage(probability, parameters);
         List<Parameter> tempParameterList = new LinkedList<>(parameters);
         List<BigDecimal> hasUsedEqRange = new LinkedList<>();
-        probability = reusePb(tempParameterList, hasUsedEqRange, probability);
-        if (probability.compareTo(BigDecimal.ZERO) == 0) {
-            dealZeroPb(tempParameterList);
-            return;
+        // 如果有某个参数拒绝重用，则直接进行贪心寻range
+        if (tempParameterList.stream().allMatch(Parameter::isCanMerge)) {
+            probability = reusePb(tempParameterList, hasUsedEqRange, probability);
+            if (probability.compareTo(BigDecimal.ZERO) == 0) {
+                dealZeroPb(tempParameterList);
+                return;
+            }
         }
         // 标记该参数为等值的参数
         tempParameterList.forEach(parameter -> parameter.setEqualPredicate(true));
@@ -180,6 +185,7 @@ public class Distribution {
      * @return 增加的基数
      */
     public long initAllParameters() {
+        offset2Pv.clear();
         long addCardinality = 0;
         if (range <= 0) {
             return addCardinality;
@@ -231,57 +237,84 @@ public class Distribution {
                 .mapToInt(Parameter::getId).boxed().toList());
     }
 
-    /**
-     * 在column中维护数据
-     *
-     * @param size column内部需要维护的数据大小
-     */
-    public long[] prepareTupleData(int size) {
+    private List<Long> generateAttributeData(BigDecimal bSize) {
         // 存储符合CDF的属性值
-        List<Long> attributeData = new ArrayList<>(size);
-        BigDecimal bSize = BigDecimal.valueOf(size);
+        List<Long> attributeData = new ArrayList<>(bSize.intValue());
         // 生成为左开右闭，因此lastParaData始终比上一右边界大
         long lastParaData = 1;
+        BigDecimal cumulativeError = BigDecimal.ZERO;
         List<Long> allBoundPvs = offset2Pv.values().stream().toList();
         for (Map.Entry<Long, BigDecimal> data2Probability : paraData2Probability.entrySet()) {
             long currentParaData = data2Probability.getKey();
             if (!allBoundPvs.contains(currentParaData)) {
-                BigDecimal currentPb = data2Probability.getValue();
-                int generateSize = bSize.multiply(currentPb).setScale(0, RoundingMode.HALF_UP).intValue();
+                BigDecimal bGenerateSize = bSize.multiply(data2Probability.getValue());
+                var generateSizeAndCumulativeError = computeGenerateSize(bGenerateSize, cumulativeError);
+                cumulativeError = generateSizeAndCumulativeError.getValue();
                 List<Long> rangeData;
                 if (currentParaData == lastParaData) {
-                    rangeData = Collections.nCopies(generateSize, currentParaData);
+                    rangeData = Collections.nCopies(generateSizeAndCumulativeError.getKey(), currentParaData);
                 } else {
-                    rangeData = ThreadLocalRandom.current().longs(generateSize, lastParaData, currentParaData + 1).boxed().toList();
+                    rangeData = ThreadLocalRandom.current().longs(generateSizeAndCumulativeError.getKey(), lastParaData, currentParaData + 1).boxed().toList();
                 }
                 attributeData.addAll(rangeData);
             }
             // 移动到右边界+1
             lastParaData = currentParaData + 1;
         }
+        return attributeData;
+    }
+
+
+    private Map.Entry<Integer, BigDecimal> computeGenerateSize(BigDecimal generateSize, BigDecimal cumulativeError) {
+        BigDecimal roundOffset = generateSize.setScale(0, RoundingMode.HALF_UP);
+        cumulativeError = cumulativeError.add(roundOffset.subtract(generateSize));
+        int offset = roundOffset.intValue();
+        if (cumulativeError.compareTo(BigDecimal.ONE) >= 0) {
+            cumulativeError = cumulativeError.subtract(BigDecimal.ONE);
+            offset--;
+        } else if (cumulativeError.compareTo(BigDecimal.valueOf(-1)) <= 0) {
+            cumulativeError = cumulativeError.add(BigDecimal.ONE);
+            offset++;
+        }
+        return new AbstractMap.SimpleEntry<>(offset, cumulativeError);
+    }
+
+    /**
+     * 在column中维护数据
+     *
+     * @param size column内部需要维护的数据大小
+     */
+    public long[] prepareTupleData(int size) {
+        BigDecimal bSize = BigDecimal.valueOf(size);
+        List<Long> attributeData = generateAttributeData(bSize);
         // 将属性值与bound值组合
         int currentIndex = 0;
         int attributeIndex = 0;
         long[] columnData = new long[size];
+        BigDecimal cumulativeOffsetError = BigDecimal.ZERO;
         for (Map.Entry<BigDecimal, Long> pv2Offset : offset2Pv.entrySet()) {
             // 确定bound的开始offset
-            int offset = bSize.multiply(pv2Offset.getKey()).setScale(0, RoundingMode.HALF_UP).intValue();
-            while (currentIndex < currentIndex + offset) {
+            BigDecimal bOffset = bSize.multiply(pv2Offset.getKey());
+            var offsetAndCumulativeError = computeGenerateSize(bOffset, cumulativeOffsetError);
+            cumulativeOffsetError = offsetAndCumulativeError.getValue();
+            while (currentIndex < offsetAndCumulativeError.getKey()) {
                 columnData[currentIndex++] = attributeData.get(attributeIndex++);
             }
             // 确定bound的大小
             BigDecimal rangeProbability = paraData2Probability.get(pv2Offset.getValue());
-            int generateSize = bSize.multiply(rangeProbability).setScale(0, RoundingMode.HALF_UP).intValue();
+            BigDecimal bPvSize = bSize.multiply(rangeProbability);
+            var pvSizeAndCumulativeError = computeGenerateSize(bPvSize, cumulativeOffsetError);
+            int generateSize = pvSizeAndCumulativeError.getKey();
+            cumulativeOffsetError = pvSizeAndCumulativeError.getValue();
             Arrays.fill(columnData, currentIndex, currentIndex + generateSize, pv2Offset.getValue());
             currentIndex += generateSize;
         }
-        // 概率误差可能会导致attributeData略微大于size
-        while (attributeData.size() > size) {
-            attributeData.remove(attributeData.size() - 1);
-        }
         // 复制最后部分
-        for (int i = attributeIndex; i < attributeData.size(); i++) {
-            columnData[currentIndex++] = attributeData.get(i);
+        int attributeRemain = attributeData.size() - attributeIndex;
+        int localRemain = size - currentIndex;
+        attributeRemain = Math.min(attributeRemain, localRemain);
+        for (int i = 0; i < attributeRemain; i++) {
+            columnData[currentIndex++] = attributeData.get(attributeIndex++);
         }
         // 使用Long.MIN_VALUE标记结尾的null值
         if (currentIndex < size - 1) {

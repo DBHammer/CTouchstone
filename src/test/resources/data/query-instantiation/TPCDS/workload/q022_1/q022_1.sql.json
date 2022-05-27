@@ -47,10 +47,7 @@
                 "operator" : "EQ",
                 "probability" : 0.02652,
                 "canonicalColumnName" : "public.customer_address.ca_state",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.customer_address.ca_state"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
@@ -77,37 +74,34 @@
                 "parameters" : [
                   {
                     "id" : 85,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 86,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 87,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 88,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
                     "id" : 89,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "IN",
-                "probability" : 0,
+                "probability" : 1,
                 "canonicalColumnName" : "public.call_center.cc_county",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.call_center.cc_county"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
@@ -137,33 +131,27 @@
                     "parameters" : [
                       {
                         "id" : 91,
-                        "data" : 72984,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.0008487453627,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.date_dim.d_date",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.date_dim.d_date"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
                         "id" : 92,
-                        "data" : 73050,
+                        "data" : 66,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.0008487453627,
                     "canonicalColumnName" : "public.date_dim.d_date",
-                    "type" : "UNI_FILTER_OPERATION",
-                    "columns" : [
-                      "public.date_dim.d_date"
-                    ]
+                    "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }

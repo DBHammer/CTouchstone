@@ -32,17 +32,14 @@
                 "parameters" : [
                   {
                     "id" : 31,
-                    "data" : -1,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
-                "probability" : 0,
+                "probability" : 1,
                 "canonicalColumnName" : "public.store.s_gmt_offset",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.store.s_gmt_offset"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
@@ -69,17 +66,14 @@
                 "parameters" : [
                   {
                     "id" : 32,
-                    "data" : 1,
+                    "data" : 12,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
                 "probability" : 0.005010335528,
                 "canonicalColumnName" : "public.date_dim.d_year",
-                "type" : "UNI_FILTER_OPERATION",
-                "columns" : [
-                  "public.date_dim.d_year"
-                ]
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },

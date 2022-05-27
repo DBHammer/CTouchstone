@@ -17,11 +17,7 @@ import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
-import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.generator.constraintchain.filter.operation.MultiVarFilterOperation;
-import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.Distribution;
 import ecnu.db.schema.Table;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
@@ -33,11 +29,9 @@ import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.MAPPER;
 
@@ -54,105 +48,6 @@ public class TaskConfigurator implements Callable<Integer> {
     private TaskConfiguratorConfig taskConfiguratorConfig;
     private static final String WORKLOAD_DIR = "/workload";
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
-
-    /**
-     * 1. 对于数值型的filter, 首先计算单元的filter, 然后计算多值的filter，对于bet操作，先记录阈值，然后选择合适的区间插入，
-     * 等值约束也需选择合适的区间每个filter operation内部保存自己实例化后的结果
-     * 2. 对于字符型的filter, 只有like和eq的运算，直接计算即可
-     *
-     * @param constraintChains 待计算的约束链
-     * @param samplingSize     多元非等值的采样大小
-     */
-    public static Map<Integer, Parameter> queryInstantiation(List<ConstraintChain> constraintChains, int samplingSize) {
-        List<List<AbstractFilterOperation>> allFilterOperations = constraintChains.stream()
-                .map(ConstraintChain::getNodes)
-                .flatMap(Collection::stream)
-                .filter(ConstraintChainFilterNode.class::isInstance)
-                .map(ConstraintChainFilterNode.class::cast)
-                .map(ConstraintChainFilterNode::pushDownProbability).toList();
-
-        List<AbstractFilterOperation> filterOperations = allFilterOperations.stream().flatMap(Collection::stream).toList();
-
-        // uni-var operation
-        List<UniVarFilterOperation> uniFilters = filterOperations.stream()
-                .filter(UniVarFilterOperation.class::isInstance)
-                .sorted(Comparator.comparing(AbstractFilterOperation::getProbability))
-                .map(UniVarFilterOperation.class::cast).toList();
-        uniFilters.stream()
-                .filter(uniFilter -> !uniFilter.getOperator().isEqual())
-                .forEach(UniVarFilterOperation::applyConstraint);
-        uniFilters.stream()
-                .filter(uniFilter -> uniFilter.getOperator().isEqual())
-                .filter(uniFilter -> !uniFilter.getOperator().isMultiEqual())
-                .forEach(UniVarFilterOperation::applyConstraint);
-        uniFilters.stream()
-                .filter(uniFilter -> uniFilter.getOperator().isEqual())
-                .filter(uniFilter -> uniFilter.getOperator().isMultiEqual())
-                .forEach(UniVarFilterOperation::applyConstraint);
-        ColumnManager.getInstance().initAllParameters();
-
-        // 修正>=和<的参数边界，对其+1，因为数据生成为左开右闭
-        uniFilters.forEach(UniVarFilterOperation::amendParameters);
-
-        Set<TreeMap<String, LinkedHashSet<Long>>> allColumn2Bounds = new HashSet<>();
-        for (List<AbstractFilterOperation> operationOfSameNode : allFilterOperations) {
-            var validOperations = new ArrayList<>(operationOfSameNode.stream()
-                    .filter(node -> node.getProbability().compareTo(BigDecimal.ONE) != 0)
-                    .filter(node -> node.getProbability().compareTo(BigDecimal.ZERO) != 0).toList());
-            // todo in的概率复用, 可能会导致bound冲突
-            if (validOperations.size() > 1) {
-                validOperations.sort(Comparator.comparing(o -> ((UniVarFilterOperation) o).getCanonicalColumnName()));
-                TreeMap<String, LinkedHashSet<Long>> column2Bound = new TreeMap<>();
-                for (AbstractFilterOperation validOperation : validOperations) {
-                    String columnName = ((UniVarFilterOperation) validOperation).getCanonicalColumnName();
-                    LinkedHashSet<Long> dataIndexes = new LinkedHashSet<>();
-                    for (Parameter parameter : validOperation.getParameters()) {
-                        dataIndexes.add(parameter.getData());
-                    }
-                    column2Bound.put(columnName, dataIndexes);
-                }
-                allColumn2Bounds.add(column2Bound);
-            }
-        }
-
-        // todo 处理in的parameter数量不一致的情况
-        for (TreeMap<String, LinkedHashSet<Long>> allColumn2Bound : allColumn2Bounds) {
-            for (int i = 0; i < allColumn2Bound.firstEntry().getValue().size(); i++) {
-                BigDecimal offset = BigDecimal.ZERO;
-                for (Map.Entry<String, LinkedHashSet<Long>> column2Bound : allColumn2Bound.entrySet()) {
-                    Distribution distribution = ColumnManager.getInstance().getColumn(column2Bound.getKey()).getDistribution();
-                    long index = new ArrayList<>(column2Bound.getValue()).get(i);
-                    BigDecimal columnOffset = distribution.getOffset(index);
-                    if (columnOffset.compareTo(offset) > 0) {
-                        offset = columnOffset;
-                    }
-                }
-                for (Map.Entry<String, LinkedHashSet<Long>> column2Bound : allColumn2Bound.entrySet()) {
-                    Distribution distribution = ColumnManager.getInstance().getColumn(column2Bound.getKey()).getDistribution();
-                    distribution.getOffset2Pv().put(offset, new ArrayList<>(column2Bound.getValue()).get(i));
-                }
-            }
-        }
-
-        // multi-var non-eq sampling
-        Set<String> prepareSamplingColumnName = filterOperations.parallelStream()
-                .filter(MultiVarFilterOperation.class::isInstance)
-                .map(MultiVarFilterOperation.class::cast)
-                .map(MultiVarFilterOperation::getAllCanonicalColumnNames)
-                .flatMap(Collection::stream).collect(Collectors.toSet());
-
-        ColumnManager.getInstance().prepareGeneration(prepareSamplingColumnName, samplingSize);
-
-        filterOperations.parallelStream()
-                .filter(MultiVarFilterOperation.class::isInstance)
-                .map(MultiVarFilterOperation.class::cast)
-                .forEach(MultiVarFilterOperation::instantiateMultiVarParameter);
-
-        Map<Integer, Parameter> id2Parameter = new HashMap<>();
-        filterOperations.stream().map(AbstractFilterOperation::getParameters).flatMap(Collection::stream)
-                .forEach(parameter -> id2Parameter.put(parameter.getId(), parameter));
-        return id2Parameter;
-    }
 
     @Override
     public Integer call() throws Exception {

@@ -27,12 +27,12 @@
                     "parameters" : [
                       {
                         "id" : 17,
-                        "data" : 2401,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.004996646087,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.date_dim.d_month_seq",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -40,12 +40,12 @@
                     "parameters" : [
                       {
                         "id" : 18,
-                        "data" : 2402,
+                        "data" : 1,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.004996646087,
                     "canonicalColumnName" : "public.date_dim.d_month_seq",
                     "type" : "UNI_FILTER_OPERATION"
                   }

@@ -5,13 +5,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.TouchstoneException;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 /**
@@ -114,25 +111,27 @@ public class Column {
         boolean[] ret = new boolean[columnData.length];
         IntStream indexStream = IntStream.range(0, columnData.length);
         switch (operator) {
-            case EQ, LIKE, ISNULL -> indexStream.forEach(i -> ret[i] = columnData[i] == value);
-            case NE, NOT_LIKE, IS_NOT_NULL -> indexStream.forEach(i -> ret[i] = columnData[i] != value);
-            case LT -> indexStream.forEach(i -> ret[i] = columnData[i] < value);
-            case LE -> indexStream.forEach(i -> ret[i] = columnData[i] <= value);
-            case GT -> indexStream.forEach(i -> ret[i] = columnData[i] > value);
-            case GE -> indexStream.forEach(i -> ret[i] = columnData[i] >= value);
+            case EQ, LIKE, ISNULL ->
+                    indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] == value);
+            case NE, NOT_LIKE, IS_NOT_NULL ->
+                    indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] != value);
+            case LT -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] < value);
+            case LE -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] <= value);
+            case GT -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] > value);
+            case GE -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] >= value);
             case IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());
                 }
-                indexStream.forEach(i -> ret[i] = parameterData.contains(columnData[i]));
+                indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && parameterData.contains(columnData[i]));
             }
             case NOT_IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());
                 }
-                indexStream.forEach(i -> ret[i] = !parameterData.contains(columnData[i]));
+                indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && !parameterData.contains(columnData[i]));
             }
             default -> throw new UnsupportedOperationException();
         }

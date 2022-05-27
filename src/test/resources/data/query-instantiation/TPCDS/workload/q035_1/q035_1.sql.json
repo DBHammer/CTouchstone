@@ -1,26 +1,5 @@
 {
-  "q010_1.sql" : [
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.inventory.inv_date_sk",
-          "pkTag" : 7,
-          "probability" : 0.04980842912,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.item.i_item_sk",
-          "localCols" : "public.inventory.inv_item_sk",
-          "pkTag" : 2,
-          "probability" : 0.062,
-          "type" : "INNER_JOIN"
-        }
-      ],
-      "tableName" : "public.inventory"
-    },
+  "q035_1.sql" : [
     {
       "nodes" : [
         {
@@ -34,59 +13,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 29,
-                        "data" : 0,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "GE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_date",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 30,
-                        "data" : 95,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "LE",
-                    "probability" : 0.00123204972,
-                    "canonicalColumnName" : "public.date_dim.d_date",
-                    "type" : "UNI_FILTER_OPERATION"
-                  }
-                ]
-              }
-            ]
-          },
-          "probability" : 0.00123204972
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "d_date_sk"
-          ],
-          "pkTag" : 7
-        }
-      ],
-      "tableName" : "public.date_dim"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "type" : "AND",
-                "children" : [
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 27,
+                        "id" : 169,
                         "data" : 0,
                         "type" : "ACTUAL"
                       }
@@ -99,13 +26,41 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 28,
-                        "data" : 615,
+                        "id" : 171,
+                        "data" : 1,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 172,
+                        "data" : 4,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 173,
+                        "data" : 4,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 174,
+                        "data" : 4,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "IN",
+                    "probability" : 0.0004444444444,
+                    "canonicalColumnName" : "public.item.i_manufact_id",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 170,
+                        "data" : 9992,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.06133333333,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.item.i_current_price",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -113,17 +68,69 @@
               }
             ]
           },
-          "probability" : 0.06133333333
+          "probability" : 0.0004444444444
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
             "i_item_sk"
           ],
-          "pkTag" : 2
+          "pkTag" : 10
         }
       ],
       "tableName" : "public.item"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "AND",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 167,
+                        "data" : 0,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 168,
+                        "data" : 489,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "LE",
+                    "probability" : 0.00657093184,
+                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "type" : "UNI_FILTER_OPERATION"
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.00657093184
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "d_date_sk"
+          ],
+          "pkTag" : 29
+        }
+      ],
+      "tableName" : "public.date_dim"
     }
   ]
 }

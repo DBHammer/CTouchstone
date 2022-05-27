@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.store.s_store_sk",
           "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 3,
+          "pkTag" : 7,
           "probability" : 0.1629321763,
           "type" : "INNER_JOIN"
         },
@@ -22,7 +22,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.store_sales.ss_hdemo_sk",
-          "pkTag" : 5,
+          "pkTag" : 6,
           "probability" : 0.1534450861,
           "type" : "INNER_JOIN"
         }
@@ -42,7 +42,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 338,
+                        "id" : 399,
                         "data" : 0,
                         "type" : "ACTUAL"
                       }
@@ -55,8 +55,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 339,
-                        "data" : 22,
+                        "id" : 400,
+                        "data" : 1,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -91,7 +91,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 331,
+                    "id" : 392,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -110,7 +110,7 @@
           "pkColumns" : [
             "s_store_sk"
           ],
-          "pkTag" : 3
+          "pkTag" : 7
         }
       ],
       "tableName" : "public.store"
@@ -131,7 +131,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 332,
+                            "id" : 393,
                             "data" : 2,
                             "type" : "ACTUAL"
                           }
@@ -144,7 +144,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 333,
+                            "id" : 394,
                             "data" : 7,
                             "type" : "ACTUAL"
                           }
@@ -162,7 +162,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 336,
+                            "id" : 397,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -175,13 +175,13 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 337,
-                            "data" : -1,
+                            "id" : 398,
+                            "data" : 7,
                             "type" : "ACTUAL"
                           }
                         ],
                         "operator" : "LE",
-                        "probability" : 0,
+                        "probability" : 1,
                         "canonicalColumnName" : "public.household_demographics.hd_vehicle_count",
                         "type" : "UNI_FILTER_OPERATION"
                       }
@@ -193,7 +193,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 334,
+                            "id" : 395,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -206,13 +206,13 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 335,
-                            "data" : -1,
+                            "id" : 396,
+                            "data" : 7,
                             "type" : "ACTUAL"
                           }
                         ],
                         "operator" : "LE",
-                        "probability" : 0,
+                        "probability" : 1,
                         "canonicalColumnName" : "public.household_demographics.hd_vehicle_count",
                         "type" : "UNI_FILTER_OPERATION"
                       }
@@ -229,7 +229,7 @@
           "pkColumns" : [
             "hd_demo_sk"
           ],
-          "pkTag" : 5
+          "pkTag" : 6
         }
       ],
       "tableName" : "public.household_demographics"

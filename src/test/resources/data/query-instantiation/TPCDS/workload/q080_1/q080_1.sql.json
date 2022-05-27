@@ -13,7 +13,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 389,
+                        "id" : 447,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -26,7 +26,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 391,
+                        "id" : 449,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -39,7 +39,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 390,
+                        "id" : 448,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -71,7 +71,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.store.s_store_sk",
           "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 9,
+          "pkTag" : 13,
           "probability" : 0.9548556383,
           "type" : "INNER_JOIN"
         },
@@ -79,7 +79,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 45,
+          "pkTag" : 53,
           "probability" : 0.03148121889,
           "type" : "INNER_JOIN"
         },
@@ -87,7 +87,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.item.i_item_sk",
           "localCols" : "public.store_sales.ss_item_sk",
-          "pkTag" : 16,
+          "pkTag" : 19,
           "probability" : 0.09741872149,
           "type" : "INNER_JOIN"
         },
@@ -112,13 +112,13 @@
               {
                 "parameters" : [
                   {
-                    "id" : 385,
-                    "data" : -1,
+                    "id" : 446,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
-                "probability" : 0,
+                "probability" : 1,
                 "canonicalColumnName" : "public.store.s_gmt_offset",
                 "type" : "UNI_FILTER_OPERATION"
               }
@@ -131,7 +131,7 @@
           "pkColumns" : [
             "s_store_sk"
           ],
-          "pkTag" : 9
+          "pkTag" : 13
         }
       ],
       "tableName" : "public.store"
@@ -149,8 +149,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 387,
-                        "data" : 193,
+                        "id" : 451,
+                        "data" : 2,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -162,7 +162,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 388,
+                        "id" : 452,
                         "data" : 2,
                         "type" : "ACTUAL"
                       }
@@ -183,7 +183,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 45
+          "pkTag" : 53
         }
       ],
       "tableName" : "public.date_dim"
@@ -198,7 +198,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 386,
+                    "id" : 450,
                     "data" : 3,
                     "type" : "ACTUAL"
                   }
@@ -217,7 +217,7 @@
           "pkColumns" : [
             "i_item_sk"
           ],
-          "pkTag" : 16
+          "pkTag" : 19
         }
       ],
       "tableName" : "public.item"
