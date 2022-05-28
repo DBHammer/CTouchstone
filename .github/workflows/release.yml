@@ -22,7 +22,7 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml
         env:
-          MAVEN_OPTS: -Xmx7168m
+          JAVA_TOOL_OPTIONS: -Xmx7168m
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
