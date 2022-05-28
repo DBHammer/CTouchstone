@@ -22,11 +22,11 @@ class QueryInstantiationTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = ';', value = {
-            "src/test/resources/data/query-instantiation/TPCH/;0.0006",
+            "src/test/resources/data/query-instantiation/TPCH/;0.0007",
             "src/test/resources/data/query-instantiation/SSB/;0.0000005",
             "src/test/resources/data/query-instantiation/TPCDS/;0.0000005"
     })
-    void computeTestForSSB(String configPath, double delta) throws Exception {
+    void computeTest(String configPath, double delta) throws Exception {
         // load column configuration
         ColumnManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnMetaData();
