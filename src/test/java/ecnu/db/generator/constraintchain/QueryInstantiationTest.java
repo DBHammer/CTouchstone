@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class QueryInstantiationSSBTest {
+class QueryInstantiationTest {
     private static final BigDecimal sampleSize = BigDecimal.valueOf(400_0000L);
 
     @ParameterizedTest
