@@ -24,7 +24,6 @@ class ReadAndWriteJsonTest {
         Map<String, List<ConstraintChain>> query2chains = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         String contentWrite = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(query2chains);
-        //json是window下生成的
         content = content.replaceAll(System.lineSeparator(), "");
         contentWrite = contentWrite.replaceAll(System.lineSeparator(), "");
         assertEquals(content, contentWrite);
