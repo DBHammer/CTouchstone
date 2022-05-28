@@ -1,22 +1,20 @@
 package ecnu.db.generator.constraintchain;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ecnu.db.utils.CommonUtils.readFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryInstantiationSSBTest {
@@ -24,8 +22,9 @@ class QueryInstantiationSSBTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = ';', value = {
-            "src/test/resources/data/query-instantiation/SSB/;0.000005",
-            "src/test/resources/data/query-instantiation/TPCDS/;0.000005"
+            "src/test/resources/data/query-instantiation/TPCH/;0.0006",
+            "src/test/resources/data/query-instantiation/SSB/;0.0000005",
+            "src/test/resources/data/query-instantiation/TPCDS/;0.0000005"
     })
     void computeTestForSSB(String configPath, double delta) throws Exception {
         // load column configuration
@@ -34,7 +33,7 @@ class QueryInstantiationSSBTest {
         ColumnManager.getInstance().loadColumnDistribution();
 
         // load constraintChain configuration
-        Map<String, List<ConstraintChain>> query2chains = loadConstrainChainResult(configPath);
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.loadConstrainChainResult(configPath);
         List<ConstraintChain> constraintChains = query2chains.values().stream().flatMap(Collection::stream).toList();
 
         // 筛选所有的filterNode
@@ -66,25 +65,5 @@ class QueryInstantiationSSBTest {
             double rate = filterNode.getProbability().subtract(realFilterProbability).doubleValue();
             assertEquals(0, rate, delta, filterNode.toString());
         });
-    }
-
-    private Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
-        String path = resultDir + "/workload";
-        File sqlDic = new File(path);
-        File[] sqlArray = sqlDic.listFiles();
-        assert sqlArray != null;
-        Map<String, List<ConstraintChain>> result = new HashMap<>();
-        for (File file : sqlArray) {
-            File[] graphArray = file.listFiles();
-            assert graphArray != null;
-            for (File file1 : graphArray) {
-                if (file1.getName().contains("json")) {
-                    Map<String, List<ConstraintChain>> eachresult = CommonUtils.MAPPER.readValue(readFile(file1.getPath()), new TypeReference<>() {
-                    });
-                    result.putAll(eachresult);
-                }
-            }
-        }
-        return result;
     }
 }

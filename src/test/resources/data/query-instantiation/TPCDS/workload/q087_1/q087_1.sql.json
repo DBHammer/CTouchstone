@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.catalog_sales.cs_sold_date_sk",
-          "pkTag" : 59,
+          "pkTag" : 51,
           "probability" : 0.1988882784,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_demographics.cd_demo_sk",
           "localCols" : "public.catalog_sales.cs_bill_cdemo_sk",
-          "pkTag" : 4,
+          "pkTag" : 3,
           "probability" : 0.01370388585,
           "type" : "INNER_JOIN"
         },
@@ -39,8 +39,8 @@
               {
                 "parameters" : [
                   {
-                    "id" : 526,
-                    "data" : 8,
+                    "id" : 465,
+                    "data" : 9,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -58,7 +58,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 59
+          "pkTag" : 51
         }
       ],
       "tableName" : "public.date_dim"
@@ -76,7 +76,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 523,
+                        "id" : 462,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -89,7 +89,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 525,
+                        "id" : 464,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -102,7 +102,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 524,
+                        "id" : 463,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -123,7 +123,7 @@
           "pkColumns" : [
             "cd_demo_sk"
           ],
-          "pkTag" : 4
+          "pkTag" : 3
         }
       ],
       "tableName" : "public.customer_demographics"
@@ -141,7 +141,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 527,
+                        "id" : 466,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -154,7 +154,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 528,
+                        "id" : 467,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }

@@ -14,12 +14,12 @@
                     "parameters" : [
                       {
                         "id" : 5,
-                        "data" : 11,
+                        "data" : 0,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.05464333544,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.lineorder.lo_discount",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -53,12 +53,12 @@
                     "parameters" : [
                       {
                         "id" : 6,
-                        "data" : 12,
+                        "data" : 1,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 1,
+                    "probability" : 0.05464333544,
                     "canonicalColumnName" : "public.lineorder.lo_discount",
                     "type" : "UNI_FILTER_OPERATION"
                   }

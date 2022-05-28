@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.store.s_store_sk",
           "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 11,
+          "pkTag" : 7,
           "probability" : 0.1594904749,
           "type" : "INNER_JOIN"
         },
@@ -22,7 +22,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.store_sales.ss_hdemo_sk",
-          "pkTag" : 10,
+          "pkTag" : 9,
           "probability" : 0.1603192111,
           "type" : "INNER_JOIN"
         }
@@ -42,7 +42,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 429,
+                        "id" : 368,
                         "data" : 0,
                         "type" : "ACTUAL"
                       }
@@ -55,7 +55,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 430,
+                        "id" : 369,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -91,7 +91,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 428,
+                    "id" : 367,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -110,7 +110,7 @@
           "pkColumns" : [
             "s_store_sk"
           ],
-          "pkTag" : 11
+          "pkTag" : 7
         }
       ],
       "tableName" : "public.store"
@@ -131,7 +131,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 431,
+                            "id" : 370,
                             "data" : 2,
                             "type" : "ACTUAL"
                           }
@@ -144,7 +144,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 432,
+                            "id" : 371,
                             "data" : 7,
                             "type" : "ACTUAL"
                           }
@@ -162,7 +162,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 435,
+                            "id" : 374,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -175,7 +175,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 436,
+                            "id" : 375,
                             "data" : 7,
                             "type" : "ACTUAL"
                           }
@@ -193,7 +193,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 433,
+                            "id" : 372,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -206,7 +206,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 434,
+                            "id" : 373,
                             "data" : 7,
                             "type" : "ACTUAL"
                           }
@@ -229,7 +229,7 @@
           "pkColumns" : [
             "hd_demo_sk"
           ],
-          "pkTag" : 10
+          "pkTag" : 9
         }
       ],
       "tableName" : "public.household_demographics"

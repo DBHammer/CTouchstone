@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_address.ca_address_sk",
           "localCols" : "public.customer.c_current_addr_sk",
-          "pkTag" : 7,
+          "pkTag" : 6,
           "probability" : 0.09097,
           "type" : "INNER_JOIN"
         }
@@ -23,17 +23,17 @@
               {
                 "parameters" : [
                   {
-                    "id" : 141,
+                    "id" : 100,
                     "data" : 2,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 142,
+                    "id" : 101,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 143,
+                    "id" : 102,
                     "data" : 3,
                     "type" : "ACTUAL"
                   }
@@ -52,7 +52,7 @@
           "pkColumns" : [
             "ca_address_sk"
           ],
-          "pkTag" : 7
+          "pkTag" : 6
         }
       ],
       "tableName" : "public.customer_address"

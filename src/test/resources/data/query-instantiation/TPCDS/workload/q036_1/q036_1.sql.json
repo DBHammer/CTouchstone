@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 30,
+          "pkTag" : 24,
           "probability" : 0.009343828157,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.item.i_item_sk",
           "localCols" : "public.store_sales.ss_item_sk",
-          "pkTag" : 11,
+          "pkTag" : 10,
           "probability" : 0.2990265289,
           "type" : "INNER_JOIN"
         }
@@ -34,7 +34,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 175,
+                        "id" : 124,
                         "data" : 0,
                         "type" : "ACTUAL"
                       }
@@ -47,7 +47,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 176,
+                        "id" : 125,
                         "data" : 32,
                         "type" : "ACTUAL"
                       }
@@ -68,7 +68,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 30
+          "pkTag" : 24
         }
       ],
       "tableName" : "public.date_dim"
@@ -83,18 +83,18 @@
               {
                 "parameters" : [
                   {
-                    "id" : 177,
-                    "data" : 6,
+                    "id" : 126,
+                    "data" : 8,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 178,
-                    "data" : 3,
+                    "id" : 127,
+                    "data" : 5,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 179,
-                    "data" : 7,
+                    "id" : 128,
+                    "data" : 9,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -112,7 +112,7 @@
           "pkColumns" : [
             "i_item_sk"
           ],
-          "pkTag" : 11
+          "pkTag" : 10
         }
       ],
       "tableName" : "public.item"

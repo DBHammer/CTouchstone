@@ -191,7 +191,6 @@ public class QueryInstantiate implements Callable<Integer> {
         //载入约束链，并进行transform
         ConstraintChainManager.getInstance().setResultDir(configPath);
         query2constraintChains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
-        ConstraintChainManager.getInstance().cleanConstrainChains(query2constraintChains);
     }
 
     public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {

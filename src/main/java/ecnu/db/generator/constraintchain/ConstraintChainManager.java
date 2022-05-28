@@ -142,7 +142,7 @@ public class ConstraintChainManager {
         this.resultDir = resultDir;
     }
 
-    public Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
+    public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
         String path = resultDir + "/workload";
         File sqlDic = new File(path);
         File[] sqlArray = sqlDic.listFiles();

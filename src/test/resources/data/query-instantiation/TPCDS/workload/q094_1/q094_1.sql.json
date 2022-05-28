@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.store_sales.ss_hdemo_sk",
-          "pkTag" : 15,
+          "pkTag" : 14,
           "probability" : 0,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.store.s_store_sk",
           "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 16,
+          "pkTag" : 12,
           "probability" : 0,
           "type" : "INNER_JOIN"
         },
@@ -22,7 +22,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 64,
+          "pkTag" : 56,
           "probability" : 0,
           "type" : "INNER_JOIN"
         }
@@ -42,7 +42,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 556,
+                        "id" : 490,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -58,7 +58,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 557,
+                            "id" : 491,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -71,7 +71,7 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 558,
+                            "id" : 492,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -94,7 +94,7 @@
           "pkColumns" : [
             "hd_demo_sk"
           ],
-          "pkTag" : 15
+          "pkTag" : 14
         }
       ],
       "tableName" : "public.household_demographics"
@@ -109,22 +109,22 @@
               {
                 "parameters" : [
                   {
-                    "id" : 547,
+                    "id" : 486,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 548,
+                    "id" : 487,
                     "data" : -1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 549,
+                    "id" : 488,
                     "data" : -1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 550,
+                    "id" : 489,
                     "data" : -1,
                     "type" : "ACTUAL"
                   }
@@ -143,7 +143,7 @@
           "pkColumns" : [
             "s_store_sk"
           ],
-          "pkTag" : 16
+          "pkTag" : 12
         }
       ],
       "tableName" : "public.store"
@@ -161,7 +161,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 551,
+                        "id" : 493,
                         "data" : 0,
                         "type" : "ACTUAL"
                       }
@@ -174,18 +174,18 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 553,
+                        "id" : 495,
+                        "data" : 4,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 496,
                         "data" : 3,
                         "type" : "ACTUAL"
                       },
                       {
-                        "id" : 554,
-                        "data" : 2,
-                        "type" : "ACTUAL"
-                      },
-                      {
-                        "id" : 555,
-                        "data" : 9,
+                        "id" : 497,
+                        "data" : 10,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -197,7 +197,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 552,
+                        "id" : 494,
                         "data" : 32,
                         "type" : "ACTUAL"
                       }
@@ -218,7 +218,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 64
+          "pkTag" : 56
         }
       ],
       "tableName" : "public.date_dim"

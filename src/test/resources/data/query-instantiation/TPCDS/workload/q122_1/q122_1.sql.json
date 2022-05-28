@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 92,
+          "pkTag" : 84,
           "probability" : 0.03065368608,
           "type" : "INNER_JOIN"
         }
@@ -26,8 +26,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 633,
-                        "data" : 2,
+                        "id" : 572,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -39,8 +39,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 634,
-                        "data" : 2,
+                        "id" : 573,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -60,7 +60,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 92
+          "pkTag" : 84
         }
       ],
       "tableName" : "public.date_dim"

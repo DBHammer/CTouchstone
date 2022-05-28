@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_address.ca_address_sk",
           "localCols" : "public.customer.c_current_addr_sk",
-          "pkTag" : 17,
+          "pkTag" : 16,
           "probability" : 0.00756,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.customer.c_current_hdemo_sk",
-          "pkTag" : 14,
+          "pkTag" : 13,
           "probability" : 0.1746031746,
           "type" : "INNER_JOIN"
         }
@@ -31,7 +31,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 546,
+                    "id" : 483,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -50,7 +50,7 @@
           "pkColumns" : [
             "ca_address_sk"
           ],
-          "pkTag" : 17
+          "pkTag" : 16
         }
       ],
       "tableName" : "public.customer_address"
@@ -70,7 +70,7 @@
           "pkColumns" : [
             "hd_demo_sk"
           ],
-          "pkTag" : 14
+          "pkTag" : 13
         }
       ],
       "tableName" : "public.household_demographics"
@@ -88,7 +88,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 544,
+                        "id" : 484,
                         "data" : 0,
                         "type" : "ACTUAL"
                       }
@@ -101,7 +101,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 545,
+                        "id" : 485,
                         "data" : 5,
                         "type" : "ACTUAL"
                       }
