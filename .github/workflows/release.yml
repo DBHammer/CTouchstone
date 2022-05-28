@@ -10,7 +10,7 @@ on:
 jobs:
   build:
 
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -21,6 +21,8 @@ jobs:
           java-version: 17
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml
+        env:
+          MAVEN_OPTS: -Xmx1024m
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
