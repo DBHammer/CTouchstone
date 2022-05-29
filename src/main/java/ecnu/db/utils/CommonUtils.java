@@ -26,6 +26,8 @@ import java.io.*;
 import java.math.MathContext;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -45,6 +47,18 @@ public class CommonUtils {
     public static final int INIT_HASHMAP_SIZE = 16;
     public static final double CardinalityScale = 1.4;
     public static final CsvMapper CSV_MAPPER = new CsvMapper();
+
+    public static final DateTimeFormatter INPUT_FMT = new DateTimeFormatterBuilder()
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
+                    .appendFraction(ChronoField.MILLI_OF_SECOND, 2, 3, true) // min 2 max 3
+                    .toFormatter())
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss").toFormatter())
+            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
+                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter())
+            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
+            .toFormatter();
     public static final DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault());
     public static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault());
     private static final SimpleModule touchStoneJsonModule = new SimpleModule()
