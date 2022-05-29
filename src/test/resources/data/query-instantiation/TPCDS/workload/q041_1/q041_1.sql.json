@@ -1,0 +1,147 @@
+{
+  "q041_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "AND",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 149,
+                        "data" : 0,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.store_sales.ss_quantity",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "type" : "OR",
+                    "children" : [
+                      {
+                        "type" : "AND",
+                        "children" : [
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 151,
+                                "data" : 0,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "GE",
+                            "probability" : 1,
+                            "canonicalColumnName" : "public.store_sales.ss_list_price",
+                            "type" : "UNI_FILTER_OPERATION"
+                          },
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 152,
+                                "data" : -1,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "LE",
+                            "probability" : 0,
+                            "canonicalColumnName" : "public.store_sales.ss_list_price",
+                            "type" : "UNI_FILTER_OPERATION"
+                          }
+                        ]
+                      },
+                      {
+                        "type" : "AND",
+                        "children" : [
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 155,
+                                "data" : 0,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "GE",
+                            "probability" : 1,
+                            "canonicalColumnName" : "public.store_sales.ss_wholesale_cost",
+                            "type" : "UNI_FILTER_OPERATION"
+                          },
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 156,
+                                "data" : -1,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "LE",
+                            "probability" : 0,
+                            "canonicalColumnName" : "public.store_sales.ss_wholesale_cost",
+                            "type" : "UNI_FILTER_OPERATION"
+                          }
+                        ]
+                      },
+                      {
+                        "type" : "AND",
+                        "children" : [
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 153,
+                                "data" : 0,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "GE",
+                            "probability" : 1,
+                            "canonicalColumnName" : "public.store_sales.ss_coupon_amt",
+                            "type" : "UNI_FILTER_OPERATION"
+                          },
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 154,
+                                "data" : 1758827,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "LE",
+                            "probability" : 1,
+                            "canonicalColumnName" : "public.store_sales.ss_coupon_amt",
+                            "type" : "UNI_FILTER_OPERATION"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 150,
+                        "data" : 6,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "LE",
+                    "probability" : 0.01210073309,
+                    "canonicalColumnName" : "public.store_sales.ss_quantity",
+                    "type" : "UNI_FILTER_OPERATION"
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.01210073309
+        }
+      ],
+      "tableName" : "public.store_sales"
+    }
+  ]
+}

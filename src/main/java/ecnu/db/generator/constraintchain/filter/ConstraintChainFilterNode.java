@@ -27,6 +27,11 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
     }
 
     @JsonIgnore
+    public List<String> getColumns(){
+        return root.getColumns();
+    }
+
+    @JsonIgnore
     public boolean hasKeyColumn() {
         return root.hasKeyColumn();
     }

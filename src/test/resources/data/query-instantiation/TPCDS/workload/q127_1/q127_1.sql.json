@@ -1,0 +1,281 @@
+{
+  "q127_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.customer_demographics.cd_demo_sk",
+          "localCols" : "public.catalog_sales.cs_bill_cdemo_sk",
+          "pkTag" : 4,
+          "probability" : 0.01397039849,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.customer.c_customer_sk",
+          "localCols" : "public.catalog_sales.cs_bill_customer_sk",
+          "pkTag" : 1,
+          "probability" : 0.09811807935,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.promotion.p_promo_sk",
+          "localCols" : "public.catalog_sales.cs_promo_sk",
+          "pkTag" : 3,
+          "probability" : 0.9939271255,
+          "type" : "INNER_JOIN"
+        }
+      ],
+      "tableName" : "public.catalog_sales"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "AND",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 590,
+                        "data" : 1,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0.01428571429,
+                    "canonicalColumnName" : "public.customer_demographics.cd_gender",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 592,
+                        "data" : 1,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0.01428571429,
+                    "canonicalColumnName" : "public.customer_demographics.cd_education_status",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 591,
+                        "data" : 1,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0.01428571429,
+                    "canonicalColumnName" : "public.customer_demographics.cd_marital_status",
+                    "type" : "UNI_FILTER_OPERATION"
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.01428571429
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "cd_demo_sk"
+          ],
+          "pkTag" : 4
+        }
+      ],
+      "tableName" : "public.customer_demographics"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 584,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 585,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 586,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 587,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 588,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 589,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  }
+                ],
+                "operator" : "IN",
+                "probability" : 0.48616,
+                "canonicalColumnName" : "public.customer.c_birth_month",
+                "type" : "UNI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability" : 0.48616
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.customer_address.ca_address_sk",
+          "localCols" : "public.customer.c_current_addr_sk",
+          "pkTag" : 17,
+          "probability" : 0.1984737535,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "c_customer_sk"
+          ],
+          "pkTag" : 1
+        }
+      ],
+      "tableName" : "public.customer"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 593,
+                    "data" : 3,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 594,
+                    "data" : 2,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 595,
+                    "data" : 1,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 596,
+                    "data" : 4,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 597,
+                    "data" : 4,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 598,
+                    "data" : 4,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 599,
+                    "data" : 4,
+                    "type" : "ACTUAL"
+                  }
+                ],
+                "operator" : "IN",
+                "probability" : 0.19848,
+                "canonicalColumnName" : "public.customer_address.ca_state",
+                "type" : "UNI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability" : 0.19848
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "ca_address_sk"
+          ],
+          "pkTag" : 17
+        }
+      ],
+      "tableName" : "public.customer_address"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "OR",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 600,
+                        "data" : 1,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0.9966666667,
+                    "canonicalColumnName" : "public.promotion.p_channel_email",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 601,
+                        "data" : -1,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0,
+                    "canonicalColumnName" : "public.promotion.p_channel_event",
+                    "type" : "UNI_FILTER_OPERATION"
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.9966666667
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "p_promo_sk"
+          ],
+          "pkTag" : 3
+        }
+      ],
+      "tableName" : "public.promotion"
+    }
+  ]
+}

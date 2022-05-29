@@ -27,6 +27,20 @@ public class Parameter {
     private long data;
 
     private ParameterType type = ParameterType.ACTUAL;
+
+
+    @JsonIgnore
+    public boolean isEqualPredicate() {
+        return isEqualPredicate;
+    }
+
+    public void setEqualPredicate(boolean equalPredicate) {
+        isEqualPredicate = equalPredicate;
+    }
+
+    @JsonIgnore
+    private boolean isEqualPredicate = false;
+
     /**
      * 操作数
      */
@@ -40,6 +54,18 @@ public class Parameter {
 
     @JsonIgnore
     private boolean isSubPlan = false;
+
+    @JsonIgnore
+    private boolean canMerge = true;
+
+    @JsonIgnore
+    public boolean isCanMerge() {
+        return canMerge;
+    }
+
+    public void setCanMerge(boolean canMerge) {
+        this.canMerge = canMerge;
+    }
 
     public Parameter() {
     }

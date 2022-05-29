@@ -1,0 +1,49 @@
+{
+  "q065_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "AND",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 252,
+                        "data" : 0,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.item.i_manufact_id",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 253,
+                        "data" : 12,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "LE",
+                    "probability" : 0.01244444444,
+                    "canonicalColumnName" : "public.item.i_manufact_id",
+                    "type" : "UNI_FILTER_OPERATION"
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.01244444444
+        }
+      ],
+      "tableName" : "public.item"
+    }
+  ]
+}

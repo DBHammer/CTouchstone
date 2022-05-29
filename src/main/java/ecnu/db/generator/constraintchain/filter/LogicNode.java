@@ -35,31 +35,35 @@ public class LogicNode extends BoolExprNode {
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         List<AbstractFilterOperation> operations = new ArrayList<>();
-        // 如果上层要求设置概率为 1， 则不需要处理，直接下推概率1到所有的filter operation中
-        if (probability.compareTo(BigDecimal.ONE) == 0) {
-            for (BoolExprNode child : children) {
-                operations.addAll(child.pushDownProbability(BigDecimal.ONE));
-            }
-        } else {
-            // 如果当前节点为 OR 且 概率不为 1， 则反转该树为AND
-            if (getRealType() == OR) {
-                this.reverse();
-                probability = BigDecimal.ONE.subtract(probability);
-            }
+        // 如果当前节点为 OR 且 概率不为 1， 则反转该树为AND
+        boolean hasReverse = false;
+        if (getRealType() == OR) {
+            this.reverse();
+            hasReverse = true;
+            probability = BigDecimal.ONE.subtract(probability);
+        }
 
-            boolean allTrue = true;
-            for (BoolExprNode child : children) {
-                if (child.isTrue()) {
-                    operations.addAll(child.pushDownProbability(BigDecimal.ONE));
-                } else {
-                    allTrue = false;
-                    operations.addAll(child.pushDownProbability(probability));
+        boolean allTrue = true;
+        int onlyNoEqlOperations = 0;
+        for (int index = 0; index < children.size(); index++) {
+            BoolExprNode child = children.get(index);
+            if (child.isTrue()) {
+                List<AbstractFilterOperation> subOperations = child.pushDownProbability(BigDecimal.ONE);
+                if (subOperations.stream().noneMatch(operation -> operation.getOperator().isEqual())) {
+                    onlyNoEqlOperations = index;
                 }
+                operations.addAll(subOperations);
+            } else {
+                allTrue = false;
+                operations.addAll(child.pushDownProbability(probability));
             }
-            if (allTrue) {
-                operations.removeAll(children.get(0).pushDownProbability(BigDecimal.ONE));
-                operations.addAll(0, children.get(0).pushDownProbability(probability));
-            }
+        }
+        if (allTrue) {
+            operations.removeAll(children.get(onlyNoEqlOperations).pushDownProbability(BigDecimal.ONE));
+            operations.addAll(onlyNoEqlOperations, children.get(onlyNoEqlOperations).pushDownProbability(probability));
+        }
+        if (hasReverse) {
+            this.reverse();
         }
         return operations;
     }
@@ -111,6 +115,12 @@ public class LogicNode extends BoolExprNode {
     @Override
     public List<Parameter> getParameters() {
         return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();
+    }
+
+    @JsonIgnore
+    @Override
+    public List<String> getColumns() {
+        return children.stream().map(BoolExprNode::getColumns).flatMap(Collection::stream).toList();
     }
 
     @Override

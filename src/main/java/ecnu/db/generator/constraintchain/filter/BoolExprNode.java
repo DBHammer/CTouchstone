@@ -55,6 +55,14 @@ public abstract class BoolExprNode {
     public abstract void reverse();
 
     /**
+     * 获取该filter条件中的所有列名
+     *
+     * @return 所有的参数
+     */
+    @JsonIgnore
+    public abstract List<String> getColumns();
+
+    /**
      * 判定子树是否可以标记为True
      *
      * @return 子树可以标记为True

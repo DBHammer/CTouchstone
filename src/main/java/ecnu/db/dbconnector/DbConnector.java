@@ -21,7 +21,7 @@ public abstract class DbConnector {
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
     private final int[] sqlInfoColumns;
     private final Connection conn;
-    private final static List<Field> ALL_FIELDS = Arrays.stream(Types.class.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers())).toList();
+    private static final List<Field> ALL_FIELDS = Arrays.stream(Types.class.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers())).toList();
 
     protected DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig)
             throws TouchstoneException, SQLException {
@@ -199,7 +199,7 @@ public abstract class DbConnector {
                 case BOOL -> sql.append(String.format("avg(%s)", canonicalColumnName));
                 default -> throw new TouchstoneException("未匹配到的类型");
             }
-            sql.append(String.format("avg(case when %s IS NULL then 1 else 0 end),", canonicalColumnName));
+            sql.append(String.format("sum(case when %s IS NULL then 1 else 0 end),", canonicalColumnName));
         }
         return sql.substring(0, sql.length() - 1);
     }

@@ -9,6 +9,7 @@ import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -76,6 +77,12 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     @Override
     public boolean[] evaluate() {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, CompareOperator.ISNULL, null);
+    }
+
+    @Override
+    @JsonIgnore
+    public List<String> getColumns() {
+        return new ArrayList<>(List.of(canonicalColumnName));
     }
 
     @JsonIgnore

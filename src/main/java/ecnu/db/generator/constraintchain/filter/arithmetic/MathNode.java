@@ -2,6 +2,7 @@ package ecnu.db.generator.constraintchain.filter.arithmetic;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class MathNode extends ArithmeticNode {
@@ -49,6 +50,15 @@ public class MathNode extends ArithmeticNode {
             default -> throw new UnsupportedOperationException();
         };
         return String.format("%s %s %s", leftNode.toSQL(), mathType, rightNode.toSQL());
+    }
+
+    @Override
+    public List<String> getColumns() {
+        List<String> columnNames = leftNode.getColumns();
+        if (rightNode != null) {
+            columnNames.addAll(rightNode.getColumns());
+        }
+        return columnNames;
     }
 
     @Override

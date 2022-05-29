@@ -2,7 +2,6 @@ package ecnu.db.generator.constraintchain.filter.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
@@ -12,7 +11,9 @@ import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.GE;
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.LT;
 
 
 /**
@@ -36,38 +37,16 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         this.parameters = parameters;
     }
 
-
-    /**
-     * merge operation
-     */
-    public static void merge(List<BoolExprNode> toMergeNodes,
-                             Map<String, Collection<UniVarFilterOperation>> col2uniFilters,
-                             boolean isAnd) {
-        for (var col2uniFilter : col2uniFilters.entrySet()) {
-            Collection<UniVarFilterOperation> filters = col2uniFilter.getValue();
-            Map<CompareOperator, List<UniVarFilterOperation>> typ2Filter = filters.stream()
-                    .map(filter -> new AbstractMap.SimpleEntry<>(filter.getOperator(), filter))
-                    .collect(Collectors.groupingBy(AbstractMap.SimpleEntry::getKey,
-                            Collectors.mapping(AbstractMap.SimpleEntry::getValue, Collectors.toList())));
-            if (typ2Filter.size() == 1) {
-                toMergeNodes.addAll(typ2Filter.values().stream().flatMap(Collection::stream).toList());
-                continue;
+    public void amendParameters() {
+        if (operator == GE || operator == LT) {
+            for (Parameter parameter : parameters) {
+                parameter.setData(parameter.getData() + 1);
+                parameter.setDataValue(ColumnManager.getInstance().getColumn(canonicalColumnName).transferDataToValue(parameter.getData()));
             }
-            RangeFilterOperation newFilter = null;
-            try {
-                newFilter = new RangeFilterOperation(col2uniFilter.getKey());
-                newFilter.addLessParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.LE, new ArrayList<>()).stream(),
-                                typ2Filter.getOrDefault(CompareOperator.LT, new ArrayList<>()).stream())
-                        .flatMap(filter -> filter.getParameters().stream()).toList());
-                newFilter.addGreaterParameters(Stream.concat(typ2Filter.getOrDefault(CompareOperator.GE, new ArrayList<>()).stream(),
-                                typ2Filter.getOrDefault(CompareOperator.GT, new ArrayList<>()).stream())
-                        .flatMap(filter -> filter.getParameters().stream()).toList());
-                newFilter.setLessOperator(isAnd, typ2Filter);
-                newFilter.setGreaterOperator(isAnd, typ2Filter);
-            } catch (IllegalQueryColumnNameException e) {
-                e.printStackTrace();
-            }
-            toMergeNodes.add(newFilter);
+        }
+        for (Parameter parameter : parameters) {
+            String value = ColumnManager.getInstance().getColumn(canonicalColumnName).transferDataToValue(parameter.getData());
+            parameter.setDataValue(value);
         }
     }
 
@@ -99,13 +78,18 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     /**
      * 初始化等值filter的参数
      */
-    public void instantiateParameter() {
-        ColumnManager.getInstance().insertUniVarProbability(canonicalColumnName, probability, operator, parameters);
+    public void applyConstraint() {
+        ColumnManager.getInstance().applyUniVarConstraint(canonicalColumnName, probability, operator, parameters);
     }
 
     @Override
     public boolean[] evaluate() {
         return ColumnManager.getInstance().evaluate(canonicalColumnName, operator, parameters);
+    }
+
+    @Override
+    public List<String> getColumns() {
+        return new ArrayList<>(List.of(canonicalColumnName));
     }
 
     @JsonIgnore

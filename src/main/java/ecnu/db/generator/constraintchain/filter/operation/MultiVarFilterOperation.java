@@ -156,6 +156,11 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         return ret;
     }
 
+    @Override
+    public List<String> getColumns() {
+        return arithmeticTree.getColumns();
+    }
+
     @JsonIgnore
     @Override
     public boolean isDifferentTable(String tableName) {

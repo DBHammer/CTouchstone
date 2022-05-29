@@ -11,6 +11,8 @@ class StringTemplate {
     int minLength;
     int rangeLength;
     long specialValue;
+
+    private boolean hasNonEqConstraint;
     Map<Long, boolean[]> likeIndex2Status = new HashMap<>();
 
     public StringTemplate(int minLength, int rangeLength, long specialValue) {
@@ -64,7 +66,7 @@ class StringTemplate {
     }
 
     //todo deal with the like operator and the compare operator at the same time
-    public String transferColumnData2Value(long data, boolean compare, long range) {
+    public String transferColumnData2Value(long data, long range) {
         if (likeIndex2Status.size() > 0 && likeIndex2Status.containsKey(data)) {
             char[] value = getParameterBuilder(data);
             boolean[] status = likeIndex2Status.get(data);
@@ -81,7 +83,7 @@ class StringTemplate {
             }
             value[firstChangeIndex] = likeRandomCharSet[value[firstChangeIndex] % likeRandomCharSet.length];
             return new String(value);
-        } else if (compare) {
+        } else if (hasNonEqConstraint) {
             char[] value = getParameterBuilder(data);
             int length = Long.toString(range).length();
             String currentData = Long.toString(data);

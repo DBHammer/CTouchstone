@@ -3,7 +3,9 @@ package ecnu.db.generator.constraintchain.filter.arithmetic;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author wangqingshuai
@@ -52,6 +54,11 @@ public class NumericNode extends ArithmeticNode {
     @Override
     public String toSQL() {
         return constant.toString();
+    }
+
+    @Override
+    public List<String> getColumns() {
+        return new ArrayList<>();
     }
 
     @Override

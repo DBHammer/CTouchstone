@@ -1,0 +1,69 @@
+{
+  "q117_1.sql" : [
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.date_dim.d_date_sk",
+          "localCols" : "public.catalog_sales.cs_sold_date_sk",
+          "pkTag" : 79,
+          "probability" : 0.5965358073,
+          "type" : "INNER_JOIN"
+        }
+      ],
+      "tableName" : "public.catalog_sales"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "AND",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 562,
+                        "data" : 0,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.date_dim.d_year",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 563,
+                        "data" : 12,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "LE",
+                    "probability" : 0.0150036277,
+                    "canonicalColumnName" : "public.date_dim.d_year",
+                    "type" : "UNI_FILTER_OPERATION"
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.0150036277
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "d_date_sk"
+          ],
+          "pkTag" : 79
+        }
+      ],
+      "tableName" : "public.date_dim"
+    }
+  ]
+}
