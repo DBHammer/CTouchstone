@@ -231,7 +231,9 @@ public class ConstraintChainManager {
             File file = new File(resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0]);
             File[] array = file.listFiles();
             assert array != null;
-            if (!graphIsExists(array, stringListEntry.getKey() + ".dot")) {
+            String graphName = stringListEntry.getKey() + ".dot";
+            boolean graphNotExist = Arrays.stream(array).map(File::getName).noneMatch(fileName -> fileName.equals(graphName));
+            if (graphNotExist) {
                 String graph = presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue());
                 CommonUtils.writeFile(path, graph);
             } else {
@@ -264,9 +266,6 @@ public class ConstraintChainManager {
         return String.format(GRAPH_TEMPLATE, queryName, subGraphs + graph);
     }
 
-    private boolean graphIsExists(File[] array, String graphName) {
-        return Arrays.stream(array).map(File::getName).anyMatch(fileName -> fileName.equals(graphName));
-    }
 
     private String removeData(String graph) {
         String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
