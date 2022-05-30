@@ -14,34 +14,22 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_SPLIT_REGEX;
-import static ecnu.db.utils.CommonUtils.CSV_MAPPER;
+import static ecnu.db.utils.CommonUtils.*;
 
 public class ColumnManager {
     public static final String COLUMN_STRING_INFO = "/stringTemplate.json";
     public static final String COLUMN_DISTRIBUTION_INFO = "/distribution.json";
-    public static final String COLUMN_BOUNDPARA_INFO = "/boundPara.json";
+    public static final String COLUMN_BOUND_PARA_INFO = "/boundPara.json";
     public static final String COLUMN_METADATA_INFO = "/column.csv";
     private static final ColumnManager INSTANCE = new ColumnManager();
     private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class);
-    private static final DateTimeFormatter FMT = new DateTimeFormatterBuilder()
-            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
-                    .appendFraction(ChronoField.MILLI_OF_SECOND, 2, 3, true) // min 2 max 3
-                    .toFormatter())
-            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss").toFormatter())
-            .appendOptional(new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
-                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
-                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter())
-            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
-            .toFormatter();
     private final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
+
+    private final List<Column> attributeColumns = new LinkedList<>();
+
     private File distributionInfoPath;
     private final Logger logger = LoggerFactory.getLogger(ColumnManager.class);
 
@@ -160,7 +148,7 @@ public class ColumnManager {
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(paraData2Probability);
         CommonUtils.writeFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO, content);
         content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(offset2Pvs);
-        CommonUtils.writeFile(distribution.getPath() + COLUMN_BOUNDPARA_INFO, content);
+        CommonUtils.writeFile(distribution.getPath() + COLUMN_BOUND_PARA_INFO, content);
     }
 
     public void loadColumnMetaData() throws IOException {
@@ -191,7 +179,7 @@ public class ColumnManager {
         for (Map.Entry<String, SortedMap<Long, BigDecimal>> paraData : paraData2Probability.entrySet()) {
             columns.get(paraData.getKey()).getDistribution().setParaData2Probability(paraData.getValue());
         }
-        content = CommonUtils.readFile(distribution.getPath() + COLUMN_BOUNDPARA_INFO);
+        content = CommonUtils.readFile(distribution.getPath() + COLUMN_BOUND_PARA_INFO);
         Map<String, SortedMap<BigDecimal, Long>> boundPv2Offsets = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (var boundPara : boundPv2Offsets.entrySet()) {
@@ -244,13 +232,13 @@ public class ColumnManager {
                         range = (long) (Double.parseDouble(maxResult) * specialValue) - min + 1;
                     }
                     case DATE -> {
-                        min = LocalDateTime.parse(minResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60);
-                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60) - min + 1;
+                        min = LocalDateTime.parse(minResult, INPUT_FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60);
+                        range = LocalDateTime.parse(maxResult, INPUT_FMT).toEpochSecond(ZoneOffset.UTC) / (24 * 60 * 60) - min + 1;
                         specialValue = 0;
                     }
                     case DATETIME -> {
-                        min = LocalDateTime.parse(minResult, FMT).toEpochSecond(ZoneOffset.UTC);
-                        range = LocalDateTime.parse(maxResult, FMT).toEpochSecond(ZoneOffset.UTC) - min + 1;
+                        min = LocalDateTime.parse(minResult, INPUT_FMT).toEpochSecond(ZoneOffset.UTC);
+                        range = LocalDateTime.parse(maxResult, INPUT_FMT).toEpochSecond(ZoneOffset.UTC) - min + 1;
                         specialValue = 0;
                     }
                     default -> throw new TouchstoneException("未匹配到的类型");
@@ -267,17 +255,20 @@ public class ColumnManager {
         }
     }
 
-    public void prepareParameterInit(Collection<String> columnNames, int size) {
-        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
+    public void cacheAttributeColumn(Collection<String> columnNames) {
+        attributeColumns.clear();
+        attributeColumns.addAll(columnNames.stream().map(this::getColumn).toList());
     }
 
-    public void prepareGeneration(Collection<String> columnNames, int size) {
-        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
-        List<Integer> rowIndex = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            rowIndex.add(i);
+    public void prepareGeneration(int size, boolean shuffle) {
+        attributeColumns.stream().parallel().forEach(column -> column.prepareTupleData(size));
+        if (shuffle) {
+            List<Integer> rowIndex = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                rowIndex.add(i);
+            }
+            Collections.shuffle(rowIndex);
+            attributeColumns.stream().parallel().forEach(column -> column.shuffleRows(rowIndex));
         }
-        Collections.shuffle(rowIndex);
-        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).shuffleRows(rowIndex));
     }
 }

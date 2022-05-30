@@ -122,7 +122,8 @@ public class QueryInstantiate implements Callable<Integer> {
                 .map(MultiVarFilterOperation::getAllCanonicalColumnNames)
                 .flatMap(Collection::stream).collect(Collectors.toSet());
 
-        ColumnManager.getInstance().prepareGeneration(prepareSamplingColumnName, samplingSize);
+        ColumnManager.getInstance().cacheAttributeColumn(prepareSamplingColumnName);
+        ColumnManager.getInstance().prepareGeneration(samplingSize, false);
 
         filterOperations.parallelStream()
                 .filter(MultiVarFilterOperation.class::isInstance)

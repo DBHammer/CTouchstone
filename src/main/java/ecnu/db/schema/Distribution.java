@@ -15,7 +15,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Distribution {
 
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
-    private final HashSet<Integer> likeParameterId = new HashSet<>();
 
     // bound PV的偏移位置
     private SortedMap<BigDecimal, Long> offset2Pv = new TreeMap<>();
@@ -39,12 +38,6 @@ public class Distribution {
 
     public boolean hasConstraints() {
         return pvAndPbList.size() > 1 || pvAndPbList.lastEntry().getValue().size() > 1;
-    }
-
-    private void dealZeroPb(List<Parameter> parameters) {
-        for (Parameter parameter : parameters) {
-            parameter.setData(-1);
-        }
     }
 
     public BigDecimal getOffset(long dataIndex) {
@@ -132,10 +125,11 @@ public class Distribution {
         // 如果有某个参数拒绝重用，则直接进行贪心寻range
         if (tempParameterList.stream().allMatch(Parameter::isCanMerge)) {
             probability = reusePb(tempParameterList, hasUsedEqRange, probability);
-            if (probability.compareTo(BigDecimal.ZERO) == 0) {
-                dealZeroPb(tempParameterList);
-                return;
-            }
+        }
+        // 如果没有剩余的请求，则返回
+        if (probability.compareTo(BigDecimal.ZERO) == 0) {
+            tempParameterList.forEach(parameter -> parameter.setData(-1));
+            return;
         }
         // 标记该参数为等值的参数
         tempParameterList.forEach(parameter -> parameter.setEqualPredicate(true));
@@ -191,21 +185,24 @@ public class Distribution {
             return addCardinality;
         }
         long remainCardinality = range - pvAndPbList.size();
-        if (remainCardinality < 0) {
-            addCardinality = -remainCardinality;
-            remainCardinality = 0;
-        }
         BigDecimal remainRange = pvAndPbList.entrySet().stream()
-                // 找到所有的非等值的range右边界
+                // search right bound of each no equal range
                 .filter(e -> isNonEqualRange(e.getValue()))
-                // 确定其range大小
+                // compute the size of range
                 .map(e -> getRange(e.getKey()))
-                // 计算range的和
+                // sum all range
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal cardinalityPercentage;
         if (remainRange.compareTo(BigDecimal.ZERO) > 0) {
+            if (remainCardinality < 0) {
+                addCardinality = -remainCardinality;
+                remainCardinality = 0;
+            }
             cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
         } else {
+            if (remainCardinality > 0) {
+                addCardinality = -remainCardinality;
+            }
             cardinalityPercentage = BigDecimal.ZERO;
         }
         long dataIndex = 0;
@@ -231,10 +228,6 @@ public class Distribution {
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
         }
-        likeParameterId.addAll(parameters.stream()
-                .filter(parameter -> parameter.getType() == Parameter.ParameterType.LIKE ||
-                        parameter.getType() == Parameter.ParameterType.SUBSTRING)
-                .mapToInt(Parameter::getId).boxed().toList());
     }
 
     private List<Long> generateAttributeData(BigDecimal bSize) {

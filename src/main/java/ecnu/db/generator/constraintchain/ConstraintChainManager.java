@@ -191,8 +191,8 @@ public class ConstraintChainManager {
      * @param onlyPkConstrainChains  只有主键的约束链
      * @param fkAndPkConstrainChains 既含有主键又含有外键的约束链
      */
-    public void classifyConstraintChain(List<ConstraintChain> allChains, List<ConstraintChain> haveFkConstrainChains,
-                                        List<ConstraintChain> onlyPkConstrainChains, List<ConstraintChain> fkAndPkConstrainChains) {
+    public static void classifyConstraintChain(List<ConstraintChain> allChains, List<ConstraintChain> haveFkConstrainChains,
+                                               List<ConstraintChain> onlyPkConstrainChains, List<ConstraintChain> fkAndPkConstrainChains) {
         if (allChains == null) {
             return;
         }
@@ -209,8 +209,6 @@ public class ConstraintChainManager {
                 haveFkConstrainChains.add(constraintChain);
             }
         }
-        logger.debug(rb.getString("ConstraintChainClassification"),
-                haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
     }
 
     public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
@@ -231,7 +229,9 @@ public class ConstraintChainManager {
             File file = new File(resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0]);
             File[] array = file.listFiles();
             assert array != null;
-            if (!graphIsExists(array, stringListEntry.getKey() + ".dot")) {
+            String graphName = stringListEntry.getKey() + ".dot";
+            boolean graphNotExist = Arrays.stream(array).map(File::getName).noneMatch(fileName -> fileName.equals(graphName));
+            if (graphNotExist) {
                 String graph = presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue());
                 CommonUtils.writeFile(path, graph);
             } else {
@@ -264,9 +264,6 @@ public class ConstraintChainManager {
         return String.format(GRAPH_TEMPLATE, queryName, subGraphs + graph);
     }
 
-    private boolean graphIsExists(File[] array, String graphName) {
-        return Arrays.stream(array).map(File::getName).anyMatch(fileName -> fileName.equals(graphName));
-    }
 
     private String removeData(String graph) {
         String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
