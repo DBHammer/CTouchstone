@@ -40,12 +40,6 @@ public class Distribution {
         return pvAndPbList.size() > 1 || pvAndPbList.lastEntry().getValue().size() > 1;
     }
 
-    private void dealZeroPb(List<Parameter> parameters) {
-        for (Parameter parameter : parameters) {
-            parameter.setData(-1);
-        }
-    }
-
     public BigDecimal getOffset(long dataIndex) {
         if (offset2Pv.isEmpty()) {
             return BigDecimal.ZERO;
@@ -131,10 +125,11 @@ public class Distribution {
         // 如果有某个参数拒绝重用，则直接进行贪心寻range
         if (tempParameterList.stream().allMatch(Parameter::isCanMerge)) {
             probability = reusePb(tempParameterList, hasUsedEqRange, probability);
-            if (probability.compareTo(BigDecimal.ZERO) == 0) {
-                dealZeroPb(tempParameterList);
-                return;
-            }
+        }
+        // 如果没有剩余的请求，则返回
+        if (probability.compareTo(BigDecimal.ZERO) == 0) {
+            tempParameterList.forEach(parameter -> parameter.setData(-1));
+            return;
         }
         // 标记该参数为等值的参数
         tempParameterList.forEach(parameter -> parameter.setEqualPredicate(true));
