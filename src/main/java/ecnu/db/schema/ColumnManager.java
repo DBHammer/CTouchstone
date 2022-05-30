@@ -27,6 +27,9 @@ public class ColumnManager {
     private static final ColumnManager INSTANCE = new ColumnManager();
     private static final CsvSchema columnSchema = CSV_MAPPER.schemaFor(Column.class);
     private final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
+
+    private final List<Column> attributeColumns = new LinkedList<>();
+
     private File distributionInfoPath;
     private final Logger logger = LoggerFactory.getLogger(ColumnManager.class);
 
@@ -252,17 +255,20 @@ public class ColumnManager {
         }
     }
 
-    public void prepareParameterInit(Collection<String> columnNames, int size) {
-        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
+    public void cacheAttributeColumn(Collection<String> columnNames) {
+        attributeColumns.clear();
+        attributeColumns.addAll(columnNames.stream().map(this::getColumn).toList());
     }
 
-    public void prepareGeneration(Collection<String> columnNames, int size) {
-        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).prepareTupleData(size));
-        List<Integer> rowIndex = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            rowIndex.add(i);
+    public void prepareGeneration(int size, boolean shuffle) {
+        attributeColumns.stream().parallel().forEach(column -> column.prepareTupleData(size));
+        if (shuffle) {
+            List<Integer> rowIndex = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                rowIndex.add(i);
+            }
+            Collections.shuffle(rowIndex);
+            attributeColumns.stream().parallel().forEach(column -> column.shuffleRows(rowIndex));
         }
-        Collections.shuffle(rowIndex);
-        columnNames.stream().parallel().forEach(columnName -> getColumn(columnName).shuffleRows(rowIndex));
     }
 }

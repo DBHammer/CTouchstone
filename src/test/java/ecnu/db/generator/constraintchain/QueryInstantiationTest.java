@@ -49,7 +49,8 @@ class QueryInstantiationTest {
                 .flatMap(Collection::stream).collect(Collectors.toSet());
 
         // 生成测试数据集
-        ColumnManager.getInstance().prepareParameterInit(columnNames, sampleSize.intValue());
+        ColumnManager.getInstance().cacheAttributeColumn(columnNames);
+        ColumnManager.getInstance().prepareGeneration(sampleSize.intValue(), false);
 
         //验证每个filterNode的执行结果
         filterNodes.stream().parallel().forEach(filterNode -> {

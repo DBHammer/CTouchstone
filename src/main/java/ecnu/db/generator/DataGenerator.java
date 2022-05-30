@@ -110,12 +110,13 @@ public class DataGenerator implements Callable<Integer> {
             }
             stepRange = stepSize * (generatorNum - 1);
             List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
+            ColumnManager.getInstance().cacheAttributeColumn(attColumnNames);
             String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
             int totolSize = 0;
             while (resultStart < tableSize) {
                 int range = (int) (Math.min(resultStart + batchSize, tableSize) - resultStart);
                 //生成属性列数据
-                ColumnManager.getInstance().prepareGeneration(attColumnNames, range);
+                ColumnManager.getInstance().prepareGeneration(range, true);
                 //转换为字符串准备输出
                 ExecutorService service = Executors.newSingleThreadExecutor();
                 Future<List<StringBuilder>> futureRowData = service.submit(() -> ConstraintChainManager.generateAttRows(attColumnNames, range));
