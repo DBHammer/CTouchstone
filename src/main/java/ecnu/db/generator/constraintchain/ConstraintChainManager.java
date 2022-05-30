@@ -112,15 +112,15 @@ public class ConstraintChainManager {
             currentSize = col2AllStatus.get(i).size() * currentSize;
             loopSize[i] = diffStatusSize / currentSize;
         }
-        List<List<boolean[]>> allDiffStatus = IntStream.range(0, diffStatusSize)
-                .mapToObj(index -> {
-                    List<boolean[]> result = new ArrayList<>();
-                    for (int i = 0; i < col2AllStatus.size(); i++) {
-                        List<boolean[]> tableStatus = col2AllStatus.get(i);
-                        result.add(tableStatus.get((index) / loopSize[i] % tableStatus.size()));
-                    }
-                    return result;
-                }).toList();
+        List<List<boolean[]>> allDiffStatus = new ArrayList<>();
+        for (int index = 0; index < diffStatusSize; index++) {
+            List<boolean[]> result = new ArrayList<>();
+            for (int i = 0; i < col2AllStatus.size(); i++) {
+                List<boolean[]> tableStatus = col2AllStatus.get(i);
+                result.add(tableStatus.get((index) / loopSize[i] % tableStatus.size()));
+            }
+            allDiffStatus.add(result);
+        }
         return allDiffStatus;
     }
 
@@ -179,34 +179,6 @@ public class ConstraintChainManager {
                     logger.info(rb.getString("RemoveConstraintChain1"), query2ConstraintChains.getKey(), constraintChain);
                     constraintChainIterator.remove();
                 }
-            }
-        }
-    }
-
-    /**
-     * 对一组约束链进行分类
-     *
-     * @param allChains              输入的约束链
-     * @param haveFkConstrainChains  含有外键和Agg的约束链
-     * @param onlyPkConstrainChains  只有主键的约束链
-     * @param fkAndPkConstrainChains 既含有主键又含有外键的约束链
-     */
-    public static void classifyConstraintChain(List<ConstraintChain> allChains, List<ConstraintChain> haveFkConstrainChains,
-                                               List<ConstraintChain> onlyPkConstrainChains, List<ConstraintChain> fkAndPkConstrainChains) {
-        if (allChains == null) {
-            return;
-        }
-        for (ConstraintChain constraintChain : allChains) {
-            if (constraintChain.getNodes().stream().allMatch(node ->
-                    node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN ||
-                            node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER)) {
-                onlyPkConstrainChains.add(constraintChain);
-            } else {
-                if (constraintChain.getNodes().stream().anyMatch(node ->
-                        node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN)) {
-                    fkAndPkConstrainChains.add(constraintChain);
-                }
-                haveFkConstrainChains.add(constraintChain);
             }
         }
     }

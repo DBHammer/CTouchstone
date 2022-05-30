@@ -21,12 +21,12 @@ public class RuleTableManager {
         return ruleTableMap.get(colName);
     }
 
-    public Map<Integer, Long> getStatueSize(String colName, List<Integer> location) {
-        return ruleTableMap.get(colName).mergeRules(location);
+    public Map<JoinStatus, Long> getStatueSize(Map.Entry<String, List<Integer>> col2Location) {
+        return ruleTableMap.get(col2Location.getKey()).mergeRules(col2Location.getValue());
     }
 
-    public List<boolean[]> getAllStatusRule(String colName, List<Integer> location) {
-        return ruleTableMap.get(colName).getStatus(location);
+    public List<boolean[]> getAllStatusRule(Map.Entry<String, List<Integer>> col2Location) {
+        return ruleTableMap.get(col2Location.getKey()).getStatus(col2Location.getValue());
     }
 
     public Map<JoinStatus, AtomicLong> addRuleTable(String tableName, Map<JoinStatus, Long> pkHistogram, long indexStart) {

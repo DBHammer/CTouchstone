@@ -98,6 +98,14 @@ public class ConstraintChain {
         }
     }
 
+    public boolean hasFkNode() {
+        return nodes.stream().anyMatch(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN);
+    }
+
+    public boolean hasPkNode() {
+        return nodes.stream().anyMatch(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN);
+    }
+
     public boolean hasCardinalityConstraint() {
         boolean hasCardinalityConstraint;
         hasCardinalityConstraint = nodes.stream()
@@ -111,7 +119,7 @@ public class ConstraintChain {
         return hasCardinalityConstraint;
     }
 
-    public void computePkStatus(List<List<Map.Entry<boolean[], Long>>> fkStatus, boolean[] filterStatus, boolean[][] pkStatus) {
+    public void computeVectorStatus(List<List<Map.Entry<boolean[], Long>>> fkStatus, boolean[] filterStatus) {
         for (ConstraintChainNode node : nodes) {
             if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN) {
                 ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
@@ -123,25 +131,22 @@ public class ConstraintChain {
                         filterStatus[i] = fkStatus.get(i).get(joinStatusIndex).getKey()[joinStatusLocation] == status;
                     }
                 }
-            } else if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
-                pkStatus[((ConstraintChainPkJoinNode) node).getPkTag()] = filterStatus;
-                break;
             }
         }
     }
 
     public void addConstraint2Model(int filterIndex, int filterSize, int unFilterSize,
-                                    List<Map<Integer, Long>> statusHash2Size,
-                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
+                                    List<Map<JoinStatus, Long>> statusHash2Size,
+                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2TransferStatus) {
         // 每一组填充状态是否能到达这个算子
-        boolean[] canBeInput = new boolean[filterStatus2PkStatus.size()];
+        boolean[] canBeInput = new boolean[filterStatus2TransferStatus.size()];
         Arrays.fill(canBeInput, true);
         for (ConstraintChainNode node : nodes) {
             // filter的状态 根据其filter status对应的index的位置获得
             switch (node.getConstraintChainNodeType()) {
                 case FILTER -> {
                     int i = 0;
-                    for (Map.Entry<JoinStatus, List<boolean[]>> status2PkStatus : filterStatus2PkStatus) {
+                    for (Map.Entry<JoinStatus, List<boolean[]>> status2PkStatus : filterStatus2TransferStatus) {
                         canBeInput[i++] = status2PkStatus.getKey().status()[filterIndex];
                     }
                 }
@@ -150,10 +155,10 @@ public class ConstraintChain {
                     if (!fkJoinNode.getType().isSemi()) {
                         if (fkJoinNode.getProbabilityWithFailFilter() != null) {
                             int indexJoinSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                            ConstructCpModel.addIndexJoinFkConstraint(indexJoinSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
+                            ConstructCpModel.addIndexJoinFkConstraint(indexJoinSize, fkJoinNode, canBeInput, filterStatus2TransferStatus);
                         }
                         filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                        ConstructCpModel.addEqJoinFkConstraint(filterSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
+                        ConstructCpModel.addEqJoinFkConstraint(filterSize, fkJoinNode, canBeInput, filterStatus2TransferStatus);
                     }
                     if (fkJoinNode.getType().hasCardinalityConstraint()) {
                         // 获取join对应的位置
@@ -163,7 +168,7 @@ public class ConstraintChain {
                         int cardinalityBound = TableManager.getInstance().cardinalityConstraint(fkJoinNode.getLocalCols());
                         logger.info(rb.getString("StateOfTable"), joinStatusIndex, joinStatusLocation, pkSize);
                         ConstructCpModel.addCardinalityConstraint(joinStatusIndex, joinStatusLocation,
-                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2PkStatus);
+                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2TransferStatus);
                     }
                 }
                 case AGGREGATE -> {
@@ -173,7 +178,7 @@ public class ConstraintChain {
                         logger.info(rb.getString("LocationOfAgg"), aggregateNode.joinStatusIndex, pkSize);
                         int cardinalityBound = TableManager.getInstance().cardinalityConstraint(aggregateNode.getGroupKey().get(0));
                         ConstructCpModel.addAggCardinalityConstraint(aggregateNode.joinStatusIndex,
-                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2PkStatus);
+                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2TransferStatus);
                     }
                 }
                 default -> {

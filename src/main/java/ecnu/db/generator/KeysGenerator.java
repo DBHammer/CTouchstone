@@ -26,8 +26,8 @@ public class KeysGenerator {
      * * status11--- status22---- status33
      */
     private final List<List<boolean[]>> allStatus;
-    // 主键的状态Hash对应的size。 一组  主键状态hash -> 主键状态的大小
-    private final List<Map<Integer, Long>> statusHash2Size;
+    // 主键的状态对应的size。 一组  主键状态 -> 主键状态的大小
+    private final List<Map<JoinStatus, Long>> statusHash2Size;
     Logger logger = LoggerFactory.getLogger(KeysGenerator.class);
 
     public KeysGenerator(List<ConstraintChain> haveFkConstrainChains) {
@@ -36,8 +36,7 @@ public class KeysGenerator {
         // 获得每个列的涉及到的status
         // 表 -> 表内所有的不同join status -> join status
         List<List<boolean[]>> col2AllStatus = involveFks.entrySet().stream()
-                .map(col2Location -> RuleTableManager.getInstance().getAllStatusRule(col2Location.getKey(), col2Location.getValue()))
-                .toList();
+                .map(col2Location -> RuleTableManager.getInstance().getAllStatusRule(col2Location)).toList();
         allStatus = ConstraintChainManager.getAllDistinctStatus(col2AllStatus);
         if (!allStatus.isEmpty()) {
             logger.debug("共计{}种状态，参照列为{}", allStatus.size(), involveFks);
@@ -45,11 +44,9 @@ public class KeysGenerator {
                 logger.debug(booleans.stream().map(Arrays::toString).collect(Collectors.joining("\t\t")));
             }
         }
-        statusHash2Size = new ArrayList<>(allStatus.size());
-        for (Map.Entry<String, List<Integer>> table2Location : involveFks.entrySet()) {
-            Map<Integer, Long> sizes = RuleTableManager.getInstance().getStatueSize(table2Location.getKey(), table2Location.getValue());
-            statusHash2Size.add(sizes);
-        }
+        // 主键status -> 数据量
+        statusHash2Size = involveFks.entrySet().stream()
+                .map(col2Location -> RuleTableManager.getInstance().getStatueSize(col2Location)).toList();
     }
 
     public long[] generateFkSolution(List<ConstraintChain> haveFkConstrainChains, SortedMap<JoinStatus, Long> filterHistogram,
@@ -62,15 +59,16 @@ public class KeysGenerator {
         if (result.length > filterStatus2PkStatus.size()) {
             int step = result.length / (filterStatus2PkStatus.get(0).getValue().size() + 1);
             int num = filterStatus2PkStatus.get(0).getValue().size();
-            IntStream.range(0, step).filter(i -> result[i] > 0).forEach(i -> {
-                        long[] cardinalityResult = new long[num];
-                        for (int j = 0; j < num; j++) {
-                            cardinalityResult[j] = result[step * (j + 1) + i];
-                        }
-                        logger.info("{}->{} size:{} cardinality:{}", filterStatus2PkStatus.get(i).getKey(),
-                                filterStatus2PkStatus.get(i).getValue().stream().map(Arrays::toString).toList(), result[i], Arrays.toString(cardinalityResult));
+            for (int i = 0; i < step; i++) {
+                if (result[i] > 0) {
+                    long[] cardinalityResult = new long[num];
+                    for (int j = 0; j < num; j++) {
+                        cardinalityResult[j] = result[step * (j + 1) + i];
                     }
-            );
+                    logger.info("{}->{} size:{} cardinality:{}", filterStatus2PkStatus.get(i).getKey(),
+                            filterStatus2PkStatus.get(i).getValue().stream().map(Arrays::toString).toList(), result[i], Arrays.toString(cardinalityResult));
+                }
+            }
         } else {
             IntStream.range(0, result.length).filter(i -> result[i] > 0).forEach(i ->
                     logger.info("{}->{} size:{}", filterStatus2PkStatus.get(i).getKey(),
@@ -117,11 +115,11 @@ public class KeysGenerator {
         // 统计status的分布直方图
         SortedMap<JoinStatus, Long> filterHistogram = new TreeMap<>(countStatus(filterStatus));
         long[] result = generateFkSolution(haveFkConstrainChains, filterHistogram, filterStatus, range);
-        logger.info("statusHash2Size" + statusHash2Size);
-        boolean hasCardinalityConstraint = result.length > filterHistogram.size() * allStatus.size();
+        logger.info("statusHash2Size:{}", statusHash2Size);
+        boolean hasDistinctConstraint = result.length > filterHistogram.size() * allStatus.size();
         List<List<FkGenerate>> cardinalityRangeForEachFk = new ArrayList<>();
         List<String> refCols = new ArrayList<>(involveFks.keySet());
-        if (hasCardinalityConstraint) {
+        if (hasDistinctConstraint) {
             int step = filterHistogram.size() * allStatus.size();
             int fkNum = result.length / step - 1;
             for (int i = 1; i <= fkNum; i++) {
@@ -133,15 +131,15 @@ public class KeysGenerator {
                     if (result[rangeIndex] == 0) {
                         cardinalityRangeForFk.add(new RandomFkGenerate(-1L, -1L, 0));
                     } else {
-                        int ruleHash = Arrays.hashCode(allStatus.get(rangeIndex % allStatus.size()).get(fkIndex));
-                        long currentCounter = ruleTable.getRuleCounter().get(ruleHash);
+                        JoinStatus ruleStatus = new JoinStatus(allStatus.get(rangeIndex % allStatus.size()).get(fkIndex));
+                        long currentCounter = ruleTable.getRuleCounter().get(ruleStatus);
                         long nextCounter = currentCounter + result[rangeIndex];
                         if (refCols.get(fkIndex).contains("public.orders.o_orderkey")) {
                             cardinalityRangeForFk.add(new BoundFkGenerate(currentCounter, nextCounter, result[rangeIndex - resultRangeStart]));
                         } else {
                             cardinalityRangeForFk.add(new RandomFkGenerate(currentCounter, nextCounter, result[rangeIndex - resultRangeStart]));
                         }
-                        ruleTable.getRuleCounter().put(ruleHash, nextCounter);
+                        ruleTable.getRuleCounter().put(ruleStatus, nextCounter);
                     }
                 }
                 cardinalityRangeForEachFk.add(cardinalityRangeForFk);

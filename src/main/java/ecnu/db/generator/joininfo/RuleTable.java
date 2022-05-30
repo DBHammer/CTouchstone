@@ -6,15 +6,15 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RuleTable {
     double scaleFactor = 1;
     Map<JoinStatus, List<Map.Entry<Long, Long>>> rules = new HashMap<>();
-    Map<Integer, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
-    Map<Integer, Long> mergedSize = new HashMap<>();
-    Map<Integer, Long> ruleCounter = new HashMap<>();
+    Map<JoinStatus, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
+    Map<JoinStatus, Long> mergedSize = new HashMap<>();
+    Map<JoinStatus, Long> ruleCounter = new HashMap<>();
 
     public void setScaleFactor(double scaleFactor) {
         this.scaleFactor = scaleFactor;
     }
 
-    public Map<Integer, Long> getRuleCounter() {
+    public Map<JoinStatus, Long> getRuleCounter() {
         return ruleCounter;
     }
 
@@ -23,7 +23,7 @@ public class RuleTable {
         rules.get(status).add(range);
     }
 
-    public Map<Integer, Long> mergeRules(List<Integer> location) {
+    public Map<JoinStatus, Long> mergeRules(List<Integer> location) {
         mergedRules = new HashMap<>();
         for (Map.Entry<JoinStatus, List<Map.Entry<Long, Long>>> joinStatusListEntry : rules.entrySet()) {
             boolean[] joinStatus = joinStatusListEntry.getKey().status();
@@ -31,13 +31,13 @@ public class RuleTable {
             for (int i = 0; i < location.size(); i++) {
                 subStatus[i] = joinStatus[location.get(i)];
             }
-            int statusHash = Arrays.hashCode(subStatus);
-            mergedRules.computeIfAbsent(statusHash, v -> new ArrayList<>());
-            mergedRules.get(statusHash).addAll(joinStatusListEntry.getValue());
+            JoinStatus pkStatus = new JoinStatus(subStatus);
+            mergedRules.computeIfAbsent(pkStatus, v -> new ArrayList<>());
+            mergedRules.get(pkStatus).addAll(joinStatusListEntry.getValue());
         }
         mergedSize = new HashMap<>();
         ruleCounter = new HashMap<>();
-        for (Map.Entry<Integer, List<Map.Entry<Long, Long>>> status2KeyList : mergedRules.entrySet()) {
+        for (Map.Entry<JoinStatus, List<Map.Entry<Long, Long>>> status2KeyList : mergedRules.entrySet()) {
             long size = 0;
             for (Map.Entry<Long, Long> range : status2KeyList.getValue()) {
                 size += range.getValue() - range.getKey();
@@ -49,8 +49,7 @@ public class RuleTable {
     }
 
     public long getKey(boolean[] status, long index) {
-        int statusHash = Arrays.hashCode(status);
-        List<Map.Entry<Long, Long>> ranges = mergedRules.get(statusHash);
+        List<Map.Entry<Long, Long>> ranges = mergedRules.get(new JoinStatus(status));
         long currentSize = 0;
         // 近似处理跨表参照关系
         if (index < 0) {

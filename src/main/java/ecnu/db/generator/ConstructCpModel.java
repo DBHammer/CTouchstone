@@ -42,7 +42,7 @@ public class ConstructCpModel {
      */
     public static long[] computeWithCpModel(List<ConstraintChain> haveFkConstrainChains,
                                             SortedMap<JoinStatus, Long> filterHistogram,
-                                            List<Map<Integer, Long>> statusHash2Size,
+                                            List<Map<JoinStatus, Long>> statusHash2Size,
                                             List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus,
                                             int[] filterSize, int range) {
         logger.info("filterHistogram: {}", filterHistogram);
@@ -135,7 +135,7 @@ public class ConstructCpModel {
 
     public static void addAggCardinalityConstraint(int joinStatusIndex,
                                                    int pkCardinalitySize, int cardinalityBound,
-                                                   List<Map<Integer, Long>> statusHash2Size,
+                                                   List<Map<JoinStatus, Long>> statusHash2Size,
                                                    boolean[] canBeInput,
                                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
         // 找到有效的CpModel变量
@@ -143,18 +143,18 @@ public class ConstructCpModel {
         // 找到var中对应的range空间
         int anchor = vars.length / (filterStatus2PkStatus.get(0).getValue().size() + 1) * (joinStatusIndex + 1);
         // 维护同一个status的所有var，他们共享了一个pk status的size
-        Map<Integer, ArrayList<IntVar>> hash2Index = new HashMap<>();
+        Map<JoinStatus, ArrayList<IntVar>> hash2Index = new HashMap<>();
         // 与join不同的是 agg 不需要join的location
         IntStream.range(0, filterStatus2PkStatus.size()).filter(i -> canBeInput[i]).forEach(i -> {
-            Integer fkHash = Arrays.hashCode(filterStatus2PkStatus.get(i).getValue().get(joinStatusIndex));
-            hash2Index.computeIfAbsent(fkHash, v -> new ArrayList<>());
-            hash2Index.get(fkHash).add(vars[anchor + i]);
+            JoinStatus fkStatus = new JoinStatus(filterStatus2PkStatus.get(i).getValue().get(joinStatusIndex));
+            hash2Index.computeIfAbsent(fkStatus, v -> new ArrayList<>());
+            hash2Index.get(fkStatus).add(vars[anchor + i]);
             cardinalityVars.add(vars[anchor + i]);
             model.addLessOrEqual(vars[i], LinearExpr.affine(vars[anchor + i], cardinalityBound, 0));
         });
         model.addEquality(LinearExpr.sum(cardinalityVars.toArray(IntVar[]::new)), pkCardinalitySize);
         var pkStatusHash2Size = statusHash2Size.get(joinStatusIndex);
-        for (Map.Entry<Integer, ArrayList<IntVar>> hash2VarIndex : hash2Index.entrySet()) {
+        for (Map.Entry<JoinStatus, ArrayList<IntVar>> hash2VarIndex : hash2Index.entrySet()) {
             long maxLimitation = pkRange.multiply(BigDecimal.valueOf(pkStatusHash2Size.get(hash2VarIndex.getKey()))).setScale(0, RoundingMode.UP).longValue();
             logger.info("cardinality limitation is {}", maxLimitation);
             model.addLessOrEqual(LinearExpr.sum(hash2VarIndex.getValue().toArray(new IntVar[0])), maxLimitation);
@@ -163,26 +163,26 @@ public class ConstructCpModel {
 
     public static void addCardinalityConstraint(int joinStatusIndex, int joinStatusLocation,
                                                 int pkCardinalitySize, int cardinalityBound,
-                                                List<Map<Integer, Long>> statusHash2Size,
+                                                List<Map<JoinStatus, Long>> statusHash2Size,
                                                 boolean[] canBeInput,
                                                 List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
         // 找到有效的CpModel变量
         List<IntVar> cardinalityVars = new ArrayList<>();
         int anchor = vars.length / (filterStatus2PkStatus.get(0).getValue().size() + 1) * (joinStatusIndex + 1);
-        Map<Integer, ArrayList<IntVar>> hash2Index = new HashMap<>();
+        Map<JoinStatus, ArrayList<IntVar>> hash2Index = new HashMap<>();
         IntStream.range(0, filterStatus2PkStatus.size()).filter(i -> canBeInput[i]).forEach(i -> {
             boolean[] fkStatus = filterStatus2PkStatus.get(i).getValue().get(joinStatusIndex);
             if (fkStatus[joinStatusLocation]) {
-                Integer fkHash = Arrays.hashCode(fkStatus);
-                hash2Index.computeIfAbsent(fkHash, v -> new ArrayList<>());
-                hash2Index.get(fkHash).add(vars[anchor + i]);
+                JoinStatus fkStatusObj = new JoinStatus(fkStatus);
+                hash2Index.computeIfAbsent(fkStatusObj, v -> new ArrayList<>());
+                hash2Index.get(fkStatusObj).add(vars[anchor + i]);
                 cardinalityVars.add(vars[anchor + i]);
                 model.addLessOrEqual(vars[i], LinearExpr.affine(vars[anchor + i], cardinalityBound, 0));
             }
         });
         model.addEquality(LinearExpr.sum(cardinalityVars.toArray(IntVar[]::new)), pkCardinalitySize);
         var pkStatusHash2Size = statusHash2Size.get(joinStatusIndex);
-        for (Map.Entry<Integer, ArrayList<IntVar>> hash2VarIndex : hash2Index.entrySet()) {
+        for (Map.Entry<JoinStatus, ArrayList<IntVar>> hash2VarIndex : hash2Index.entrySet()) {
             long maxLimitation = pkRange.multiply(BigDecimal.valueOf(pkStatusHash2Size.get(hash2VarIndex.getKey()))).setScale(0, RoundingMode.UP).longValue();
             logger.info("cardinality limitation is {}", maxLimitation);
             model.addLessOrEqual(LinearExpr.sum(hash2VarIndex.getValue().toArray(new IntVar[0])), maxLimitation);

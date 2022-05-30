@@ -4,6 +4,7 @@ package ecnu.db.generator;
 import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
+import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 import ecnu.db.generator.joininfo.JoinStatus;
 import ecnu.db.generator.joininfo.RuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
@@ -68,7 +69,7 @@ public class DataGenerator implements Callable<Integer> {
         ColumnManager.getInstance().loadColumnDistribution();
         //载入约束链，并进行transform
         ConstraintChainManager.getInstance().setResultDir(configPath);
-        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.loadConstrainChainResult(configPath);
         ConstraintChainManager.getInstance().cleanConstrainChains(query2chains);
         schema2chains = getSchema2Chains(query2chains);
         // 删除上次生成的数据
@@ -82,6 +83,7 @@ public class DataGenerator implements Callable<Integer> {
         dataWriter = new DataWriter(outputPath, generatorId);
     }
 
+
     @Override
     public Integer call() throws Exception {
         init();
@@ -91,19 +93,17 @@ public class DataGenerator implements Callable<Integer> {
             dataWriter.reset();
             //对约束链进行分类
             List<ConstraintChain> allChains = schema2chains.get(schemaName);
-            List<ConstraintChain> haveFkConstrainChains = new ArrayList<>();
-            List<ConstraintChain> onlyPkConstrainChains = new ArrayList<>();
-            List<ConstraintChain> fkAndPkConstrainChains = new ArrayList<>();
-            ConstraintChainManager.classifyConstraintChain(allChains,
-                    haveFkConstrainChains, onlyPkConstrainChains, fkAndPkConstrainChains);
-            logger.debug(rb.getString("ConstraintChainClassification"),
-                    haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
+            if (allChains == null) {
+                continue;
+            }
+            List<ConstraintChain> haveFkConstrainChains = allChains.stream().filter(ConstraintChain::hasFkNode).toList();
+            int pkStatusSize = (int) allChains.stream().filter(ConstraintChain::hasPkNode).count();
             KeysGenerator keysGenerator = new KeysGenerator(haveFkConstrainChains);
             long tableSize = TableManager.getInstance().getTableSize(schemaName);
             long resultStart;
             long stepRange;
             long batchSize;
-            if (stepSize * generatorNum > tableSize) {
+            if ((long) stepSize * generatorNum > tableSize) {
                 batchSize = tableSize / generatorNum;
                 resultStart = batchSize * generatorId;
                 if (generatorId == generatorNum - 1) {
@@ -111,9 +111,9 @@ public class DataGenerator implements Callable<Integer> {
                 }
             } else {
                 batchSize = stepSize;
-                resultStart = stepSize * generatorId;
+                resultStart = (long) stepSize * generatorId;
             }
-            stepRange = stepSize * (generatorNum - 1);
+            stepRange = (long) stepSize * (generatorNum - 1);
             List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
             ColumnManager.getInstance().cacheAttributeColumn(attColumnNames);
             String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
@@ -125,11 +125,6 @@ public class DataGenerator implements Callable<Integer> {
                 //转换为字符串准备输出
                 ExecutorService service = Executors.newSingleThreadExecutor();
                 Future<List<StringBuilder>> futureRowData = service.submit(() -> ConstraintChainManager.generateAttRows(attColumnNames, range));
-                //创建主键状态矩阵
-                boolean[][] pkStatus = new boolean[onlyPkConstrainChains.size() + fkAndPkConstrainChains.size()][range];
-                //处理不需要外键填充的主键状态
-                onlyPkConstrainChains.stream().parallel().forEach(constraintChain ->
-                        pkStatus[constraintChain.getJoinTag()] = constraintChain.evaluateFilterStatus(range));
                 List<long[]> fksList = null;
                 // 如果存在外键，进行外键填充
                 if (!haveFkConstrainChains.isEmpty()) {
@@ -142,8 +137,8 @@ public class DataGenerator implements Callable<Integer> {
                     // 根据外键状态和filter status推演主键状态表
                     int chainIndex = 0;
                     for (ConstraintChain fkAndPkConstrainChain : haveFkConstrainChains) {
-                        if (fkAndPkConstrainChains.contains(fkAndPkConstrainChain)) {
-                            fkAndPkConstrainChain.computePkStatus(fkStatus, filterStatus[chainIndex], pkStatus);
+                        if (fkAndPkConstrainChain.hasPkNode()) {
+                            fkAndPkConstrainChain.computeVectorStatus(fkStatus, filterStatus[chainIndex]);
                         }
                         chainIndex++;
                     }
@@ -160,6 +155,12 @@ public class DataGenerator implements Callable<Integer> {
                         rowData.get(i).insert(0, row);
                     }
                 }
+                //创建主键状态矩阵
+                boolean[][] pkStatus = new boolean[pkStatusSize][range];
+                //处理不需要外键填充的主键状态
+                allChains.stream().parallel().filter(ConstraintChain::hasPkNode).forEach(
+                        chain -> pkStatus[chain.getJoinTag()] = chain.evaluateFilterStatus(range)
+                );
                 if (pkStatus.length > 0) {
                     Map<JoinStatus, Long> pkHistogram = keysGenerator.printPkStatusMatrix(pkStatus);
                     var pkStatus2Location = RuleTableManager.getInstance().addRuleTable(pkName, pkHistogram, resultStart);
