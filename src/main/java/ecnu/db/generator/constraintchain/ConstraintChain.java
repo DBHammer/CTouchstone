@@ -135,12 +135,14 @@ public class ConstraintChain {
         }
     }
 
+    @JsonIgnore
     public List<ConstraintChainAggregateNode> getAggNodes(){
         return nodes.stream().filter(constraintChainNode ->
                         constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE)
                 .map(ConstraintChainAggregateNode.class::cast).toList();
     }
 
+    @JsonIgnore
     public List<ConstraintChainFkJoinNode> getFkNodes() {
         return nodes.stream().filter(constraintChainNode ->
                         constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
