@@ -185,21 +185,24 @@ public class Distribution {
             return addCardinality;
         }
         long remainCardinality = range - pvAndPbList.size();
-        if (remainCardinality < 0) {
-            addCardinality = -remainCardinality;
-            remainCardinality = 0;
-        }
         BigDecimal remainRange = pvAndPbList.entrySet().stream()
-                // 找到所有的非等值的range右边界
+                // search right bound of each no equal range
                 .filter(e -> isNonEqualRange(e.getValue()))
-                // 确定其range大小
+                // compute the size of range
                 .map(e -> getRange(e.getKey()))
-                // 计算range的和
+                // sum all range
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal cardinalityPercentage;
         if (remainRange.compareTo(BigDecimal.ZERO) > 0) {
+            if (remainCardinality < 0) {
+                addCardinality = -remainCardinality;
+                remainCardinality = 0;
+            }
             cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
         } else {
+            if (remainCardinality > 0) {
+                addCardinality = -remainCardinality;
+            }
             cardinalityPercentage = BigDecimal.ZERO;
         }
         long dataIndex = 0;
