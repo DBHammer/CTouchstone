@@ -1,6 +1,7 @@
 package ecnu.db.generator;
 
 
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.generator.joininfo.JoinStatus;
@@ -41,6 +42,8 @@ public class DataGenerator implements Callable<Integer> {
     private Map<String, List<ConstraintChain>> schema2chains;
 
     private DataWriter dataWriter;
+
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     private static Map<String, List<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
         Map<String, List<ConstraintChain>> schema2chains = new HashMap<>();
@@ -91,8 +94,10 @@ public class DataGenerator implements Callable<Integer> {
             List<ConstraintChain> haveFkConstrainChains = new ArrayList<>();
             List<ConstraintChain> onlyPkConstrainChains = new ArrayList<>();
             List<ConstraintChain> fkAndPkConstrainChains = new ArrayList<>();
-            ConstraintChainManager.getInstance().classifyConstraintChain(allChains,
+            ConstraintChainManager.classifyConstraintChain(allChains,
                     haveFkConstrainChains, onlyPkConstrainChains, fkAndPkConstrainChains);
+            logger.debug(rb.getString("ConstraintChainClassification"),
+                    haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
             KeysGenerator keysGenerator = new KeysGenerator(haveFkConstrainChains);
             long tableSize = TableManager.getInstance().getTableSize(schemaName);
             long resultStart;

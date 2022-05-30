@@ -191,8 +191,8 @@ public class ConstraintChainManager {
      * @param onlyPkConstrainChains  只有主键的约束链
      * @param fkAndPkConstrainChains 既含有主键又含有外键的约束链
      */
-    public void classifyConstraintChain(List<ConstraintChain> allChains, List<ConstraintChain> haveFkConstrainChains,
-                                        List<ConstraintChain> onlyPkConstrainChains, List<ConstraintChain> fkAndPkConstrainChains) {
+    public static void classifyConstraintChain(List<ConstraintChain> allChains, List<ConstraintChain> haveFkConstrainChains,
+                                               List<ConstraintChain> onlyPkConstrainChains, List<ConstraintChain> fkAndPkConstrainChains) {
         if (allChains == null) {
             return;
         }
@@ -209,8 +209,6 @@ public class ConstraintChainManager {
                 haveFkConstrainChains.add(constraintChain);
             }
         }
-        logger.debug(rb.getString("ConstraintChainClassification"),
-                haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
     }
 
     public void storeConstraintChain(Map<String, List<ConstraintChain>> query2constraintChains) throws IOException {
