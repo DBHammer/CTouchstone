@@ -48,44 +48,34 @@ public class ConstraintChainManager {
     public static SortedMap<String, List<Integer>> getInvolvedFks(List<ConstraintChain> constraintChains) {
         SortedMap<String, List<Integer>> involveFks = new TreeMap<>();
         // 找到涉及到的参照表和参照的tag
-        constraintChains.forEach(constraintChain -> constraintChain.getNodes().stream()
-                .filter(constraintChainNode -> constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
-                .map(ConstraintChainFkJoinNode.class::cast)
-                .forEach(fkJoinNode -> {
-                            involveFks.computeIfAbsent(fkJoinNode.getRefCols(), v -> new ArrayList<>());
-                            involveFks.get(fkJoinNode.getRefCols()).add(fkJoinNode.getPkTag());
-                        }
-                ));
+        List<ConstraintChainFkJoinNode> fkJoinNodes = constraintChains.stream().map(ConstraintChain::getFkNodes)
+                .flatMap(Collection::stream).toList();
+        for (var fkJoinNode : fkJoinNodes) {
+            involveFks.computeIfAbsent(fkJoinNode.getRefCols(), v -> new ArrayList<>());
+            involveFks.get(fkJoinNode.getRefCols()).add(fkJoinNode.getPkTag());
+        }
         //对所有的位置进行排序
         involveFks.values().forEach(Collections::sort);
         //标记约束链对应的status的位置
-        constraintChains.forEach(constraintChain -> constraintChain.getNodes().stream()
-                .filter(constraintChainNode -> constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
-                .map(ConstraintChainFkJoinNode.class::cast)
-                .forEach(fkJoinNode -> {
-                            fkJoinNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(fkJoinNode.getRefCols());
-                            fkJoinNode.joinStatusLocation = involveFks.get(fkJoinNode.getRefCols()).indexOf(fkJoinNode.getPkTag());
-                        }
-                )
-        );
-        //传递约束链
-        for (ConstraintChain constraintChain : constraintChains) {
-            for (int i = 0; i < constraintChain.getNodes().size(); i++) {
-                if (constraintChain.getNodes().get(i).getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE) {
-                    ConstraintChainAggregateNode aggregateNode = (ConstraintChainAggregateNode) constraintChain.getNodes().get(i);
-                    if (aggregateNode.getGroupKey() != null) {
-                        String fkCol = aggregateNode.getGroupKey().get(0);
-                        String[] cols = fkCol.split("\\.");
-                        try {
-                            String remoteCol = TableManager.getInstance().getSchema(cols[0] + "." + cols[1]).getForeignKeys().get(fkCol);
-                            aggregateNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(remoteCol);
-                        } catch (CannotFindSchemaException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        aggregateNode.joinStatusIndex = -1;
-                    }
+        for (ConstraintChainFkJoinNode fkJoinNode : fkJoinNodes) {
+            fkJoinNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(fkJoinNode.getRefCols());
+            fkJoinNode.joinStatusLocation = involveFks.get(fkJoinNode.getRefCols()).indexOf(fkJoinNode.getPkTag());
+        }
+        // 绑定Aggregation到相关的Fk上
+        List<ConstraintChainAggregateNode> aggregateNodes = constraintChains.stream().map(ConstraintChain::getAggNodes)
+                .flatMap(Collection::stream).toList();
+        for (ConstraintChainAggregateNode aggregateNode : aggregateNodes) {
+            if (aggregateNode.getGroupKey() != null) {
+                String fkCol = aggregateNode.getGroupKey().get(0);
+                String[] cols = fkCol.split("\\.");
+                try {
+                    String remoteCol = TableManager.getInstance().getSchema(cols[0] + "." + cols[1]).getForeignKeys().get(fkCol);
+                    aggregateNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(remoteCol);
+                } catch (CannotFindSchemaException e) {
+                    e.printStackTrace();
                 }
+            } else {
+                aggregateNode.joinStatusIndex = -1;
             }
         }
         return involveFks;

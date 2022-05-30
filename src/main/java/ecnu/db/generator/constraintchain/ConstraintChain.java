@@ -135,6 +135,18 @@ public class ConstraintChain {
         }
     }
 
+    public List<ConstraintChainAggregateNode> getAggNodes(){
+        return nodes.stream().filter(constraintChainNode ->
+                        constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE)
+                .map(ConstraintChainAggregateNode.class::cast).toList();
+    }
+
+    public List<ConstraintChainFkJoinNode> getFkNodes() {
+        return nodes.stream().filter(constraintChainNode ->
+                        constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
+                .map(ConstraintChainFkJoinNode.class::cast).toList();
+    }
+
     public void addConstraint2Model(int filterIndex, int filterSize, int unFilterSize,
                                     List<Map<JoinStatus, Long>> statusHash2Size,
                                     List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2TransferStatus) {
