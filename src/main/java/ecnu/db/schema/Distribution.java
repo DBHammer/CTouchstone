@@ -15,7 +15,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Distribution {
 
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
-    private final HashSet<Integer> likeParameterId = new HashSet<>();
 
     // bound PV的偏移位置
     private SortedMap<BigDecimal, Long> offset2Pv = new TreeMap<>();
@@ -231,10 +230,6 @@ public class Distribution {
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
         }
-        likeParameterId.addAll(parameters.stream()
-                .filter(parameter -> parameter.getType() == Parameter.ParameterType.LIKE ||
-                        parameter.getType() == Parameter.ParameterType.SUBSTRING)
-                .mapToInt(Parameter::getId).boxed().toList());
     }
 
     private List<Long> generateAttributeData(BigDecimal bSize) {
