@@ -9,8 +9,10 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
 import ecnu.db.generator.joininfo.JoinStatus;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
+import ecnu.db.utils.exception.schema.CannotFindSchemaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +138,7 @@ public class ConstraintChain {
     }
 
     @JsonIgnore
-    public List<ConstraintChainAggregateNode> getAggNodes(){
+    public List<ConstraintChainAggregateNode> getAggNodes() {
         return nodes.stream().filter(constraintChainNode ->
                         constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE)
                 .map(ConstraintChainAggregateNode.class::cast).toList();
@@ -149,9 +151,19 @@ public class ConstraintChain {
                 .map(ConstraintChainFkJoinNode.class::cast).toList();
     }
 
+    private boolean[] getAllJoinStatus(int joinStatusIndex, int joinStatusLocation,
+                                       List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2TransferStatus) {
+        boolean[] allJoinStatus = new boolean[filterStatus2TransferStatus.size()];
+        int i = 0;
+        for (Map.Entry<JoinStatus, List<boolean[]>> status2TransferStatus : filterStatus2TransferStatus) {
+            allJoinStatus[i++] = status2TransferStatus.getValue().get(joinStatusIndex)[joinStatusLocation];
+        }
+        return allJoinStatus;
+    }
+
     public void addConstraint2Model(int filterIndex, int filterSize, int unFilterSize,
                                     List<Map<JoinStatus, Long>> statusHash2Size,
-                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2TransferStatus) {
+                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2TransferStatus) throws CannotFindSchemaException {
         // 每一组填充状态是否能到达这个算子
         boolean[] canBeInput = new boolean[filterStatus2TransferStatus.size()];
         Arrays.fill(canBeInput, true);
@@ -166,23 +178,44 @@ public class ConstraintChain {
                 }
                 case FK_JOIN -> {
                     ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
+                    int joinStatusIndex = fkJoinNode.joinStatusIndex;
+                    int joinStatusLocation = fkJoinNode.joinStatusLocation;
                     if (!fkJoinNode.getType().isSemi()) {
+                        boolean[] allJoinStatus = getAllJoinStatus(joinStatusIndex, joinStatusLocation, filterStatus2TransferStatus);
+                        boolean status = !fkJoinNode.getType().isAnti();
                         if (fkJoinNode.getProbabilityWithFailFilter() != null) {
-                            int indexJoinSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                            ConstructCpModel.addIndexJoinFkConstraint(indexJoinSize, fkJoinNode, canBeInput, filterStatus2TransferStatus);
+                            BigDecimal bIndexJoinSize = BigDecimal.valueOf(unFilterSize).multiply(fkJoinNode.getProbabilityWithFailFilter());
+                            int indexJoinSize = bIndexJoinSize.setScale(0, RoundingMode.HALF_UP).intValue();
+                            List<Integer> validIndexes = new ArrayList<>();
+                            for (int i = 0; i < filterStatus2TransferStatus.size(); i++) {
+                                if (!canBeInput[i] && allJoinStatus[i] == status) {
+                                    validIndexes.add(i);
+                                }
+                            }
+                            ConstructCpModel.addJoinCardinalityConstraint(validIndexes, indexJoinSize);
+                            logger.info("indexjoin输出的数据量为:{}, 为第{}个表的第{}个状态", indexJoinSize, joinStatusIndex, joinStatusLocation);
                         }
-                        filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                        ConstructCpModel.addEqJoinFkConstraint(filterSize, fkJoinNode, canBeInput, filterStatus2TransferStatus);
+                        BigDecimal bFilterSize = BigDecimal.valueOf(filterSize).multiply(fkJoinNode.getProbability());
+                        filterSize = bFilterSize.setScale(0, RoundingMode.HALF_UP).intValue();
+                        List<Integer> validIndexes = new ArrayList<>();
+                        for (int i = 0; i < allJoinStatus.length; i++) {
+                            if (canBeInput[i] && allJoinStatus[i] == status) {
+                                validIndexes.add(i);
+                            } else {
+                                canBeInput[i] = false;
+                            }
+                        }
+                        logger.info("输出的数据量为:{}, 为第{}个表的第{}个状态", filterIndex, joinStatusIndex, joinStatusLocation);
+                        ConstructCpModel.addJoinCardinalityConstraint(validIndexes, filterSize);
                     }
                     if (fkJoinNode.getType().hasCardinalityConstraint()) {
                         // 获取join对应的位置
-                        int joinStatusIndex = fkJoinNode.joinStatusIndex;
-                        int joinStatusLocation = fkJoinNode.joinStatusLocation;
                         int pkSize = fkJoinNode.getPkDistinctProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                        int cardinalityBound = TableManager.getInstance().cardinalityConstraint(fkJoinNode.getLocalCols());
+                        int tableSize = TableManager.getInstance().getTableSizeWithFK(fkJoinNode.getLocalCols());
+                        int fkNum = ColumnManager.getInstance().getNdv(fkJoinNode.getLocalCols());
                         logger.info(rb.getString("StateOfTable"), joinStatusIndex, joinStatusLocation, pkSize);
-                        ConstructCpModel.addCardinalityConstraint(joinStatusIndex, joinStatusLocation,
-                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2TransferStatus);
+                        ConstructCpModel.addJoinDistinctConstraint(joinStatusIndex, joinStatusLocation,
+                                pkSize, tableSize, fkNum, statusHash2Size, canBeInput, filterStatus2TransferStatus);
                     }
                 }
                 case AGGREGATE -> {
@@ -190,9 +223,10 @@ public class ConstraintChain {
                     if (aggregateNode.joinStatusIndex >= 0) {
                         int pkSize = aggregateNode.getAggProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
                         logger.info(rb.getString("LocationOfAgg"), aggregateNode.joinStatusIndex, pkSize);
-                        int cardinalityBound = TableManager.getInstance().cardinalityConstraint(aggregateNode.getGroupKey().get(0));
-                        ConstructCpModel.addAggCardinalityConstraint(aggregateNode.joinStatusIndex,
-                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2TransferStatus);
+                        int tableSize = TableManager.getInstance().getTableSizeWithFK(aggregateNode.getGroupKey().get(0));
+                        int fkNum = ColumnManager.getInstance().getNdv(aggregateNode.getGroupKey().get(0));
+                        ConstructCpModel.addJoinDistinctConstraint(aggregateNode.joinStatusIndex, -1,
+                                pkSize, tableSize, fkNum, statusHash2Size, canBeInput, filterStatus2TransferStatus);
                     }
                 }
                 default -> {

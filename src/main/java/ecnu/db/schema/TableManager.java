@@ -59,26 +59,6 @@ public class TableManager {
         return getSchema(tableName).getPrimaryKeys();
     }
 
-    /**
-     * 输出指定行的基数
-     *
-     * @param fkCol 外键列
-     * @return 外键行的基数
-     */
-    public int cardinalityConstraint(String fkCol) {
-        String[] cols = fkCol.split("\\.");
-        String tableName = cols[0] + "." + cols[1];
-        String pkCol = schemas.get(tableName).getForeignKeys().get(fkCol);
-        String[] pkCols = pkCol.split("\\.");
-        String pkTable = pkCols[0] + "." + pkCols[1];
-        double scale = CommonUtils.CardinalityScale;
-        if (tableName.equals("public.orders")) {
-            scale = 1.5;
-        }
-        return (int) (scale * schemas.get(tableName).getTableSize() / schemas.get(pkTable).getTableSize());
-    }
-
-
     public boolean isPrimaryKey(String canonicalColumnName) {
         String[] nameArray = canonicalColumnName.split("\\.");
         String tableName = nameArray[0] + "." + nameArray[1];
@@ -105,6 +85,12 @@ public class TableManager {
 
     public long getTableSize(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getTableSize();
+    }
+
+    public int getTableSizeWithFK(String fk) throws CannotFindSchemaException {
+        String[] cols = fk.split("\\.");
+        String tableName = cols[0] + "." + cols[1];
+        return (int) getTableSize(tableName);
     }
 
     public int getJoinTag(String tableName) throws CannotFindSchemaException {

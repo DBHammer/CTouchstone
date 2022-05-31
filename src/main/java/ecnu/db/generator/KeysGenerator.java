@@ -8,6 +8,7 @@ import ecnu.db.generator.fkgenerate.RandomFkGenerate;
 import ecnu.db.generator.joininfo.JoinStatus;
 import ecnu.db.generator.joininfo.RuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
+import ecnu.db.utils.exception.schema.CannotFindSchemaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,9 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static ecnu.db.generator.ConstructCpModel.initDistinctModel;
+import static ecnu.db.generator.ConstructCpModel.initModel;
 
 public class KeysGenerator {
     // 约束链中的外键对应的主键的位置。 主键名 -> 一组主键的join info status中对应的位置
@@ -50,11 +54,25 @@ public class KeysGenerator {
     }
 
     public long[] generateFkSolution(List<ConstraintChain> haveFkConstrainChains, SortedMap<JoinStatus, Long> filterHistogram,
-                                     boolean[][] filterStatus, int range) {
+                                     boolean[][] filterStatus, int range) throws CannotFindSchemaException {
         // 为每个filter status 匹配对应的pk status 生成所有的solution方案
         List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus = getAllVarStatus(filterHistogram, allStatus);
         int[] filterSize = computeFilterSizeForEachFilter(filterStatus);
-        long[] result = ConstructCpModel.computeWithCpModel(haveFkConstrainChains, filterHistogram, statusHash2Size, filterStatus2PkStatus, filterSize, range);
+        logger.info("filterHistogram: {}", filterHistogram);
+        if (haveFkConstrainChains.stream().anyMatch(ConstraintChain::hasCardinalityConstraint)) {
+            int anchor = filterStatus2PkStatus.size();
+            int varNum = (filterStatus2PkStatus.get(0).getValue().size() + 1) * anchor;
+            initDistinctModel(filterHistogram, anchor, varNum, range);
+        } else {
+            initModel(filterHistogram, filterStatus2PkStatus.size(), range);
+        }
+        int chainIndex = 0;
+        for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
+            haveFkConstrainChain.addConstraint2Model(chainIndex, filterSize[chainIndex],
+                    range - filterSize[chainIndex], statusHash2Size, filterStatus2PkStatus);
+            chainIndex++;
+        }
+        long[] result = ConstructCpModel.solve();
         logger.info("填充方案");
         if (result.length > filterStatus2PkStatus.size()) {
             int step = result.length / (filterStatus2PkStatus.get(0).getValue().size() + 1);
@@ -111,7 +129,7 @@ public class KeysGenerator {
     }
 
     public List<List<Map.Entry<boolean[], Long>>> populateFkStatus(List<ConstraintChain> haveFkConstrainChains,
-                                                                   boolean[][] filterStatus, int range) {
+                                                                   boolean[][] filterStatus, int range) throws CannotFindSchemaException {
         // 统计status的分布直方图
         SortedMap<JoinStatus, Long> filterHistogram = new TreeMap<>(countStatus(filterStatus));
         long[] result = generateFkSolution(haveFkConstrainChains, filterHistogram, filterStatus, range);
