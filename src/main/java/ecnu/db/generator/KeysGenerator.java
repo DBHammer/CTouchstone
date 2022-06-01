@@ -2,7 +2,6 @@ package ecnu.db.generator;
 
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
-import ecnu.db.generator.fkgenerate.BoundFkGenerate;
 import ecnu.db.generator.fkgenerate.FkGenerate;
 import ecnu.db.generator.fkgenerate.RandomFkGenerate;
 import ecnu.db.generator.joininfo.JoinStatus;
@@ -239,6 +238,11 @@ public class KeysGenerator {
         if (pkStatus.length != 0) {
             logger.debug("PK Info");
             Map<JoinStatus, Long> pkHistogram = countStatus(pkStatus);
+            int statusSize = pkStatus.length;
+            JoinStatus nullStatus = new JoinStatus(new boolean[statusSize]);
+            if (!pkHistogram.containsKey(nullStatus)) {
+                pkHistogram.put(nullStatus, 1L);
+            }
             for (Map.Entry<JoinStatus, Long> s : pkHistogram.entrySet()) {
                 logger.debug("status:{} size:{}", s.getKey(), s.getValue());
             }
