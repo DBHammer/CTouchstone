@@ -87,10 +87,10 @@ public class TableManager {
         return getSchema(tableName).getTableSize();
     }
 
-    public int getTableSizeWithFK(String fk) throws CannotFindSchemaException {
+    public long getTableSizeWithFK(String fk) throws CannotFindSchemaException {
         String[] cols = fk.split("\\.");
         String tableName = cols[0] + "." + cols[1];
-        return (int) getTableSize(tableName);
+        return getTableSize(tableName);
     }
 
     public int getJoinTag(String tableName) throws CannotFindSchemaException {

@@ -145,7 +145,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     public boolean[] evaluate() throws CannotFindColumnException {
         double[] data = arithmeticTree.calculate();
         boolean[] ret = new boolean[data.length];
-        double parameterValue = (double) parameters.get(0).getData();
+        double parameterValue = parameters.get(0).getData();
         switch (operator) {
             case LT -> IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] < parameterValue);
             case LE -> IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] <= parameterValue);

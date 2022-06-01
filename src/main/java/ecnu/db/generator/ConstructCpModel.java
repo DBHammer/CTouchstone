@@ -89,7 +89,7 @@ public class ConstructCpModel {
     }
 
     public static void addJoinDistinctConstraint(int joinStatusIndex, int joinStatusLocation,
-                                                 int pkCardinalitySize, int fkTableSize, int fkColCardinality,
+                                                 int pkCardinalitySize, long fkTableSize, long fkColCardinality,
                                                  List<Map<JoinStatus, Long>> status2Size,
                                                  boolean[] canBeInput,
                                                  List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {

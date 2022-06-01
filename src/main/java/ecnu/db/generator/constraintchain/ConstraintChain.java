@@ -211,8 +211,8 @@ public class ConstraintChain {
                     if (fkJoinNode.getType().hasCardinalityConstraint()) {
                         // 获取join对应的位置
                         int pkSize = fkJoinNode.getPkDistinctProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                        int tableSize = TableManager.getInstance().getTableSizeWithFK(fkJoinNode.getLocalCols());
-                        int fkNum = ColumnManager.getInstance().getNdv(fkJoinNode.getLocalCols());
+                        long tableSize = TableManager.getInstance().getTableSizeWithFK(fkJoinNode.getLocalCols());
+                        long fkNum = ColumnManager.getInstance().getNdv(fkJoinNode.getLocalCols());
                         logger.info(rb.getString("StateOfTable"), joinStatusIndex, joinStatusLocation, pkSize);
                         ConstructCpModel.addJoinDistinctConstraint(joinStatusIndex, joinStatusLocation,
                                 pkSize, tableSize, fkNum, statusHash2Size, canBeInput, filterStatus2TransferStatus);
@@ -223,8 +223,8 @@ public class ConstraintChain {
                     if (aggregateNode.joinStatusIndex >= 0) {
                         int pkSize = aggregateNode.getAggProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
                         logger.info(rb.getString("LocationOfAgg"), aggregateNode.joinStatusIndex, pkSize);
-                        int tableSize = TableManager.getInstance().getTableSizeWithFK(aggregateNode.getGroupKey().get(0));
-                        int fkNum = ColumnManager.getInstance().getNdv(aggregateNode.getGroupKey().get(0));
+                        long tableSize = TableManager.getInstance().getTableSizeWithFK(aggregateNode.getGroupKey().get(0));
+                        long fkNum = ColumnManager.getInstance().getNdv(aggregateNode.getGroupKey().get(0));
                         ConstructCpModel.addJoinDistinctConstraint(aggregateNode.joinStatusIndex, -1,
                                 pkSize, tableSize, fkNum, statusHash2Size, canBeInput, filterStatus2TransferStatus);
                     }

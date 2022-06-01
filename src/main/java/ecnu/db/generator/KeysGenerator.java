@@ -31,7 +31,7 @@ public class KeysGenerator {
      */
     private final List<List<boolean[]>> allStatus;
     // 主键的状态对应的size。 一组  主键状态 -> 主键状态的大小
-    private final List<Map<JoinStatus, Long>> statusHash2Size;
+    private final List<Map<JoinStatus, Long>> pkStatus2Size;
     Logger logger = LoggerFactory.getLogger(KeysGenerator.class);
 
     public KeysGenerator(List<ConstraintChain> haveFkConstrainChains) {
@@ -49,7 +49,7 @@ public class KeysGenerator {
             }
         }
         // 主键status -> 数据量
-        statusHash2Size = involveFks.entrySet().stream()
+        pkStatus2Size = involveFks.entrySet().stream()
                 .map(col2Location -> RuleTableManager.getInstance().getStatueSize(col2Location)).toList();
     }
 
@@ -69,7 +69,7 @@ public class KeysGenerator {
         int chainIndex = 0;
         for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
             haveFkConstrainChain.addConstraint2Model(chainIndex, filterSize[chainIndex],
-                    range - filterSize[chainIndex], statusHash2Size, filterStatus2PkStatus);
+                    range - filterSize[chainIndex], pkStatus2Size, filterStatus2PkStatus);
             chainIndex++;
         }
         long[] result = ConstructCpModel.solve();
@@ -133,7 +133,7 @@ public class KeysGenerator {
         // 统计status的分布直方图
         SortedMap<JoinStatus, Long> filterHistogram = new TreeMap<>(countStatus(filterStatus));
         long[] result = generateFkSolution(haveFkConstrainChains, filterHistogram, filterStatus, range);
-        logger.info("statusHash2Size:{}", statusHash2Size);
+        logger.info("pkStatus2Size:{}", pkStatus2Size);
         boolean hasDistinctConstraint = result.length > filterHistogram.size() * allStatus.size();
         List<List<FkGenerate>> cardinalityRangeForEachFk = new ArrayList<>();
         List<String> refCols = new ArrayList<>(involveFks.keySet());
@@ -152,11 +152,7 @@ public class KeysGenerator {
                         JoinStatus ruleStatus = new JoinStatus(allStatus.get(rangeIndex % allStatus.size()).get(fkIndex));
                         long currentCounter = ruleTable.getRuleCounter().get(ruleStatus);
                         long nextCounter = currentCounter + result[rangeIndex];
-                        if (refCols.get(fkIndex).contains("public.orders.o_orderkey")) {
-                            cardinalityRangeForFk.add(new BoundFkGenerate(currentCounter, nextCounter, result[rangeIndex - resultRangeStart]));
-                        } else {
-                            cardinalityRangeForFk.add(new RandomFkGenerate(currentCounter, nextCounter, result[rangeIndex - resultRangeStart]));
-                        }
+                        cardinalityRangeForFk.add(new RandomFkGenerate(currentCounter, nextCounter, result[rangeIndex - resultRangeStart]));
                         ruleTable.getRuleCounter().put(ruleStatus, nextCounter);
                     }
                 }
