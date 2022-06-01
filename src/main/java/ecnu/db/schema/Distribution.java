@@ -233,6 +233,10 @@ public class Distribution {
     private List<Long> generateAttributeData(BigDecimal bSize) {
         // 存储符合CDF的属性值
         List<Long> attributeData = new ArrayList<>(bSize.intValue());
+        // 如果全列数据为空，则不需要填充属性值
+        if (paraData2Probability.size() == 1 && paraData2Probability.lastKey() == -1) {
+            return attributeData;
+        }
         // 生成为左开右闭，因此lastParaData始终比上一右边界大
         long lastParaData = 1;
         BigDecimal cumulativeError = BigDecimal.ZERO;
