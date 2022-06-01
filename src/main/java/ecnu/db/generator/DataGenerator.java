@@ -11,6 +11,10 @@ import ecnu.db.generator.joininfo.RuleTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
+import org.jgrapht.Graph;
+import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -81,6 +85,28 @@ public class DataGenerator implements Callable<Integer> {
         }
         // 初始化数据生成器
         dataWriter = new DataWriter(outputPath, generatorId);
+    }
+
+    private List<Set<String>> classifyFkDependency(List<ConstraintChain> haveFkConstrainChains) {
+        Graph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
+            List<ConstraintChainFkJoinNode> fkJoinNodes = haveFkConstrainChain.getFkNodes();
+            if (fkJoinNodes.size() > 1) {
+                String lastColName = fkJoinNodes.get(0).getRefCols();
+                if (!graph.containsVertex(lastColName)) {
+                    graph.addVertex(lastColName);
+                }
+                for (int i = 1; i < fkJoinNodes.size(); i++) {
+                    String currentColName = fkJoinNodes.get(i).getRefCols();
+                    if (!graph.containsVertex(currentColName)) {
+                        graph.addVertex(currentColName);
+                    }
+                    graph.addEdge(lastColName, currentColName);
+                    lastColName = currentColName;
+                }
+            }
+        }
+        return new KosarajuStrongConnectivityInspector<>(graph).stronglyConnectedSets();
     }
 
 
