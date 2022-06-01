@@ -4,7 +4,7 @@ package ecnu.db.generator;
 import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
-import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
+import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.joininfo.JoinStatus;
 import ecnu.db.generator.joininfo.RuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
@@ -152,6 +152,8 @@ public class DataGenerator implements Callable<Integer> {
                 ExecutorService service = Executors.newSingleThreadExecutor();
                 Future<List<StringBuilder>> futureRowData = service.submit(() -> ConstraintChainManager.generateAttRows(attColumnNames, range));
                 List<long[]> fksList = null;
+                //创建主键状态矩阵
+                boolean[][] pkStatus = new boolean[pkStatusSize][range];
                 // 如果存在外键，进行外键填充
                 if (!haveFkConstrainChains.isEmpty()) {
                     ConstructCpModel.setPkRange(BigDecimal.valueOf(range).divide(BigDecimal.valueOf(tableSize), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION));
@@ -165,6 +167,7 @@ public class DataGenerator implements Callable<Integer> {
                     for (ConstraintChain fkAndPkConstrainChain : haveFkConstrainChains) {
                         if (fkAndPkConstrainChain.hasPkNode()) {
                             fkAndPkConstrainChain.computeVectorStatus(fkStatus, filterStatus[chainIndex]);
+                            pkStatus[fkAndPkConstrainChain.getJoinTag()] = filterStatus[chainIndex];
                         }
                         chainIndex++;
                     }
@@ -181,12 +184,11 @@ public class DataGenerator implements Callable<Integer> {
                         rowData.get(i).insert(0, row);
                     }
                 }
-                //创建主键状态矩阵
-                boolean[][] pkStatus = new boolean[pkStatusSize][range];
                 //处理不需要外键填充的主键状态
-                allChains.stream().parallel().filter(ConstraintChain::hasPkNode).forEach(
-                        chain -> pkStatus[chain.getJoinTag()] = chain.evaluateFilterStatus(range)
-                );
+                allChains.stream().parallel().filter(constraintChain -> !haveFkConstrainChains.contains(constraintChain))
+                        .filter(ConstraintChain::hasPkNode).forEach(
+                                chain -> pkStatus[chain.getJoinTag()] = chain.evaluateFilterStatus(range)
+                        );
                 if (pkStatus.length > 0) {
                     Map<JoinStatus, Long> pkHistogram = keysGenerator.printPkStatusMatrix(pkStatus);
                     var pkStatus2Location = RuleTableManager.getInstance().addRuleTable(pkName, pkHistogram, resultStart);
