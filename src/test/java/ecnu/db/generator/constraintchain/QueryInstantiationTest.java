@@ -54,12 +54,7 @@ class QueryInstantiationTest {
 
         //验证每个filterNode的执行结果
         filterNodes.stream().parallel().forEach(filterNode -> {
-            boolean[] evaluation;
-            try {
-                evaluation = filterNode.getRoot().evaluate();
-            } catch (CannotFindColumnException e) {
-                throw new RuntimeException(e);
-            }
+            boolean[] evaluation = filterNode.getRoot().evaluate();
             long satisfyRowCount = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count();
             BigDecimal bSatisfyRowCount = BigDecimal.valueOf(satisfyRowCount);
             BigDecimal realFilterProbability = bSatisfyRowCount.divide(sampleSize, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);

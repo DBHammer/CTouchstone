@@ -91,7 +91,7 @@ public class LogicNode extends BoolExprNode {
     }
 
     @Override
-    public boolean[] evaluate() throws CannotFindColumnException {
+    public boolean[] evaluate() {
         boolean[][] computeVectors = new boolean[children.size()][];
         for (int i = 0; i < children.size(); i++) {
             computeVectors[i] = children.get(i).evaluate();

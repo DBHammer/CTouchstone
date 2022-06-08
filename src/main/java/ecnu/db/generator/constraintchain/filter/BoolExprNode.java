@@ -40,7 +40,7 @@ public abstract class BoolExprNode {
      *
      * @return evaluate表达式的布尔值
      */
-    protected abstract boolean[] evaluate() throws CannotFindColumnException;
+    protected abstract boolean[] evaluate();
 
     /**
      * 获取该filter条件中的所有参数

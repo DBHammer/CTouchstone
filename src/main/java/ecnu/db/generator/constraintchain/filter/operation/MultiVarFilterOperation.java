@@ -139,10 +139,9 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
      * todo 暂时不考虑NULL
      *
      * @return 多值表达式的计算结果
-     * @throws CannotFindColumnException 计算树中对应的数据列找不到
      */
     @Override
-    public boolean[] evaluate() throws CannotFindColumnException {
+    public boolean[] evaluate() {
         double[] data = arithmeticTree.calculate();
         boolean[] ret = new boolean[data.length];
         double parameterValue = parameters.get(0).getData();

@@ -66,7 +66,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         return root.toString();
     }
 
-    public boolean[] evaluate() throws CannotFindColumnException {
+    public boolean[] evaluate() {
         return root.evaluate();
     }
 }
