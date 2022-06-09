@@ -2,129 +2,122 @@ package ecnu.db.generator;
 
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
-import ecnu.db.generator.constraintchain.ConstraintChain;
-import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.joininfo.JoinStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
-import java.util.stream.IntStream;
 
 public class ConstructCpModel {
-    static Logger logger = LoggerFactory.getLogger(ConstructCpModel.class);
-    private static BigDecimal pkRange;
-    private static CpModel model;
-    private static IntVar[] vars;
+
+    private static final double DISTINCT_FK_SKEW = 2;
+    private final Logger logger = LoggerFactory.getLogger(ConstructCpModel.class);
+    private final CpModel model = new CpModel();
+    private final CpSolver solver = new CpSolver();
+    private IntVar[][] vars;
+    private final Map<Integer, IntVar[][]> fkDistinctVars = new HashMap<>();
+    private final List<IntVar> involvedVars = new LinkedList<>();
+
 
     static {
         Loader.loadNativeLibraries();
     }
 
-    private ConstructCpModel() {
-    }
-
-    public static void setPkRange(BigDecimal pkRange) {
-        ConstructCpModel.pkRange = pkRange;
-    }
-
-    public static long[] solve() {
-        CpSolver solver = new CpSolver();
+    public long[][] solve() {
         solver.getParameters().setEnumerateAllSolutions(false);
         CpSolverStatus status = solver.solve(model);
-        long[] result = new long[vars.length];
         if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
             logger.info("用时{}ms", solver.wallTime() * 1000);
-            int i = 0;
-            for (IntVar intVar : vars) {
-                result[i++] = solver.value(intVar);
+            int filterStatusCount = vars.length;
+            int pkStatusCount = vars[0].length;
+            long[][] rowCountForEachStatus = new long[filterStatusCount][pkStatusCount];
+            for (int filterIndex = 0; filterIndex < filterStatusCount; filterIndex++) {
+                for (int pkStatusIndex = 0; pkStatusIndex < pkStatusCount; pkStatusIndex++) {
+                    rowCountForEachStatus[filterIndex][pkStatusCount] = solver.value(vars[filterIndex][pkStatusIndex]);
+                }
             }
+            return rowCountForEachStatus;
         } else {
-            logger.error("No solution found.");
+            throw new UnsupportedOperationException("No solution found.");
         }
-        return result;
     }
 
-    public static void initDistinctModel(SortedMap<JoinStatus, Long> filterHistogram, int anchor, int varNum, int range) {
-        model = new CpModel();
-        vars = new IntVar[varNum];
-        logger.debug("create {} vars", varNum);
-        for (int i = 0; i < anchor; i++) {
-            vars[i] = model.newIntVar(0, range, String.valueOf(i));
-            for (int j = 1; j <= varNum / anchor - 1; j++) {
-                vars[i + j * anchor] = model.newIntVar(0, range, String.valueOf(i + j * anchor));
-                model.addLessOrEqual(vars[i + j * anchor], vars[i]);
+    public FkRange[][] getDistinctResult(int fkColsIndex) {
+        // todo 根据ruletable 递增range的start
+        IntVar[][] distinctVars = fkDistinctVars.get(fkColsIndex);
+        FkRange[][] fkRanges = new FkRange[distinctVars.length][distinctVars[0].length];
+        for (int pkStatusIndex = 0; pkStatusIndex < fkRanges[0].length; pkStatusIndex++) {
+            long start = 0L;
+            for (int filterIndex = 0; filterIndex < fkRanges.length; filterIndex++) {
+                long range = solver.value(distinctVars[filterIndex][pkStatusIndex]);
+                fkRanges[filterIndex][pkStatusIndex] = new FkRange(start, range);
+                start += range;
             }
         }
-        int i = 0;
-        int allPkSize = anchor / filterHistogram.size();
-        for (Map.Entry<JoinStatus, Long> filter2Status : filterHistogram.entrySet()) {
-            model.addEquality(LinearExpr.sum(Arrays.copyOfRange(vars, i, i + allPkSize)), filter2Status.getValue());
-            i += allPkSize;
-        }
+        return fkRanges;
     }
+
+    public void initDistinctModel(int fkColIndex, long fkColCardinality, long fkTableSize,
+                                  Map<ArrayList<Integer>, Long> samePkStatusIndexes2Limitations) {
+        IntVar[][] distinctVars = new IntVar[vars.length][vars[0].length];
+        // todo 用fk的最大重复次数来替代
+        fkTableSize = (long) (fkTableSize * DISTINCT_FK_SKEW);
+        for (int filterIndex = 0; filterIndex < distinctVars.length; filterIndex++) {
+            for (int pkIndex = 0; pkIndex < distinctVars[0].length; pkIndex++) {
+                IntVar numVar = vars[filterIndex][pkIndex];
+                String varName = fkColIndex + "-" + filterIndex + "-" + pkIndex;
+                IntVar distinctVar = model.newIntVarFromDomain(numVar.getDomain(), varName);
+                model.addLessOrEqual(distinctVar, numVar);
+                // distinct的外键均匀分布与每个range中, i.e., x / tableSize <= d/fkColCardinality
+                model.addLessOrEqual(LinearExpr.term(numVar, fkColCardinality), LinearExpr.term(distinctVar, fkTableSize));
+                distinctVars[filterIndex][pkIndex] = distinctVar;
+            }
+        }
+        for (var pkIndexes2Limitation : samePkStatusIndexes2Limitations.entrySet()) {
+            var samePkStatusIndexes = pkIndexes2Limitation.getKey();
+            IntVar[] sameStatusDistinctVars = new IntVar[samePkStatusIndexes.size() * distinctVars.length];
+            int i = 0;
+            for (IntVar[] distinctVar : distinctVars) {
+                for (Integer pkIndex : samePkStatusIndexes) {
+                    sameStatusDistinctVars[i++] = distinctVar[pkIndex];
+                }
+            }
+            model.addLessOrEqual(LinearExpr.sum(sameStatusDistinctVars), pkIndexes2Limitation.getValue());
+        }
+        fkDistinctVars.put(fkColIndex, distinctVars);
+    }
+
 
     /**
      * 根据join info table计算不同status的填充数量
      *
-     * @param filterHistogram filter status的统计直方图
-     * @param varNum          所有填充方案的数量
-     * @param range           每个填充方案的的上界
+     * @param filterHistogram  filter status的统计直方图
+     * @param pkJointStatusNum 所有联合主键的数量
+     * @param range            每个填充方案的的上界
      */
-    public static void initModel(SortedMap<JoinStatus, Long> filterHistogram, int varNum, int range) {
-        model = new CpModel();
-        vars = new IntVar[varNum];
-        logger.debug("create {} vars", varNum);
-        for (int i = 0; i < varNum; i++) {
-            vars[i] = model.newIntVar(0, range, String.valueOf(i));
-        }
-        int i = 0;
-        int allPkSize = varNum / filterHistogram.size();
-        for (Map.Entry<JoinStatus, Long> filter2Status : filterHistogram.entrySet()) {
-            model.addEquality(LinearExpr.sum(Arrays.copyOfRange(vars, i, i + allPkSize)), filter2Status.getValue());
-            i += allPkSize;
-        }
-    }
-
-    public static void addJoinDistinctConstraint(int joinStatusIndex, int joinStatusLocation,
-                                                 int pkCardinalitySize, long fkTableSize, long fkColCardinality,
-                                                 List<Map<JoinStatus, Long>> status2Size,
-                                                 boolean[] canBeInput,
-                                                 List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
-        // 找到有效的CpModel变量
-        List<IntVar> cardinalityVars = new ArrayList<>();
-        // 找到var中对应的range空间
-        int anchor = vars.length / (filterStatus2PkStatus.get(0).getValue().size() + 1) * (joinStatusIndex + 1);
-        // 维护同一个status的所有var，他们共享了一个pk status的size
-        Map<JoinStatus, ArrayList<IntVar>> status2Index = new HashMap<>();
-        for (int i = 0; i < filterStatus2PkStatus.size(); i++) {
-            if (canBeInput[i]) {
-                JoinStatus fkStatus = new JoinStatus(filterStatus2PkStatus.get(i).getValue().get(joinStatusIndex));
-                if (joinStatusLocation < 0 || fkStatus.status()[joinStatusLocation]) {
-                    status2Index.computeIfAbsent(fkStatus, v -> new ArrayList<>());
-                    status2Index.get(fkStatus).add(vars[anchor + i]);
-                    cardinalityVars.add(vars[anchor + i]);
-                    model.addLessOrEqual(LinearExpr.term(vars[i], fkColCardinality), LinearExpr.term(vars[anchor + i], fkTableSize));
-                }
+    public void initModel(Map<JoinStatus, Long> filterHistogram, int pkJointStatusNum, int range) {
+        vars = new IntVar[filterHistogram.size()][pkJointStatusNum];
+        for (int i = 0; i < filterHistogram.size(); i++) {
+            for (int j = 0; j < pkJointStatusNum; j++) {
+                vars[i][j] = model.newIntVar(0, range, i + "-" + j);
             }
         }
-        model.addEquality(LinearExpr.sum(cardinalityVars.toArray(IntVar[]::new)), pkCardinalitySize);
-        var pkStatus2Size = status2Size.get(joinStatusIndex);
-        for (Map.Entry<JoinStatus, ArrayList<IntVar>> hash2VarIndex : status2Index.entrySet()) {
-            BigDecimal bMaxLimitation = BigDecimal.valueOf(pkStatus2Size.get(hash2VarIndex.getKey())).multiply(pkRange);
-            long maxLimitation = bMaxLimitation.setScale(0, RoundingMode.UP).longValue();
-            logger.info("cardinality limitation is {}", maxLimitation);
-            model.addLessOrEqual(LinearExpr.sum(hash2VarIndex.getValue().toArray(new IntVar[0])), maxLimitation);
+        int i = 0;
+        for (Map.Entry<JoinStatus, Long> status2Size : filterHistogram.entrySet()) {
+            model.addEquality(LinearExpr.sum(vars[i++]), status2Size.getValue());
         }
     }
 
-    public static void addJoinCardinalityConstraint(List<Integer> validIndexes, int eqJoinSize) {
-        IntVar[] validVars = new IntVar[validIndexes.size()];
-        for (int i = 0; i < validVars.length; i++) {
-            validVars[i] = vars[validIndexes.get(i)];
-        }
-        model.addEquality(LinearExpr.sum(validVars), eqJoinSize);
+    public void addJoinDistinctValidVar(int fkColIndex, int filterIndex, int pkStatusIndex) {
+        involvedVars.add(fkDistinctVars.get(fkColIndex)[filterIndex][pkStatusIndex]);
+    }
+
+    public void addJoinCardinalityValidVar(int filterIndex, int pkStatusIndex) {
+        involvedVars.add(vars[filterIndex][pkStatusIndex]);
+    }
+
+    public void addJoinCardinalityConstraint(long eqJoinSize) {
+        model.addEquality(LinearExpr.sum(involvedVars.toArray(new IntVar[0])), eqJoinSize);
+        involvedVars.clear();
     }
 }

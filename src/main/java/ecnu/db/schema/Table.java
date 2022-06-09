@@ -16,7 +16,7 @@ public class Table {
     private long tableSize;
     private List<String> primaryKeys;
     private List<String> canonicalColumnNames;
-    private Map<String, String> foreignKeys = new HashMap<>();
+    private Map<String, String> foreignKeys = new TreeMap<>();
     @JsonIgnore
     private int joinTag = 0;
 
@@ -34,11 +34,10 @@ public class Table {
         return canonicalColumnNames;
     }
 
-
     @JsonIgnore
-    public List<String> getCanonicalColumnNamesNotFk() {
-        List<String> canonicalColumnNamesNotKey = new LinkedList<>(canonicalColumnNames);
-        canonicalColumnNamesNotKey.removeAll(primaryKeys);
+    public Set<String> getAttributeColumnNames() {
+        Set<String> canonicalColumnNamesNotKey = new HashSet<>(canonicalColumnNames);
+        primaryKeys.forEach(canonicalColumnNamesNotKey::remove);
         canonicalColumnNamesNotKey.removeAll(foreignKeys.keySet());
         return canonicalColumnNamesNotKey;
     }
@@ -61,6 +60,14 @@ public class Table {
         } else {
             return false;
         }
+    }
+
+    public SortedMap<String, Long> getFk2PkTableSize() {
+        SortedMap<String, Long> fk2PkTableSize = new TreeMap<>();
+        for (Map.Entry<String, String> foreignKey : foreignKeys.entrySet()) {
+            fk2PkTableSize.put(foreignKey.getKey(), TableManager.getInstance().getTableSizeWithCol(foreignKey.getValue()));
+        }
+        return fk2PkTableSize;
     }
 
     public boolean isRefTable(String refTable) {
@@ -139,7 +146,7 @@ public class Table {
         return primaryKeys;
     }
 
-    public void toSQL(DbConnector dbConnector, String tableName) throws SQLException, TouchstoneException {
+    public void toSQL(DbConnector dbConnector, String tableName) throws SQLException {
         StringBuilder head = new StringBuilder("CREATE TABLE ");
         head.append(tableName).append(" (");
         List<String> allColumns = new ArrayList<>(canonicalColumnNames);

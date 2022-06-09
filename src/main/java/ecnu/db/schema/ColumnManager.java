@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static ecnu.db.utils.CommonUtils.*;
 
@@ -72,6 +74,15 @@ public class ColumnManager {
             }
         }
     }
+
+    public String[] generateAttRows(int range) {
+        return IntStream.range(0, range).parallel().mapToObj(
+                rowId -> attributeColumns.stream()
+                        .map(attributeColumn -> attributeColumn.output(rowId))
+                        .collect(Collectors.joining(","))
+        ).toArray(String[]::new);
+    }
+
 
     public boolean[] evaluate(String columnName, CompareOperator operator, List<Parameter> parameters) {
         return columns.get(columnName).evaluate(operator, parameters);

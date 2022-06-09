@@ -1,18 +1,15 @@
 package ecnu.db.generator.joininfo;
 
+import ecnu.db.generator.FkGenerator;
+
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RuleTable {
-    double scaleFactor = 1;
     Map<JoinStatus, List<Map.Entry<Long, Long>>> rules = new HashMap<>();
     Map<JoinStatus, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
     Map<JoinStatus, Long> mergedSize = new HashMap<>();
     Map<JoinStatus, Long> ruleCounter = new HashMap<>();
-
-    public void setScaleFactor(double scaleFactor) {
-        this.scaleFactor = scaleFactor;
-    }
 
     public Map<JoinStatus, Long> getRuleCounter() {
         return ruleCounter;
@@ -23,66 +20,58 @@ public class RuleTable {
         rules.get(status).add(range);
     }
 
-    public Map<JoinStatus, Long> mergeRules(List<Integer> location) {
+    public JoinStatus[] mergeRules(List<Integer> location, boolean withNull) {
         mergedRules = new HashMap<>();
         for (Map.Entry<JoinStatus, List<Map.Entry<Long, Long>>> joinStatusListEntry : rules.entrySet()) {
             boolean[] joinStatus = joinStatusListEntry.getKey().status();
-            boolean[] subStatus = new boolean[location.size()];
-            for (int i = 0; i < location.size(); i++) {
-                subStatus[i] = joinStatus[location.get(i)];
-            }
-            JoinStatus pkStatus = new JoinStatus(subStatus);
+            JoinStatus pkStatus = FkGenerator.chooseCorrespondingStatus(joinStatus, location);
             mergedRules.computeIfAbsent(pkStatus, v -> new ArrayList<>());
             mergedRules.get(pkStatus).addAll(joinStatusListEntry.getValue());
         }
         mergedSize = new HashMap<>();
         ruleCounter = new HashMap<>();
-        for (Map.Entry<JoinStatus, List<Map.Entry<Long, Long>>> status2KeyList : mergedRules.entrySet()) {
-            long size = 0;
-            for (Map.Entry<Long, Long> range : status2KeyList.getValue()) {
-                size += range.getValue() - range.getKey();
-            }
-            mergedSize.put(status2KeyList.getKey(), (long) (size * scaleFactor));
-            ruleCounter.put(status2KeyList.getKey(), 0L);
+        for (var mergedRule : mergedRules.entrySet()) {
+            long size = mergedRule.getValue().stream().mapToLong(range -> range.getValue() - range.getKey()).sum();
+            mergedSize.put(mergedRule.getKey(), size);
+            ruleCounter.put(mergedRule.getKey(), 0L);
         }
-        return mergedSize;
+        JoinStatus[] pkStatuses = new JoinStatus[mergedRules.size()];
+        int i = 0;
+        for (JoinStatus joinStatus : mergedRules.keySet()) {
+            pkStatuses[i++] = joinStatus;
+        }
+        // deal with null
+        if (withNull) {
+            JoinStatus allFalseStatus = new JoinStatus(new boolean[location.size()]);
+            if (!mergedRules.containsKey(allFalseStatus)) {
+                JoinStatus[] copy = new JoinStatus[pkStatuses.length + 1];
+                System.arraycopy(pkStatuses, 0, copy, 0, pkStatuses.length);
+                copy[copy.length - 1] = allFalseStatus;
+                pkStatuses = copy;
+            }
+        }
+        return pkStatuses;
     }
 
-    public long getKey(boolean[] status, long index) {
-        List<Map.Entry<Long, Long>> ranges = mergedRules.get(new JoinStatus(status));
-        long currentSize = 0;
-        // 近似处理跨表参照关系
+    public long getStatusSize(JoinStatus status) {
+        return mergedSize.get(status);
+    }
+
+    public long getKey(JoinStatus joinStatus, long index) {
+        if (!mergedRules.containsKey(joinStatus)) {
+            return Long.MIN_VALUE;
+        }
         if (index < 0) {
-            var range = ranges.get(ThreadLocalRandom.current().nextInt(ranges.size()));
-            return range.getKey() + ThreadLocalRandom.current().nextLong(Math.min(48, range.getValue() - range.getKey()));
+            index = ThreadLocalRandom.current().nextLong(mergedSize.get(joinStatus));
         }
-
-        //todo may be error for other benchmark
-        while (true) {
-            for (Map.Entry<Long, Long> range : ranges) {
-                long nextSize = currentSize + range.getValue() - range.getKey();
-                if (nextSize > index) {
-                    return range.getKey() + index - currentSize;
-                } else {
-                    currentSize = nextSize;
-                }
+        long currentSize = 0;
+        for (Map.Entry<Long, Long> range : mergedRules.get(joinStatus)) {
+            long nextSize = currentSize + range.getValue() - range.getKey();
+            if (nextSize > index) {
+                return index - currentSize + range.getKey();
             }
+            currentSize = nextSize;
         }
+        return Long.MIN_VALUE;
     }
-
-
-    public List<boolean[]> getStatus(List<Integer> location) {
-        Collections.sort(location);
-        Map<Integer, boolean[]> allStatus = new HashMap<>();
-        for (JoinStatus joinStatus : rules.keySet()) {
-            boolean[] result = new boolean[location.size()];
-            boolean[] status = joinStatus.status();
-            for (int i = 0; i < result.length; i++) {
-                result[i] = status[location.get(i)];
-            }
-            allStatus.putIfAbsent(Arrays.hashCode(result), result);
-        }
-        return allStatus.values().stream().toList();
-    }
-
 }

@@ -2,6 +2,7 @@ package ecnu.db.generator.constraintchain.agg;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.LanguageManager;
+import ecnu.db.generator.ConstructCpModel;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
@@ -11,13 +12,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 public class ConstraintChainAggregateNode extends ConstraintChainNode {
     private final Logger logger = LoggerFactory.getLogger(ConstraintChainAggregateNode.class);
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     @JsonIgnore
-    public int joinStatusIndex;
+    public int joinStatusIndex = -1;
     private List<String> groupKey;
     private BigDecimal aggProbability;
     ConstraintChainFilterNode aggFilter;
@@ -62,6 +64,23 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
             logger.error(rb.getString("AggOperatorCannotBeSupportedInQuery"), this);
         }
         return true;
+    }
+
+    public void addJoinDistinctConstraint(ConstructCpModel cpModel, long filterSize, boolean[][] canBeInput) {
+        if (joinStatusIndex < 0) {
+            return;
+        }
+        for (int filterIndex = 0; filterIndex < canBeInput.length; filterIndex++) {
+            for (int pkStatusIndex = 0; pkStatusIndex < canBeInput[0].length; pkStatusIndex++) {
+                if (canBeInput[filterIndex][pkStatusIndex]) {
+                    cpModel.addJoinDistinctValidVar(joinStatusIndex, filterIndex, pkStatusIndex);
+                }
+            }
+        }
+        var bPkSize = BigDecimal.valueOf(filterSize).multiply(aggProbability);
+        long pkSize = bPkSize.setScale(0, RoundingMode.HALF_UP).longValue();
+        // 合法性约束，每个pkStatus不能超过提供的数量
+        cpModel.addJoinCardinalityConstraint(pkSize);
     }
 
     private void cleanGroupKeys() {
