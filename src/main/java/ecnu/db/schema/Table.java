@@ -62,6 +62,7 @@ public class Table {
         }
     }
 
+    @JsonIgnore
     public SortedMap<String, Long> getFk2PkTableSize() {
         SortedMap<String, Long> fk2PkTableSize = new TreeMap<>();
         for (Map.Entry<String, String> foreignKey : foreignKeys.entrySet()) {

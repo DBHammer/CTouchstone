@@ -101,12 +101,12 @@ public class DataGenerator implements Callable<Integer> {
         for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
             List<ConstraintChainFkJoinNode> fkJoinNodes = haveFkConstrainChain.getFkNodes();
             if (fkJoinNodes.size() > 1) {
-                String lastColName = fkJoinNodes.get(0).getRefCols();
+                String lastColName = fkJoinNodes.get(0).getLocalCols();
                 if (!graph.containsVertex(lastColName)) {
                     graph.addVertex(lastColName);
                 }
                 for (int i = 1; i < fkJoinNodes.size(); i++) {
-                    String currentColName = fkJoinNodes.get(i).getRefCols();
+                    String currentColName = fkJoinNodes.get(i).getLocalCols();
                     if (!graph.containsVertex(currentColName)) {
                         graph.addVertex(currentColName);
                     }
@@ -182,7 +182,7 @@ public class DataGenerator implements Callable<Integer> {
     private void generateFksNoConstraints(Map<String, long[]> fkCol2Values, SortedMap<String, Long> allFk2TableSize, int range) {
         for (Map.Entry<String, Long> fk2TableSize : allFk2TableSize.entrySet()) {
             if (!fkCol2Values.containsKey(fk2TableSize.getKey())) {
-                long[] fks = ThreadLocalRandom.current().longs(fk2TableSize.getValue()).limit(range).toArray();
+                long[] fks = ThreadLocalRandom.current().longs(range, 0, fk2TableSize.getValue()).toArray();
                 fkCol2Values.put(fk2TableSize.getKey(), fks);
             }
         }
@@ -201,6 +201,25 @@ public class DataGenerator implements Callable<Integer> {
         return Arrays.stream(pkStatusChainIndexes).boxed().toList();
     }
 
+    private void generateTableWithoutChains(long tableSize, String schemaName) throws InterruptedException {
+        while (batchStart < tableSize) {
+            int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
+            //生成属性列数据
+            ColumnManager.getInstance().prepareGeneration(range, true);
+            String[] attRows = ColumnManager.getInstance().generateAttRows(range);
+            List<StringBuilder> rowData = new ArrayList<>();
+            for (int i = 0; i < range; i++) {
+                rowData.add(new StringBuilder().append(batchStart).append(",").append(attRows[i]));
+            }
+            dataWriter.addWriteTask(schemaName, rowData);
+            batchStart += range + stepRange;
+        }
+        if (dataWriter.waitWriteFinish()) {
+            logger.info("输出表数据{}完成", schemaName);
+            dataWriter.reset();
+        }
+    }
+
     @Override
     public Integer call() throws Exception {
         init();
@@ -215,6 +234,10 @@ public class DataGenerator implements Callable<Integer> {
             ColumnManager.getInstance().cacheAttributeColumn(attColumnNames);
             // 获得所有约束链
             List<ConstraintChain> allChains = schema2chains.get(schemaName);
+            if (allChains == null) {
+                generateTableWithoutChains(tableSize, schemaName);
+                continue;
+            }
             // 设置chain的索引
             for (int i = 0; i < allChains.size(); i++) {
                 allChains.get(i).setChainIndex(i);
@@ -234,10 +257,10 @@ public class DataGenerator implements Callable<Integer> {
                 int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
                 //生成属性列数据
                 ColumnManager.getInstance().prepareGeneration(range, true);
-                // 生成每一行的
-                boolean[][] statusVectorOfEachRow = generateStatusViewOfEachRow(allChains, range);
                 //转换为字符串准备输出
                 Future<String[]> futureRowData = attTransferService.submit(() -> ColumnManager.getInstance().generateAttRows(range));
+                // 生成每一行的
+                boolean[][] statusVectorOfEachRow = generateStatusViewOfEachRow(allChains, range);
                 Map<String, long[]> fkCol2Values = generateFks(statusVectorOfEachRow, fkGenerators, fkGroups);
                 generateFksNoConstraints(fkCol2Values, allFk2TableSize, range);
                 List<StringBuilder> rowData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, range, pkName);

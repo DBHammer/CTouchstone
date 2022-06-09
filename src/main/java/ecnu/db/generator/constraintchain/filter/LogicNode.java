@@ -2,13 +2,12 @@ package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
+import ecnu.db.generator.constraintchain.filter.operation.MultiVarFilterOperation;
+import ecnu.db.generator.constraintchain.filter.operation.RangeFilterOperation;
+import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -32,9 +31,10 @@ public class LogicNode extends BoolExprNode {
         return children.stream().anyMatch(BoolExprNode::hasKeyColumn);
     }
 
+
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
-        List<AbstractFilterOperation> operations = new ArrayList<>();
+        List<List<AbstractFilterOperation>> operationsOfTrees = new ArrayList<>();
         // 如果当前节点为 OR 且 概率不为 1， 则反转该树为AND
         boolean hasReverse = false;
         if (getRealType() == OR) {
@@ -44,28 +44,63 @@ public class LogicNode extends BoolExprNode {
         }
 
         boolean allTrue = true;
-        int onlyNoEqlOperations = 0;
+        List<Integer> onlyNoEqlOperations = new ArrayList<>();
         for (int index = 0; index < children.size(); index++) {
             BoolExprNode child = children.get(index);
             if (child.isTrue()) {
                 List<AbstractFilterOperation> subOperations = child.pushDownProbability(BigDecimal.ONE);
                 if (subOperations.stream().noneMatch(operation -> operation.getOperator().isEqual())) {
-                    onlyNoEqlOperations = index;
+                    onlyNoEqlOperations.add(index);
                 }
-                operations.addAll(subOperations);
+                operationsOfTrees.add(subOperations);
             } else {
                 allTrue = false;
-                operations.addAll(child.pushDownProbability(probability));
+                operationsOfTrees.add(child.pushDownProbability(probability));
             }
         }
-        if (allTrue) {
-            operations.removeAll(children.get(onlyNoEqlOperations).pushDownProbability(BigDecimal.ONE));
-            operations.addAll(onlyNoEqlOperations, children.get(onlyNoEqlOperations).pushDownProbability(probability));
+        if (allTrue && probability.compareTo(BigDecimal.ONE) < 0) {
+            boolean needToDealBetween = true;
+            if (onlyNoEqlOperations.isEmpty()) {
+                operationsOfTrees.set(0, children.get(0).pushDownProbability(probability));
+                needToDealBetween = false;
+            }
+            Map<String, List<Integer>> col2TreeIndex = new HashMap<>();
+            for (Integer onlyNoEqlOperation : onlyNoEqlOperations) {
+                List<AbstractFilterOperation> operations = operationsOfTrees.get(onlyNoEqlOperation);
+                if (operations.size() > 1 || operations.get(0) instanceof MultiVarFilterOperation) {
+                    operationsOfTrees.set(onlyNoEqlOperation, children.get(onlyNoEqlOperation).pushDownProbability(probability));
+                    needToDealBetween = false;
+                    break;
+                } else {
+                    UniVarFilterOperation uniFilter = (UniVarFilterOperation) operations.get(0);
+                    col2TreeIndex.computeIfAbsent(uniFilter.getCanonicalColumnName(), v -> new ArrayList<>());
+                    col2TreeIndex.get(uniFilter.getCanonicalColumnName()).add(onlyNoEqlOperation);
+                }
+            }
+            if (needToDealBetween) {
+                assert col2TreeIndex.values().stream().noneMatch(index -> index.size() > 2);
+                List<Integer> indexes = col2TreeIndex.values().stream().filter(index -> index.size() == 1).findFirst().orElse(null);
+                if (indexes != null) {
+                    int treeIndex = indexes.get(0);
+                    operationsOfTrees.set(treeIndex, children.get(treeIndex).pushDownProbability(probability));
+                } else {
+                    indexes = col2TreeIndex.values().stream().toList().get(0);
+                    UniVarFilterOperation leftOperation = (UniVarFilterOperation) operationsOfTrees.get(indexes.get(0)).get(0);
+                    UniVarFilterOperation rightOperation = (UniVarFilterOperation) operationsOfTrees.get(indexes.get(1)).get(0);
+                    if (rightOperation.getOperator().isLess()) {
+                        operationsOfTrees.set(indexes.get(1), Collections.singletonList(new RangeFilterOperation(rightOperation, leftOperation, probability)));
+                    } else {
+                        operationsOfTrees.set(indexes.get(1), Collections.singletonList(new RangeFilterOperation(leftOperation, rightOperation, probability)));
+                    }
+                    operationsOfTrees.remove(indexes.get(0).intValue());
+
+                }
+            }
         }
         if (hasReverse) {
             this.reverse();
         }
-        return operations;
+        return operationsOfTrees.stream().flatMap(Collection::stream).toList();
     }
 
     public void removeOtherTablesOperation(String tableName) {

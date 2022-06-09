@@ -6,10 +6,9 @@ import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
-import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.GE;
@@ -27,13 +26,9 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         super(null);
     }
 
-    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator, List<Parameter> parameters)
-            throws IllegalQueryColumnNameException {
+    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator, List<Parameter> parameters) {
         super(operator);
         this.canonicalColumnName = canonicalColumnName;
-        if (CommonUtils.isNotCanonicalColumnName(canonicalColumnName)) {
-            throw new IllegalQueryColumnNameException();
-        }
         this.parameters = parameters;
     }
 

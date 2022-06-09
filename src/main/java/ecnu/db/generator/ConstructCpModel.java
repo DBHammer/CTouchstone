@@ -33,7 +33,7 @@ public class ConstructCpModel {
             long[][] rowCountForEachStatus = new long[filterStatusCount][pkStatusCount];
             for (int filterIndex = 0; filterIndex < filterStatusCount; filterIndex++) {
                 for (int pkStatusIndex = 0; pkStatusIndex < pkStatusCount; pkStatusIndex++) {
-                    rowCountForEachStatus[filterIndex][pkStatusCount] = solver.value(vars[filterIndex][pkStatusIndex]);
+                    rowCountForEachStatus[filterIndex][pkStatusIndex] = solver.value(vars[filterIndex][pkStatusIndex]);
                 }
             }
             return rowCountForEachStatus;

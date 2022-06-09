@@ -57,7 +57,8 @@ public class FkGenerator {
         }
         // 计算联合status
         jointPkStatus = getPkJointStatus(pkCol2AllStatus);
-        chainNodesList.stream().filter(ConstraintChainFkJoinNode.class::isInstance)
+        chainNodesList.stream().flatMap(Collection::stream)
+                .filter(ConstraintChainFkJoinNode.class::isInstance)
                 .map(ConstraintChainFkJoinNode.class::cast).forEach(node -> node.initJoinResultStatus(jointPkStatus));
         // 计算输出的status
         outputStatusForEachPk = computeOutputStatus(fkConstrainChains.size());
@@ -227,12 +228,12 @@ public class FkGenerator {
 
     private JoinStatus[] computeOutputStatus(int allChainSize) {
         JoinStatus[] outputStatus = new JoinStatus[jointPkStatus.length];
-        for (int j = 0; j < outputStatusForEachPk.length; j++) {
+        for (int j = 0; j < outputStatus.length; j++) {
             boolean[] status = new boolean[allChainSize];
             Arrays.fill(status, true);
-            outputStatusForEachPk[j] = new JoinStatus(status);
+            outputStatus[j] = new JoinStatus(status);
         }
-        for (int pkStatusIndex = 0; pkStatusIndex < outputStatusForEachPk.length; pkStatusIndex++) {
+        for (int pkStatusIndex = 0; pkStatusIndex < outputStatus.length; pkStatusIndex++) {
             for (int currentChainIndex = 0; currentChainIndex < involvedChainIndexes.size(); currentChainIndex++) {
                 List<ConstraintChainFkJoinNode> chainFkJoinNodes = chainNodesList.get(currentChainIndex).stream()
                         .filter(ConstraintChainFkJoinNode.class::isInstance).map(ConstraintChainFkJoinNode.class::cast).toList();
@@ -242,7 +243,7 @@ public class FkGenerator {
                     status &= pkStatusOfRow[chainFkJoinNode.joinStatusIndex].status()[chainFkJoinNode.joinStatusLocation];
                 }
                 int chainIndex = involvedChainIndexes.get(currentChainIndex);
-                outputStatusForEachPk[pkStatusIndex].status()[chainIndex] = status;
+                outputStatus[pkStatusIndex].status()[chainIndex] = status;
             }
         }
         return outputStatus;
@@ -264,7 +265,7 @@ public class FkGenerator {
         for (ConstraintChainFkJoinNode fkNode : involvedFkNodes) {
             involvedFkCol2JoinTags.get(fkNode.getLocalCols()).add(fkNode.getPkTag());
             fkNode.joinStatusIndex = fkCols.indexOf(fkNode.getLocalCols());
-            if (fkNode.getPkDistinctProbability().compareTo(BigDecimal.ZERO) > 0) {
+            if (fkNode.getPkDistinctProbability() != null) {
                 distinctFkIndex2Cardinality.put(fkNode.joinStatusIndex, 0L);
             }
         }
