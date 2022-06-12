@@ -5,6 +5,7 @@ public enum ConstraintNodeJoinType {
     OUTER_JOIN,
     INNER_JOIN,
     ANTI_JOIN,
+    // 在获取约束时处理
     ANTI_SEMI_JOIN;
 
     public boolean isSemi() {
@@ -12,7 +13,7 @@ public enum ConstraintNodeJoinType {
     }
 
     public boolean isAnti() {
-        return this == ANTI_SEMI_JOIN || this == ANTI_JOIN;
+        return this == ANTI_JOIN;
     }
 
     public boolean hasCardinalityConstraint() {
