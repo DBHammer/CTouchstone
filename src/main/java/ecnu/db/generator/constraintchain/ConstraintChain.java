@@ -196,20 +196,6 @@ public class ConstraintChain {
         return graph;
     }
 
-    @JsonIgnore
-    public int getJoinTag() {
-        int joinTag = Integer.MIN_VALUE;
-        for (ConstraintChainNode node : nodes) {
-            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
-                if (joinTag == Integer.MIN_VALUE) {
-                    joinTag = ((ConstraintChainPkJoinNode) node).getPkTag();
-                } else {
-                    throw new UnsupportedOperationException(rb.getString("DoublePKInConstraintChain"));
-                }
-            }
-        }
-        return joinTag;
-    }
 
     public void setChainIndex(int chainIndex) {
         this.chainIndex = chainIndex;
