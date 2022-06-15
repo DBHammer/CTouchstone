@@ -4,6 +4,7 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,12 +15,17 @@ public class RangeFilterOperation extends UniVarFilterOperation {
     private final CompareOperator leftOperator;
     private final CompareOperator rightOperator;
 
+    private final Parameter rightParameter;
+
     public RangeFilterOperation(UniVarFilterOperation leftOperation, UniVarFilterOperation rightOperation, BigDecimal probability) {
-        super(leftOperation.canonicalColumnName, CompareOperator.EQ, leftOperation.parameters);
-        this.parameters.addAll(rightOperation.parameters);
+        super(leftOperation.canonicalColumnName, CompareOperator.EQ, new ArrayList<>(leftOperation.parameters));
         leftOperator = leftOperation.operator;
         rightOperator = rightOperation.operator;
-        assert parameters.size() == 2;
+        assert parameters.size() == 1;
+        if (rightOperation.getParameters().size() > 1) {
+            throw new IllegalArgumentException();
+        }
+        this.rightParameter = rightOperation.getParameters().get(0);
         this.probability = probability;
     }
 
@@ -32,13 +38,14 @@ public class RangeFilterOperation extends UniVarFilterOperation {
 
     @Override
     public void amendParameters() {
-        if (leftOperator == GT) {
-            Parameter leftParameter = parameters.get(0);
-            leftParameter.setData(leftParameter.getData() - 1);
-        }
+        long leftData = parameters.get(0).getData();
         if (rightOperator == LT) {
-            Parameter rightParameter = parameters.get(1);
-            rightParameter.setData(rightParameter.getData() + 1);
+            rightParameter.setData(leftData + 1);
+        } else {
+            rightParameter.setData(leftData);
+        }
+        if (leftOperator == GT) {
+            parameters.get(0).setData(leftData - 1);
         }
         for (Parameter parameter : parameters) {
             String value = ColumnManager.getInstance().getColumn(canonicalColumnName).transferDataToValue(parameter.getData());

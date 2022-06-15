@@ -88,12 +88,11 @@ public class LogicNode extends BoolExprNode {
                     UniVarFilterOperation leftOperation = (UniVarFilterOperation) operationsOfTrees.get(indexes.get(0)).get(0);
                     UniVarFilterOperation rightOperation = (UniVarFilterOperation) operationsOfTrees.get(indexes.get(1)).get(0);
                     if (rightOperation.getOperator().isLess()) {
-                        operationsOfTrees.set(indexes.get(1), Collections.singletonList(new RangeFilterOperation(rightOperation, leftOperation, probability)));
-                    } else {
                         operationsOfTrees.set(indexes.get(1), Collections.singletonList(new RangeFilterOperation(leftOperation, rightOperation, probability)));
+                    } else {
+                        operationsOfTrees.set(indexes.get(1), Collections.singletonList(new RangeFilterOperation(rightOperation, leftOperation, probability)));
                     }
                     operationsOfTrees.remove(indexes.get(0).intValue());
-
                 }
             }
         }

@@ -59,20 +59,16 @@ class PushDownProbabilityTest {
     void getMultiOperationsTest() {
         List<AbstractFilterOperation> operations;
         operations = query2operations.get("19_1.sql_public.lineitem");
-        assertEquals(8, operations.size());
+        assertEquals(6, operations.size());
         assertEquals(0.01924177021, operations.get(0).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.lineitem");
-        assertEquals(8, operations.size());
+        assertEquals(6, operations.size());
         assertEquals(1.0, operations.get(1).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.lineitem");
-        assertEquals(8, operations.size());
-        assertEquals(0, operations.get(2).getProbability().doubleValue(), 0.0000001);
-
-        operations = query2operations.get("19_1.sql_public.lineitem");
-        assertEquals(8, operations.size());
-        assertEquals( 0.01924177021, operations.get(7).getProbability().doubleValue(), 0.0000001);
+        assertEquals(6, operations.size());
+        assertEquals(1.0, operations.get(2).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.part");
         assertEquals(10, operations.size());
@@ -92,7 +88,7 @@ class PushDownProbabilityTest {
 
         operations = query2operations.get("6_1.sql_public.lineitem");
         assertEquals(5, operations.size());
-        assertEquals(1.0, operations.get(1).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.0190413108, operations.get(1).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("6_1.sql_public.lineitem");
         assertEquals(5, operations.size());
@@ -101,9 +97,5 @@ class PushDownProbabilityTest {
         operations = query2operations.get("6_1.sql_public.lineitem");
         assertEquals(5, operations.size());
         assertEquals(1.0, operations.get(3).getProbability().doubleValue(), 0.0000001);
-
-        operations = query2operations.get("6_1.sql_public.lineitem");
-        assertEquals(5, operations.size());
-        assertEquals(0.0190413108, operations.get(4).getProbability().doubleValue(), 0.0000001);
     }
 }
