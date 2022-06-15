@@ -98,21 +98,22 @@ public class DataGenerator implements Callable<Integer> {
 
     private List<List<String>> classifyFkDependency(List<ConstraintChain> haveFkConstrainChains) {
         Graph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        HashSet<String> allFkCols = new HashSet<>();
+        for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
+            for (ConstraintChainFkJoinNode fkJoinNode : haveFkConstrainChain.getFkNodes()) {
+                allFkCols.add(fkJoinNode.getLocalCols());
+            }
+        }
+        for (String fkCol : allFkCols) {
+            graph.addVertex(fkCol);
+        }
         for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
             List<ConstraintChainFkJoinNode> fkJoinNodes = haveFkConstrainChain.getFkNodes();
-            if (fkJoinNodes.size() > 1) {
-                String lastColName = fkJoinNodes.get(0).getLocalCols();
-                if (!graph.containsVertex(lastColName)) {
-                    graph.addVertex(lastColName);
-                }
-                for (int i = 1; i < fkJoinNodes.size(); i++) {
-                    String currentColName = fkJoinNodes.get(i).getLocalCols();
-                    if (!graph.containsVertex(currentColName)) {
-                        graph.addVertex(currentColName);
-                    }
-                    graph.addEdge(lastColName, currentColName);
-                    lastColName = currentColName;
-                }
+            String lastColName = fkJoinNodes.get(0).getLocalCols();
+            for (int i = 1; i < fkJoinNodes.size(); i++) {
+                String currentColName = fkJoinNodes.get(i).getLocalCols();
+                graph.addEdge(lastColName, currentColName);
+                lastColName = currentColName;
             }
         }
         List<Set<String>> fkSets = new KosarajuStrongConnectivityInspector<>(graph).stronglyConnectedSets();
@@ -149,6 +150,10 @@ public class DataGenerator implements Callable<Integer> {
         //处理不需要外键填充的主键状态
         List<StringBuilder> rowData = new ArrayList<>();
         if (!pkHistogram.isEmpty()) {
+            logger.info("{}的状态表为", pkName);
+            for (Map.Entry<JoinStatus, Long> joinStatusLongEntry : pkHistogram.entrySet()) {
+                logger.info("size:{}, status:{}", joinStatusLongEntry.getValue(), joinStatusLongEntry.getKey().status());
+            }
             var pkStatus2Location = RuleTableManager.getInstance().addRuleTable(pkName, pkHistogram, batchStart);
             for (int i = 0; i < range; i++) {
                 JoinStatus status = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[i], pkStatusChainIndexes);
@@ -189,16 +194,15 @@ public class DataGenerator implements Callable<Integer> {
     }
 
     private List<Integer> getPkStatusChainIndexes(List<ConstraintChain> allChains) {
-        int pkJoinTagsNum = (int) allChains.stream().filter(ConstraintChain::hasPkNode).count();
-        int[] pkStatusChainIndexes = new int[pkJoinTagsNum];
+        TreeMap<Integer, Integer> pkJoinTag2ChainIndex = new TreeMap<>();
         for (ConstraintChain constraintChain : allChains) {
             for (ConstraintChainNode node : constraintChain.getNodes()) {
                 if (node instanceof ConstraintChainPkJoinNode pkJoinNode) {
-                    pkStatusChainIndexes[pkJoinNode.getPkTag()] = constraintChain.getChainIndex();
+                    pkJoinTag2ChainIndex.put(pkJoinNode.getPkTag(), constraintChain.getChainIndex());
                 }
             }
         }
-        return Arrays.stream(pkStatusChainIndexes).boxed().toList();
+        return pkJoinTag2ChainIndex.values().stream().toList();
     }
 
     private void generateTableWithoutChains(long tableSize, String schemaName) throws InterruptedException {
@@ -249,7 +253,7 @@ public class DataGenerator implements Callable<Integer> {
             SortedMap<String, Long> allFk2TableSize = TableManager.getInstance().getFk2PkTableSize(schemaName);
             FkGenerator[] fkGenerators = new FkGenerator[fkGroups.size()];
             for (int i = 0; i < fkGenerators.length; i++) {
-                fkGenerators[i] = new FkGenerator(haveFkConstrainChains, fkGroups.get(i), tableSize);
+                fkGenerators[i] = new FkGenerator(allChains, fkGroups.get(i), tableSize);
             }
             List<Integer> pkStatusChainIndexes = getPkStatusChainIndexes(allChains);
             // 开始生成

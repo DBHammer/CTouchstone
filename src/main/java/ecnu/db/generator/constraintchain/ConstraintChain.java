@@ -1,7 +1,6 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
@@ -48,9 +47,9 @@ public class ConstraintChain {
     }
 
     private boolean involvedNode(ConstraintChainNode node, List<String> fkCols) {
-        // todo 处理复合的groupby key
         boolean involvedFk = node instanceof ConstraintChainFkJoinNode fkNode && fkCols.contains(fkNode.getLocalCols());
-        boolean involvedAgg = node instanceof ConstraintChainAggregateNode aggNode && fkCols.contains(aggNode.getGroupKey().get(0));
+        // todo 处理复合的groupby key
+        boolean involvedAgg = node instanceof ConstraintChainAggregateNode aggNode && aggNode.getGroupKey() != null && fkCols.contains(aggNode.getGroupKey().get(0));
         return involvedFk || involvedAgg;
     }
 
@@ -65,9 +64,6 @@ public class ConstraintChain {
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-
-    @JsonIgnore
-    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     @JsonIgnore
     public List<Parameter> getParameters() {
@@ -100,10 +96,6 @@ public class ConstraintChain {
 
     public boolean hasFkNode() {
         return nodes.stream().anyMatch(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN);
-    }
-
-    public boolean hasPkNode() {
-        return nodes.stream().anyMatch(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN);
     }
 
     @JsonIgnore
