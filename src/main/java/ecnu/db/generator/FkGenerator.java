@@ -279,7 +279,7 @@ public class FkGenerator {
         List<ConstraintChainAggregateNode> involvedAggNodes = chainNodesList.stream().flatMap(Collection::stream)
                 .filter(ConstraintChainAggregateNode.class::isInstance).map(ConstraintChainAggregateNode.class::cast).toList();
         for (ConstraintChainAggregateNode aggregateNode : involvedAggNodes) {
-            String groupKey = aggregateNode.getGroupKey().toString();
+            String groupKey = aggregateNode.getGroupKey().get(0);
             var fkNode = involvedFkNodes.stream().filter(node -> node.getLocalCols().equals(groupKey)).findAny();
             if (fkNode.isPresent()) {
                 aggregateNode.joinStatusIndex = fkNode.get().joinStatusIndex;
