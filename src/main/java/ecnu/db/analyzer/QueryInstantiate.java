@@ -191,6 +191,7 @@ public class QueryInstantiate implements Callable<Integer> {
         ColumnManager.getInstance().loadColumnMetaData();
         //载入约束链，并进行transform
         ConstraintChainManager.getInstance().setResultDir(configPath);
+        ColumnManager.getInstance().loadColumnName2IdList();
         query2constraintChains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
     }
 

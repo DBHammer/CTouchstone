@@ -26,6 +26,8 @@ public class Distribution {
 
     private final long range;
 
+    private List<List<Integer>> idList = new ArrayList<>();
+
     public Distribution(BigDecimal nullPercentage, long range) {
         this.range = range;
         // 初始化pvAndPbList 插入pve
@@ -77,26 +79,37 @@ public class Distribution {
         }
     }
 
-    public BigDecimal reusePb(List<Parameter> tempParameterList, List<BigDecimal> hasUsedEqRange, BigDecimal probability) {
-        TreeMap<BigDecimal, BigDecimal> rangePb2CDFBound = new TreeMap<>();
-        for (var currentCDF2Pb : pvAndPbList.entrySet()) {
-            if (!isNonEqualRange(currentCDF2Pb.getValue())) {
-                rangePb2CDFBound.put(getRange(currentCDF2Pb.getKey()), currentCDF2Pb.getKey());
+    private BigDecimal subReuse(List<Integer> containIdList, BigDecimal probability, Parameter parameter) {
+        for (Integer paraId : containIdList) {
+            for (Map.Entry<BigDecimal, List<Parameter>> pb2pvList : pvAndPbList.entrySet()) {
+                for (Parameter assignParameter : pb2pvList.getValue()) {
+                    if (Objects.equals(assignParameter.getId(), paraId)) {
+                        pb2pvList.getValue().add(parameter);
+                        return probability.subtract(getRange(pb2pvList.getKey()));
+                    }
+                }
             }
         }
-        BigDecimal assignRange = rangePb2CDFBound.floorKey(probability);
-        while (assignRange != null) {
-            // 如果只剩下最后一个无法复用的range，则退出
-            boolean canNotAssign = probability.compareTo(assignRange) < 0;
-            boolean withoutRemain = tempParameterList.size() == 1 && probability.compareTo(assignRange) > 0;
-            if (canNotAssign || withoutRemain) {
+        return probability;
+    }
+
+    public BigDecimal reusePb(List<Parameter> tempParameterList, BigDecimal probability) {
+        var parIter = tempParameterList.iterator();
+        while (parIter.hasNext()) {
+            Parameter parameter = parIter.next();
+            int id = parameter.getId();
+            List<Integer> containIdList = idList.stream().filter(list -> list.contains(id)).findAny().orElse(null);
+            if (containIdList == null) {
+                continue;
+            }
+            BigDecimal tempProbability = subReuse(containIdList, probability, parameter);
+            if (tempProbability.compareTo(probability) < 0) {
+                probability = tempProbability;
+                parIter.remove();
+            }
+            if (BigDecimal.ZERO.compareTo(probability) == 0) {
                 break;
             }
-            probability = probability.subtract(assignRange);
-            BigDecimal cdfBound = rangePb2CDFBound.remove(assignRange);
-            pvAndPbList.get(cdfBound).add(tempParameterList.remove(0));
-            hasUsedEqRange.add(cdfBound);
-            assignRange = rangePb2CDFBound.floorKey(probability);
         }
         return probability;
     }
@@ -118,13 +131,30 @@ public class Distribution {
         }
     }
 
+
+    private boolean canBeReused(List<Parameter> parameters) {
+        for (Parameter parameter : parameters) {
+            for (List<Integer> integers : idList) {
+                if (integers.contains(parameter.getId())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) throws TouchstoneException {
         adjustNullPercentage(probability, parameters);
         List<Parameter> tempParameterList = new LinkedList<>(parameters);
-        List<BigDecimal> hasUsedEqRange = new LinkedList<>();
+        // 如果没有剩余的请求，则返回
+        if (probability.compareTo(BigDecimal.ZERO) == 0) {
+            tempParameterList.forEach(parameter -> parameter.setData(-1));
+            return;
+        }
         // 如果有某个参数拒绝重用，则直接进行贪心寻range
         if (tempParameterList.stream().allMatch(Parameter::isCanMerge)) {
-            probability = reusePb(tempParameterList, hasUsedEqRange, probability);
+            probability = reusePb(tempParameterList, probability);
         }
         // 如果没有剩余的请求，则返回
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
@@ -138,7 +168,7 @@ public class Distribution {
         for (var currentCDF : pvAndPbList.entrySet()) {
             BigDecimal currentRange = getRange(currentCDF.getKey());
             // 当前空间可以被完全利用
-            if (currentRange.compareTo(probability) == 0 && !hasUsedEqRange.contains(currentCDF.getKey())) {
+            if (currentRange.compareTo(probability) == 0 && canBeReused(currentCDF.getValue())) {
                 currentCDF.getValue().addAll(tempParameterList);
                 return;
             } else {
@@ -156,7 +186,15 @@ public class Distribution {
         // 如果没有找到
         if (minCDF.compareTo(BigDecimal.ZERO) == 0) {
             throw new TouchstoneException("不存在可以放置的range");
-        } else {
+        } else if (tempParameterList.stream().anyMatch(Parameter::isCanMerge)) {
+            BigDecimal eachPb = probability.divide(BigDecimal.valueOf(tempParameterList.size()), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            for (Parameter parameter : tempParameterList) {
+                BigDecimal remainCapacity = minRange.subtract(eachPb);
+                BigDecimal eqCDf = minCDF.subtract(remainCapacity);
+                pvAndPbList.put(eqCDf, new LinkedList<>(Collections.singletonList(parameter)));
+                minRange = remainCapacity;
+            }
+        } else if (!tempParameterList.isEmpty()) {
             BigDecimal remainCapacity = minRange.subtract(probability);
             BigDecimal eqCDf = minCDF.subtract(remainCapacity);
             pvAndPbList.put(eqCDf, new LinkedList<>(tempParameterList));
@@ -334,5 +372,10 @@ public class Distribution {
 
     public void setParaData2Probability(SortedMap<Long, BigDecimal> paraData2Probability) {
         this.paraData2Probability = paraData2Probability;
+    }
+
+
+    public void setIdList(List<List<Integer>> idList) {
+        this.idList = idList;
     }
 }

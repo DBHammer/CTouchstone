@@ -8,11 +8,12 @@ import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.GE;
-import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.LT;
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.*;
 
 
 /**
@@ -48,6 +49,33 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     @Override
     public boolean hasKeyColumn() {
         return TableManager.getInstance().isPrimaryKey(canonicalColumnName) || TableManager.getInstance().isForeignKey(canonicalColumnName);
+    }
+
+    @Override
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
+        if (operator != IN && operator != EQ) {
+            return;
+        }
+        for (Parameter parameter : parameters) {
+            String dataValue = parameter.getDataValue();
+            if (column2Value2ParameterList.containsKey(canonicalColumnName)) {
+                Map<String, List<Integer>> dataValue2ID = column2Value2ParameterList.get(canonicalColumnName);
+                if (dataValue2ID.containsKey(dataValue)) {
+                    List<Integer> idList = dataValue2ID.get(dataValue);
+                    idList.add(parameter.getId());
+                } else {
+                    List<Integer> idList = new ArrayList<>();
+                    idList.add(parameter.getId());
+                    dataValue2ID.put(dataValue, idList);
+                }
+            } else {
+                Map<String, List<Integer>> dataValue2ID = new HashMap<>();
+                List<Integer> idList = new ArrayList<>();
+                idList.add(parameter.getId());
+                dataValue2ID.put(dataValue, idList);
+                column2Value2ParameterList.put(canonicalColumnName, dataValue2ID);
+            }
+        }
     }
 
     @Override

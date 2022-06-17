@@ -11,6 +11,7 @@ import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author alan
@@ -50,6 +51,10 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
     }
 
     @Override

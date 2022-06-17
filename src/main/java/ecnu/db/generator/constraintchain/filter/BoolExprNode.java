@@ -5,7 +5,9 @@ import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperatio
 import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author wangqingshuai
@@ -27,6 +29,8 @@ public abstract class BoolExprNode {
      * @param probability 当前节点的总概率
      */
     protected abstract List<AbstractFilterOperation> pushDownProbability(BigDecimal probability);
+
+    public abstract void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList);
 
     /**
      * 获得当前布尔表达式节点的类型

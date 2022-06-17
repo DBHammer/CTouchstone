@@ -14,6 +14,7 @@ import ecnu.db.dbconnector.adapter.Tidb3Connector;
 import ecnu.db.dbconnector.adapter.Tidb4Connector;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
+import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
@@ -48,6 +49,8 @@ public class TaskConfigurator implements Callable<Integer> {
     private TaskConfiguratorConfig taskConfiguratorConfig;
     private static final String WORKLOAD_DIR = "/workload";
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+
+    private static final HashMap<String, Map<String, List<Integer>>> columnName2ParameterID = new HashMap<>();
 
     @Override
     public Integer call() throws Exception {
@@ -200,11 +203,13 @@ public class TaskConfigurator implements Callable<Integer> {
                     } else {
                         query2constraintChains.put(queryCanonicalName, constraintChains);
                     }
+                    buildColumnName2ParameterID(constraintChains);
                     parameters.addAll(constraintChains.stream().flatMap((c -> c.getParameters().stream())).toList());
                 }
                 queryName2QueryTemplates.put(queryCanonicalName, queryWriter.templatizeSql(queryCanonicalName, query, parameters));
             }
         }
+        writeWithoutParameterValue();
         logger.info(rb.getString("GetQueryPlanDone"));
         logger.info(rb.getString("StartPersistingTableReferenceInformation"));
         TableManager.getInstance().storeSchemaInfo();
@@ -216,6 +221,23 @@ public class TaskConfigurator implements Callable<Integer> {
         logger.info(rb.getString("StartQueryTemplating"));
         writeTemplateQuery(queryName2QueryTemplates, resultDir);
         logger.info(rb.getString("FillInTheQueryTemplateComplete"));
+    }
+
+    private void writeWithoutParameterValue() throws IOException {
+        Map<String, List<List<Integer>>> column2IdList = new HashMap<>();
+        for (Map.Entry<String, Map<String, List<Integer>>> column2ID : columnName2ParameterID.entrySet()) {
+            column2IdList.put(column2ID.getKey(), column2ID.getValue().values().stream().toList());
+        }
+        ColumnManager.getInstance().storeColumnName2IdList(column2IdList);
+    }
+
+    private void buildColumnName2ParameterID(List<ConstraintChain> constraintChains) {
+        for (ConstraintChain constraintChain : constraintChains) {
+            ConstraintChainNode node = constraintChain.getNodes().get(0);
+            if (node instanceof ConstraintChainFilterNode filterNode) {
+                filterNode.getRoot().getColumn2ParameterBucket(columnName2ParameterID);
+            }
+        }
     }
 
     public void writeTemplateQuery(Map<String, String> queryName2QueryTemplates, String resultDir) throws IOException {

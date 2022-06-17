@@ -13,9 +13,7 @@ import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -114,6 +112,10 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     @Override
     public boolean hasKeyColumn() {
         return hasKeyColumn(arithmeticTree);
+    }
+
+    @Override
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
     }
 
     private boolean hasKeyColumn(ArithmeticNode node) {

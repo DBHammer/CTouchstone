@@ -102,6 +102,14 @@ public class LogicNode extends BoolExprNode {
         return operationsOfTrees.stream().flatMap(Collection::stream).toList();
     }
 
+    @Override
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
+        if (children.size() == 1 && children.get(0) instanceof UniVarFilterOperation uniVarFilterOperation) {
+            uniVarFilterOperation.getColumn2ParameterBucket(column2Value2ParameterList);
+        }
+    }
+
+
     public void removeOtherTablesOperation(String tableName) {
         BoolExprNode root = this.children.get(0);
         if (root.getType() == AND) {
