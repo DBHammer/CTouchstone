@@ -198,6 +198,20 @@ public class ColumnManager {
         }
     }
 
+    public void storeColumnName2IdList(Map<String, List<List<Integer>>> columnName2IdList) throws IOException {
+        String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columnName2IdList);
+        CommonUtils.writeFile("result/column2IdList", content);
+    }
+    public void loadColumnName2IdList() throws IOException {
+        String content = CommonUtils.readFile("result/column2IdList");
+        Map<String, List<List<Integer>>> column2IdList = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        });
+        for (Map.Entry<String, List<List<Integer>>> stringListEntry : column2IdList.entrySet()) {
+            String columnName = stringListEntry.getKey();
+            List<List<Integer>> idList = stringListEntry.getValue();
+            columns.get(columnName).getDistribution().setIdList(idList);
+        }
+    }
     /**
      * 提取col的range信息(最大值，最小值)
      *
