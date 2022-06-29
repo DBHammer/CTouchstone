@@ -2,6 +2,7 @@ package ecnu.db.generator;
 
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
+import com.google.ortools.util.Domain;
 import ecnu.db.generator.joininfo.JoinStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,8 @@ public class ConstructCpModel {
     private IntVar[][] vars;
     private final Map<Integer, IntVar[][]> fkDistinctVars = new HashMap<>();
     private final List<IntVar> involvedVars = new LinkedList<>();
+
+    private final Map<Integer, Map<Integer, Set<IntVar>>> fkSharePkVars = new HashMap<>();
 
 
     static {
@@ -44,6 +47,7 @@ public class ConstructCpModel {
 
     public FkRange[][] getDistinctResult(int fkColsIndex) {
         // todo 根据ruletable 递增range的start
+        fkSharePkVars.clear();
         IntVar[][] distinctVars = fkDistinctVars.get(fkColsIndex);
         FkRange[][] fkRanges = new FkRange[distinctVars.length][distinctVars[0].length];
         for (int pkStatusIndex = 0; pkStatusIndex < fkRanges[0].length; pkStatusIndex++) {
@@ -57,8 +61,7 @@ public class ConstructCpModel {
         return fkRanges;
     }
 
-    public void initDistinctModel(int fkColIndex, long fkColCardinality, long fkTableSize,
-                                  Map<ArrayList<Integer>, Long> samePkStatusIndexes2Limitations) {
+    public void initDistinctModel(int fkColIndex, long fkColCardinality, long fkTableSize) {
         IntVar[][] distinctVars = new IntVar[vars.length][vars[0].length];
         // todo 用fk的最大重复次数来替代
         fkTableSize = (long) (fkTableSize * DISTINCT_FK_SKEW);
@@ -73,18 +76,22 @@ public class ConstructCpModel {
                 distinctVars[filterIndex][pkIndex] = distinctVar;
             }
         }
+        fkSharePkVars.put(fkColIndex, new HashMap<>());
+        fkDistinctVars.put(fkColIndex, distinctVars);
+    }
+
+    public void applyFKShareConstraint(int fkColIndex, Map<ArrayList<Integer>, Long> samePkStatusIndexes2Limitations) {
+        var pkIndex2IntVar = fkSharePkVars.get(fkColIndex);
         for (var pkIndexes2Limitation : samePkStatusIndexes2Limitations.entrySet()) {
             var samePkStatusIndexes = pkIndexes2Limitation.getKey();
-            IntVar[] sameStatusDistinctVars = new IntVar[samePkStatusIndexes.size() * distinctVars.length];
-            int i = 0;
-            for (IntVar[] distinctVar : distinctVars) {
-                for (Integer pkIndex : samePkStatusIndexes) {
-                    sameStatusDistinctVars[i++] = distinctVar[pkIndex];
+            List<IntVar> sharedFk = new ArrayList<>();
+            for (Integer samePkStatusIndex : samePkStatusIndexes) {
+                if (pkIndex2IntVar.containsKey(samePkStatusIndex)) {
+                    sharedFk.addAll(pkIndex2IntVar.get(samePkStatusIndex));
                 }
             }
-            model.addLessOrEqual(LinearExpr.sum(sameStatusDistinctVars), pkIndexes2Limitation.getValue());
+            model.addLessOrEqual(LinearExpr.sum(sharedFk.toArray(new IntVar[0])), pkIndexes2Limitation.getValue());
         }
-        fkDistinctVars.put(fkColIndex, distinctVars);
     }
 
 
@@ -109,7 +116,11 @@ public class ConstructCpModel {
     }
 
     public void addJoinDistinctValidVar(int fkColIndex, int filterIndex, int pkStatusIndex) {
-        involvedVars.add(fkDistinctVars.get(fkColIndex)[filterIndex][pkStatusIndex]);
+        IntVar fkVar = fkDistinctVars.get(fkColIndex)[filterIndex][pkStatusIndex];
+        involvedVars.add(fkVar);
+        var pkIndex2IntVar = fkSharePkVars.get(fkColIndex);
+        pkIndex2IntVar.computeIfAbsent(pkStatusIndex, v -> new HashSet<>());
+        pkIndex2IntVar.get(pkStatusIndex).add(fkVar);
     }
 
     public void addJoinCardinalityValidVar(int filterIndex, int pkStatusIndex) {

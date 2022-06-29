@@ -69,10 +69,9 @@ public class FkGenerator {
     }
 
 
-    private void initDistinctModel(ConstructCpModel cpModel, int range) {
+    private void applySharePkConstraint(ConstructCpModel cpModel, int range) {
         BigDecimal batchPercentage = BigDecimal.valueOf(range).divide(BigDecimal.valueOf(tableSize), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
-        for (var distinctFkCol2Cardinality : distinctFkIndex2Cardinality.entrySet()) {
-            int distinctFKIndex = distinctFkCol2Cardinality.getKey();
+        for (var distinctFKIndex : distinctFkIndex2Cardinality.keySet()) {
             Map<JoinStatus, ArrayList<Integer>> status2PkIndex = new HashMap<>();
             for (int i = 0; i < jointPkStatus.length; i++) {
                 JoinStatus status = jointPkStatus[i][distinctFKIndex];
@@ -87,14 +86,16 @@ public class FkGenerator {
                 long batchPkStatusSize = bBatchPkStatusSize.setScale(0, RoundingMode.UP).longValue();
                 pkIndex2Size.put(statusArrayListEntry.getValue(), batchPkStatusSize);
             }
-            cpModel.initDistinctModel(distinctFKIndex, distinctFkCol2Cardinality.getValue(), tableSize, pkIndex2Size);
+            cpModel.applyFKShareConstraint(distinctFKIndex, pkIndex2Size);
         }
     }
 
     private ConstructCpModel constructConstraintProblem(Map<JoinStatus, Long> statusHistogram, int range) {
         ConstructCpModel constructCpModel = new ConstructCpModel();
         constructCpModel.initModel(statusHistogram, jointPkStatus.length, range);
-        initDistinctModel(constructCpModel, range);
+        for (var distinctFkCol2Cardinality : distinctFkIndex2Cardinality.entrySet()) {
+            constructCpModel.initDistinctModel(distinctFkCol2Cardinality.getKey(), distinctFkCol2Cardinality.getValue(), tableSize);
+        }
         for (int chainIndex = 0; chainIndex < chainNodesList.size(); chainIndex++) {
             boolean[][] canBeInput = new boolean[statusHistogram.size()][jointPkStatus.length];
             int i = 0;
@@ -115,6 +116,7 @@ public class FkGenerator {
                 }
             }
         }
+        applySharePkConstraint(constructCpModel, range);
         return constructCpModel;
     }
 
