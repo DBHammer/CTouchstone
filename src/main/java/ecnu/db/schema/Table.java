@@ -35,9 +35,9 @@ public class Table {
     }
 
     @JsonIgnore
-    public Set<String> getAttributeColumnNames() {
-        Set<String> canonicalColumnNamesNotKey = new HashSet<>(canonicalColumnNames);
-        primaryKeys.forEach(canonicalColumnNamesNotKey::remove);
+    public List<String> getAttributeColumnNames() {
+        List<String> canonicalColumnNamesNotKey = new ArrayList<>(canonicalColumnNames);
+        canonicalColumnNamesNotKey.removeAll(primaryKeys);
         canonicalColumnNamesNotKey.removeAll(foreignKeys.keySet());
         return canonicalColumnNamesNotKey;
     }

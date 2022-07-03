@@ -153,7 +153,7 @@ public class TableManager {
         return orderedSchemas;
     }
 
-    public Set<String> getAttributeColumnNames(String schemaName) throws CannotFindSchemaException {
+    public List<String> getAttributeColumnNames(String schemaName) throws CannotFindSchemaException {
         return getSchema(schemaName).getAttributeColumnNames();
     }
 

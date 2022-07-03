@@ -157,11 +157,11 @@ public class DataGenerator implements Callable<Integer> {
             var pkStatus2Location = RuleTableManager.getInstance().addRuleTable(pkName, pkHistogram, batchStart);
             for (int i = 0; i < range; i++) {
                 JoinStatus status = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[i], pkStatusChainIndexes);
-                rowData.add(new StringBuilder().append(pkStatus2Location.get(status).getAndIncrement()));
+                rowData.add(new StringBuilder().append(pkStatus2Location.get(status).getAndIncrement()).append(','));
             }
         } else if (!pkName.isEmpty()) {
             for (int i = 0; i < range; i++) {
-                rowData.add(new StringBuilder().append(batchStart + i));
+                rowData.add(new StringBuilder().append(batchStart + i).append(','));
             }
         } else {
             for (int i = 0; i < range; i++) {
@@ -234,7 +234,7 @@ public class DataGenerator implements Callable<Integer> {
             computeStepRange(tableSize);
             logger.info("开始输出表数据{}, 数据总量为{}", schemaName, tableSize);
             // 准备生成的属性列生成器
-            Set<String> attColumnNames = TableManager.getInstance().getAttributeColumnNames(schemaName);
+            List<String> attColumnNames = TableManager.getInstance().getAttributeColumnNames(schemaName);
             ColumnManager.getInstance().cacheAttributeColumn(attColumnNames);
             // 获得所有约束链
             List<ConstraintChain> allChains = schema2chains.get(schemaName);
@@ -272,9 +272,9 @@ public class DataGenerator implements Callable<Integer> {
                 IntStream.range(0, rowData.size()).parallel().forEach(index -> {
                     StringBuilder row = rowData.get(index);
                     for (long[] fks : fkCol2Values.values()) {
-                        row.append(",").append(fks[index]);
+                        row.append(fks[index]).append(",");
                     }
-                    row.append(",").append(attributeData[index]);
+                    row.append(attributeData[index]);
                 });
                 dataWriter.addWriteTask(schemaName, rowData);
                 batchStart += range + stepRange;
