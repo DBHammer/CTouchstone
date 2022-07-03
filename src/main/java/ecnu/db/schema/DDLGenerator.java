@@ -74,11 +74,12 @@ public class DDLGenerator implements Callable<Integer> {
             Map<String, String> foreignKeys = table.getForeignKeys();
             List<String> pks = new ArrayList<>(table.getPrimaryKeysList());
             if (!foreignKeys.isEmpty()) {
+                int indexIndex = 0;
                 for (Map.Entry<String, String> foreignKey : foreignKeys.entrySet()) {
                     pks.removeIf(pk -> pk.equals(foreignKey.getKey()));
                     String key = foreignKey.getKey().split("\\.")[2].toUpperCase();
                     String tableRef = foreignKey.getValue().split("\\.")[1].toUpperCase();
-                    String indexName = tableName.split("\\.")[1] + "_" + key.split("_")[1].toLowerCase();
+                    String indexName = tableName.split("\\.")[1] + "_" + key.split("_")[1].toLowerCase() + indexIndex++;
                     String simpleTableName = tableName.split("\\.")[1].toUpperCase();
                     addFks.add(String.format("ALTER TABLE %s ADD FOREIGN KEY (%s) references %s;%nCREATE INDEX %s on %s(%s);%n", simpleTableName, key, tableRef, indexName, simpleTableName, key));
                 }

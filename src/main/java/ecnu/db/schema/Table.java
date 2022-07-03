@@ -46,6 +46,12 @@ public class Table {
         return joinTag++;
     }
 
+    public void cleanPrimaryKey() {
+        while (primaryKeys.size() > 1) {
+            primaryKeys.remove(0);
+        }
+    }
+
 
     /**
      * 本表的列是否参照目标列
@@ -83,7 +89,6 @@ public class Table {
         if (foreignKeys == null) {
             foreignKeys = new HashMap<>(columnNames.length);
         }
-        List<String> newPrimaryKeys = new ArrayList<>(primaryKeys);
         for (int i = 0; i < columnNames.length; i++) {
             if (foreignKeys.containsKey(columnNames[i])) {
                 if (!(referencingTable + "." + refColumnNames[i]).equals(foreignKeys.get(columnNames[i]))) {
@@ -92,15 +97,9 @@ public class Table {
                     return;
                 }
             }
-            for (String primaryKey : primaryKeys) {
-                if(primaryKey.equals(localTable + "." + columnNames[i])){
-                    newPrimaryKeys.remove(primaryKey);
-                }
-            }
             foreignKeys.put(localTable + "." + columnNames[i], referencingTable + "." + refColumnNames[i]);
-            primaryKeys.remove(columnNames[i]);
+            primaryKeys.remove(localTable + "." + columnNames[i]);
         }
-        setPrimaryKeys(newPrimaryKeys);
     }
 
 

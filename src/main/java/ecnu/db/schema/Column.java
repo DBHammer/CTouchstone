@@ -171,6 +171,9 @@ public class Column {
     }
 
     public String transferDataToValue(long data) {
+        if (data == Long.MIN_VALUE) {
+            return "\\N";
+        }
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();

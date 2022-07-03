@@ -47,6 +47,8 @@ public class TableManager {
     }
 
     public void storeSchemaInfo() throws IOException {
+        // todo 假设主键是单列的
+        schemas.values().forEach(Table::cleanPrimaryKey);
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
         CommonUtils.writeFile(schemaInfoPath.getPath(), content);
     }

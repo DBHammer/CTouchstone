@@ -83,6 +83,9 @@ public class ColumnManager {
         ).toArray(String[]::new);
     }
 
+    public long getMin(String columnName){
+        return columns.get(columnName).getMin();
+    }
 
     public boolean[] evaluate(String columnName, CompareOperator operator, List<Parameter> parameters) {
         return columns.get(columnName).evaluate(operator, parameters);

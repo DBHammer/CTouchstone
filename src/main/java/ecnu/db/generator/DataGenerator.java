@@ -148,6 +148,7 @@ public class DataGenerator implements Callable<Integer> {
         Map<JoinStatus, Long> pkHistogram = FkGenerator.generateStatusHistogram(statusVectorOfEachRow, pkStatusChainIndexes);
 
         //处理不需要外键填充的主键状态
+        //todo 处理多列主键
         List<StringBuilder> rowData = new ArrayList<>();
         if (!pkHistogram.isEmpty()) {
             logger.info("{}的状态表为", pkName);
@@ -205,7 +206,7 @@ public class DataGenerator implements Callable<Integer> {
         return pkJoinTag2ChainIndex.values().stream().toList();
     }
 
-    private void generateTableWithoutChains(long tableSize, String schemaName) throws InterruptedException {
+    private void generateTableWithoutChains(long pkStart, long tableSize, String schemaName) throws InterruptedException {
         while (batchStart < tableSize) {
             int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
             //生成属性列数据
@@ -213,7 +214,7 @@ public class DataGenerator implements Callable<Integer> {
             String[] attRows = ColumnManager.getInstance().generateAttRows(range);
             List<StringBuilder> rowData = new ArrayList<>();
             for (int i = 0; i < range; i++) {
-                rowData.add(new StringBuilder().append(batchStart).append(",").append(attRows[i]));
+                rowData.add(new StringBuilder().append(batchStart + i + pkStart).append(",").append(attRows[i]));
             }
             dataWriter.addWriteTask(schemaName, rowData);
             batchStart += range + stepRange;
@@ -239,7 +240,8 @@ public class DataGenerator implements Callable<Integer> {
             // 获得所有约束链
             List<ConstraintChain> allChains = schema2chains.get(schemaName);
             if (allChains == null) {
-                generateTableWithoutChains(tableSize, schemaName);
+                // todo 当前假设主键是连续的
+                generateTableWithoutChains(ColumnManager.getInstance().getMin(pkName), tableSize, schemaName);
                 continue;
             }
             // 设置chain的索引
@@ -272,7 +274,12 @@ public class DataGenerator implements Callable<Integer> {
                 IntStream.range(0, rowData.size()).parallel().forEach(index -> {
                     StringBuilder row = rowData.get(index);
                     for (long[] fks : fkCol2Values.values()) {
-                        row.append(fks[index]).append(",");
+                        long fk = fks[index];
+                        if (fk == Long.MIN_VALUE) {
+                            row.append("\\N,");
+                        } else {
+                            row.append(fk).append(",");
+                        }
                     }
                     row.append(attributeData[index]);
                 });
