@@ -203,4 +203,16 @@ public abstract class DbConnector {
         }
         return sql.substring(0, sql.length() - 1);
     }
+
+    public List<String> getPrimaryKey(String canonicalTableName) throws SQLException {
+        String[] schemaAndTable = canonicalTableName.split("\\.");
+        List<String> primaryKeys = new ArrayList<>();
+        DatabaseMetaData databaseMetaData = conn.getMetaData();
+        ResultSet rs = databaseMetaData.getPrimaryKeys(null,schemaAndTable[0],schemaAndTable[1]);
+        while (rs.next()) {
+            String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
+            primaryKeys.add(canonicalColumnName);
+        }
+        return primaryKeys;
+    }
 }

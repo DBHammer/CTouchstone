@@ -122,6 +122,7 @@ public class TaskConfigurator implements Callable<Integer> {
             } else {
                 Table table = new Table(dbConnector.getColumnMetadata(canonicalTableName),
                         dbConnector.getTableSize(canonicalTableName));
+                table.setPrimaryKeys(dbConnector.getPrimaryKey(canonicalTableName));
                 TableManager.getInstance().addSchema(canonicalTableName, table);
                 logger.info(rb.getString("GetColumnMetadataSuccessfully"), canonicalTableName);
                 logger.info(rb.getString("StartGettingTheDataDistributionOfTable"), canonicalTableName);
