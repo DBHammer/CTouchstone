@@ -2,7 +2,6 @@ package ecnu.db.generator;
 
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
-import com.google.ortools.util.Domain;
 import ecnu.db.generator.joininfo.JoinStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +19,8 @@ public class ConstructCpModel {
     private final List<IntVar> involvedVars = new LinkedList<>();
 
     private final Map<Integer, Map<Integer, Set<IntVar>>> fkSharePkVars = new HashMap<>();
+
+    private final Map<Integer, List<List<IntVar>>> fkDistinctInvolvedVars = new HashMap<>();
 
 
     static {
@@ -45,17 +46,25 @@ public class ConstructCpModel {
         }
     }
 
-    public FkRange[][] getDistinctResult(int fkColsIndex) {
-        // todo 根据ruletable 递增range的start
-        fkSharePkVars.clear();
-        IntVar[][] distinctVars = fkDistinctVars.get(fkColsIndex);
-        FkRange[][] fkRanges = new FkRange[distinctVars.length][distinctVars[0].length];
-        for (int pkStatusIndex = 0; pkStatusIndex < fkRanges[0].length; pkStatusIndex++) {
+    public FkRange[][] getDistinctResult(int fkColIndex) {
+        var involvedFkVars = fkDistinctInvolvedVars.remove(fkColIndex);
+        FkRange[][] fkRanges = new FkRange[vars.length][vars[0].length];
+        for (List<IntVar> samePkStatusVars : involvedFkVars) {
             long start = 0L;
-            for (int filterIndex = 0; filterIndex < fkRanges.length; filterIndex++) {
-                long range = solver.value(distinctVars[filterIndex][pkStatusIndex]);
-                fkRanges[filterIndex][pkStatusIndex] = new FkRange(start, range);
+            for (IntVar samePkStatusVar : samePkStatusVars) {
+                long range = solver.value(samePkStatusVar);
+                String[] tags = samePkStatusVar.getName().split("-");
+                int filterIndex = Integer.parseInt(tags[1]);
+                int pkIndex = Integer.parseInt(tags[2]);
+                fkRanges[filterIndex][pkIndex] = new FkRange(start, range);
                 start += range;
+            }
+        }
+        for (int filterIndex = 0; filterIndex < vars.length; filterIndex++) {
+            for (int pkIndex = 0; pkIndex < vars[0].length; pkIndex++) {
+                if (fkRanges[filterIndex][pkIndex] == null) {
+                    fkRanges[filterIndex][pkIndex] = new FkRange(-1L, -1L);
+                }
             }
         }
         return fkRanges;
@@ -81,7 +90,8 @@ public class ConstructCpModel {
     }
 
     public void applyFKShareConstraint(int fkColIndex, Map<ArrayList<Integer>, Long> samePkStatusIndexes2Limitations) {
-        var pkIndex2IntVar = fkSharePkVars.get(fkColIndex);
+        var pkIndex2IntVar = fkSharePkVars.remove(fkColIndex);
+        fkDistinctInvolvedVars.put(fkColIndex, new ArrayList<>());
         for (var pkIndexes2Limitation : samePkStatusIndexes2Limitations.entrySet()) {
             var samePkStatusIndexes = pkIndexes2Limitation.getKey();
             List<IntVar> sharedFk = new ArrayList<>();
@@ -90,7 +100,11 @@ public class ConstructCpModel {
                     sharedFk.addAll(pkIndex2IntVar.get(samePkStatusIndex));
                 }
             }
-            model.addLessOrEqual(LinearExpr.sum(sharedFk.toArray(new IntVar[0])), pkIndexes2Limitation.getValue());
+            if (!sharedFk.isEmpty()) {
+                logger.info("pk size limit {}  for {}", pkIndexes2Limitation.getValue(), sharedFk);
+                fkDistinctInvolvedVars.get(fkColIndex).add(sharedFk);
+                model.addLessOrEqual(LinearExpr.sum(sharedFk.toArray(new IntVar[0])), pkIndexes2Limitation.getValue());
+            }
         }
     }
 

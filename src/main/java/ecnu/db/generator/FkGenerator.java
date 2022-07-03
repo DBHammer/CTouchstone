@@ -154,26 +154,31 @@ public class FkGenerator {
             for (int fkColIndex = 0; fkColIndex < populateStatus.length; fkColIndex++) {
                 long index = -1;
                 if (fkIndex2Range.containsKey(fkColIndex)) {
-                    long currentCardinality = populateSolution[filterIndex][pkStatusIndex];
                     FkRange fkRange = fkIndex2Range.get(fkColIndex)[filterIndex][pkStatusIndex];
-                    boolean withRemainingRange = fkRange.range > 0;
-                    boolean moveToNextRange = ThreadLocalRandom.current().nextDouble() * currentCardinality <= fkRange.range;
-                    if (withRemainingRange && moveToNextRange) {
-                        fkRange.range--;
-                    }
-                    index = fkRange.start + fkRange.range;
+                    index = fkRange.start + fkRange.range - 1;
+                    advanceFkRange(fkRange, populateSolution[filterIndex][pkStatusIndex]);
                 }
                 fkColValues[fkColIndex][rowId] = ruleTables[fkColIndex].getKey(populateStatus[fkColIndex], index);
             }
+            populateSolution[filterIndex][pkStatusIndex]--;
+            // 计算这一行数据的输出状态
             boolean[] outputStatus = outputStatusForEachPk[pkStatusIndex].status();
             for (int j = 0; j < statusVectorOfEachRow[rowId].length; j++) {
                 statusVectorOfEachRow[rowId][j] &= outputStatus[j];
             }
-            populateSolution[filterIndex][pkStatusIndex]--;
         }
         return fkColValues;
     }
 
+    private void advanceFkRange(FkRange fkRange, long currentCardinality) {
+        boolean withRemainingRange = fkRange.range > 1;
+        if (withRemainingRange) {
+            boolean moveToNextRange = ThreadLocalRandom.current().nextDouble() * currentCardinality <= fkRange.range;
+            if (moveToNextRange) {
+                fkRange.range--;
+            }
+        }
+    }
 
     /**
      * 输入约束链，返回涉及到所有状态 组织结构如下
