@@ -2,8 +2,6 @@ package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.generator.constraintchain.filter.operation.MultiVarFilterOperation;
-import ecnu.db.generator.constraintchain.filter.operation.RangeFilterOperation;
 import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 
 import java.math.BigDecimal;
@@ -59,42 +57,8 @@ public class LogicNode extends BoolExprNode {
             }
         }
         if (allTrue && probability.compareTo(BigDecimal.ONE) < 0) {
-            boolean needToDealBetween = true;
-            if (onlyNoEqlOperations.isEmpty()) {
-                operationsOfTrees.set(0, children.get(0).pushDownProbability(probability));
-                needToDealBetween = false;
-            }
-            Map<String, List<Integer>> col2TreeIndex = new HashMap<>();
-            for (Integer onlyNoEqlOperation : onlyNoEqlOperations) {
-                List<AbstractFilterOperation> operations = operationsOfTrees.get(onlyNoEqlOperation);
-                if (operations.size() > 1 || operations.get(0) instanceof MultiVarFilterOperation) {
-                    operationsOfTrees.set(onlyNoEqlOperation, children.get(onlyNoEqlOperation).pushDownProbability(probability));
-                    needToDealBetween = false;
-                    break;
-                } else {
-                    UniVarFilterOperation uniFilter = (UniVarFilterOperation) operations.get(0);
-                    col2TreeIndex.computeIfAbsent(uniFilter.getCanonicalColumnName(), v -> new ArrayList<>());
-                    col2TreeIndex.get(uniFilter.getCanonicalColumnName()).add(onlyNoEqlOperation);
-                }
-            }
-            if (needToDealBetween) {
-                assert col2TreeIndex.values().stream().noneMatch(index -> index.size() > 2);
-                List<Integer> indexes = col2TreeIndex.values().stream().filter(index -> index.size() == 1).findFirst().orElse(null);
-                if (indexes != null) {
-                    int treeIndex = indexes.get(0);
-                    operationsOfTrees.set(treeIndex, children.get(treeIndex).pushDownProbability(probability));
-                } else {
-                    indexes = col2TreeIndex.values().stream().toList().get(0);
-                    UniVarFilterOperation leftOperation = (UniVarFilterOperation) operationsOfTrees.get(indexes.get(0)).get(0);
-                    UniVarFilterOperation rightOperation = (UniVarFilterOperation) operationsOfTrees.get(indexes.get(1)).get(0);
-                    if (rightOperation.getOperator().isLess()) {
-                        operationsOfTrees.set(indexes.get(1), Collections.singletonList(new RangeFilterOperation(leftOperation, rightOperation, probability)));
-                    } else {
-                        operationsOfTrees.set(indexes.get(1), Collections.singletonList(new RangeFilterOperation(rightOperation, leftOperation, probability)));
-                    }
-                    operationsOfTrees.remove(indexes.get(0).intValue());
-                }
-            }
+            int index = onlyNoEqlOperations.isEmpty() ? 0 : onlyNoEqlOperations.remove(0);
+            operationsOfTrees.set(index, children.get(index).pushDownProbability(probability));
         }
         if (hasReverse) {
             this.reverse();
