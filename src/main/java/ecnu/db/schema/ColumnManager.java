@@ -202,11 +202,13 @@ public class ColumnManager {
     }
 
     public void storeColumnName2IdList(Map<String, List<List<Integer>>> columnName2IdList) throws IOException {
+        String resultDir = distributionInfoPath.getPath();
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columnName2IdList);
-        CommonUtils.writeFile("result/column2IdList", content);
+        CommonUtils.writeFile(resultDir + "/column2IdList", content);
     }
     public void loadColumnName2IdList() throws IOException {
-        String content = CommonUtils.readFile("result/column2IdList");
+        String resultDir = distributionInfoPath.getPath();
+        String content = CommonUtils.readFile(resultDir + "/column2IdList");
         Map<String, List<List<Integer>>> column2IdList = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
         for (Map.Entry<String, List<List<Integer>>> stringListEntry : column2IdList.entrySet()) {
