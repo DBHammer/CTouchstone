@@ -65,7 +65,7 @@ public class Distribution {
      */
     private void insertNonEqProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         if (operator == CompareOperator.GE || operator == CompareOperator.GT) {
-            probability = BigDecimal.ONE.subtract(probability);
+            probability = pvAndPbList.lastKey().subtract(probability);
         }
         if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
             adjustNullPercentage(probability, parameters);
