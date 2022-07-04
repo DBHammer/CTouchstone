@@ -5,7 +5,7 @@ import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.joininfo.JoinStatus;
-import ecnu.db.generator.joininfo.RuleTable;
+import ecnu.db.generator.joininfo.MergedRuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
@@ -30,7 +30,7 @@ public class FkGenerator {
 
     private final JoinStatus[] outputStatusForEachPk;
 
-    private final RuleTable[] ruleTables;
+    private final MergedRuleTable[] ruleTables;
 
 
     FkGenerator(List<ConstraintChain> fkConstrainChains, List<String> fkGroup, long tableSize) {
@@ -47,12 +47,12 @@ public class FkGenerator {
         // 对于每一个外键组，确定主键状态
         JoinStatus[][] pkCol2AllStatus = new JoinStatus[involvedFkCol2JoinTags.size()][];
         int i = 0;
-        ruleTables = new RuleTable[involvedFkCol2JoinTags.size()];
+        ruleTables = new MergedRuleTable[involvedFkCol2JoinTags.size()];
         for (Map.Entry<String, List<Integer>> involvedFk2JoinTag : involvedFkCol2JoinTags.entrySet()) {
             String pkCol = TableManager.getInstance().getRefKey(involvedFk2JoinTag.getKey());
-            ruleTables[i] = RuleTableManager.getInstance().getRuleTable(pkCol);
+            ruleTables[i] = RuleTableManager.getInstance().getRuleTable(pkCol,involvedFk2JoinTag.getValue());
             boolean withNull = ColumnManager.getInstance().getNullPercentage(involvedFk2JoinTag.getKey()).compareTo(BigDecimal.ZERO) > 0;
-            pkCol2AllStatus[i] = ruleTables[i].mergeRules(involvedFk2JoinTag.getValue(), withNull);
+            pkCol2AllStatus[i] = ruleTables[i].getPkStatus(withNull);
             i++;
         }
         // 计算联合status
@@ -79,7 +79,7 @@ public class FkGenerator {
                 status2PkIndex.get(status).add(i);
             }
             Map<ArrayList<Integer>, Long> pkIndex2Size = new HashMap<>();
-            RuleTable ruleTable = ruleTables[distinctFKIndex];
+            MergedRuleTable ruleTable = ruleTables[distinctFKIndex];
             for (Map.Entry<JoinStatus, ArrayList<Integer>> statusArrayListEntry : status2PkIndex.entrySet()) {
                 long pkStatusSize = ruleTable.getStatusSize(statusArrayListEntry.getKey());
                 BigDecimal bBatchPkStatusSize = BigDecimal.valueOf(pkStatusSize).multiply(batchPercentage);

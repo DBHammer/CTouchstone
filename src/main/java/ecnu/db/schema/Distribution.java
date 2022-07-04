@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Distribution {
+    private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.15);
 
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
 
@@ -132,15 +133,19 @@ public class Distribution {
     }
 
 
-    private boolean canBeReused(List<Parameter> parameters) {
+    private boolean canBeReused(List<Parameter> parameters, BigDecimal probability) {
+        boolean status = true;
         for (Parameter parameter : parameters) {
             for (List<Integer> integers : idList) {
                 if (integers.contains(parameter.getId())) {
-                    return false;
+                    status = false;
                 }
             }
         }
-        return true;
+        if (!isNonEqualRange(parameters) && probability.compareTo(reuseEqProbabilityLimit) <= 0) {
+            status = false;
+        }
+        return status;
     }
 
 
@@ -168,7 +173,7 @@ public class Distribution {
         for (var currentCDF : pvAndPbList.entrySet()) {
             BigDecimal currentRange = getRange(currentCDF.getKey());
             // 当前空间可以被完全利用
-            if (currentRange.compareTo(probability) == 0 && canBeReused(currentCDF.getValue())) {
+            if (currentRange.compareTo(probability) == 0 && canBeReused(currentCDF.getValue(), probability)) {
                 currentCDF.getValue().addAll(tempParameterList);
                 return;
             } else {
@@ -185,7 +190,7 @@ public class Distribution {
         }
         // 如果没有找到
         if (minCDF.compareTo(BigDecimal.ZERO) == 0) {
-            throw new TouchstoneException("不存在可以放置的range");
+            throw new TouchstoneException(String.format("不存在可以放置的range, 概率为%s", probability));
         } else if (tempParameterList.stream().anyMatch(Parameter::isCanMerge)) {
             BigDecimal eachPb = probability.divide(BigDecimal.valueOf(tempParameterList.size()), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
             for (Parameter parameter : tempParameterList) {
@@ -261,7 +266,8 @@ public class Distribution {
 
     public void applyUniVarConstraint(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) throws TouchstoneException {
         switch (operator) {
-            case NE, NOT_LIKE, NOT_IN -> insertEqualProbability(pvAndPbList.lastKey().subtract(probability), parameters);
+            case NE, NOT_LIKE, NOT_IN ->
+                    insertEqualProbability(pvAndPbList.lastKey().subtract(probability), parameters);
             case EQ, LIKE, IN -> insertEqualProbability(probability, parameters);
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
