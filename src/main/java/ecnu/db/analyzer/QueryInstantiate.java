@@ -30,7 +30,7 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 @CommandLine.Command(name = "instantiate", description = "instantiate the query")
 public class QueryInstantiate implements Callable<Integer> {
 
-    private static final Pattern PATTERN = Pattern.compile("'(\\d+)'");
+    private static final Pattern PATTERN = Pattern.compile("'Mirage#(\\d+)'");
     private static final String WORKLOAD_DIR = "/workload";
     private static final String QUERIES = "/queries";
     private final Logger logger = LoggerFactory.getLogger(QueryInstantiate.class);

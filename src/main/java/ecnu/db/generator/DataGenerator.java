@@ -188,7 +188,7 @@ public class DataGenerator implements Callable<Integer> {
     private void generateFksNoConstraints(Map<String, long[]> fkCol2Values, SortedMap<String, Long> allFk2TableSize, int range) {
         for (Map.Entry<String, Long> fk2TableSize : allFk2TableSize.entrySet()) {
             if (!fkCol2Values.containsKey(fk2TableSize.getKey())) {
-                long[] fks = ThreadLocalRandom.current().longs(range, 0, fk2TableSize.getValue()).toArray();
+                long[] fks = ThreadLocalRandom.current().longs(range, 1, fk2TableSize.getValue()+1).toArray();
                 fkCol2Values.put(fk2TableSize.getKey(), fks);
             }
         }

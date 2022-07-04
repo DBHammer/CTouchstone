@@ -57,7 +57,7 @@ public class QueryWriter {
                 String pattern = cols.stream().map(col -> col.split("\\.")[2]).collect(Collectors.joining(" .{1,2} "));
                 matcher = Pattern.compile(pattern).matcher(query);
                 if (matcher.find()) {
-                    query = query.replace(matcher.group(), matcher.group() + " +'" + parameter.getId() + "' ");
+                    query = query.replace(matcher.group(), matcher.group() + " +'Mirage#" + parameter.getId() + "' ");
                 }
             }
         }
@@ -67,6 +67,7 @@ public class QueryWriter {
         int lastPos = 0;
         int pos;
         String lastColumn = "";
+        boolean nextIntIsNegavive = false;
         while (!lexer.isEOF()) {
             lexer.nextToken();
             // 读进一个关键字
@@ -84,7 +85,14 @@ public class QueryWriter {
                 if (!col.equals("DATE")) {
                     lastColumn = col;
                 }
-            } else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS) {
+            } else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS||token == Token.SUB) {
+                if(token == Token.SUB){
+                    nextIntIsNegavive = true;
+                }
+                if(token == Token.LITERAL_INT && nextIntIsNegavive){
+                    lastPos--;
+                    nextIntIsNegavive = false;
+                }
                 String str = query.substring(lastPos, pos).trim();
                 if (!literalMap.containsKey(str)) {
                     literalMap.put(str, new ArrayList<>());
@@ -166,7 +174,7 @@ public class QueryWriter {
             Parameter parameter = pair.getKey();
             int startPos = pair.getValue().getKey();
             int endPos = pair.getValue().getValue();
-            fragments.append(query, currentPos, startPos).append(String.format("'%s'", parameter.getId()));
+            fragments.append(query, currentPos, startPos).append(String.format("'Mirage#%s'", parameter.getId()));
             currentPos = endPos;
         }
         fragments.append(query.substring(currentPos));
