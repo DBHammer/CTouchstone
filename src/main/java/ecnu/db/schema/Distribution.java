@@ -261,7 +261,7 @@ public class Distribution {
 
     public void applyUniVarConstraint(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) throws TouchstoneException {
         switch (operator) {
-            case NE, NOT_LIKE, NOT_IN -> insertEqualProbability(BigDecimal.ONE.subtract(probability), parameters);
+            case NE, NOT_LIKE, NOT_IN -> insertEqualProbability(pvAndPbList.lastKey().subtract(probability), parameters);
             case EQ, LIKE, IN -> insertEqualProbability(probability, parameters);
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
