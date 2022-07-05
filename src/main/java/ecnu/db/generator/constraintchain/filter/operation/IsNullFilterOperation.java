@@ -54,7 +54,13 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
+    public BigDecimal getNullProbability() {
+        return ColumnManager.getInstance().getNullPercentage(canonicalColumnName);
+    }
+
+    @Override
     public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

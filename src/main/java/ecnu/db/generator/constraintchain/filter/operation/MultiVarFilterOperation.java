@@ -9,11 +9,13 @@ import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ColumnNode;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -116,6 +118,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
 
     @Override
     public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
+        throw new UnsupportedOperationException();
     }
 
     private boolean hasKeyColumn(ArithmeticNode node) {
@@ -201,19 +204,22 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
             default:
                 throw new UnsupportedOperationException("多变量计算节点仅接受非等值约束");
         }
-        long start = System.currentTimeMillis();
         double[] vector = arithmeticTree.calculate();
-        start = System.currentTimeMillis();
         int pos;
         if (probability.equals(BigDecimal.ONE)) {
             pos = vector.length - 1;
         } else {
             pos = probability.multiply(BigDecimal.valueOf(vector.length)).setScale(0, RoundingMode.HALF_UP).intValue();
         }
-        double PosthSmallestNumber = select(vector, 0, vector.length - 1, pos + 1);
-        long internalValue = (long) (PosthSmallestNumber * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
+        double postSmallestNumber = select(vector, 0, vector.length - 1, pos + 1);
+        long internalValue = (long) (postSmallestNumber * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         parameters.forEach(param -> param.setData(internalValue));
         //todo check parameter type
         parameters.forEach(param -> param.setDataValue("interval '" + internalValue + "' day"));
+    }
+
+    @Override
+    public BigDecimal getNullProbability() {
+        throw new UnsupportedOperationException();
     }
 }

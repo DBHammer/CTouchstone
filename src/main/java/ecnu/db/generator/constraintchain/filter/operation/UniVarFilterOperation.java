@@ -7,6 +7,7 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -133,4 +134,8 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     }
 
 
+    @Override
+    public BigDecimal getNullProbability() {
+        return ColumnManager.getInstance().getNullPercentage(canonicalColumnName);
+    }
 }

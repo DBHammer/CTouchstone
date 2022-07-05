@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 
@@ -38,6 +39,14 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
         chain.add(this);
         return chain;
     }
+
+    /**
+     * 获得改operation的最大null概率
+     *
+     * @return null的概率
+     */
+    @JsonIgnore
+    public abstract BigDecimal getNullProbability();
 
     @Override
     public void reverse() {
