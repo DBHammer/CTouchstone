@@ -213,6 +213,7 @@ public class TaskConfigurator implements Callable<Integer> {
         writeWithoutParameterValue();
         logger.info(rb.getString("GetQueryPlanDone"));
         logger.info(rb.getString("StartPersistingTableReferenceInformation"));
+        TableManager.getInstance().adjustFks();
         TableManager.getInstance().storeSchemaInfo();
         logger.info(rb.getString("PersistentTableReferenceInformationSucceeded"));
         query2constraintChains = checkQueryConstraintChains(query2constraintChains);

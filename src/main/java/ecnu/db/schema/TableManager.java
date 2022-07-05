@@ -124,6 +124,10 @@ public class TableManager {
         getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
     }
 
+    public void setTmpForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
+        getSchema(localTable).addTmpForeignKey(localTable, localColumns, refTable, refColumns);
+    }
+
     public boolean isRefTable(String locTable, String locColumn, String remoteColumn) throws CannotFindSchemaException {
         return getSchema(locTable).isRefTable(locTable + "." + locColumn, remoteColumn);
     }
@@ -165,5 +169,9 @@ public class TableManager {
             throw new CannotFindSchemaException(tableName);
         }
         return schema;
+    }
+
+    public void adjustFks(){
+        schemas.values().forEach(Table::adjustFks);
     }
 }

@@ -18,6 +18,8 @@ public class Table {
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new TreeMap<>();
     @JsonIgnore
+    private final Map<String, String> tmpForeignKeys = new TreeMap<>();
+    @JsonIgnore
     private int joinTag = 0;
 
     public Table() {
@@ -81,23 +83,29 @@ public class Table {
         return foreignKeys.values().stream().anyMatch(remoteColumn -> remoteColumn.contains(refTable));
     }
 
-
     public void addForeignKey(String localTable, String localColumnName,
                               String referencingTable, String referencingInfo) throws TouchstoneException {
+        addForeignKey(foreignKeys, localTable, localColumnName, referencingTable, referencingInfo);
+    }
+
+    public void addTmpForeignKey(String localTable, String localColumnName,
+                              String referencingTable, String referencingInfo) throws TouchstoneException {
+        addForeignKey(tmpForeignKeys, localTable, localColumnName, referencingTable, referencingInfo);
+    }
+
+    private void addForeignKey(Map<String, String> foreignKeyMap, String localTable, String localColumnName,
+                               String referencingTable, String referencingInfo) throws TouchstoneException {
         String[] columnNames = localColumnName.split(",");
         String[] refColumnNames = referencingInfo.split(",");
-        if (foreignKeys == null) {
-            foreignKeys = new HashMap<>(columnNames.length);
-        }
         for (int i = 0; i < columnNames.length; i++) {
-            if (foreignKeys.containsKey(columnNames[i])) {
-                if (!(referencingTable + "." + refColumnNames[i]).equals(foreignKeys.get(columnNames[i]))) {
+            if (foreignKeyMap.containsKey(columnNames[i])) {
+                if (!(referencingTable + "." + refColumnNames[i]).equals(foreignKeyMap.get(columnNames[i]))) {
                     throw new TouchstoneException("冲突的主外键连接");
                 } else {
                     return;
                 }
             }
-            foreignKeys.put(localTable + "." + columnNames[i], referencingTable + "." + refColumnNames[i]);
+            foreignKeyMap.put(localTable + "." + columnNames[i], referencingTable + "." + refColumnNames[i]);
             primaryKeys.remove(localTable + "." + columnNames[i]);
         }
     }
@@ -202,5 +210,15 @@ public class Table {
     @Override
     public String toString() {
         return "Schema{tableSize=" + tableSize + '}';
+    }
+
+
+    public void adjustFks() {
+        for (Map.Entry<String, String> tmpFK : tmpForeignKeys.entrySet()) {
+            if (!foreignKeys.containsKey(tmpFK.getKey())) {
+                foreignKeys.put(tmpFK.getKey(), tmpFK.getValue());
+                primaryKeys.remove(tmpFK.getKey());
+            }
+        }
     }
 }

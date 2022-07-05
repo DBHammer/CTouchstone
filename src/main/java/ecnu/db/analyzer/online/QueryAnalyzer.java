@@ -206,6 +206,7 @@ public class QueryAnalyzer {
             logger.debug("{} wait join tag", node.getInfo());
             int fkJoinTag = node.getJoinTag();
             logger.debug("{} get join tag", node.getInfo());
+            TableManager.getInstance().setTmpForeignKeys(localTable, localCol, externalTable, externalCol);
             if (fkJoinTag == SKIP_JOIN_TAG) {
                 logger.debug(rb.getString("SkipNodeDueToFullPk"), node.getInfo());
                 return node.getOutputRows();
