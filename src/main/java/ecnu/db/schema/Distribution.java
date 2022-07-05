@@ -358,8 +358,8 @@ public class Distribution {
             columnData[currentIndex++] = attributeData.get(attributeIndex++);
         }
         // 使用Long.MIN_VALUE标记结尾的null值
-        if (currentIndex < size - 1) {
-            Arrays.fill(columnData, currentIndex, size - 1, Long.MIN_VALUE);
+        if (currentIndex < size) {
+            Arrays.fill(columnData, currentIndex, size, Long.MIN_VALUE);
         }
         return columnData;
     }
