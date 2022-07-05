@@ -14,14 +14,30 @@ class StringTemplate {
     int minLength;
     int rangeLength;
     long specialValue;
+    int tag;
 
     private boolean hasNonEqConstraint;
     Map<Long, boolean[]> likeIndex2Status = new HashMap<>();
 
-    public StringTemplate(int minLength, int rangeLength, long specialValue) {
+    public StringTemplate(int minLength, int rangeLength, long specialValue, long range) {
         this.minLength = minLength;
         this.rangeLength = rangeLength;
         this.specialValue = specialValue;
+        if (range < 1) {
+            return;
+        }
+        this.tag = 1;
+        while ((range /= randomCharSet.length) > 0) {
+            tag++;
+        }
+        if (tag > this.minLength) {
+            int diff = tag - this.minLength;
+            this.minLength = tag;
+            this.rangeLength -= 2 * diff;
+            if (this.rangeLength < 0)
+                throw new UnsupportedOperationException("无法唯一绑定");
+        }
+
     }
 
     public String getParameterValue(long dataId) {
@@ -33,11 +49,17 @@ class StringTemplate {
         char[] values = new char[minLength + random.nextInt(rangeLength + 1)];
         if (dataId < 0) {
             values[0] = noExistTailChar;
+            for (int i = 1; i < values.length; i++) {
+                values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
+            }
         } else {
-            values[0] = randomCharSet[(int) (dataId % randomCharSet.length)];
-        }
-        for (int i = 1; i < values.length; i++) {
-            values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
+            for (int i = tag - 1; i >= 0; i--) {
+                values[i] = randomCharSet[(int) (dataId % randomCharSet.length)];
+                dataId /= randomCharSet.length;
+            }
+            for (int i = tag; i < values.length; i++) {
+                values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
+            }
         }
         return values;
     }
@@ -90,19 +112,6 @@ class StringTemplate {
                 value[value.length / 2] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
             }
             value[firstChangeIndex] = likeRandomCharSet[value[firstChangeIndex] % likeRandomCharSet.length];
-            return new String(value);
-        } else if (hasNonEqConstraint) {
-            char[] value = getParameterBuilder(data);
-            int length = Long.toString(range).length();
-            String currentData = Long.toString(data);
-            int lengthCurrent = currentData.length();
-            int diff = length - lengthCurrent;
-            for (int i = 0; i < diff; i++) {
-                value[i] = '0';
-            }
-            for (int i = 0; i < lengthCurrent; i++) {
-                value[i + diff] = currentData.charAt(i);
-            }
             return new String(value);
         } else {
             return getParameterValue(data);

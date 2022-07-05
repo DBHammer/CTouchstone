@@ -56,7 +56,7 @@ public class Column {
     public void init() {
         distribution = new Distribution(nullPercentage, range);
         if (columnType == ColumnType.VARCHAR) {
-            stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
+            stringTemplate = new StringTemplate(minLength, rangeLength, specialValue, range);
         }
     }
 
