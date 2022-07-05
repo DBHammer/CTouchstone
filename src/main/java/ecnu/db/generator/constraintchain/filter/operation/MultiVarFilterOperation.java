@@ -220,6 +220,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
 
     @Override
     public BigDecimal getNullProbability() {
-        throw new UnsupportedOperationException();
+        //todo deal with null
+        return BigDecimal.ZERO;
     }
 }
