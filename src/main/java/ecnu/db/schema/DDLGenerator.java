@@ -101,6 +101,7 @@ public class DDLGenerator implements Callable<Integer> {
         for (String addFk : addFks) {
             createIndex.append(addFk).append("\n");
         }
+        createIndex.append("analyse;");
         CommonUtils.writeFile(createIndexPath, createIndex.toString());
     }
 }
