@@ -2,10 +2,8 @@ package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,12 +65,30 @@ public abstract class BoolExprNode {
     public abstract List<String> getColumns();
 
     /**
+     * 获得改operation的最大null概率
+     *
+     * @return null的概率
+     */
+    @JsonIgnore
+    public abstract BigDecimal getNullProbability();
+
+    /**
+     * 获得改operation的过滤比
+     *
+     * @return 过滤比
+     */
+    @JsonIgnore
+    public abstract BigDecimal getProbability();
+
+    /**
      * 判定子树是否可以标记为True
      *
      * @return 子树可以标记为True
      */
     @JsonIgnore
     public abstract boolean isTrue();
+
+
 
     /**
      * 判定子树是否包含其他的表

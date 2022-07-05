@@ -9,8 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ecnu.db.generator.constraintchain.filter.BoolExprType.AND;
-import static ecnu.db.generator.constraintchain.filter.BoolExprType.OR;
+import static ecnu.db.generator.constraintchain.filter.BoolExprType.*;
 
 public class LogicNode extends BoolExprNode {
     private BoolExprType type;
@@ -127,6 +126,44 @@ public class LogicNode extends BoolExprNode {
     @Override
     public List<String> getColumns() {
         return children.stream().map(BoolExprNode::getColumns).flatMap(Collection::stream).toList();
+    }
+
+    @Override
+    public BigDecimal getNullProbability() {
+        BigDecimal maxNull = BigDecimal.ZERO;
+        if (type == AND) {
+            for (BoolExprNode child : children) {
+                maxNull = maxNull.max(child.getNullProbability());
+            }
+        } else if (type == OR) {
+            for (BoolExprNode child : children) {
+                if (child.getProbability().compareTo(BigDecimal.ZERO) > 0) {
+                    maxNull = maxNull.max(child.getNullProbability());
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        return maxNull;
+    }
+
+    @Override
+    public BigDecimal getProbability() {
+        if (type == AND) {
+            BigDecimal minProbability = BigDecimal.ONE;
+            for (BoolExprNode child : children) {
+                minProbability = minProbability.min(child.getProbability());
+            }
+            return minProbability;
+        } else if (type == OR) {
+            BigDecimal maxProbability = BigDecimal.ZERO;
+            for (BoolExprNode child : children) {
+                maxProbability = maxProbability.max(child.getProbability());
+            }
+            return maxProbability;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override

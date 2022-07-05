@@ -38,16 +38,11 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
     public List<AbstractFilterOperation> pushDownProbability() {
         List<AbstractFilterOperation> operations = root.pushDownProbability(probability);
         // 处理GT和GE算子的NULL问题
-        BigDecimal maxNullProbability = BigDecimal.ZERO;
-        for (AbstractFilterOperation operation : operations) {
-            if (operation.getProbability().compareTo(BigDecimal.ZERO) > 0) {
-                maxNullProbability = maxNullProbability.max(operation.getNullProbability());
-            }
-        }
+        BigDecimal maxNullProbability = root.getNullProbability();
         for (AbstractFilterOperation operation : operations) {
             // 选在所有概率有效的GT和GE operation
             if (operation.getProbability().compareTo(BigDecimal.ZERO) > 0 &&
-                    operation.getProbability().compareTo(BigDecimal.ZERO) < 1 && operation.getOperator().isBigger()) {
+                    operation.getProbability().compareTo(BigDecimal.ONE) < 0 && operation.getOperator().isBigger()) {
                 BigDecimal selfNull = operation.getNullProbability();
                 if (maxNullProbability.compareTo(selfNull) > 0) {
                     operation.setProbability(operation.getProbability().add(maxNullProbability).subtract(selfNull));
