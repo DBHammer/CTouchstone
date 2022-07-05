@@ -4,18 +4,18 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.ship_mode.sm_ship_mode_sk",
-          "localCols" : "public.catalog_sales.cs_ship_mode_sk",
-          "pkTag" : 1,
-          "probability" : 0.09898317642,
+          "refCols" : "public.date_dim.d_date_sk",
+          "localCols" : "public.catalog_sales.cs_sold_date_sk",
+          "pkTag" : 28,
+          "probability" : 0.1981848679,
           "type" : "INNER_JOIN"
         },
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.catalog_sales.cs_sold_date_sk",
-          "pkTag" : 29,
-          "probability" : 0.1989711891,
+          "refCols" : "public.ship_mode.sm_ship_mode_sk",
+          "localCols" : "public.catalog_sales.cs_ship_mode_sk",
+          "pkTag" : 1,
+          "probability" : 0.0993759035,
           "type" : "INNER_JOIN"
         },
         {
@@ -39,13 +39,47 @@
               {
                 "parameters" : [
                   {
-                    "id" : 189,
+                    "id" : 199,
+                    "data" : 26,
+                    "type" : "ACTUAL"
+                  }
+                ],
+                "operator" : "EQ",
+                "probability" : 0.004996646087,
+                "canonicalColumnName" : "public.date_dim.d_year",
+                "type" : "UNI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability" : 0.004996646087
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "d_date_sk"
+          ],
+          "pkTag" : 28
+        }
+      ],
+      "tableName" : "public.date_dim"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 195,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 190,
-                    "data" : -1,
+                    "id" : 196,
+                    "data" : 2,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -76,65 +110,31 @@
             "type" : "AND",
             "children" : [
               {
-                "parameters" : [
-                  {
-                    "id" : 188,
-                    "data" : 9,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.004996646087,
-                "canonicalColumnName" : "public.date_dim.d_year",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 0.004996646087
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "d_date_sk"
-          ],
-          "pkTag" : 29
-        }
-      ],
-      "tableName" : "public.date_dim"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
                 "type" : "AND",
                 "children" : [
                   {
                     "parameters" : [
                       {
-                        "id" : 191,
-                        "data" : 0,
+                        "id" : 197,
+                        "data" : 57600,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.3333449074,
                     "canonicalColumnName" : "public.time_dim.t_time",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 192,
-                        "data" : 28801,
+                        "id" : 198,
+                        "data" : 86401,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.3333449074,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.time_dim.t_time",
                     "type" : "UNI_FILTER_OPERATION"
                   }

@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_returns.sr_returned_date_sk",
-          "pkTag" : 5,
+          "pkTag" : 4,
           "probability" : 0.110652003,
           "type" : "INNER_JOIN"
         }
@@ -23,8 +23,8 @@
               {
                 "parameters" : [
                   {
-                    "id" : 19,
-                    "data" : 9,
+                    "id" : 17,
+                    "data" : 28,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -42,7 +42,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 5
+          "pkTag" : 4
         }
       ],
       "tableName" : "public.date_dim"

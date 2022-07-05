@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.catalog_sales.cs_sold_date_sk",
-          "pkTag" : 51,
+          "pkTag" : 45,
           "probability" : 0.1988882784,
           "type" : "INNER_JOIN"
         },
@@ -39,8 +39,8 @@
               {
                 "parameters" : [
                   {
-                    "id" : 465,
-                    "data" : 9,
+                    "id" : 385,
+                    "data" : 27,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -58,7 +58,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 51
+          "pkTag" : 45
         }
       ],
       "tableName" : "public.date_dim"
@@ -76,8 +76,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 462,
-                        "data" : 1,
+                        "id" : 382,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -89,8 +89,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 464,
-                        "data" : 1,
+                        "id" : 384,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -102,8 +102,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 463,
-                        "data" : 1,
+                        "id" : 383,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -141,7 +141,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 466,
+                        "id" : 386,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -154,7 +154,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 467,
+                        "id" : 387,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }

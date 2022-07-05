@@ -13,13 +13,13 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 133,
-                        "data" : 0,
+                        "id" : 142,
+                        "data" : 94,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.01236041888,
                     "canonicalColumnName" : "public.store_sales.ss_quantity",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -32,7 +32,7 @@
                           {
                             "parameters" : [
                               {
-                                "id" : 135,
+                                "id" : 144,
                                 "data" : 0,
                                 "type" : "ACTUAL"
                               }
@@ -45,13 +45,13 @@
                           {
                             "parameters" : [
                               {
-                                "id" : 136,
-                                "data" : -1,
+                                "id" : 145,
+                                "data" : 19902,
                                 "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
-                            "probability" : 0,
+                            "probability" : 1,
                             "canonicalColumnName" : "public.store_sales.ss_list_price",
                             "type" : "UNI_FILTER_OPERATION"
                           }
@@ -63,26 +63,26 @@
                           {
                             "parameters" : [
                               {
-                                "id" : 139,
-                                "data" : 0,
+                                "id" : 148,
+                                "data" : 9902,
                                 "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "GE",
-                            "probability" : 1,
+                            "probability" : 0,
                             "canonicalColumnName" : "public.store_sales.ss_wholesale_cost",
                             "type" : "UNI_FILTER_OPERATION"
                           },
                           {
                             "parameters" : [
                               {
-                                "id" : 140,
-                                "data" : -1,
+                                "id" : 149,
+                                "data" : 9902,
                                 "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
-                            "probability" : 0,
+                            "probability" : 1,
                             "canonicalColumnName" : "public.store_sales.ss_wholesale_cost",
                             "type" : "UNI_FILTER_OPERATION"
                           }
@@ -94,20 +94,20 @@
                           {
                             "parameters" : [
                               {
-                                "id" : 137,
-                                "data" : 0,
+                                "id" : 146,
+                                "data" : 1758827,
                                 "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "GE",
-                            "probability" : 1,
+                            "probability" : 0,
                             "canonicalColumnName" : "public.store_sales.ss_coupon_amt",
                             "type" : "UNI_FILTER_OPERATION"
                           },
                           {
                             "parameters" : [
                               {
-                                "id" : 138,
+                                "id" : 147,
                                 "data" : 1758827,
                                 "type" : "ACTUAL"
                               }
@@ -124,13 +124,13 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 134,
-                        "data" : 7,
+                        "id" : 143,
+                        "data" : 101,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.01235798867,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.store_sales.ss_quantity",
                     "type" : "UNI_FILTER_OPERATION"
                   }

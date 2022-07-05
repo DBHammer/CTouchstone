@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 24,
+          "pkTag" : 25,
           "probability" : 0.009343828157,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.item.i_item_sk",
           "localCols" : "public.store_sales.ss_item_sk",
-          "pkTag" : 10,
+          "pkTag" : 9,
           "probability" : 0.2990265289,
           "type" : "INNER_JOIN"
         }
@@ -34,26 +34,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 124,
-                        "data" : 0,
+                        "id" : 135,
+                        "data" : 73018,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.0004243726814,
                     "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 125,
-                        "data" : 32,
+                        "id" : 136,
+                        "data" : 73050,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.0004243726814,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -68,7 +68,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 24
+          "pkTag" : 25
         }
       ],
       "tableName" : "public.date_dim"
@@ -83,18 +83,18 @@
               {
                 "parameters" : [
                   {
-                    "id" : 126,
+                    "id" : 137,
+                    "data" : 6,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 138,
+                    "data" : 7,
+                    "type" : "ACTUAL"
+                  },
+                  {
+                    "id" : 139,
                     "data" : 8,
-                    "type" : "ACTUAL"
-                  },
-                  {
-                    "id" : 127,
-                    "data" : 5,
-                    "type" : "ACTUAL"
-                  },
-                  {
-                    "id" : 128,
-                    "data" : 9,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -112,7 +112,7 @@
           "pkColumns" : [
             "i_item_sk"
           ],
-          "pkTag" : 10
+          "pkTag" : 9
         }
       ],
       "tableName" : "public.item"

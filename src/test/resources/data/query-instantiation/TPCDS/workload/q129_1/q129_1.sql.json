@@ -14,24 +14,24 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.web_sales.ws_sold_date_sk",
-          "pkTag" : 88,
+          "pkTag" : 62,
           "probability" : 0.4543071474,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.time_dim.t_time_sk",
-          "localCols" : "public.web_sales.ws_sold_time_sk",
-          "pkTag" : 13,
-          "probability" : 0.4560800442,
           "type" : "INNER_JOIN"
         },
         {
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.customer_address.ca_address_sk",
           "localCols" : "public.web_sales.ws_ship_addr_sk",
-          "pkTag" : 18,
-          "probability" : 0.4375504711,
+          "pkTag" : 16,
+          "probability" : 0.440396538,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.time_dim.t_time_sk",
+          "localCols" : "public.web_sales.ws_sold_time_sk",
+          "pkTag" : 12,
+          "probability" : 0.4531326225,
           "type" : "INNER_JOIN"
         }
       ],
@@ -47,13 +47,13 @@
               {
                 "parameters" : [
                   {
-                    "id" : 613,
+                    "id" : 476,
                     "data" : 1,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 614,
-                    "data" : -1,
+                    "id" : 477,
+                    "data" : 2,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -89,8 +89,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 610,
-                        "data" : 16,
+                        "id" : 473,
+                        "data" : 31,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -102,7 +102,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 612,
+                        "id" : 475,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -115,7 +115,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 611,
+                        "id" : 474,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -136,7 +136,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 88
+          "pkTag" : 62
         }
       ],
       "tableName" : "public.date_dim"
@@ -149,61 +149,9 @@
             "type" : "AND",
             "children" : [
               {
-                "type" : "AND",
-                "children" : [
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 615,
-                        "data" : 0,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "GE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.time_dim.t_time",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 616,
-                        "data" : 28801,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "LE",
-                    "probability" : 0.3333449074,
-                    "canonicalColumnName" : "public.time_dim.t_time",
-                    "type" : "UNI_FILTER_OPERATION"
-                  }
-                ]
-              }
-            ]
-          },
-          "probability" : 0.3333449074
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "t_time_sk"
-          ],
-          "pkTag" : 13
-        }
-      ],
-      "tableName" : "public.time_dim"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
                 "parameters" : [
                   {
-                    "id" : 617,
+                    "id" : 480,
                     "data" : 2,
                     "type" : "ACTUAL"
                   }
@@ -222,10 +170,62 @@
           "pkColumns" : [
             "ca_address_sk"
           ],
-          "pkTag" : 18
+          "pkTag" : 16
         }
       ],
       "tableName" : "public.customer_address"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "AND",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 478,
+                        "data" : 57600,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 0.3333449074,
+                    "canonicalColumnName" : "public.time_dim.t_time",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 479,
+                        "data" : 86401,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "LE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.time_dim.t_time",
+                    "type" : "UNI_FILTER_OPERATION"
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.3333449074
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "t_time_sk"
+          ],
+          "pkTag" : 12
+        }
+      ],
+      "tableName" : "public.time_dim"
     }
   ]
 }

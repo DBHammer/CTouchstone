@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.catalog_sales.cs_sold_date_sk",
-          "pkTag" : 87,
+          "pkTag" : 61,
           "probability" : 0.2284377627,
           "type" : "INNER_JOIN"
         },
@@ -45,26 +45,26 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 605,
-                            "data" : 0,
+                            "id" : 468,
+                            "data" : 72584,
                             "type" : "ACTUAL"
                           }
                         ],
                         "operator" : "GE",
-                        "probability" : 1,
+                        "probability" : 0.006269764131,
                         "canonicalColumnName" : "public.date_dim.d_date",
                         "type" : "UNI_FILTER_OPERATION"
                       },
                       {
                         "parameters" : [
                           {
-                            "id" : 606,
-                            "data" : 466,
+                            "id" : 469,
+                            "data" : 73050,
                             "type" : "ACTUAL"
                           }
                         ],
                         "operator" : "LE",
-                        "probability" : 0.006269764131,
+                        "probability" : 1,
                         "canonicalColumnName" : "public.date_dim.d_date",
                         "type" : "UNI_FILTER_OPERATION"
                       }
@@ -73,7 +73,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 607,
+                        "id" : 470,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -94,7 +94,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 87
+          "pkTag" : 61
         }
       ],
       "tableName" : "public.date_dim"
@@ -112,8 +112,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 602,
-                        "data" : 1,
+                        "id" : 465,
+                        "data" : 4,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -125,8 +125,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 604,
-                        "data" : 1,
+                        "id" : 467,
+                        "data" : 4,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -138,8 +138,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 603,
-                        "data" : 1,
+                        "id" : 466,
+                        "data" : 4,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -177,7 +177,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 608,
+                        "id" : 471,
                         "data" : 1,
                         "type" : "ACTUAL"
                       }
@@ -190,7 +190,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 609,
+                        "id" : 472,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }

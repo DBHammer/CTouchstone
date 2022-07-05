@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.web_page.wp_web_page_sk",
           "localCols" : "public.web_sales.ws_web_page_sk",
-          "pkTag" : 1,
+          "pkTag" : 0,
           "probability" : 0.01953476864,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.web_sales.ws_ship_hdemo_sk",
-          "pkTag" : 2,
+          "pkTag" : 1,
           "probability" : 0.1020422686,
           "type" : "INNER_JOIN"
         },
@@ -22,7 +22,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.time_dim.t_time_sk",
           "localCols" : "public.web_sales.ws_sold_time_sk",
-          "pkTag" : 4,
+          "pkTag" : 3,
           "probability" : 0.07740585774,
           "type" : "INNER_JOIN"
         }
@@ -42,26 +42,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 199,
-                        "data" : 0,
+                        "id" : 203,
+                        "data" : 41,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.01666666667,
                     "canonicalColumnName" : "public.web_page.wp_char_count",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 200,
-                        "data" : 2,
+                        "id" : 204,
+                        "data" : 43,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.01666666667,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.web_page.wp_char_count",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -76,7 +76,7 @@
           "pkColumns" : [
             "wp_web_page_sk"
           ],
-          "pkTag" : 1
+          "pkTag" : 0
         }
       ],
       "tableName" : "public.web_page"
@@ -91,7 +91,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 198,
+                    "id" : 200,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -110,7 +110,7 @@
           "pkColumns" : [
             "hd_demo_sk"
           ],
-          "pkTag" : 2
+          "pkTag" : 1
         }
       ],
       "tableName" : "public.household_demographics"
@@ -129,12 +129,12 @@
                     "parameters" : [
                       {
                         "id" : 201,
-                        "data" : 0,
+                        "data" : 20,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.08333333333,
                     "canonicalColumnName" : "public.time_dim.t_hour",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -142,12 +142,12 @@
                     "parameters" : [
                       {
                         "id" : 202,
-                        "data" : 3,
+                        "data" : 25,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.08333333333,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.time_dim.t_hour",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -162,7 +162,7 @@
           "pkColumns" : [
             "t_time_sk"
           ],
-          "pkTag" : 4
+          "pkTag" : 3
         }
       ],
       "tableName" : "public.time_dim"

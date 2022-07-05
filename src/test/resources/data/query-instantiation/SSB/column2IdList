@@ -1,0 +1,66 @@
+{
+  "public.part.p_mfgr" : [
+    [
+      44,
+      48
+    ],
+    [
+      43,
+      47
+    ]
+  ],
+  "public.supplier.s_nation" : [
+    [
+      27,
+      52
+    ]
+  ],
+  "public.date.d_year" : [
+    [
+      50,
+      55
+    ],
+    [
+      49,
+      54
+    ]
+  ],
+  "public.supplier.s_region" : [
+    [
+      15,
+      42,
+      46
+    ],
+    [
+      17,
+      22
+    ]
+  ],
+  "public.customer.c_region" : [
+    [
+      41,
+      45,
+      51
+    ]
+  ],
+  "public.customer.c_city" : [
+    [
+      33,
+      40
+    ],
+    [
+      32,
+      39
+    ]
+  ],
+  "public.supplier.s_city" : [
+    [
+      31,
+      38
+    ],
+    [
+      30,
+      37
+    ]
+  ]
+}

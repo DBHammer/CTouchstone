@@ -13,26 +13,26 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 252,
-                        "data" : 0,
+                        "id" : 234,
+                        "data" : 983,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.01244444444,
                     "canonicalColumnName" : "public.item.i_manufact_id",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 253,
-                        "data" : 12,
+                        "id" : 235,
+                        "data" : 995,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.01244444444,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.item.i_manufact_id",
                     "type" : "UNI_FILTER_OPERATION"
                   }

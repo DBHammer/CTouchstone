@@ -39,7 +39,7 @@ class QueryWriterTest {
         parameters.add(new Parameter(0, null, dataValue));
         String modified = queryWriter.templatizeSql("Test Query", sql, parameters);
         modified = modified.replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
-        assertEquals("select * from test where a = '0'", modified);
+        assertEquals("select * from test where a = 'Mirage#0'", modified);
     }
 
     @Test
@@ -52,7 +52,7 @@ class QueryWriterTest {
         parameters.add(new Parameter(1, "db.test.b", "5"));
         String modified = queryWriter.templatizeSql("q5", sql, parameters);
         modified = modified.replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
-        assertEquals("select * from test where a = '0' or b = '1'", modified.replace('\n', ' '));
+        assertEquals("select * from test where a = 'Mirage#0' or b = 'Mirage#1'", modified.replace('\n', ' '));
     }
 
     @Test

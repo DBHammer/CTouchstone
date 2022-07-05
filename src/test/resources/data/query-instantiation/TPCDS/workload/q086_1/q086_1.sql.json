@@ -16,18 +16,18 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 428,
-                            "data" : 7,
+                            "id" : 348,
+                            "data" : 5,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 429,
-                            "data" : 7,
+                            "id" : 349,
+                            "data" : 5,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 430,
-                            "data" : 7,
+                            "id" : 350,
+                            "data" : 5,
                             "type" : "ACTUAL"
                           }
                         ],
@@ -39,22 +39,22 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 435,
+                            "id" : 355,
                             "data" : 2,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 436,
+                            "id" : 356,
                             "data" : 2,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 437,
+                            "id" : 357,
                             "data" : 2,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 438,
+                            "id" : 358,
                             "data" : 2,
                             "type" : "ACTUAL"
                           }
@@ -67,22 +67,22 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 431,
+                            "id" : 351,
                             "data" : 2,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 432,
+                            "id" : 352,
                             "data" : 2,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 433,
+                            "id" : 353,
                             "data" : 2,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 434,
+                            "id" : 354,
                             "data" : 2,
                             "type" : "ACTUAL"
                           }
@@ -100,17 +100,17 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 439,
+                            "id" : 359,
                             "data" : -1,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 440,
+                            "id" : 360,
                             "data" : -1,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 441,
+                            "id" : 361,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -123,22 +123,22 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 446,
+                            "id" : 366,
                             "data" : -1,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 447,
+                            "id" : 367,
                             "data" : -1,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 448,
+                            "id" : 368,
                             "data" : -1,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 449,
+                            "id" : 369,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -151,22 +151,22 @@
                       {
                         "parameters" : [
                           {
-                            "id" : 442,
+                            "id" : 362,
                             "data" : -1,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 443,
+                            "id" : 363,
                             "data" : -1,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 444,
+                            "id" : 364,
                             "data" : -1,
                             "type" : "ACTUAL"
                           },
                           {
-                            "id" : 445,
+                            "id" : 365,
                             "data" : -1,
                             "type" : "ACTUAL"
                           }
@@ -189,7 +189,7 @@
           "pkColumns" : [
             "i_item_sk"
           ],
-          "pkTag" : 17
+          "pkTag" : 15
         }
       ],
       "tableName" : "public.item"
@@ -200,7 +200,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.item.i_item_sk",
           "localCols" : "public.store_sales.ss_item_sk",
-          "pkTag" : 17,
+          "pkTag" : 15,
           "probability" : 0.04171150991,
           "type" : "INNER_JOIN"
         },
@@ -208,7 +208,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 50,
+          "pkTag" : 44,
           "probability" : 0.2618647312,
           "type" : "INNER_JOIN"
         }
@@ -225,63 +225,63 @@
               {
                 "parameters" : [
                   {
-                    "id" : 450,
-                    "data" : 1,
+                    "id" : 370,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 451,
-                    "data" : 2,
+                    "id" : 371,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 452,
-                    "data" : 2,
+                    "id" : 372,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 453,
-                    "data" : 2,
+                    "id" : 373,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 454,
-                    "data" : 2,
+                    "id" : 374,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 455,
-                    "data" : 2,
+                    "id" : 375,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 456,
-                    "data" : 2,
+                    "id" : 376,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 457,
-                    "data" : 2,
+                    "id" : 377,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 458,
-                    "data" : 2,
+                    "id" : 378,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 459,
-                    "data" : 2,
+                    "id" : 379,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 460,
-                    "data" : 2,
+                    "id" : 380,
+                    "data" : 2400,
                     "type" : "ACTUAL"
                   },
                   {
-                    "id" : 461,
-                    "data" : 2,
+                    "id" : 381,
+                    "data" : 2401,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -299,7 +299,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 50
+          "pkTag" : 44
         }
       ],
       "tableName" : "public.date_dim"

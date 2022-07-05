@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.catalog_sales.cs_sold_date_sk",
-          "pkTag" : 20,
+          "pkTag" : 22,
           "probability" : 0,
           "type" : "INNER_JOIN"
         }
@@ -26,21 +26,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 109,
-                        "data" : 0,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "GE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_moy",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 111,
-                        "data" : 6,
+                        "id" : 123,
+                        "data" : 20,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -52,13 +39,23 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 110,
-                        "data" : 13,
+                        "id" : 124,
+                        "data" : 20,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 125,
+                        "data" : 20,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 126,
+                        "data" : 20,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "LE",
-                    "probability" : 1,
+                    "operator" : "IN",
+                    "probability" : 0.001259428603,
                     "canonicalColumnName" : "public.date_dim.d_moy",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -73,7 +70,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 20
+          "pkTag" : 22
         }
       ],
       "tableName" : "public.date_dim"

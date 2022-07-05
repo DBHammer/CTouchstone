@@ -11,7 +11,7 @@
                 "parameters" : [
                   {
                     "id" : 11,
-                    "data" : 3,
+                    "data" : 985,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -69,12 +69,12 @@
                     "parameters" : [
                       {
                         "id" : 12,
-                        "data" : 0,
+                        "data" : 72950,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.001273118044,
                     "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -82,12 +82,12 @@
                     "parameters" : [
                       {
                         "id" : 13,
-                        "data" : 100,
+                        "data" : 73050,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.001273118044,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   }

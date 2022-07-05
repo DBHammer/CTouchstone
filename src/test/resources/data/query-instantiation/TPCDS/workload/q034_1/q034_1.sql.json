@@ -6,7 +6,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.web_sales.ws_sold_date_sk",
-          "pkTag" : 23,
+          "pkTag" : 24,
           "probability" : 0.02171302114,
           "type" : "INNER_JOIN"
         },
@@ -14,7 +14,7 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.item.i_item_sk",
           "localCols" : "public.web_sales.ws_item_sk",
-          "pkTag" : 9,
+          "pkTag" : 8,
           "probability" : 0.09366197183,
           "type" : "INNER_JOIN"
         },
@@ -42,8 +42,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 121,
-                        "data" : 4,
+                        "id" : 132,
+                        "data" : 15,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -55,8 +55,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 122,
-                        "data" : 4,
+                        "id" : 133,
+                        "data" : 15,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -76,7 +76,7 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 23
+          "pkTag" : 24
         }
       ],
       "tableName" : "public.date_dim"
@@ -91,8 +91,8 @@
               {
                 "parameters" : [
                   {
-                    "id" : 120,
-                    "data" : 3,
+                    "id" : 131,
+                    "data" : 1,
                     "type" : "ACTUAL"
                   }
                 ],
@@ -110,7 +110,7 @@
           "pkColumns" : [
             "i_item_sk"
           ],
-          "pkTag" : 9
+          "pkTag" : 8
         }
       ],
       "tableName" : "public.item"
@@ -125,7 +125,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 123,
+                    "id" : 134,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
