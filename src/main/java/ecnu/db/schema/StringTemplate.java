@@ -7,7 +7,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 class StringTemplate {
     private static final char[] randomCharSet = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray();
-    private static final char[] likeRandomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ-".toCharArray();
+    private static final char[] likeRandomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+
+    private static final char noExistTailChar = '-';
+
     int minLength;
     int rangeLength;
     long specialValue;
@@ -28,7 +31,12 @@ class StringTemplate {
     private char[] getParameterBuilder(long dataId) {
         Random random = new Random(specialValue * dataId);
         char[] values = new char[minLength + random.nextInt(rangeLength + 1)];
-        for (int i = 0; i < values.length; i++) {
+        if (dataId < 0) {
+            values[0] = noExistTailChar;
+        } else {
+            values[0] = randomCharSet[(int) (dataId % randomCharSet.length)];
+        }
+        for (int i = 1; i < values.length; i++) {
             values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
         }
         return values;
