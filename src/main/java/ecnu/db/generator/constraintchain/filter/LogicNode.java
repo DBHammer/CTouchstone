@@ -137,7 +137,7 @@ public class LogicNode extends BoolExprNode {
             }
         } else if (type == OR) {
             for (BoolExprNode child : children) {
-                if (child.getProbability().compareTo(BigDecimal.ZERO) > 0) {
+                if (child.getFilterProbability().compareTo(BigDecimal.ZERO) > 0) {
                     maxNull = maxNull.max(child.getNullProbability());
                 }
             }
@@ -148,17 +148,17 @@ public class LogicNode extends BoolExprNode {
     }
 
     @Override
-    public BigDecimal getProbability() {
+    public BigDecimal getFilterProbability() {
         if (type == AND) {
             BigDecimal minProbability = BigDecimal.ONE;
             for (BoolExprNode child : children) {
-                minProbability = minProbability.min(child.getProbability());
+                minProbability = minProbability.min(child.getFilterProbability());
             }
             return minProbability;
         } else if (type == OR) {
             BigDecimal maxProbability = BigDecimal.ZERO;
             for (BoolExprNode child : children) {
-                maxProbability = maxProbability.max(child.getProbability());
+                maxProbability = maxProbability.max(child.getFilterProbability());
             }
             return maxProbability;
         } else {

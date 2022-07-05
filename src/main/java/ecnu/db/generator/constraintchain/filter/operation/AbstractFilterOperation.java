@@ -15,6 +15,11 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
      * 此filter包含的参数
      */
     protected List<Parameter> parameters = new ArrayList<>();
+
+    @Override
+    public BigDecimal getFilterProbability() {
+        return probability;
+    }
     /**
      * 此filter operation的操作符
      */
@@ -71,7 +76,6 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
         this.operator = operator;
     }
 
-    @Override
     public BigDecimal getProbability() {
         return probability;
     }

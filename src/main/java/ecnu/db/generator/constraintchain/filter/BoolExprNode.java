@@ -78,7 +78,7 @@ public abstract class BoolExprNode {
      * @return 过滤比
      */
     @JsonIgnore
-    public abstract BigDecimal getProbability();
+    public abstract BigDecimal getFilterProbability();
 
     /**
      * 判定子树是否可以标记为True
