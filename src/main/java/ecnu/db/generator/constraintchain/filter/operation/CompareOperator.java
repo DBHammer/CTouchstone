@@ -86,11 +86,10 @@ public enum CompareOperator {
         };
     }
 
-    public boolean isLess() {
+    public boolean isBigger() {
         return switch (this) {
-            case LT, LE -> true;
-            case GT, GE -> false;
-            default -> throw new UnsupportedOperationException();
+            case GT, GE -> true;
+            default -> false;
         };
     }
 

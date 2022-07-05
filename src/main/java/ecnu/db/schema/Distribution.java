@@ -100,16 +100,15 @@ public class Distribution {
             Parameter parameter = parIter.next();
             int id = parameter.getId();
             List<Integer> containIdList = idList.stream().filter(list -> list.contains(id)).findAny().orElse(null);
-            if (containIdList == null) {
-                continue;
-            }
-            BigDecimal tempProbability = subReuse(containIdList, probability, parameter);
-            if (tempProbability.compareTo(probability) < 0) {
-                probability = tempProbability;
-                parIter.remove();
-            }
-            if (BigDecimal.ZERO.compareTo(probability) == 0) {
-                break;
+            if (containIdList != null) {
+                BigDecimal tempProbability = subReuse(containIdList, probability, parameter);
+                if (tempProbability.compareTo(probability) < 0) {
+                    probability = tempProbability;
+                    parIter.remove();
+                }
+                if (BigDecimal.ZERO.compareTo(probability) == 0) {
+                    break;
+                }
             }
         }
         return probability;
@@ -322,6 +321,7 @@ public class Distribution {
 
     /**
      * 在column中维护数据
+     * todo 列内随机生成，且有NULL的部分不要随机
      *
      * @param size column内部需要维护的数据大小
      */
