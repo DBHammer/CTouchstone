@@ -23,7 +23,7 @@ class StringTemplate {
         this.minLength = minLength;
         this.rangeLength = rangeLength;
         this.specialValue = specialValue;
-        if (range < 1) {
+        if (range < 1 || minLength + rangeLength == 0) {
             return;
         }
         this.tag = 1;
