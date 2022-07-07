@@ -143,31 +143,29 @@ public class DataGenerator implements Callable<Integer> {
         return statusVectorOfEachRow;
     }
 
-    private List<StringBuilder> generatePks(boolean[][] statusVectorOfEachRow, List<Integer> pkStatusChainIndexes, int range, String pkName) {
-        //创建主键状态矩阵
-        Map<JoinStatus, Long> pkHistogram = FkGenerator.generateStatusHistogram(statusVectorOfEachRow, pkStatusChainIndexes);
-
-        //处理不需要外键填充的主键状态
+    private StringBuilder[] generatePks(boolean[][] statusVectorOfEachRow, List<Integer> pkStatusChainIndexes, int range, String pkName) {
         //todo 处理多列主键
-        List<StringBuilder> rowData = new ArrayList<>();
-        if (!pkHistogram.isEmpty()) {
+        StringBuilder[] rowData = new StringBuilder[range];
+        if (!pkStatusChainIndexes.isEmpty()) {
+            //创建主键状态矩阵
+            JoinStatus[] allStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
+                    .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, pkStatusChainIndexes)).toArray(JoinStatus[]::new);
+            Map<JoinStatus, Long> pkHistogram = FkGenerator.generateStatusHistogram(allStatuses);
             logger.info("{}的状态表为", pkName);
             for (Map.Entry<JoinStatus, Long> joinStatusLongEntry : pkHistogram.entrySet()) {
                 logger.info("size:{}, status:{}", joinStatusLongEntry.getValue(), joinStatusLongEntry.getKey().status());
             }
             var pkStatus2Location = RuleTableManager.getInstance().addRuleTable(pkName, pkHistogram, batchStart);
-            for (int i = 0; i < range; i++) {
+            IntStream.range(0, range).parallel().forEach(i -> {
                 JoinStatus status = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[i], pkStatusChainIndexes);
-                rowData.add(new StringBuilder().append(pkStatus2Location.get(status).getAndIncrement()).append(','));
-            }
-        } else if (!pkName.isEmpty()) {
-            for (int i = 0; i < range; i++) {
-                rowData.add(new StringBuilder().append(batchStart + i).append(','));
-            }
+                rowData[i] = new StringBuilder().append(pkStatus2Location.get(status).getAndIncrement()).append(',');
+            });
+        }
+        //处理不需要外键填充的主键状态
+        else if (!pkName.isEmpty()) {
+            IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder().append(batchStart + i).append(','));
         } else {
-            for (int i = 0; i < range; i++) {
-                rowData.add(new StringBuilder());
-            }
+            IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder());
         }
         return rowData;
     }
@@ -212,11 +210,9 @@ public class DataGenerator implements Callable<Integer> {
             //生成属性列数据
             ColumnManager.getInstance().prepareGeneration(range, true);
             String[] attRows = ColumnManager.getInstance().generateAttRows(range);
-            List<StringBuilder> rowData = new ArrayList<>();
-            for (int i = 0; i < range; i++) {
-                rowData.add(new StringBuilder().append(batchStart + i + pkStart).append(",").append(attRows[i]));
-            }
-            dataWriter.addWriteTask(schemaName, rowData);
+            StringBuilder[] rowData = new StringBuilder[range];
+            IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder().append(batchStart + i + pkStart).append(","));
+            dataWriter.addWriteTask(schemaName, rowData, attRows);
             batchStart += range + stepRange;
         }
         if (dataWriter.waitWriteFinish()) {
@@ -269,10 +265,9 @@ public class DataGenerator implements Callable<Integer> {
                 boolean[][] statusVectorOfEachRow = generateStatusViewOfEachRow(allChains, range);
                 Map<String, long[]> fkCol2Values = generateFks(statusVectorOfEachRow, fkGenerators, fkGroups);
                 generateFksNoConstraints(fkCol2Values, allFk2TableSize, range);
-                List<StringBuilder> rowData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, range, pkName);
-                String[] attributeData = futureRowData.get();
-                IntStream.range(0, rowData.size()).parallel().forEach(index -> {
-                    StringBuilder row = rowData.get(index);
+                StringBuilder[] keyData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, range, pkName);
+                IntStream.range(0, keyData.length).parallel().forEach(index -> {
+                    StringBuilder row = keyData[index];
                     for (long[] fks : fkCol2Values.values()) {
                         long fk = fks[index];
                         if (fk == Long.MIN_VALUE) {
@@ -281,15 +276,13 @@ public class DataGenerator implements Callable<Integer> {
                             row.append(fk).append(",");
                         }
                     }
-                    row.append(attributeData[index]);
                 });
-                dataWriter.addWriteTask(schemaName, rowData);
+                dataWriter.addWriteTask(schemaName, keyData, futureRowData.get());
                 batchStart += range + stepRange;
             }
-            if (dataWriter.waitWriteFinish()) {
-                logger.info("输出表数据{}完成", schemaName);
-                dataWriter.reset();
-            }
+        }
+        if (dataWriter.waitWriteFinish()) {
+            logger.info("输出表数据完成");
         }
         logger.info("总用时:{}", System.currentTimeMillis() - start);
         return 0;

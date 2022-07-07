@@ -15,8 +15,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 public class FkGenerator {
@@ -50,7 +49,7 @@ public class FkGenerator {
         ruleTables = new MergedRuleTable[involvedFkCol2JoinTags.size()];
         for (Map.Entry<String, List<Integer>> involvedFk2JoinTag : involvedFkCol2JoinTags.entrySet()) {
             String pkCol = TableManager.getInstance().getRefKey(involvedFk2JoinTag.getKey());
-            ruleTables[i] = RuleTableManager.getInstance().getRuleTable(pkCol,involvedFk2JoinTag.getValue());
+            ruleTables[i] = RuleTableManager.getInstance().getRuleTable(pkCol, involvedFk2JoinTag.getValue());
             boolean withNull = ColumnManager.getInstance().getNullPercentage(involvedFk2JoinTag.getKey()).compareTo(BigDecimal.ZERO) > 0;
             pkCol2AllStatus[i] = ruleTables[i].getPkStatus(withNull);
             i++;
@@ -126,8 +125,13 @@ public class FkGenerator {
         if (involvedChainIndexes.isEmpty()) {
             return new long[0][0];
         }
-        SortedMap<JoinStatus, Long> statusHistogram = generateStatusHistogram(statusVectorOfEachRow, involvedChainIndexes);
+        JoinStatus[] involvedStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
+                .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, involvedChainIndexes)).toArray(JoinStatus[]::new);
+        SortedMap<JoinStatus, Long> statusHistogram = generateStatusHistogram(involvedStatuses);
+        System.out.println("状态图：" + statusHistogram.size());
+
         int range = statusVectorOfEachRow.length;
+        long start2 = System.currentTimeMillis();
         ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
         long[][] populateSolution = cpModel.solve();
         Map<Integer, FkRange[][]> fkIndex2Range = new HashMap<>();
@@ -139,32 +143,49 @@ public class FkGenerator {
         for (JoinStatus joinStatus : statusHistogram.keySet()) {
             status2Index.put(joinStatus, i++);
         }
+        int[] filterIndexes = Arrays.stream(involvedStatuses).parallel().mapToInt(status2Index::get).toArray();
+        int[] pkStatuses = new int[statusVectorOfEachRow.length];
+        long[] remainSize = new long[statusVectorOfEachRow.length];
         Integer[] filterStatusPkPopulatedIndex = new Integer[statusHistogram.size()];
         Arrays.fill(filterStatusPkPopulatedIndex, 0);
-        long[][] fkColValues = new long[jointPkStatus[0].length][statusVectorOfEachRow.length];
         for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
-            JoinStatus involvedStatus = chooseCorrespondingStatus(statusVectorOfEachRow[rowId], involvedChainIndexes);
-            int filterIndex = status2Index.get(involvedStatus);
+            int filterIndex = filterIndexes[rowId];
             int pkStatusIndex = filterStatusPkPopulatedIndex[filterIndex];
             while (populateSolution[filterIndex][pkStatusIndex] == 0) {
                 pkStatusIndex++;
                 filterStatusPkPopulatedIndex[filterIndex] = pkStatusIndex;
             }
-            JoinStatus[] populateStatus = jointPkStatus[pkStatusIndex];
-            for (int fkColIndex = 0; fkColIndex < populateStatus.length; fkColIndex++) {
-                long index = -1;
-                if (fkIndex2Range.containsKey(fkColIndex)) {
-                    FkRange fkRange = fkIndex2Range.get(fkColIndex)[filterIndex][pkStatusIndex];
-                    index = fkRange.start + fkRange.range - 1;
-                    advanceFkRange(fkRange, populateSolution[filterIndex][pkStatusIndex]);
-                }
-                fkColValues[fkColIndex][rowId] = ruleTables[fkColIndex].getKey(populateStatus[fkColIndex], index);
-            }
+            pkStatuses[rowId] = pkStatusIndex;
+            remainSize[rowId] = populateSolution[filterIndex][pkStatusIndex];
             populateSolution[filterIndex][pkStatusIndex]--;
-            // 计算这一行数据的输出状态
-            boolean[] outputStatus = outputStatusForEachPk[pkStatusIndex].status();
-            for (int j = 0; j < statusVectorOfEachRow[rowId].length; j++) {
-                statusVectorOfEachRow[rowId][j] &= outputStatus[j];
+        }
+        long[][] fkColValues = new long[jointPkStatus[0].length][statusVectorOfEachRow.length];
+        for (int fkColIndex = 0; fkColIndex < jointPkStatus[0].length; fkColIndex++) {
+            if (fkIndex2Range.containsKey(fkColIndex)) {
+                for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
+                    int pkStatusIndex = pkStatuses[rowId];
+                    JoinStatus[] populateStatus = jointPkStatus[pkStatusIndex];
+                    int filterIndex = filterIndexes[rowId];
+                    FkRange fkRange = fkIndex2Range.get(fkColIndex)[filterIndex][pkStatusIndex];
+                    long index = fkRange.start + fkRange.range - 1;
+                    advanceFkRange(fkRange, remainSize[rowId]);
+                    fkColValues[fkColIndex][rowId] = ruleTables[fkColIndex].getKey(populateStatus[fkColIndex], index);
+                }
+            } else {
+                int finalFkColIndex = fkColIndex;
+                IntStream.range(0, statusVectorOfEachRow.length).parallel().forEach(rowId -> {
+                    int pkStatusIndex = pkStatuses[rowId];
+                    JoinStatus[] populateStatus = jointPkStatus[pkStatusIndex];
+                    fkColValues[finalFkColIndex][rowId] = ruleTables[finalFkColIndex].getKey(populateStatus[finalFkColIndex], -1);
+                });
+            }
+        }
+        // 计算每一行数据的输出状态
+        int chainSize = statusVectorOfEachRow[0].length;
+        for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
+            boolean[] outputStatus = outputStatusForEachPk[pkStatuses[rowId]].status();
+            for (int fkColIndex = 0; fkColIndex < chainSize; fkColIndex++) {
+                statusVectorOfEachRow[rowId][fkColIndex] &= outputStatus[fkColIndex];
             }
         }
         return fkColValues;
@@ -214,14 +235,18 @@ public class FkGenerator {
     }
 
 
-    public static SortedMap<JoinStatus, Long> generateStatusHistogram(boolean[][] statusVectorOfEachRow, List<Integer> involvedChainIndexes) {
-        if (involvedChainIndexes.isEmpty()) {
-            return new TreeMap<>();
+    public static SortedMap<JoinStatus, Long> generateStatusHistogram(JoinStatus[] involvedStatuses) {
+        List<JoinStatus> distinctStatuses = Arrays.stream(involvedStatuses).parallel().distinct().toList();
+        HashMap<JoinStatus, AtomicLong> status2Recorder = new HashMap<>();
+        for (JoinStatus allStatus : distinctStatuses) {
+            status2Recorder.put(allStatus, new AtomicLong(0L));
         }
-        var map = IntStream.range(0, statusVectorOfEachRow.length).parallel()
-                .mapToObj(i -> chooseCorrespondingStatus(statusVectorOfEachRow[i], involvedChainIndexes))
-                .collect(Collectors.groupingByConcurrent(Function.identity(), Collectors.counting()));
-        return new TreeMap<>(map);
+        Arrays.stream(involvedStatuses).parallel().forEach(status -> status2Recorder.get(status).incrementAndGet());
+        SortedMap<JoinStatus, Long> result = new TreeMap<>();
+        for (Map.Entry<JoinStatus, AtomicLong> s2Recorder : status2Recorder.entrySet()) {
+            result.put(s2Recorder.getKey(), s2Recorder.getValue().get());
+        }
+        return result;
     }
 
     public static JoinStatus chooseCorrespondingStatus(boolean[] originStatus, List<Integer> involvedChainIndexes) {
