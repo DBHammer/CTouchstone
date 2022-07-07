@@ -76,7 +76,15 @@ public abstract class DbConnector {
             int columnType=rs.getInt("DATA_TYPE");
             ColumnManager.getInstance().addColumn(canonicalColumnName, new Column(ColumnType.getColumnType(columnType)));
             String originalType = switch (columnType) {
-                case Types.CHAR, Types.VARCHAR -> getTypeName(columnType) + "(" + rs.getInt("CHAR_OCTET_LENGTH") + ")";
+                case Types.CHAR -> getTypeName(columnType) + "(" + rs.getInt("CHAR_OCTET_LENGTH") + ")";
+                case Types.VARCHAR -> {
+                    int charLength = rs.getInt("CHAR_OCTET_LENGTH");
+                    if (charLength == Integer.MAX_VALUE) {
+                        yield "TEXT";
+                    } else {
+                        yield getTypeName(columnType) + "(" + charLength +")";
+                    }
+                }
                 case Types.NUMERIC -> "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")";
                 default -> getTypeName(columnType);
             } + (rs.getInt("NULLABLE") == 0 ? " NOT NULL" : " DEFAULT NULL");
