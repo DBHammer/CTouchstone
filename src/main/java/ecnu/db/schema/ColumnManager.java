@@ -293,10 +293,7 @@ public class ColumnManager {
     public void prepareGeneration(int size, boolean shuffle) {
         attributeColumns.stream().parallel().forEach(column -> column.prepareTupleData(size));
         if (shuffle) {
-            List<Integer> rowIndex = new ArrayList<>();
-            for (int i = 0; i < size; i++) {
-                rowIndex.add(i);
-            }
+            List<Integer> rowIndex = IntStream.range(0, size).parallel().boxed().collect(Collectors.toList());
             Collections.shuffle(rowIndex);
             attributeColumns.stream().parallel().forEach(column -> column.shuffleRows(rowIndex));
         }
