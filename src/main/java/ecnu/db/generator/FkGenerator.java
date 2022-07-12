@@ -128,8 +128,6 @@ public class FkGenerator {
         JoinStatus[] involvedStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
                 .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, involvedChainIndexes)).toArray(JoinStatus[]::new);
         SortedMap<JoinStatus, Long> statusHistogram = generateStatusHistogram(involvedStatuses);
-        System.out.println("状态图：" + statusHistogram.size());
-
         int range = statusVectorOfEachRow.length;
         long start2 = System.currentTimeMillis();
         ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
