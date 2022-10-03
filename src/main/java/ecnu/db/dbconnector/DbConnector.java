@@ -203,7 +203,7 @@ public abstract class DbConnector {
             switch (ColumnManager.getInstance().getColumnType(canonicalColumnName)) {
                 case DATE, DATETIME, DECIMAL -> sql.append(String.format("min(%1$s), max(%1$s), ", canonicalColumnName));
                 case INTEGER -> sql.append(String.format("min(%1$s), max(%1$s), count(distinct %1$s),", canonicalColumnName));
-                case VARCHAR -> sql.append(String.format("min(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
+                case VARCHAR -> sql.append(String.format("avg(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
                 case BOOL -> sql.append(String.format("avg(%s)", canonicalColumnName));
                 default -> throw new TouchstoneException("未匹配到的类型");
             }
