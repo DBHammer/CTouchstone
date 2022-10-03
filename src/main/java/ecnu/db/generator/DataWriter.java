@@ -13,7 +13,11 @@ public class DataWriter {
     String outputPath;
     int generatorId;
 
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    String lastSchemaName = null;
+
+    BufferedWriter lastBufferedWriter = null;
+
+    ExecutorService executorService = Executors.newFixedThreadPool(6);
 
     public DataWriter(String outputPath, int generatorId) {
         this.outputPath = outputPath;
@@ -21,25 +25,29 @@ public class DataWriter {
     }
 
     public void addWriteTask(String schemaName, StringBuilder[] keyData, String[] attData) {
-        executorService.submit(() -> {
+        if (!schemaName.equals(lastSchemaName)) {
+            File file = new File(outputPath + "/" + schemaName + generatorId);
             try {
-                File file = new File(outputPath + "/" + schemaName + generatorId);
                 if (!file.exists()) {
                     file.createNewFile();
                 }
-                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file, true));
+                lastBufferedWriter = new BufferedWriter(new FileWriter(file, true));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        BufferedWriter finalWriter = lastBufferedWriter;
+        executorService.submit(() -> {
+            try {
+                StringBuilder file = new StringBuilder();
                 for (int i = 0; i < keyData.length; i++) {
-                    bufferedWriter.append(keyData[i]).append(attData[i]).append(System.lineSeparator());
+                    file.append(keyData[i]).append(attData[i]).append(System.lineSeparator());
                 }
-                bufferedWriter.close();
+                finalWriter.write(file.toString());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
-    }
-
-    public void reset() {
-        executorService = Executors.newSingleThreadExecutor();
     }
 
     public boolean waitWriteFinish() throws InterruptedException {

@@ -215,10 +215,6 @@ public class DataGenerator implements Callable<Integer> {
             dataWriter.addWriteTask(schemaName, rowData, attRows);
             batchStart += range + stepRange;
         }
-        if (dataWriter.waitWriteFinish()) {
-            logger.info("输出表数据{}完成", schemaName);
-            dataWriter.reset();
-        }
     }
 
     @Override
