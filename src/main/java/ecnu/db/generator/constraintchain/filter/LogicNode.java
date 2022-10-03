@@ -7,7 +7,6 @@ import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static ecnu.db.generator.constraintchain.filter.BoolExprType.*;
 
@@ -101,17 +100,19 @@ public class LogicNode extends BoolExprNode {
         for (int i = 0; i < children.size(); i++) {
             computeVectors[i] = children.get(i).evaluate();
         }
-        boolean[] resultVector = new boolean[computeVectors[0].length];
+        boolean[] resultVector = computeVectors[0];
         if (getRealType() == AND) {
-            Arrays.fill(resultVector, true);
-            Arrays.stream(computeVectors).forEach(
-                    computeVector -> IntStream.range(0, resultVector.length)
-                            .forEach(i -> resultVector[i] &= computeVector[i]));
+            for (int i = 0; i < resultVector.length; i++) {
+                for (int j = 1; j < computeVectors.length; j++) {
+                    resultVector[i] &= computeVectors[j][i];
+                }
+            }
         } else if (getRealType() == OR) {
-            Arrays.fill(resultVector, false);
-            Arrays.stream(computeVectors).forEach(
-                    computeVector -> IntStream.range(0, resultVector.length)
-                            .forEach(i -> resultVector[i] |= computeVector[i]));
+            for (int i = 0; i < resultVector.length; i++) {
+                for (int j = 1; j < computeVectors.length; j++) {
+                    resultVector[i] |= computeVectors[j][i];
+                }
+            }
         }
         return resultVector;
     }
