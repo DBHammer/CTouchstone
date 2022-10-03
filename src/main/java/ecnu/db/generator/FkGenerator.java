@@ -164,26 +164,40 @@ public class FkGenerator {
             populateSolution[filterIndex][pkStatusIndex]--;
         }
         long[][] fkColValues = new long[jointPkStatus[0].length][statusVectorOfEachRow.length];
+        ExecutorService executorPool = Executors.newFixedThreadPool(jointPkStatus[0].length);
         for (int fkColIndex = 0; fkColIndex < jointPkStatus[0].length; fkColIndex++) {
+            int finalFkColIndex = fkColIndex;
             if (fkIndex2Range.containsKey(fkColIndex)) {
-                for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
-                    int pkStatusIndex = pkStatuses[rowId];
-                    JoinStatus[] populateStatus = jointPkStatus[pkStatusIndex];
-                    int filterIndex = filterIndexes[rowId];
-                    FkRange fkRange = fkIndex2Range.get(fkColIndex)[filterIndex][pkStatusIndex];
-                    long index = fkRange.start + fkRange.range - 1;
-                    advanceFkRange(fkRange, remainSize[rowId]);
-                    fkColValues[fkColIndex][rowId] = ruleTables[fkColIndex].getKey(populateStatus[fkColIndex], index);
-                }
-            } else {
-                int finalFkColIndex = fkColIndex;
-                IntStream.range(0, statusVectorOfEachRow.length).parallel().forEach(rowId -> {
-                    int pkStatusIndex = pkStatuses[rowId];
-                    JoinStatus[] populateStatus = jointPkStatus[pkStatusIndex];
-                    fkColValues[finalFkColIndex][rowId] = ruleTables[finalFkColIndex].getKey(populateStatus[finalFkColIndex], -1);
+                executorPool.submit(() -> {
+                    FkRange[][] fkRangeForFk = fkIndex2Range.get(finalFkColIndex);
+                    for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
+                        int pkStatusIndex = pkStatuses[rowId];
+                        JoinStatus[] populateStatus = jointPkStatus[pkStatusIndex];
+                        int filterIndex = filterIndexes[rowId];
+                        FkRange fkRange = fkRangeForFk[filterIndex][pkStatusIndex];
+                        long index = fkRange.start + fkRange.range - 1;
+                        advanceFkRange(fkRange, remainSize[rowId]);
+                        fkColValues[finalFkColIndex][rowId] = ruleTables[finalFkColIndex].getKey(populateStatus[finalFkColIndex], index);
+                    }
                 });
+            } else {
+                executorPool.submit(() -> {
+                            for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
+                                int pkStatusIndex = pkStatuses[rowId];
+                                JoinStatus[] populateStatus = jointPkStatus[pkStatusIndex];
+                                fkColValues[finalFkColIndex][rowId] = ruleTables[finalFkColIndex].getKey(populateStatus[finalFkColIndex], 0);
+                            }
+                        }
+                );
             }
         }
+        executorPool.shutdown();
+        try {
+            executorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         // 计算每一行数据的输出状态
         int chainSize = statusVectorOfEachRow[0].length;
         IntStream.range(0, statusVectorOfEachRow.length).parallel().forEach(rowId -> {
