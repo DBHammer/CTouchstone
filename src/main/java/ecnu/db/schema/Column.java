@@ -109,29 +109,54 @@ public class Column {
             value = parameters.get(0).getData();
         }
         boolean[] ret = new boolean[columnData.length];
-        IntStream indexStream = IntStream.range(0, columnData.length);
         switch (operator) {
-            case EQ, LIKE, ISNULL ->
-                    indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] == value);
-            case NE, NOT_LIKE, IS_NOT_NULL ->
-                    indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] != value);
-            case LT -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] < value);
-            case LE -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] <= value);
-            case GT -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] > value);
-            case GE -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] >= value);
+            case EQ, LIKE, ISNULL -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] == value;
+                }
+            }
+            case NE, NOT_LIKE, IS_NOT_NULL -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] != value;
+                }
+            }
+            case LT -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] < value;
+                }
+            }
+            case LE -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] <= value;
+                }
+            }
+            case GT -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] > value;
+                }
+            }
+            case GE -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] >= value;
+                }
+            }
             case IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());
                 }
-                indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && parameterData.contains(columnData[i]));
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && parameterData.contains(columnData[i]);
+                }
             }
             case NOT_IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());
                 }
-                indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && !parameterData.contains(columnData[i]));
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && !parameterData.contains(columnData[i]);
+                }
             }
             default -> throw new UnsupportedOperationException();
         }
@@ -143,15 +168,26 @@ public class Column {
      */
     public double[] calculate() {
         //lazy生成computeData
-        return switch (columnType) {
-            case DATE, DATETIME ->
-                    Arrays.stream(columnData).parallel().mapToDouble(data -> (double) data + min).toArray();
-            case DECIMAL ->
-                    Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
-            case INTEGER ->
-                    Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (specialValue * data) + min).toArray();
+        double[] ret = new double[columnData.length];
+        switch (columnType) {
+            case DATE, DATETIME -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] + min;
+                }
+            }
+            case DECIMAL -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = ((double) (columnData[i] + min)) / specialValue;
+                }
+            }
+            case INTEGER -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = (double) (specialValue * columnData[i]) + min;
+                }
+            }
             default -> throw new IllegalStateException("Unexpected value: " + columnType);
-        };
+        }
+        return ret;
     }
 
     public int getAvgLength() {
