@@ -123,7 +123,7 @@ public class QueryInstantiate implements Callable<Integer> {
                 .flatMap(Collection::stream).collect(Collectors.toSet());
 
         ColumnManager.getInstance().cacheAttributeColumn(prepareSamplingColumnName);
-        ColumnManager.getInstance().prepareGeneration(samplingSize, false);
+        ColumnManager.getInstance().prepareGeneration(samplingSize);
 
         filterOperations.parallelStream()
                 .filter(MultiVarFilterOperation.class::isInstance)
