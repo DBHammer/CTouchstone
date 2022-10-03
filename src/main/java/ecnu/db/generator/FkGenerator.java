@@ -186,12 +186,12 @@ public class FkGenerator {
         }
         // 计算每一行数据的输出状态
         int chainSize = statusVectorOfEachRow[0].length;
-        for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
+        IntStream.range(0, statusVectorOfEachRow.length).parallel().forEach(rowId -> {
             boolean[] outputStatus = outputStatusForEachPk[pkStatuses[rowId]].status();
             for (int fkColIndex = 0; fkColIndex < chainSize; fkColIndex++) {
                 statusVectorOfEachRow[rowId][fkColIndex] &= outputStatus[fkColIndex];
             }
-        }
+        });
         return fkColValues;
     }
 
