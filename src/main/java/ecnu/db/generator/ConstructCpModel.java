@@ -29,6 +29,7 @@ public class ConstructCpModel {
 
     public long[][] solve() {
         solver.getParameters().setEnumerateAllSolutions(false);
+        solver.getParameters().setNumWorkers(Runtime.getRuntime().availableProcessors());
         CpSolverStatus status = solver.solve(model);
         if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
             logger.info("用时{}ms", solver.wallTime() * 1000);
