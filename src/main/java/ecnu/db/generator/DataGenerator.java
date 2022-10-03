@@ -143,7 +143,7 @@ public class DataGenerator implements Callable<Integer> {
         return statusVectorOfEachRow;
     }
 
-    private StringBuilder[] generatePks(boolean[][] statusVectorOfEachRow, List<Integer> pkStatusChainIndexes, int range, String pkName) {
+    private StringBuilder[] generatePks(boolean[][] statusVectorOfEachRow, int[] pkStatusChainIndexes, int range, String pkName) {
         //todo 处理多列主键
         StringBuilder[] rowData = new StringBuilder[range];
         if (pkStatusChainIndexes.length > 0) {
@@ -253,11 +253,7 @@ public class DataGenerator implements Callable<Integer> {
             // 开始生成
             while (batchStart < tableSize) {
                 int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
-                //生成属性列数据
-                ColumnManager.getInstance().prepareGeneration(range, true);
-                //转换为字符串准备输出
-                Future<String[]> futureRowData = attTransferService.submit(() -> ColumnManager.getInstance().generateAttRows(range));
-                // 生成每一行的
+                ColumnManager.getInstance().prepareGeneration(range);
                 boolean[][] statusVectorOfEachRow = generateStatusViewOfEachRow(allChains, range);
                 Map<String, long[]> fkCol2Values = generateFks(statusVectorOfEachRow, fkGenerators, fkGroups);
                 generateFksNoConstraints(fkCol2Values, allFk2TableSize, range);
@@ -273,7 +269,9 @@ public class DataGenerator implements Callable<Integer> {
                         }
                     }
                 });
-                dataWriter.addWriteTask(schemaName, keyData, futureRowData.get());
+                //转换为字符串准备输出
+                String[] data = ColumnManager.getInstance().generateAttRows(range);
+                dataWriter.addWriteTask(schemaName, keyData, data);
                 batchStart += range + stepRange;
             }
         }
