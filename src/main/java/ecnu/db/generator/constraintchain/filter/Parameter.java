@@ -111,6 +111,11 @@ public class Parameter {
         return id;
     }
 
+    @JsonIgnore
+    public String getIdForString() {
+        return String.valueOf(id);
+    }
+
     public void setId(int id) {
         this.id = id;
     }
