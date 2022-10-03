@@ -44,6 +44,7 @@ public class DataWriter {
                     file.append(keyData[i]).append(attData[i]).append(System.lineSeparator());
                 }
                 finalWriter.write(file.toString());
+                finalWriter.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
