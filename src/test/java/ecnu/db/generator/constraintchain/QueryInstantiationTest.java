@@ -50,7 +50,7 @@ class QueryInstantiationTest {
 
         // 生成测试数据集
         ColumnManager.getInstance().cacheAttributeColumn(columnNames);
-        ColumnManager.getInstance().prepareGeneration(sampleSize.intValue(), false);
+        ColumnManager.getInstance().prepareGeneration(sampleSize.intValue());
 
         //验证每个filterNode的执行结果
         filterNodes.stream().parallel().forEach(filterNode -> {

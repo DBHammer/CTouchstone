@@ -289,12 +289,7 @@ public class ColumnManager {
         attributeColumns.addAll(columnNames.stream().map(this::getColumn).toList());
     }
 
-    public void prepareGeneration(int size, boolean shuffle) {
+    public void prepareGeneration(int size) {
         attributeColumns.stream().parallel().forEach(column -> column.prepareTupleData(size));
-        if (shuffle) {
-            List<Integer> rowIndex = IntStream.range(0, size).parallel().boxed().collect(Collectors.toList());
-            Collections.shuffle(rowIndex);
-            attributeColumns.stream().parallel().forEach(column -> column.shuffleRows(rowIndex));
-        }
     }
 }

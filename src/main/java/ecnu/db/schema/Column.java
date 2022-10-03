@@ -86,14 +86,6 @@ public class Column {
     }
 
 
-    public void shuffleRows(List<Integer> rowIndexes) {
-        long[] tempIndex = new long[rowIndexes.size()];
-        for (int i = 0; i < tempIndex.length; i++) {
-            tempIndex[i] = columnData[rowIndexes.get(i)];
-        }
-        columnData = tempIndex;
-    }
-
     /**
      * 无运算比较，针对传入的参数，对于单操作符进行比较
      *
