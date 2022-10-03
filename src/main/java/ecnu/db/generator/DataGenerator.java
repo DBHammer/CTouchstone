@@ -53,10 +53,6 @@ public class DataGenerator implements Callable<Integer> {
 
     // 下一次batch需要推进的range
     private long stepRange;
-
-
-    ExecutorService attTransferService = Executors.newSingleThreadExecutor();
-
     private static Map<String, List<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
         Map<String, List<ConstraintChain>> schema2chains = new HashMap<>();
         for (List<ConstraintChain> chains : query2chains.values()) {
