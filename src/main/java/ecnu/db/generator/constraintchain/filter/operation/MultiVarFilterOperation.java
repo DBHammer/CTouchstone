@@ -12,12 +12,7 @@ import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.*;
 
 /**
  * @author wangqingshuai
@@ -36,63 +31,6 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         this.parameters = parameters;
     }
 
-    private static double select(double[] a, int l, int r, int k) {
-        if (r - l < 75) {
-            insertSort(a, l, r);    //用快速排序进行排序
-            return a[l + k - 1];
-        }
-        int group = (r - l + 5) / 5;
-        for (int i = 0; i < group; i++) {
-            int left = l + 5 * i;
-            int right = Math.min((l + i * 5 + 4), r);  //如果超出右边界就用右边界赋值
-            int mid = (left + right) / 2;
-            insertSort(a, left, right);
-            swap(a, l + i, mid);     // 将各组中位数与前i个
-        }
-        double pivot = select(a, l, l + group - 1, (group + 1) / 2);  //找出中位数的中位数
-        int p = partition(a, l, r, pivot);    //用中位数的中位数作为基准的位置
-        int leftNum = p - l;       //leftNum用来记录基准位置的前边的元素个数
-        if (k == leftNum + 1)
-            return a[p];
-        else if (k <= leftNum)
-            return select(a, l, p - 1, k);
-        else                    //若k在基准位子的后边，则要从基准位置的后边数起，即第（k - leftNum - 1）个
-            return select(a, p + 1, r, k - leftNum - 1);
-    }
-
-    private static int partition(double[] a, int l, int r, double pivot) {   //适用于线性时间选择的partition方法
-        int i = l;
-        int j = r;
-        while (true) {
-            while (a[i] <= pivot && i < r)
-                ++i;   //i一直向后移动，直到出现a[i]>pivot
-            while (a[j] > pivot)
-                --j;   //j一直向前移动，直到出现a[j]<pivot
-            if (i >= j) break;
-            swap(a, i, j);
-        }
-        a[l] = a[j];
-        a[j] = pivot;
-        return j;
-    }
-
-    private static void insertSort(double[] a, int law, int high) {    //插入排序
-        for (int i = law + 1; i <= high; i++) {
-            double key = a[i];
-            int j = i - 1;
-            while (j >= law && a[j] > key) {
-                a[j + 1] = a[j];
-                j--;
-            }
-            a[j + 1] = key;
-        }
-    }
-
-    private static void swap(double[] a, int i, int j) {
-        double temp = a[i];
-        a[i] = a[j];
-        a[j] = temp;
-    }
 
     public Set<String> getAllCanonicalColumnNames() {
         HashSet<String> allTables = new HashSet<>();
@@ -220,7 +158,8 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         } else {
             pos = probability.multiply(BigDecimal.valueOf(vector.length)).setScale(0, RoundingMode.HALF_UP).intValue();
         }
-        double postSmallestNumber = select(vector, 0, vector.length - 1, pos + 1);
+        Arrays.sort(vector);
+        double postSmallestNumber = vector[pos];
         long internalValue = (long) (postSmallestNumber * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         parameters.forEach(param -> param.setData(internalValue));
         //todo check parameter type
