@@ -4,14 +4,14 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.customer_address.ca_address_sk",
-          "localCols" : "public.customer.c_current_addr_sk",
-          "pkTag" : 11,
-          "probability" : 0.43494,
+          "refCols" : "public.date_dim.d_date_sk",
+          "localCols" : "public.store_returns.sr_returned_date_sk",
+          "pkTag" : 54,
+          "probability" : 0.01128988501,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.customer"
+      "tableName" : "public.store_returns"
     },
     {
       "nodes" : [
@@ -21,31 +21,49 @@
             "type" : "AND",
             "children" : [
               {
-                "parameters" : [
+                "type" : "AND",
+                "children" : [
                   {
-                    "id" : 321,
-                    "data" : 2,
-                    "type" : "ACTUAL"
+                    "parameters" : [
+                      {
+                        "id" : 420,
+                        "data" : 73016,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 0.0004380621227,
+                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 421,
+                        "data" : 73050,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "LE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "type" : "UNI_FILTER_OPERATION"
                   }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.43802,
-                "canonicalColumnName" : "public.customer_address.ca_gmt_offset",
-                "type" : "UNI_FILTER_OPERATION"
+                ]
               }
             ]
           },
-          "probability" : 0.43802
+          "probability" : 0.0004380621227
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
-            "ca_address_sk"
+            "d_date_sk"
           ],
-          "pkTag" : 11
+          "pkTag" : 54
         }
       ],
-      "tableName" : "public.customer_address"
+      "tableName" : "public.date_dim"
     }
   ]
 }

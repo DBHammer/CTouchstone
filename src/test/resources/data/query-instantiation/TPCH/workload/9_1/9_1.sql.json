@@ -3,6 +3,19 @@
     {
       "nodes" : [
         {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.part.p_partkey",
+          "localCols" : "public.partsupp.ps_partkey",
+          "pkTag" : 6,
+          "probability" : 0.0544,
+          "type" : "INNER_JOIN"
+        }
+      ],
+      "tableName" : "public.partsupp"
+    },
+    {
+      "nodes" : [
+        {
           "constraintChainNodeType" : "FILTER",
           "root" : {
             "type" : "AND",
@@ -33,44 +46,6 @@
         }
       ],
       "tableName" : "public.part"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.part.p_partkey",
-          "localCols" : "public.partsupp.ps_partkey",
-          "pkTag" : 6,
-          "probability" : 0.0544,
-          "type" : "INNER_JOIN"
-        }
-      ],
-      "tableName" : "public.partsupp"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "s_suppkey"
-          ],
-          "pkTag" : 7
-        }
-      ],
-      "tableName" : "public.supplier"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.supplier.s_suppkey",
-          "localCols" : "public.lineitem.l_suppkey",
-          "pkTag" : 7,
-          "probability" : 0.05437182304,
-          "type" : "INNER_JOIN"
-        }
-      ],
-      "tableName" : "public.lineitem"
     }
   ]
 }

@@ -3,111 +3,75 @@
     {
       "nodes" : [
         {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.date_dim.d_date_sk",
+          "localCols" : "public.inventory.inv_date_sk",
+          "pkTag" : 6,
+          "probability" : 0.04980842912,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.item.i_item_sk",
+          "localCols" : "public.inventory.inv_item_sk",
+          "pkTag" : 2,
+          "probability" : 0.062,
+          "type" : "INNER_JOIN"
+        }
+      ],
+      "tableName" : "public.inventory"
+    },
+    {
+      "nodes" : [
+        {
           "constraintChainNodeType" : "FILTER",
           "root" : {
             "type" : "AND",
             "children" : [
               {
-                "type" : "OR",
+                "type" : "AND",
                 "children" : [
                   {
-                    "type" : "AND",
-                    "children" : [
+                    "parameters" : [
                       {
-                        "parameters" : [
-                          {
-                            "id" : 20,
-                            "data" : 5,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0.05714285714,
-                        "canonicalColumnName" : "public.customer_demographics.cd_marital_status",
-                        "type" : "UNI_FILTER_OPERATION"
-                      },
-                      {
-                        "parameters" : [
-                          {
-                            "id" : 21,
-                            "data" : 5,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0.05714285714,
-                        "canonicalColumnName" : "public.customer_demographics.cd_education_status",
-                        "type" : "UNI_FILTER_OPERATION"
+                        "id" : 27,
+                        "data" : 72955,
+                        "type" : "ACTUAL"
                       }
-                    ]
+                    ],
+                    "operator" : "GE",
+                    "probability" : 0.00123204972,
+                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "type" : "UNI_FILTER_OPERATION"
                   },
                   {
-                    "type" : "AND",
-                    "children" : [
+                    "parameters" : [
                       {
-                        "parameters" : [
-                          {
-                            "id" : 22,
-                            "data" : -1,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0,
-                        "canonicalColumnName" : "public.customer_demographics.cd_marital_status",
-                        "type" : "UNI_FILTER_OPERATION"
-                      },
-                      {
-                        "parameters" : [
-                          {
-                            "id" : 23,
-                            "data" : -1,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0,
-                        "canonicalColumnName" : "public.customer_demographics.cd_education_status",
-                        "type" : "UNI_FILTER_OPERATION"
+                        "id" : 28,
+                        "data" : 73050,
+                        "type" : "ACTUAL"
                       }
-                    ]
+                    ],
+                    "operator" : "LE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.05714285714
+          "probability" : 0.00123204972
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
-            "cd_demo_sk"
+            "d_date_sk"
           ],
-          "pkTag" : 1
+          "pkTag" : 6
         }
       ],
-      "tableName" : "public.customer_demographics"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.customer_demographics.cd_demo_sk",
-          "localCols" : "public.customer.c_current_cdemo_sk",
-          "pkTag" : 1,
-          "probability" : 0.05507,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.customer_address.ca_address_sk",
-          "localCols" : "public.customer.c_current_addr_sk",
-          "pkTag" : 0,
-          "probability" : 0.4240058108,
-          "type" : "INNER_JOIN"
-        }
-      ],
-      "tableName" : "public.customer"
+      "tableName" : "public.date_dim"
     },
     {
       "nodes" : [
@@ -117,31 +81,49 @@
             "type" : "AND",
             "children" : [
               {
-                "parameters" : [
+                "type" : "AND",
+                "children" : [
                   {
-                    "id" : 24,
-                    "data" : 2,
-                    "type" : "ACTUAL"
+                    "parameters" : [
+                      {
+                        "id" : 25,
+                        "data" : 9377,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 0.06133333333,
+                    "canonicalColumnName" : "public.item.i_current_price",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 26,
+                        "data" : 9992,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "LE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.item.i_current_price",
+                    "type" : "UNI_FILTER_OPERATION"
                   }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.43802,
-                "canonicalColumnName" : "public.customer_address.ca_gmt_offset",
-                "type" : "UNI_FILTER_OPERATION"
+                ]
               }
             ]
           },
-          "probability" : 0.43802
+          "probability" : 0.06133333333
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
-            "ca_address_sk"
+            "i_item_sk"
           ],
-          "pkTag" : 0
+          "pkTag" : 2
         }
       ],
-      "tableName" : "public.customer_address"
+      "tableName" : "public.item"
     }
   ]
 }

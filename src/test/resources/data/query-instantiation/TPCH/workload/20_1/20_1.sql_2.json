@@ -14,12 +14,12 @@
                     "parameters" : [
                       {
                         "id" : 92,
-                        "data" : 0,
+                        "data" : 2141,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.1514228369,
                     "canonicalColumnName" : "public.lineitem.l_shipdate",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -27,12 +27,12 @@
                     "parameters" : [
                       {
                         "id" : 93,
-                        "data" : 387,
+                        "data" : 2528,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
-                    "probability" : 0.1514228369,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.lineitem.l_shipdate",
                     "type" : "UNI_FILTER_OPERATION"
                   }

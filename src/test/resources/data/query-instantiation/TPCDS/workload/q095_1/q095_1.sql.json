@@ -5,13 +5,13 @@
         {
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 49,
-          "probability" : 0.02266834791,
+          "localCols" : "public.web_sales.ws_sold_date_sk",
+          "pkTag" : 68,
+          "probability" : 0.03306856978,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.store_sales"
+      "tableName" : "public.web_sales"
     },
     {
       "nodes" : [
@@ -26,41 +26,41 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 409,
-                        "data" : 73016,
+                        "id" : 456,
+                        "data" : 10,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "GE",
-                    "probability" : 0.0004380621227,
-                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "operator" : "EQ",
+                    "probability" : 0.00041068324,
+                    "canonicalColumnName" : "public.date_dim.d_year",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 410,
-                        "data" : 73050,
+                        "id" : 457,
+                        "data" : 10,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "LE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "operator" : "EQ",
+                    "probability" : 0.00041068324,
+                    "canonicalColumnName" : "public.date_dim.d_moy",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.0004380621227
+          "probability" : 0.00041068324
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 49
+          "pkTag" : 68
         }
       ],
       "tableName" : "public.date_dim"

@@ -1,17 +1,17 @@
 {
-  "q106_1.sql" : [
+  "q068_1.sql" : [
     {
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.web_returns.wr_returned_date_sk",
-          "pkTag" : 57,
-          "probability" : 0.1899864833,
+          "refCols" : "public.customer_address.ca_address_sk",
+          "localCols" : "public.customer.c_current_addr_sk",
+          "pkTag" : 12,
+          "probability" : 0.43494,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.web_returns"
+      "tableName" : "public.customer"
     },
     {
       "nodes" : [
@@ -23,29 +23,29 @@
               {
                 "parameters" : [
                   {
-                    "id" : 425,
-                    "data" : 29,
+                    "id" : 333,
+                    "data" : 2,
                     "type" : "ACTUAL"
                   }
                 ],
                 "operator" : "EQ",
-                "probability" : 0.005010335528,
-                "canonicalColumnName" : "public.date_dim.d_year",
+                "probability" : 0.43802,
+                "canonicalColumnName" : "public.customer_address.ca_gmt_offset",
                 "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },
-          "probability" : 0.005010335528
+          "probability" : 0.43802
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
-            "d_date_sk"
+            "ca_address_sk"
           ],
-          "pkTag" : 57
+          "pkTag" : 12
         }
       ],
-      "tableName" : "public.date_dim"
+      "tableName" : "public.customer_address"
     }
   ]
 }

@@ -69,12 +69,12 @@
                     "parameters" : [
                       {
                         "id" : 137,
-                        "data" : 0,
+                        "data" : 1672,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.304842,
                     "canonicalColumnName" : "public.orders.o_orderdate",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -82,12 +82,12 @@
                     "parameters" : [
                       {
                         "id" : 138,
-                        "data" : 736,
+                        "data" : 2407,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.304842,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.orders.o_orderdate",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -146,7 +146,7 @@
                 "parameters" : [
                   {
                     "id" : 139,
-                    "data" : 1,
+                    "data" : 2,
                     "type" : "ACTUAL"
                   }
                 ],

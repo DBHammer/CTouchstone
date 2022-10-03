@@ -4,98 +4,14 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.customer_address.ca_address_sk",
-          "localCols" : "public.web_sales.ws_ship_addr_sk",
-          "pkTag" : 10,
-          "probability" : 0.02908043548,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.web_site.web_site_sk",
-          "localCols" : "public.web_sales.ws_web_site_sk",
-          "pkTag" : 1,
-          "probability" : 0.1318833652,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.web_sales.ws_ship_date_sk",
-          "pkTag" : 30,
-          "probability" : 0.03986951794,
+          "localCols" : "public.inventory.inv_date_sk",
+          "pkTag" : 38,
+          "probability" : 0.2030651341,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.web_sales"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "parameters" : [
-                  {
-                    "id" : 213,
-                    "data" : 2,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.02904,
-                "canonicalColumnName" : "public.customer_address.ca_state",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 0.02904
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "ca_address_sk"
-          ],
-          "pkTag" : 10
-        }
-      ],
-      "tableName" : "public.customer_address"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "parameters" : [
-                  {
-                    "id" : 210,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.1666666667,
-                "canonicalColumnName" : "public.web_site.web_company_name",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 0.1666666667
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "web_site_sk"
-          ],
-          "pkTag" : 1
-        }
-      ],
-      "tableName" : "public.web_site"
+      "tableName" : "public.inventory"
     },
     {
       "nodes" : [
@@ -110,41 +26,41 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 211,
-                        "data" : 72986,
+                        "id" : 231,
+                        "data" : 2400,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 0.0008350559214,
-                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "probability" : 0.005010335528,
+                    "canonicalColumnName" : "public.date_dim.d_month_seq",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 212,
-                        "data" : 73050,
+                        "id" : 232,
+                        "data" : 2402,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
                     "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "canonicalColumnName" : "public.date_dim.d_month_seq",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.0008350559214
+          "probability" : 0.005010335528
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 30
+          "pkTag" : 38
         }
       ],
       "tableName" : "public.date_dim"

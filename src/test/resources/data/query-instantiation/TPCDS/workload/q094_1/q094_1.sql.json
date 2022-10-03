@@ -4,30 +4,14 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.household_demographics.hd_demo_sk",
-          "localCols" : "public.store_sales.ss_hdemo_sk",
-          "pkTag" : 12,
-          "probability" : 0,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 48,
-          "probability" : 0,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.store.s_store_sk",
-          "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 13,
-          "probability" : 0,
+          "localCols" : "public.catalog_sales.cs_sold_date_sk",
+          "pkTag" : 67,
+          "probability" : 0.03228681945,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.store_sales"
+      "tableName" : "public.catalog_sales"
     },
     {
       "nodes" : [
@@ -42,171 +26,44 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 405,
-                        "data" : -1,
+                        "id" : 454,
+                        "data" : 7,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "GT",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.household_demographics.hd_vehicle_count",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "type" : "OR",
-                    "children" : [
-                      {
-                        "parameters" : [
-                          {
-                            "id" : 406,
-                            "data" : -1,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0,
-                        "canonicalColumnName" : "public.household_demographics.hd_buy_potential",
-                        "type" : "UNI_FILTER_OPERATION"
-                      },
-                      {
-                        "parameters" : [
-                          {
-                            "id" : 407,
-                            "data" : -1,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0,
-                        "canonicalColumnName" : "public.household_demographics.hd_buy_potential",
-                        "type" : "UNI_FILTER_OPERATION"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          "probability" : 0
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "hd_demo_sk"
-          ],
-          "pkTag" : 12
-        }
-      ],
-      "tableName" : "public.household_demographics"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "type" : "AND",
-                "children" : [
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 400,
-                        "data" : 0,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "GE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_dom",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 402,
-                        "data" : 32,
-                        "type" : "ACTUAL"
-                      },
-                      {
-                        "id" : 403,
-                        "data" : 33,
-                        "type" : "ACTUAL"
-                      },
-                      {
-                        "id" : 404,
-                        "data" : 34,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "IN",
-                    "probability" : 0.000985639776,
+                    "operator" : "EQ",
+                    "probability" : 0.00041068324,
                     "canonicalColumnName" : "public.date_dim.d_year",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 401,
-                        "data" : 32,
+                        "id" : 455,
+                        "data" : 7,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "LE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_dom",
+                    "operator" : "EQ",
+                    "probability" : 0.00041068324,
+                    "canonicalColumnName" : "public.date_dim.d_moy",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.000985639776
+          "probability" : 0.00041068324
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 48
+          "pkTag" : 67
         }
       ],
       "tableName" : "public.date_dim"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "parameters" : [
-                  {
-                    "id" : 408,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 1,
-                "canonicalColumnName" : "public.store.s_county",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 1
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "s_store_sk"
-          ],
-          "pkTag" : 13
-        }
-      ],
-      "tableName" : "public.store"
     }
   ]
 }

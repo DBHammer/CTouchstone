@@ -6,32 +6,8 @@
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
           "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 40,
-          "probability" : 0.03078700071,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.promotion.p_promo_sk",
-          "localCols" : "public.store_sales.ss_promo_sk",
-          "pkTag" : 1,
-          "probability" : 0.5139773791,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.item.i_item_sk",
-          "localCols" : "public.store_sales.ss_item_sk",
-          "pkTag" : 14,
-          "probability" : 0.09736940258,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.store.s_store_sk",
-          "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 11,
-          "probability" : 0.9896349707,
+          "pkTag" : 53,
+          "probability" : 0.02266834791,
           "type" : "INNER_JOIN"
         }
       ],
@@ -50,177 +26,44 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 317,
-                        "data" : 9,
+                        "id" : 418,
+                        "data" : 73016,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "EQ",
-                    "probability" : 0.00041068324,
-                    "canonicalColumnName" : "public.date_dim.d_year",
+                    "operator" : "GE",
+                    "probability" : 0.0004380621227,
+                    "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 318,
-                        "data" : 9,
+                        "id" : 419,
+                        "data" : 73050,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "EQ",
-                    "probability" : 0.00041068324,
-                    "canonicalColumnName" : "public.date_dim.d_moy",
+                    "operator" : "LE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.00041068324
+          "probability" : 0.0004380621227
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 40
+          "pkTag" : 53
         }
       ],
       "tableName" : "public.date_dim"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "type" : "OR",
-                "children" : [
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 314,
-                        "data" : 1,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "EQ",
-                    "probability" : 0.5266666667,
-                    "canonicalColumnName" : "public.promotion.p_channel_dmail",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 316,
-                        "data" : -1,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "EQ",
-                    "probability" : 0,
-                    "canonicalColumnName" : "public.promotion.p_channel_tv",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 315,
-                        "data" : -1,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "EQ",
-                    "probability" : 0,
-                    "canonicalColumnName" : "public.promotion.p_channel_email",
-                    "type" : "UNI_FILTER_OPERATION"
-                  }
-                ]
-              }
-            ]
-          },
-          "probability" : 0.5266666667
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "p_promo_sk"
-          ],
-          "pkTag" : 1
-        }
-      ],
-      "tableName" : "public.promotion"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "parameters" : [
-                  {
-                    "id" : 320,
-                    "data" : 3,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.1006666667,
-                "canonicalColumnName" : "public.item.i_category",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 0.1006666667
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "i_item_sk"
-          ],
-          "pkTag" : 14
-        }
-      ],
-      "tableName" : "public.item"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "parameters" : [
-                  {
-                    "id" : 319,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 1,
-                "canonicalColumnName" : "public.store.s_gmt_offset",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 1
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "s_store_sk"
-          ],
-          "pkTag" : 11
-        }
-      ],
-      "tableName" : "public.store"
     }
   ]
 }

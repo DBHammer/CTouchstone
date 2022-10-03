@@ -14,12 +14,12 @@
                     "parameters" : [
                       {
                         "id" : 121,
-                        "data" : 0,
+                        "data" : 2314,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.038316,
                     "canonicalColumnName" : "public.orders.o_orderdate",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -27,12 +27,12 @@
                     "parameters" : [
                       {
                         "id" : 122,
-                        "data" : 95,
+                        "data" : 2408,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LT",
-                    "probability" : 0.038316,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.orders.o_orderdate",
                     "type" : "UNI_FILTER_OPERATION"
                   }

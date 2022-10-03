@@ -4,18 +4,10 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.time_dim.t_time_sk",
-          "localCols" : "public.store_sales.ss_sold_time_sk",
-          "pkTag" : 0,
-          "probability" : 0.01871091694,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.household_demographics.hd_demo_sk",
           "localCols" : "public.store_sales.ss_hdemo_sk",
           "pkTag" : 0,
-          "probability" : 0.1007700158,
+          "probability" : 0.09525990104,
           "type" : "INNER_JOIN"
         },
         {
@@ -23,7 +15,15 @@
           "refCols" : "public.store.s_store_sk",
           "localCols" : "public.store_sales.ss_store_sk",
           "pkTag" : 0,
-          "probability" : 0.1747376174,
+          "probability" : 0.1621724061,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.time_dim.t_time_sk",
+          "localCols" : "public.store_sales.ss_sold_time_sk",
+          "pkTag" : 0,
+          "probability" : 0.0213268012,
           "type" : "INNER_JOIN"
         }
       ],
@@ -37,61 +37,9 @@
             "type" : "AND",
             "children" : [
               {
-                "type" : "AND",
-                "children" : [
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 2,
-                        "data" : 0,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "GE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.time_dim.t_minute",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 3,
-                        "data" : 2,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "EQ",
-                    "probability" : 0.02083333333,
-                    "canonicalColumnName" : "public.time_dim.t_hour",
-                    "type" : "UNI_FILTER_OPERATION"
-                  }
-                ]
-              }
-            ]
-          },
-          "probability" : 0.02083333333
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "t_time_sk"
-          ],
-          "pkTag" : 0
-        }
-      ],
-      "tableName" : "public.time_dim"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
                 "parameters" : [
                   {
-                    "id" : 0,
+                    "id" : 3,
                     "data" : 2,
                     "type" : "ACTUAL"
                   }
@@ -125,7 +73,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 1,
+                    "id" : 0,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -148,6 +96,58 @@
         }
       ],
       "tableName" : "public.store"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "type" : "AND",
+                "children" : [
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 1,
+                        "data" : 0,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "GE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.time_dim.t_minute",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 2,
+                        "data" : 4,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0.02083333333,
+                    "canonicalColumnName" : "public.time_dim.t_hour",
+                    "type" : "UNI_FILTER_OPERATION"
+                  }
+                ]
+              }
+            ]
+          },
+          "probability" : 0.02083333333
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "t_time_sk"
+          ],
+          "pkTag" : 0
+        }
+      ],
+      "tableName" : "public.time_dim"
     }
   ]
 }

@@ -3,19 +3,6 @@
     {
       "nodes" : [
         {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.store_returns.sr_returned_date_sk",
-          "pkTag" : 50,
-          "probability" : 0.01128988501,
-          "type" : "INNER_JOIN"
-        }
-      ],
-      "tableName" : "public.store_returns"
-    },
-    {
-      "nodes" : [
-        {
           "constraintChainNodeType" : "FILTER",
           "root" : {
             "type" : "AND",
@@ -26,41 +13,47 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 411,
-                        "data" : 73016,
+                        "id" : 458,
+                        "data" : 1,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "GE",
-                    "probability" : 0.0004380621227,
-                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "operator" : "EQ",
+                    "probability" : 0.00001368944133,
+                    "canonicalColumnName" : "public.date_dim.d_year",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 412,
-                        "data" : 73050,
+                        "id" : 460,
+                        "data" : 1,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "LE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_date",
+                    "operator" : "EQ",
+                    "probability" : 0.00001368944133,
+                    "canonicalColumnName" : "public.date_dim.d_dom",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 459,
+                        "data" : 1,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0.00001368944133,
+                    "canonicalColumnName" : "public.date_dim.d_moy",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.0004380621227
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "d_date_sk"
-          ],
-          "pkTag" : 50
+          "probability" : 0.00001368944133
         }
       ],
       "tableName" : "public.date_dim"

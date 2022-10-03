@@ -235,12 +235,12 @@
                     "parameters" : [
                       {
                         "id" : 34,
-                        "data" : 2,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       },
                       {
                         "id" : 35,
-                        "data" : 2,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -272,12 +272,12 @@
                             "parameters" : [
                               {
                                 "id" : 38,
-                                "data" : -1,
+                                "data" : 4902,
                                 "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
-                            "probability" : 0,
+                            "probability" : 1,
                             "canonicalColumnName" : "public.lineitem.l_quantity",
                             "type" : "UNI_FILTER_OPERATION"
                           }
@@ -290,12 +290,12 @@
                             "parameters" : [
                               {
                                 "id" : 41,
-                                "data" : 0,
+                                "data" : 4903,
                                 "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "GE",
-                            "probability" : 1,
+                            "probability" : 0,
                             "canonicalColumnName" : "public.lineitem.l_quantity",
                             "type" : "UNI_FILTER_OPERATION"
                           },
@@ -303,12 +303,12 @@
                             "parameters" : [
                               {
                                 "id" : 42,
-                                "data" : -1,
+                                "data" : 4902,
                                 "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "LE",
-                            "probability" : 0,
+                            "probability" : 1,
                             "canonicalColumnName" : "public.lineitem.l_quantity",
                             "type" : "UNI_FILTER_OPERATION"
                           }
@@ -321,12 +321,12 @@
                             "parameters" : [
                               {
                                 "id" : 39,
-                                "data" : 0,
+                                "data" : 4903,
                                 "type" : "ACTUAL"
                               }
                             ],
                             "operator" : "GE",
-                            "probability" : 1,
+                            "probability" : 0,
                             "canonicalColumnName" : "public.lineitem.l_quantity",
                             "type" : "UNI_FILTER_OPERATION"
                           },

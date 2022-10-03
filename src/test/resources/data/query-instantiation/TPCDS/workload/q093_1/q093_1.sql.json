@@ -4,76 +4,14 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.customer_address.ca_address_sk",
-          "localCols" : "public.customer.c_current_addr_sk",
-          "pkTag" : 14,
-          "probability" : 0.00756,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.household_demographics.hd_demo_sk",
-          "localCols" : "public.customer.c_current_hdemo_sk",
-          "pkTag" : 11,
-          "probability" : 0.1746031746,
+          "refCols" : "public.date_dim.d_date_sk",
+          "localCols" : "public.web_sales.ws_sold_date_sk",
+          "pkTag" : 66,
+          "probability" : 0.009736107559,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.customer"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "parameters" : [
-                  {
-                    "id" : 397,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.0084,
-                "canonicalColumnName" : "public.customer_address.ca_city",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 0.0084
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "ca_address_sk"
-          ],
-          "pkTag" : 14
-        }
-      ],
-      "tableName" : "public.customer_address"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.income_band.ib_income_band_sk",
-          "localCols" : "public.household_demographics.hd_income_band_sk",
-          "pkTag" : 0,
-          "probability" : 0.2,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "hd_demo_sk"
-          ],
-          "pkTag" : 11
-        }
-      ],
-      "tableName" : "public.household_demographics"
+      "tableName" : "public.web_sales"
     },
     {
       "nodes" : [
@@ -88,44 +26,44 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 398,
-                        "data" : 16,
+                        "id" : 452,
+                        "data" : 6,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "GE",
-                    "probability" : 0.2,
-                    "canonicalColumnName" : "public.income_band.ib_lower_bound",
+                    "operator" : "EQ",
+                    "probability" : 0.00041068324,
+                    "canonicalColumnName" : "public.date_dim.d_year",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 399,
-                        "data" : 21,
+                        "id" : 453,
+                        "data" : 6,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "LE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.income_band.ib_upper_bound",
+                    "operator" : "EQ",
+                    "probability" : 0.00041068324,
+                    "canonicalColumnName" : "public.date_dim.d_moy",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.2
+          "probability" : 0.00041068324
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
-            "ib_income_band_sk"
+            "d_date_sk"
           ],
-          "pkTag" : 0
+          "pkTag" : 66
         }
       ],
-      "tableName" : "public.income_band"
+      "tableName" : "public.date_dim"
     }
   ]
 }

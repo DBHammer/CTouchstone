@@ -5,29 +5,13 @@
         {
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 43,
-          "probability" : 0.08174131129,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.household_demographics.hd_demo_sk",
-          "localCols" : "public.store_sales.ss_hdemo_sk",
-          "pkTag" : 10,
-          "probability" : 0.8319713907,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.store.s_store_sk",
-          "localCols" : "public.store_sales.ss_store_sk",
-          "pkTag" : 12,
-          "probability" : 0.8195583145,
+          "localCols" : "public.web_returns.wr_returned_date_sk",
+          "pkTag" : 58,
+          "probability" : 0.007524769031,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.store_sales"
+      "tableName" : "public.web_returns"
     },
     {
       "nodes" : [
@@ -42,158 +26,44 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 342,
-                        "data" : 1,
+                        "id" : 428,
+                        "data" : 73016,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "EQ",
-                    "probability" : 0.002149242289,
-                    "canonicalColumnName" : "public.date_dim.d_dow",
+                    "operator" : "GE",
+                    "probability" : 0.0004380621227,
+                    "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 343,
-                        "data" : 35,
-                        "type" : "ACTUAL"
-                      },
-                      {
-                        "id" : 344,
-                        "data" : 35,
-                        "type" : "ACTUAL"
-                      },
-                      {
-                        "id" : 345,
-                        "data" : 35,
+                        "id" : 429,
+                        "data" : 73050,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "IN",
-                    "probability" : 0.002149242289,
-                    "canonicalColumnName" : "public.date_dim.d_year",
+                    "operator" : "LE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.date_dim.d_date",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.002149242289
+          "probability" : 0.0004380621227
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 43
+          "pkTag" : 58
         }
       ],
       "tableName" : "public.date_dim"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "type" : "OR",
-                "children" : [
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 340,
-                        "data" : 2,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "GT",
-                    "probability" : 0.85,
-                    "canonicalColumnName" : "public.household_demographics.hd_vehicle_count",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 341,
-                        "data" : -1,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "EQ",
-                    "probability" : 0,
-                    "canonicalColumnName" : "public.household_demographics.hd_dep_count",
-                    "type" : "UNI_FILTER_OPERATION"
-                  }
-                ]
-              }
-            ]
-          },
-          "probability" : 0.85
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "hd_demo_sk"
-          ],
-          "pkTag" : 10
-        }
-      ],
-      "tableName" : "public.household_demographics"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "type" : "AND",
-                "children" : [
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 346,
-                        "data" : 3,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "GE",
-                    "probability" : 0.9166666667,
-                    "canonicalColumnName" : "public.store.s_number_employees",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 347,
-                        "data" : 10,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "LE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.store.s_number_employees",
-                    "type" : "UNI_FILTER_OPERATION"
-                  }
-                ]
-              }
-            ]
-          },
-          "probability" : 0.9166666667
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "s_store_sk"
-          ],
-          "pkTag" : 12
-        }
-      ],
-      "tableName" : "public.store"
     }
   ]
 }
