@@ -3,7 +3,6 @@ package ecnu.db.generator.constraintchain;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -24,7 +23,7 @@ class QueryInstantiationTest {
     @CsvSource(delimiter = ';', value = {
             "src/test/resources/data/query-instantiation/TPCH/;0.0007",
             "src/test/resources/data/query-instantiation/SSB/;0.0000005",
-            "src/test/resources/data/query-instantiation/TPCDS/;0.0000005"
+            "src/test/resources/data/query-instantiation/TPCDS/;0.000005"
     })
     void computeTest(String configPath, double delta) throws Exception {
         // load column configuration

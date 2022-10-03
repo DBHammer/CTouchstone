@@ -4,10 +4,18 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
+          "refCols" : "public.part.p_partkey",
+          "localCols" : "public.lineorder.lo_partkey",
+          "pkTag" : 5,
+          "probability" : 0.04011867017,
+          "type" : "INNER_JOIN"
+        },
+        {
+          "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.supplier.s_suppkey",
           "localCols" : "public.lineorder.lo_suppkey",
           "pkTag" : 9,
-          "probability" : 0.03809173243,
+          "probability" : 0.03842846996,
           "type" : "INNER_JOIN"
         },
         {
@@ -15,7 +23,7 @@
           "refCols" : "public.customer.c_custkey",
           "localCols" : "public.lineorder.lo_custkey",
           "pkTag" : 6,
-          "probability" : 0.1996456615,
+          "probability" : 0.1999567661,
           "type" : "INNER_JOIN"
         },
         {
@@ -23,15 +31,7 @@
           "refCols" : "public.date.d_datekey",
           "localCols" : "public.lineorder.lo_orderdate",
           "pkTag" : 8,
-          "probability" : 0.2410710373,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.part.p_partkey",
-          "localCols" : "public.lineorder.lo_partkey",
-          "pkTag" : 5,
-          "probability" : 0.04253772041,
+          "probability" : 0.252972973,
           "type" : "INNER_JOIN"
         }
       ],
@@ -48,6 +48,40 @@
                 "parameters" : [
                   {
                     "id" : 52,
+                    "data" : 2,
+                    "type" : "ACTUAL"
+                  }
+                ],
+                "operator" : "EQ",
+                "probability" : 0.040145,
+                "canonicalColumnName" : "public.part.p_category",
+                "type" : "UNI_FILTER_OPERATION"
+              }
+            ]
+          },
+          "probability" : 0.040145
+        },
+        {
+          "constraintChainNodeType" : "PK_JOIN",
+          "pkColumns" : [
+            "p_partkey"
+          ],
+          "pkTag" : 5
+        }
+      ],
+      "tableName" : "public.part"
+    },
+    {
+      "nodes" : [
+        {
+          "constraintChainNodeType" : "FILTER",
+          "root" : {
+            "type" : "AND",
+            "children" : [
+              {
+                "parameters" : [
+                  {
+                    "id" : 51,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -81,7 +115,7 @@
               {
                 "parameters" : [
                   {
-                    "id" : 51,
+                    "id" : 55,
                     "data" : 1,
                     "type" : "ACTUAL"
                   }
@@ -118,8 +152,8 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 54,
-                        "data" : 2,
+                        "id" : 53,
+                        "data" : 4,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -131,7 +165,7 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 55,
+                        "id" : 54,
                         "data" : -1,
                         "type" : "ACTUAL"
                       }
@@ -156,40 +190,6 @@
         }
       ],
       "tableName" : "public.date"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "parameters" : [
-                  {
-                    "id" : 53,
-                    "data" : 2,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.040145,
-                "canonicalColumnName" : "public.part.p_category",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 0.040145
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "p_partkey"
-          ],
-          "pkTag" : 5
-        }
-      ],
-      "tableName" : "public.part"
     }
   ]
 }

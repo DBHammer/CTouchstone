@@ -35,12 +35,12 @@
                     "parameters" : [
                       {
                         "id" : 18,
-                        "data" : 0,
+                        "data" : 992,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.00792,
                     "canonicalColumnName" : "public.part.p_brand1",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -48,12 +48,12 @@
                     "parameters" : [
                       {
                         "id" : 19,
-                        "data" : 9,
+                        "data" : 1001,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.00792,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.part.p_brand1",
                     "type" : "UNI_FILTER_OPERATION"
                   }

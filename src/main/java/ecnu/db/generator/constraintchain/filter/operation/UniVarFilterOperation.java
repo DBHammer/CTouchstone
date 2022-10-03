@@ -96,9 +96,9 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     public String toString() {
         String parametersSQL;
         if (parameters.size() == 1) {
-            parametersSQL = "'#" + parameters.get(0).getIdForString() + "'";
+            parametersSQL = "'" + parameters.get(0).getDataValue() + "'";
         } else {
-            parametersSQL = "('#" + parameters.stream().map(Parameter::getIdForString).collect(Collectors.joining("','#")) + "')";
+            parametersSQL = "('" + parameters.stream().map(Parameter::getDataValue).collect(Collectors.joining("','")) + "')";
         }
         return canonicalColumnName.split("\\.")[2] + CompareOperator.toSQL(operator) + parametersSQL;
     }

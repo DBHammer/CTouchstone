@@ -1,31 +1,24 @@
 {
-  "public.part.p_mfgr" : [
+  "public.customer.c_nation" : [
     [
-      44,
-      48
-    ],
-    [
-      43,
-      47
+      26
     ]
   ],
   "public.supplier.s_nation" : [
     [
       27,
-      52
+      51
     ]
   ],
   "public.date.d_year" : [
     [
-      50,
-      55
-    ],
-    [
-      49,
-      54
+      0
     ]
   ],
   "public.supplier.s_region" : [
+    [
+      20
+    ],
     [
       15,
       42,
@@ -36,31 +29,37 @@
       22
     ]
   ],
+  "public.part.p_brand1" : [
+    [
+      21
+    ]
+  ],
   "public.customer.c_region" : [
     [
       41,
       45,
-      51
-    ]
-  ],
-  "public.customer.c_city" : [
-    [
-      33,
-      40
+      55
     ],
     [
-      32,
-      39
+      23
     ]
   ],
-  "public.supplier.s_city" : [
+  "public.date.d_yearmonth" : [
     [
-      31,
       38
+    ]
+  ],
+  "public.date.d_yearmonthnum" : [
+    [
+      4
+    ]
+  ],
+  "public.part.p_category" : [
+    [
+      16
     ],
     [
-      30,
-      37
+      52
     ]
   ]
 }
