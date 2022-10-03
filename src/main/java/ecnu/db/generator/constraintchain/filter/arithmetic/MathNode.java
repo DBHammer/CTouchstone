@@ -37,7 +37,16 @@ public class MathNode extends ArithmeticNode {
     }
 
     @Override
-    public String toSQL() {
+    public List<String> getColumns() {
+        List<String> columnNames = leftNode.getColumns();
+        if (rightNode != null) {
+            columnNames.addAll(rightNode.getColumns());
+        }
+        return columnNames;
+    }
+
+    @Override
+    public String toString() {
         String mathType = switch (type) {
             case MINUS -> "-";
             case DIV -> "/";
@@ -49,24 +58,10 @@ public class MathNode extends ArithmeticNode {
             case SUM -> "sum";
             default -> throw new UnsupportedOperationException();
         };
-        return String.format("%s %s %s", leftNode.toSQL(), mathType, rightNode.toSQL());
-    }
-
-    @Override
-    public List<String> getColumns() {
-        List<String> columnNames = leftNode.getColumns();
-        if (rightNode != null) {
-            columnNames.addAll(rightNode.getColumns());
-        }
-        return columnNames;
-    }
-
-    @Override
-    public String toString() {
-        if (rightNode == null) {
-            return String.format("%s(%s)", type, leftNode.toString());
+        if (type.isUniComparator()) {
+            return String.format("%s(%s)", mathType, leftNode.toString());
         } else {
-            return String.format("%s(%s, %s)", type, leftNode.toString(), rightNode.toString());
+            return String.format("%s %s %s", leftNode.toString(), mathType, rightNode.toString());
         }
     }
 }

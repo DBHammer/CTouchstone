@@ -47,10 +47,6 @@ public class QueryAnalyzer {
         this.dbConnector = dbConnector;
     }
 
-    public void setSkipNodeThreshold(double skipNodeThreshold) {
-        this.skipNodeThreshold = skipNodeThreshold;
-    }
-
     public void setAliasDic(Map<String, String> aliasDic) {
         abstractAnalyzer.setAliasDic(aliasDic);
     }
@@ -278,7 +274,7 @@ public class QueryAnalyzer {
                 LogicNode result = analyzeSelectInfo(filterNode.getInfo());
                 if (filterNode.isIndexScan()) {
                     result.removeOtherTablesOperation(filterNode.getTableName());
-                    int rowsAfterFilter = dbConnector.getRowsAfterFilter(filterNode.getTableName(), result.toSQL());
+                    int rowsAfterFilter = dbConnector.getRowsAfterFilter(filterNode.getTableName(), result.toString());
                     filterNode.setOutputRows(rowsAfterFilter);
                 }
                 BigDecimal ratio = computeFilterProbability(filterNode.getOutputRows(), TableManager.getInstance().getTableSize(filterNode.getTableName()));

@@ -52,11 +52,6 @@ public class NumericNode extends ArithmeticNode {
     }
 
     @Override
-    public String toSQL() {
-        return constant.toString();
-    }
-
-    @Override
     public List<String> getColumns() {
         return new ArrayList<>();
     }

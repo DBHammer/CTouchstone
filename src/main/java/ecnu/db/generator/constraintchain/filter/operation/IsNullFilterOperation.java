@@ -70,11 +70,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
 
     @Override
     public String toString() {
-        return switch (operator) {
-            case ISNULL -> String.format("isnull(%s)", this.canonicalColumnName);
-            case IS_NOT_NULL -> String.format("not_isnull(%s)", this.canonicalColumnName);
-            default -> throw new UnsupportedOperationException();
-        };
+        return canonicalColumnName.split("\\.")[2] + CompareOperator.toSQL(operator);
     }
 
     public String getColumnName() {
@@ -101,10 +97,4 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     public boolean isDifferentTable(String tableName) {
         return !canonicalColumnName.contains(tableName);
     }
-
-    @Override
-    public String toSQL() {
-        return canonicalColumnName + CompareOperator.toSQL(operator);
-    }
-
 }

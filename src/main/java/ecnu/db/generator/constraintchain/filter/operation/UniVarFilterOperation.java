@@ -94,9 +94,13 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
 
     @Override
     public String toString() {
-        List<String> content = parameters.stream().map(Parameter::toString).collect(Collectors.toList());
-        content.add(0, String.format("%s", canonicalColumnName));
-        return String.format("%s(%s)", operator.toString().toLowerCase(), String.join(", ", content));
+        String parametersSQL;
+        if (parameters.size() == 1) {
+            parametersSQL = "'#" + parameters.get(0).getIdForString() + "'";
+        } else {
+            parametersSQL = "('#" + parameters.stream().map(Parameter::getIdForString).collect(Collectors.joining("','#")) + "')";
+        }
+        return canonicalColumnName.split("\\.")[2] + CompareOperator.toSQL(operator) + parametersSQL;
     }
 
     /**
@@ -121,18 +125,6 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     public boolean isDifferentTable(String tableName) {
         return !canonicalColumnName.contains(tableName);
     }
-
-    @Override
-    public String toSQL() {
-        String parametersSQL;
-        if (parameters.size() == 1) {
-            parametersSQL = "'" + parameters.get(0).getDataValue() + "'";
-        } else {
-            parametersSQL = "('" + parameters.stream().map(Parameter::getDataValue).collect(Collectors.joining("','")) + "')";
-        }
-        return canonicalColumnName + CompareOperator.toSQL(operator) + parametersSQL;
-    }
-
 
     @Override
     public BigDecimal getNullProbability() {
