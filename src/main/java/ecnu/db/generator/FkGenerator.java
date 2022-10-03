@@ -240,17 +240,9 @@ public class FkGenerator {
 
 
     public static SortedMap<JoinStatus, Long> generateStatusHistogram(JoinStatus[] involvedStatuses) {
-        List<JoinStatus> distinctStatuses = Arrays.stream(involvedStatuses).parallel().distinct().toList();
-        HashMap<JoinStatus, AtomicLong> status2Recorder = new HashMap<>();
-        for (JoinStatus allStatus : distinctStatuses) {
-            status2Recorder.put(allStatus, new AtomicLong(0L));
-        }
-        Arrays.stream(involvedStatuses).parallel().forEach(status -> status2Recorder.get(status).incrementAndGet());
-        SortedMap<JoinStatus, Long> result = new TreeMap<>();
-        for (Map.Entry<JoinStatus, AtomicLong> s2Recorder : status2Recorder.entrySet()) {
-            result.put(s2Recorder.getKey(), s2Recorder.getValue().get());
-        }
-        return result;
+        Map<JoinStatus, Long> histogram = Arrays.stream(involvedStatuses).parallel()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        return new TreeMap<>(histogram);
     }
 
     public static JoinStatus chooseCorrespondingStatus(boolean[] originStatus, int[] involvedChainIndexes) {
