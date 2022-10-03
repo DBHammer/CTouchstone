@@ -249,9 +249,8 @@ public class ColumnManager {
                         specialValue = (int) ((maxBound - min + 1) / range);
                     }
                     case VARCHAR -> {
-                        column.setMinLength(Integer.parseInt(minResult));
-                        //todo avg length
-                        column.setRangeLength(Integer.parseInt(maxResult) - column.getMinLength());
+                        column.setAvgLength((int) Math.round(Double.parseDouble(minResult)));
+                        column.setMaxLength(Integer.parseInt(maxResult));
                         min = 0;
                         range = Integer.parseInt(sqlResult[index++]);
                         specialValue = ThreadLocalRandom.current().nextInt();

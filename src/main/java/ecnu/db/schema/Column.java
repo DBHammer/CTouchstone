@@ -22,8 +22,8 @@ public class Column {
     private long range;
     private long specialValue;
     private BigDecimal nullPercentage;
-    private int minLength;
-    private int rangeLength;
+    private int avgLength;
+    private int maxLength;
     @JsonIgnore
     private BigDecimal decimalPre;
     @JsonIgnore
@@ -56,7 +56,7 @@ public class Column {
     public void init() {
         distribution = new Distribution(nullPercentage, range);
         if (columnType == ColumnType.VARCHAR) {
-            stringTemplate = new StringTemplate(minLength, rangeLength, specialValue, range);
+            stringTemplate = new StringTemplate(avgLength, maxLength, specialValue, range);
         }
     }
 
@@ -154,20 +154,20 @@ public class Column {
         };
     }
 
-    public int getMinLength() {
-        return minLength;
+    public int getAvgLength() {
+        return avgLength;
     }
 
-    public void setMinLength(int minLength) {
-        this.minLength = minLength;
+    public void setAvgLength(int avgLength) {
+        this.avgLength = avgLength;
     }
 
-    public int getRangeLength() {
-        return rangeLength;
+    public int getMaxLength() {
+        return maxLength;
     }
 
-    public void setRangeLength(int rangeLength) {
-        this.rangeLength = rangeLength;
+    public void setMaxLength(int maxLength) {
+        this.maxLength = maxLength;
     }
 
     public String transferDataToValue(long data) {

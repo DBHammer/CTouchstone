@@ -11,31 +11,27 @@ class StringTemplate {
 
     private static final char noExistTailChar = '-';
 
-    int minLength;
-    int rangeLength;
+    int avgLength;
+    int maxLength;
     long specialValue;
     int tag;
 
     private boolean hasNonEqConstraint;
     Map<Long, boolean[]> likeIndex2Status = new HashMap<>();
 
-    public StringTemplate(int minLength, int rangeLength, long specialValue, long range) {
-        this.minLength = minLength;
-        this.rangeLength = rangeLength;
+    public StringTemplate(int avgLength, int maxLength, long specialValue, long range) {
+        this.avgLength = avgLength;
+        this.maxLength = maxLength;
         this.specialValue = specialValue;
-        if (range < 1 || minLength + rangeLength == 0) {
+        if (range < 1 || maxLength == 0) {
             return;
         }
         this.tag = 1;
         while ((range /= randomCharSet.length) > 0) {
             tag++;
         }
-        if (tag > this.minLength) {
-            int diff = tag - this.minLength;
-            this.minLength = tag;
-            this.rangeLength -= 2 * diff;
-            if (this.rangeLength < 0)
-                throw new UnsupportedOperationException("无法唯一绑定");
+        if (tag > this.avgLength) {
+            throw new UnsupportedOperationException("无法唯一绑定");
         }
 
     }
@@ -46,7 +42,7 @@ class StringTemplate {
 
     private char[] getParameterBuilder(long dataId) {
         Random random = new Random(specialValue * dataId);
-        char[] values = new char[minLength + random.nextInt(rangeLength + 1)];
+        char[] values = new char[avgLength];
         if (dataId < 0) {
             values[0] = noExistTailChar;
             for (int i = 1; i < values.length; i++) {
