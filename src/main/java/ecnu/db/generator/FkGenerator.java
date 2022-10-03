@@ -128,7 +128,7 @@ public class FkGenerator {
 
     public long[][] generateFK(boolean[][] statusVectorOfEachRow) {
         // 统计每种状态的数据量
-        if (involvedChainIndexes.isEmpty()) {
+        if (involvedChainIndexes.length == 0) {
             return new long[0][0];
         }
         JoinStatus[] involvedStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
