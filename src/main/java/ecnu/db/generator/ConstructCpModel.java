@@ -102,7 +102,7 @@ public class ConstructCpModel {
                 }
             }
             if (!sharedFk.isEmpty()) {
-                logger.info("pk size limit {}  for {}", pkIndexes2Limitation.getValue(), sharedFk);
+//                logger.info("pk size limit {}  for {}", pkIndexes2Limitation.getValue(), sharedFk);
                 fkDistinctInvolvedVars.get(fkColIndex).add(sharedFk);
                 model.addLessOrEqual(LinearExpr.sum(sharedFk.toArray(new IntVar[0])), pkIndexes2Limitation.getValue());
             }
