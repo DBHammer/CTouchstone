@@ -15,7 +15,7 @@ public class RuleTable {
         rules.get(status).add(range);
     }
 
-    public MergedRuleTable mergeRules(List<Integer> location) {
+    public MergedRuleTable mergeRules(int[] location) {
         Map<JoinStatus, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
         for (Map.Entry<JoinStatus, List<Map.Entry<Long, Long>>> joinStatusListEntry : rules.entrySet()) {
             boolean[] joinStatus = joinStatusListEntry.getKey().status();

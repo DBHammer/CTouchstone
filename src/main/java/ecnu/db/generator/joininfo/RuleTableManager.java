@@ -2,7 +2,6 @@ package ecnu.db.generator.joininfo;
 
 import java.util.AbstractMap;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -17,7 +16,7 @@ public class RuleTableManager {
         return INSTANCE;
     }
 
-    public MergedRuleTable getRuleTable(String colName, List<Integer> location) {
+    public MergedRuleTable getRuleTable(String colName, int[] location) {
         return ruleTableMap.get(colName).mergeRules(location);
     }
 

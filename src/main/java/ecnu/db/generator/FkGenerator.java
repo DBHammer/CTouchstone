@@ -14,15 +14,19 @@ import ecnu.db.utils.CommonUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class FkGenerator {
     private final long tableSize;
 
     private final Map<Integer, Long> distinctFkIndex2Cardinality = new HashMap<>();
-    private final List<Integer> involvedChainIndexes = new ArrayList<>();
+    private final int[] involvedChainIndexes;
     private final List<List<ConstraintChainNode>> chainNodesList = new LinkedList<>();
 
     private final JoinStatus[][] jointPkStatus;
@@ -34,20 +38,22 @@ public class FkGenerator {
 
     FkGenerator(List<ConstraintChain> fkConstrainChains, List<String> fkGroup, long tableSize) {
         this.tableSize = tableSize;
+        List<Integer> involvedChainIndexesList = new ArrayList<>();
         for (ConstraintChain fkConstrainChain : fkConstrainChains) {
             var involvedNodes = fkConstrainChain.getInvolvedNodes(fkGroup);
             if (!involvedNodes.isEmpty()) {
-                involvedChainIndexes.add(fkConstrainChain.getChainIndex());
+                involvedChainIndexesList.add(fkConstrainChain.getChainIndex());
                 chainNodesList.add(involvedNodes);
             }
         }
+        involvedChainIndexes = involvedChainIndexesList.stream().mapToInt(Integer::intValue).toArray();
         // 获得每个fk列的status, 标记外键对应的index
-        LinkedHashMap<String, List<Integer>> involvedFkCol2JoinTags = generateFkIndex(fkGroup, chainNodesList);
+        LinkedHashMap<String, int[]> involvedFkCol2JoinTags = generateFkIndex(fkGroup, chainNodesList);
         // 对于每一个外键组，确定主键状态
         JoinStatus[][] pkCol2AllStatus = new JoinStatus[involvedFkCol2JoinTags.size()][];
         int i = 0;
         ruleTables = new MergedRuleTable[involvedFkCol2JoinTags.size()];
-        for (Map.Entry<String, List<Integer>> involvedFk2JoinTag : involvedFkCol2JoinTags.entrySet()) {
+        for (Map.Entry<String, int[]> involvedFk2JoinTag : involvedFkCol2JoinTags.entrySet()) {
             String pkCol = TableManager.getInstance().getRefKey(involvedFk2JoinTag.getKey());
             ruleTables[i] = RuleTableManager.getInstance().getRuleTable(pkCol, involvedFk2JoinTag.getValue());
             boolean withNull = ColumnManager.getInstance().getNullPercentage(involvedFk2JoinTag.getKey()).compareTo(BigDecimal.ZERO) > 0;
@@ -144,7 +150,7 @@ public class FkGenerator {
         int[] filterIndexes = Arrays.stream(involvedStatuses).parallel().mapToInt(status2Index::get).toArray();
         int[] pkStatuses = new int[statusVectorOfEachRow.length];
         long[] remainSize = new long[statusVectorOfEachRow.length];
-        Integer[] filterStatusPkPopulatedIndex = new Integer[statusHistogram.size()];
+        int[] filterStatusPkPopulatedIndex = new int[statusHistogram.size()];
         Arrays.fill(filterStatusPkPopulatedIndex, 0);
         for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
             int filterIndex = filterIndexes[rowId];
@@ -247,10 +253,10 @@ public class FkGenerator {
         return result;
     }
 
-    public static JoinStatus chooseCorrespondingStatus(boolean[] originStatus, List<Integer> involvedChainIndexes) {
-        boolean[] ret = new boolean[involvedChainIndexes.size()];
+    public static JoinStatus chooseCorrespondingStatus(boolean[] originStatus, int[] involvedChainIndexes) {
+        boolean[] ret = new boolean[involvedChainIndexes.length];
         int i = 0;
-        for (Integer involvedChainIndex : involvedChainIndexes) {
+        for (int involvedChainIndex : involvedChainIndexes) {
             ret[i++] = originStatus[involvedChainIndex];
         }
         return new JoinStatus(ret);
@@ -264,7 +270,7 @@ public class FkGenerator {
             outputStatus[j] = new JoinStatus(status);
         }
         for (int pkStatusIndex = 0; pkStatusIndex < outputStatus.length; pkStatusIndex++) {
-            for (int currentChainIndex = 0; currentChainIndex < involvedChainIndexes.size(); currentChainIndex++) {
+            for (int currentChainIndex = 0; currentChainIndex < involvedChainIndexes.length; currentChainIndex++) {
                 List<ConstraintChainFkJoinNode> chainFkJoinNodes = chainNodesList.get(currentChainIndex).stream()
                         .filter(ConstraintChainFkJoinNode.class::isInstance).map(ConstraintChainFkJoinNode.class::cast).toList();
                 JoinStatus[] pkStatusOfRow = jointPkStatus[pkStatusIndex];
@@ -272,7 +278,7 @@ public class FkGenerator {
                 for (ConstraintChainFkJoinNode chainFkJoinNode : chainFkJoinNodes) {
                     status &= pkStatusOfRow[chainFkJoinNode.joinStatusIndex].status()[chainFkJoinNode.joinStatusLocation];
                 }
-                int chainIndex = involvedChainIndexes.get(currentChainIndex);
+                int chainIndex = involvedChainIndexes[currentChainIndex];
                 outputStatus[pkStatusIndex].status()[chainIndex] = status;
             }
         }
@@ -284,7 +290,7 @@ public class FkGenerator {
      *
      * @param chainNodesList 需要分析的约束链
      */
-    private LinkedHashMap<String, List<Integer>> generateFkIndex(List<String> fkCols, List<List<ConstraintChainNode>> chainNodesList) {
+    private LinkedHashMap<String, int[]> generateFkIndex(List<String> fkCols, List<List<ConstraintChainNode>> chainNodesList) {
         // 找到涉及到的参照表和参照的tag
         LinkedHashMap<String, List<Integer>> involvedFkCol2JoinTags = new LinkedHashMap<>();
         for (String fkCol : fkCols) {
@@ -318,6 +324,10 @@ public class FkGenerator {
                 throw new UnsupportedOperationException("无法下推的agg约束");
             }
         }
-        return involvedFkCol2JoinTags;
+        LinkedHashMap<String, int[]> ret = new LinkedHashMap<>();
+        for (Map.Entry<String, List<Integer>> entry : involvedFkCol2JoinTags.entrySet()) {
+            ret.put(entry.getKey(), entry.getValue().stream().mapToInt(Integer::intValue).toArray());
+        }
+        return ret;
     }
 }

@@ -146,7 +146,7 @@ public class DataGenerator implements Callable<Integer> {
     private StringBuilder[] generatePks(boolean[][] statusVectorOfEachRow, List<Integer> pkStatusChainIndexes, int range, String pkName) {
         //todo 处理多列主键
         StringBuilder[] rowData = new StringBuilder[range];
-        if (!pkStatusChainIndexes.isEmpty()) {
+        if (pkStatusChainIndexes.length > 0) {
             //创建主键状态矩阵
             JoinStatus[] allStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
                     .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, pkStatusChainIndexes)).toArray(JoinStatus[]::new);
@@ -192,7 +192,7 @@ public class DataGenerator implements Callable<Integer> {
         }
     }
 
-    private List<Integer> getPkStatusChainIndexes(List<ConstraintChain> allChains) {
+    private int[] getPkStatusChainIndexes(List<ConstraintChain> allChains) {
         TreeMap<Integer, Integer> pkJoinTag2ChainIndex = new TreeMap<>();
         for (ConstraintChain constraintChain : allChains) {
             for (ConstraintChainNode node : constraintChain.getNodes()) {
@@ -201,14 +201,14 @@ public class DataGenerator implements Callable<Integer> {
                 }
             }
         }
-        return pkJoinTag2ChainIndex.values().stream().toList();
+        return pkJoinTag2ChainIndex.values().stream().mapToInt(Integer::intValue).toArray();
     }
 
-    private void generateTableWithoutChains(long pkStart, long tableSize, String schemaName) throws InterruptedException {
+    private void generateTableWithoutChains(long pkStart, long tableSize, String schemaName) {
         while (batchStart < tableSize) {
             int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
             //生成属性列数据
-            ColumnManager.getInstance().prepareGeneration(range, true);
+            ColumnManager.getInstance().prepareGeneration(range);
             String[] attRows = ColumnManager.getInstance().generateAttRows(range);
             StringBuilder[] rowData = new StringBuilder[range];
             IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder().append(batchStart + i + pkStart).append(","));
@@ -249,7 +249,7 @@ public class DataGenerator implements Callable<Integer> {
             for (int i = 0; i < fkGenerators.length; i++) {
                 fkGenerators[i] = new FkGenerator(allChains, fkGroups.get(i), tableSize);
             }
-            List<Integer> pkStatusChainIndexes = getPkStatusChainIndexes(allChains);
+            int[] pkStatusChainIndexes = getPkStatusChainIndexes(allChains);
             // 开始生成
             while (batchStart < tableSize) {
                 int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
