@@ -151,10 +151,26 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         boolean[] ret = new boolean[data.length];
         double parameterValue = parameters.get(0).getData();
         switch (operator) {
-            case LT -> IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] < parameterValue);
-            case LE -> IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] <= parameterValue);
-            case GT -> IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] > parameterValue);
-            case GE -> IntStream.range(0, ret.length).parallel().forEach(index -> ret[index] = data[index] >= parameterValue);
+            case LT -> {
+                for (int i = 0; i < ret.length; i++) {
+                    ret[i] = data[i] < parameterValue;
+                }
+            }
+            case LE -> {
+                for (int i = 0; i < ret.length; i++) {
+                    ret[i] = data[i] <= parameterValue;
+                }
+            }
+            case GT -> {
+                for (int i = 0; i < ret.length; i++) {
+                    ret[i] = data[i] > parameterValue;
+                }
+            }
+            case GE -> {
+                for (int i = 0; i < ret.length; i++) {
+                    ret[i] = data[i] >= parameterValue;
+                }
+            }
             default -> throw new UnsupportedOperationException();
         }
         return ret;
