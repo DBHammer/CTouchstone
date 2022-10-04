@@ -135,7 +135,6 @@ public class FkGenerator {
                 .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, involvedChainIndexes)).toArray(JoinStatus[]::new);
         SortedMap<JoinStatus, Long> statusHistogram = generateStatusHistogram(involvedStatuses);
         int range = statusVectorOfEachRow.length;
-        long start2 = System.currentTimeMillis();
         ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
         long[][] populateSolution = cpModel.solve();
         Map<Integer, FkRange[][]> fkIndex2Range = new HashMap<>();
