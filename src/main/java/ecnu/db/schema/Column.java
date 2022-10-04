@@ -8,8 +8,8 @@ import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.IntStream;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * @author wangqingshuai
@@ -205,11 +205,15 @@ public class Column {
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
-            case VARCHAR -> stringTemplate.transferColumnData2Value(data, range);
+            case VARCHAR -> stringTemplate.getParameterValue(data);
             case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min) * 24 * 60 * 60));
             case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();
         };
+    }
+
+    public void addSubStringIndex(long dataId){
+        stringTemplate.addSubStringIndex(dataId);
     }
 
     public void setColumnData(long[] columnData) {

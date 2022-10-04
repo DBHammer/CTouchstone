@@ -139,7 +139,7 @@ public class ColumnManager {
         if (!distribution.exists()) {
             distribution.mkdir();
         }
-        Map<String, Map<Long, boolean[]>> columName2StringTemplate = new HashMap<>();
+        Map<String, Set<Long>> columName2StringTemplate = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
             if (column.getValue().getColumnType() == ColumnType.VARCHAR &&
                     column.getValue().getStringTemplate().getLikeIndex2Status() != null) {
@@ -182,9 +182,9 @@ public class ColumnManager {
     public void loadColumnDistribution() throws IOException {
         File distribution = new File(distributionInfoPath + "/distribution");
         String content = CommonUtils.readFile(distribution.getPath() + COLUMN_STRING_INFO);
-        Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        Map<String, TreeSet<Long>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
-        for (Map.Entry<String, Map<Long, boolean[]>> template : columName2StringTemplate.entrySet()) {
+        for (Map.Entry<String, TreeSet<Long>> template : columName2StringTemplate.entrySet()) {
             columns.get(template.getKey()).getStringTemplate().setLikeIndex2Status(template.getValue());
         }
         content = CommonUtils.readFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO);

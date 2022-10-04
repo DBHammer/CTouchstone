@@ -111,11 +111,6 @@ public class Parameter {
         return id;
     }
 
-    @JsonIgnore
-    public String getIdForString() {
-        return String.valueOf(id);
-    }
-
     public void setId(int id) {
         this.id = id;
     }
@@ -138,10 +133,8 @@ public class Parameter {
     }
 
     public void setDataValue(String dataValue) {
-        if (type == ParameterType.SUBSTRING) {
-            dataValue = dataValue.replace("%", "");
-            int length = this.dataValue.replace("%", "").length();
-            dataValue = dataValue.substring(0, length);
+        if (type == ParameterType.LIKE) {
+            dataValue = '%' + dataValue;
         }
         this.dataValue = dataValue;
     }
@@ -172,6 +165,11 @@ public class Parameter {
     @JsonIgnore
     public boolean isSubPlan() {
         return isSubPlan;
+    }
+
+    @JsonIgnore
+    public boolean isSubString() {
+        return type == ParameterType.SUBSTRING;
     }
 
     @JsonIgnore

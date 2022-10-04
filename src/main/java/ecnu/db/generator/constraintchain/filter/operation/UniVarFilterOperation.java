@@ -42,6 +42,9 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
             }
         }
         for (Parameter parameter : parameters) {
+            if (parameter.isSubString()) {
+                ColumnManager.getInstance().getColumn(canonicalColumnName).addSubStringIndex(parameter.getData());
+            }
             String value = ColumnManager.getInstance().getColumn(canonicalColumnName).transferDataToValue(parameter.getData());
             parameter.setDataValue(value);
         }
