@@ -6,14 +6,15 @@ import ecnu.db.generator.constraintchain.filter.BoolExprType;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
-import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.analyze.IllegalQueryColumnNameException;
 
-import java.util.*;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.GE;
-import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.LT;
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.*;
 
 
 /**
@@ -27,13 +28,9 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
         super(null);
     }
 
-    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator, List<Parameter> parameters)
-            throws IllegalQueryColumnNameException {
+    public UniVarFilterOperation(String canonicalColumnName, CompareOperator operator, List<Parameter> parameters) {
         super(operator);
         this.canonicalColumnName = canonicalColumnName;
-        if (CommonUtils.isNotCanonicalColumnName(canonicalColumnName)) {
-            throw new IllegalQueryColumnNameException();
-        }
         this.parameters = parameters;
     }
 
@@ -45,6 +42,9 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
             }
         }
         for (Parameter parameter : parameters) {
+            if (parameter.isSubString()) {
+                ColumnManager.getInstance().getColumn(canonicalColumnName).addSubStringIndex(parameter.getData());
+            }
             String value = ColumnManager.getInstance().getColumn(canonicalColumnName).transferDataToValue(parameter.getData());
             parameter.setDataValue(value);
         }
@@ -53,6 +53,33 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     @Override
     public boolean hasKeyColumn() {
         return TableManager.getInstance().isPrimaryKey(canonicalColumnName) || TableManager.getInstance().isForeignKey(canonicalColumnName);
+    }
+
+    @Override
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
+        if (operator != IN && operator != EQ) {
+            return;
+        }
+        for (Parameter parameter : parameters) {
+            String dataValue = parameter.getDataValue();
+            if (column2Value2ParameterList.containsKey(canonicalColumnName)) {
+                Map<String, List<Integer>> dataValue2ID = column2Value2ParameterList.get(canonicalColumnName);
+                if (dataValue2ID.containsKey(dataValue)) {
+                    List<Integer> idList = dataValue2ID.get(dataValue);
+                    idList.add(parameter.getId());
+                } else {
+                    List<Integer> idList = new ArrayList<>();
+                    idList.add(parameter.getId());
+                    dataValue2ID.put(dataValue, idList);
+                }
+            } else {
+                Map<String, List<Integer>> dataValue2ID = new HashMap<>();
+                List<Integer> idList = new ArrayList<>();
+                idList.add(parameter.getId());
+                dataValue2ID.put(dataValue, idList);
+                column2Value2ParameterList.put(canonicalColumnName, dataValue2ID);
+            }
+        }
     }
 
     @Override
@@ -70,9 +97,13 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
 
     @Override
     public String toString() {
-        List<String> content = parameters.stream().map(Parameter::toString).collect(Collectors.toList());
-        content.add(0, String.format("%s", canonicalColumnName));
-        return String.format("%s(%s)", operator.toString().toLowerCase(), String.join(", ", content));
+        String parametersSQL;
+        if (parameters.size() == 1) {
+            parametersSQL = "'" + parameters.get(0).getDataValue() + "'";
+        } else {
+            parametersSQL = "('" + parameters.stream().map(Parameter::getDataValue).collect(Collectors.joining("','")) + "')";
+        }
+        return canonicalColumnName.split("\\.")[2] + CompareOperator.toSQL(operator) + parametersSQL;
     }
 
     /**
@@ -99,15 +130,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public String toSQL() {
-        String parametersSQL;
-        if (parameters.size() == 1) {
-            parametersSQL = "'" + parameters.get(0).getDataValue() + "'";
-        } else {
-            parametersSQL = "('" + parameters.stream().map(Parameter::getDataValue).collect(Collectors.joining("','")) + "')";
-        }
-        return canonicalColumnName + CompareOperator.toSQL(operator) + parametersSQL;
+    public BigDecimal getNullProbability() {
+        return ColumnManager.getInstance().getNullPercentage(canonicalColumnName);
     }
-
-
 }

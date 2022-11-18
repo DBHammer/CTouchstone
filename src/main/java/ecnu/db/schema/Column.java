@@ -8,8 +8,8 @@ import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.IntStream;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * @author wangqingshuai
@@ -22,8 +22,8 @@ public class Column {
     private long range;
     private long specialValue;
     private BigDecimal nullPercentage;
-    private int minLength;
-    private int rangeLength;
+    private int avgLength;
+    private int maxLength;
     @JsonIgnore
     private BigDecimal decimalPre;
     @JsonIgnore
@@ -56,7 +56,7 @@ public class Column {
     public void init() {
         distribution = new Distribution(nullPercentage, range);
         if (columnType == ColumnType.VARCHAR) {
-            stringTemplate = new StringTemplate(minLength, rangeLength, specialValue);
+            stringTemplate = new StringTemplate(avgLength, maxLength, specialValue, range);
         }
     }
 
@@ -86,14 +86,6 @@ public class Column {
     }
 
 
-    public void shuffleRows(List<Integer> rowIndexes) {
-        long[] tempIndex = new long[rowIndexes.size()];
-        for (int i = 0; i < tempIndex.length; i++) {
-            tempIndex[i] = columnData[rowIndexes.get(i)];
-        }
-        columnData = tempIndex;
-    }
-
     /**
      * 无运算比较，针对传入的参数，对于单操作符进行比较
      *
@@ -109,29 +101,54 @@ public class Column {
             value = parameters.get(0).getData();
         }
         boolean[] ret = new boolean[columnData.length];
-        IntStream indexStream = IntStream.range(0, columnData.length);
         switch (operator) {
-            case EQ, LIKE, ISNULL ->
-                    indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] == value);
-            case NE, NOT_LIKE, IS_NOT_NULL ->
-                    indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] != value);
-            case LT -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] < value);
-            case LE -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] <= value);
-            case GT -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] > value);
-            case GE -> indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] >= value);
+            case EQ, LIKE, ISNULL -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] == value;
+                }
+            }
+            case NE, NOT_LIKE, IS_NOT_NULL -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] != value;
+                }
+            }
+            case LT -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] < value;
+                }
+            }
+            case LE -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] <= value;
+                }
+            }
+            case GT -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] > value;
+                }
+            }
+            case GE -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] >= value;
+                }
+            }
             case IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());
                 }
-                indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && parameterData.contains(columnData[i]));
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && parameterData.contains(columnData[i]);
+                }
             }
             case NOT_IN -> {
                 HashSet<Long> parameterData = new HashSet<>();
                 for (Parameter parameter : parameters) {
                     parameterData.add(parameter.getData());
                 }
-                indexStream.forEach(i -> ret[i] = columnData[i] != Long.MIN_VALUE && !parameterData.contains(columnData[i]));
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE && !parameterData.contains(columnData[i]);
+                }
             }
             default -> throw new UnsupportedOperationException();
         }
@@ -143,42 +160,60 @@ public class Column {
      */
     public double[] calculate() {
         //lazy生成computeData
-        return switch (columnType) {
-            case DATE, DATETIME ->
-                    Arrays.stream(columnData).parallel().mapToDouble(data -> (double) data + min).toArray();
-            case DECIMAL ->
-                    Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (data + min) / specialValue).toArray();
-            case INTEGER ->
-                    Arrays.stream(columnData).parallel().mapToDouble(data -> (double) (specialValue * data) + min).toArray();
+        double[] ret = new double[columnData.length];
+        switch (columnType) {
+            case DATE, DATETIME -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] + min;
+                }
+            }
+            case DECIMAL -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = ((double) (columnData[i] + min)) / specialValue;
+                }
+            }
+            case INTEGER -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = (double) (specialValue * columnData[i]) + min;
+                }
+            }
             default -> throw new IllegalStateException("Unexpected value: " + columnType);
-        };
+        }
+        return ret;
     }
 
-    public int getMinLength() {
-        return minLength;
+    public int getAvgLength() {
+        return avgLength;
     }
 
-    public void setMinLength(int minLength) {
-        this.minLength = minLength;
+    public void setAvgLength(int avgLength) {
+        this.avgLength = avgLength;
     }
 
-    public int getRangeLength() {
-        return rangeLength;
+    public int getMaxLength() {
+        return maxLength;
     }
 
-    public void setRangeLength(int rangeLength) {
-        this.rangeLength = rangeLength;
+    public void setMaxLength(int maxLength) {
+        this.maxLength = maxLength;
     }
 
     public String transferDataToValue(long data) {
+        if (data == Long.MIN_VALUE) {
+            return "\\N";
+        }
         return switch (columnType) {
             case INTEGER -> Long.toString((specialValue * data) + min);
             case DECIMAL -> BigDecimal.valueOf(data + min).multiply(decimalPre).toString();
-            case VARCHAR -> stringTemplate.transferColumnData2Value(data, range);
+            case VARCHAR -> stringTemplate.getParameterValue(data);
             case DATE -> CommonUtils.dateFormatter.format(Instant.ofEpochSecond((data + min) * 24 * 60 * 60));
             case DATETIME -> CommonUtils.dateTimeFormatter.format(Instant.ofEpochSecond(data + min));
             default -> throw new UnsupportedOperationException();
         };
+    }
+
+    public void addSubStringIndex(long dataId){
+        stringTemplate.addSubStringIndex(dataId);
     }
 
     public void setColumnData(long[] columnData) {

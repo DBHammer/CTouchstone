@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,7 +26,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
     }
 
     @JsonIgnore
-    public List<String> getColumns(){
+    public List<String> getColumns() {
         return root.getColumns();
     }
 
@@ -37,7 +36,20 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
     }
 
     public List<AbstractFilterOperation> pushDownProbability() {
-        return root.pushDownProbability(probability);
+        List<AbstractFilterOperation> operations = root.pushDownProbability(probability);
+        // 处理GT和GE算子的NULL问题
+        BigDecimal maxNullProbability = root.getNullProbability();
+        for (AbstractFilterOperation operation : operations) {
+            // 选在所有概率有效的GT和GE operation
+            if (operation.getProbability().compareTo(BigDecimal.ZERO) > 0 &&
+                    operation.getProbability().compareTo(BigDecimal.ONE) < 0 && operation.getOperator().isBigger()) {
+                BigDecimal selfNull = operation.getNullProbability();
+                if (maxNullProbability.compareTo(selfNull) > 0) {
+                    operation.setProbability(operation.getProbability().add(maxNullProbability).subtract(selfNull));
+                }
+            }
+        }
+        return operations;
     }
 
     @JsonIgnore
@@ -66,7 +78,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         return root.toString();
     }
 
-    public boolean[] evaluate() throws CannotFindColumnException {
+    public boolean[] evaluate() {
         return root.evaluate();
     }
 }

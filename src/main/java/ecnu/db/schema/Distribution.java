@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Distribution {
+    private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.15);
 
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
 
@@ -25,6 +26,8 @@ public class Distribution {
     private SortedMap<Long, BigDecimal> paraData2Probability = new TreeMap<>();
 
     private final long range;
+
+    private List<List<Integer>> idList = new ArrayList<>();
 
     public Distribution(BigDecimal nullPercentage, long range) {
         this.range = range;
@@ -63,7 +66,7 @@ public class Distribution {
      */
     private void insertNonEqProbability(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) {
         if (operator == CompareOperator.GE || operator == CompareOperator.GT) {
-            probability = BigDecimal.ONE.subtract(probability);
+            probability = pvAndPbList.lastKey().subtract(probability);
         }
         if (probability.compareTo(BigDecimal.ONE) < 0 && probability.compareTo(BigDecimal.ZERO) > 0) {
             adjustNullPercentage(probability, parameters);
@@ -77,26 +80,36 @@ public class Distribution {
         }
     }
 
-    public BigDecimal reusePb(List<Parameter> tempParameterList, List<BigDecimal> hasUsedEqRange, BigDecimal probability) {
-        TreeMap<BigDecimal, BigDecimal> rangePb2CDFBound = new TreeMap<>();
-        for (var currentCDF2Pb : pvAndPbList.entrySet()) {
-            if (!isNonEqualRange(currentCDF2Pb.getValue())) {
-                rangePb2CDFBound.put(getRange(currentCDF2Pb.getKey()), currentCDF2Pb.getKey());
+    private BigDecimal subReuse(List<Integer> containIdList, BigDecimal probability, Parameter parameter) {
+        for (Integer paraId : containIdList) {
+            for (Map.Entry<BigDecimal, List<Parameter>> pb2pvList : pvAndPbList.entrySet()) {
+                for (Parameter assignParameter : pb2pvList.getValue()) {
+                    if (Objects.equals(assignParameter.getId(), paraId)) {
+                        pb2pvList.getValue().add(parameter);
+                        return probability.subtract(getRange(pb2pvList.getKey()));
+                    }
+                }
             }
         }
-        BigDecimal assignRange = rangePb2CDFBound.floorKey(probability);
-        while (assignRange != null) {
-            // 如果只剩下最后一个无法复用的range，则退出
-            boolean canNotAssign = probability.compareTo(assignRange) < 0;
-            boolean withoutRemain = tempParameterList.size() == 1 && probability.compareTo(assignRange) > 0;
-            if (canNotAssign || withoutRemain) {
-                break;
+        return probability;
+    }
+
+    public BigDecimal reusePb(List<Parameter> tempParameterList, BigDecimal probability) {
+        var parIter = tempParameterList.iterator();
+        while (parIter.hasNext()) {
+            Parameter parameter = parIter.next();
+            int id = parameter.getId();
+            List<Integer> containIdList = idList.stream().filter(list -> list.contains(id)).findAny().orElse(null);
+            if (containIdList != null) {
+                BigDecimal tempProbability = subReuse(containIdList, probability, parameter);
+                if (tempProbability.compareTo(probability) < 0) {
+                    probability = tempProbability;
+                    parIter.remove();
+                }
+                if (BigDecimal.ZERO.compareTo(probability) == 0) {
+                    break;
+                }
             }
-            probability = probability.subtract(assignRange);
-            BigDecimal cdfBound = rangePb2CDFBound.remove(assignRange);
-            pvAndPbList.get(cdfBound).add(tempParameterList.remove(0));
-            hasUsedEqRange.add(cdfBound);
-            assignRange = rangePb2CDFBound.floorKey(probability);
         }
         return probability;
     }
@@ -118,13 +131,34 @@ public class Distribution {
         }
     }
 
+
+    private boolean canBeReused(List<Parameter> parameters, BigDecimal probability) {
+        boolean status = true;
+        for (Parameter parameter : parameters) {
+            for (List<Integer> integers : idList) {
+                if (integers.contains(parameter.getId())) {
+                    status = false;
+                }
+            }
+        }
+        if (!isNonEqualRange(parameters) && probability.compareTo(reuseEqProbabilityLimit) <= 0) {
+            status = false;
+        }
+        return status;
+    }
+
+
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) throws TouchstoneException {
         adjustNullPercentage(probability, parameters);
         List<Parameter> tempParameterList = new LinkedList<>(parameters);
-        List<BigDecimal> hasUsedEqRange = new LinkedList<>();
+        // 如果没有剩余的请求，则返回
+        if (probability.compareTo(BigDecimal.ZERO) == 0) {
+            tempParameterList.forEach(parameter -> parameter.setData(-1));
+            return;
+        }
         // 如果有某个参数拒绝重用，则直接进行贪心寻range
         if (tempParameterList.stream().allMatch(Parameter::isCanMerge)) {
-            probability = reusePb(tempParameterList, hasUsedEqRange, probability);
+            probability = reusePb(tempParameterList, probability);
         }
         // 如果没有剩余的请求，则返回
         if (probability.compareTo(BigDecimal.ZERO) == 0) {
@@ -138,7 +172,7 @@ public class Distribution {
         for (var currentCDF : pvAndPbList.entrySet()) {
             BigDecimal currentRange = getRange(currentCDF.getKey());
             // 当前空间可以被完全利用
-            if (currentRange.compareTo(probability) == 0 && !hasUsedEqRange.contains(currentCDF.getKey())) {
+            if (currentRange.compareTo(probability) == 0 && canBeReused(currentCDF.getValue(), probability)) {
                 currentCDF.getValue().addAll(tempParameterList);
                 return;
             } else {
@@ -155,8 +189,16 @@ public class Distribution {
         }
         // 如果没有找到
         if (minCDF.compareTo(BigDecimal.ZERO) == 0) {
-            throw new TouchstoneException("不存在可以放置的range");
-        } else {
+            throw new TouchstoneException(String.format("不存在可以放置的range, 概率为%s", probability));
+        } else if (tempParameterList.stream().anyMatch(Parameter::isCanMerge)) {
+            BigDecimal eachPb = probability.divide(BigDecimal.valueOf(tempParameterList.size()), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            for (Parameter parameter : tempParameterList) {
+                BigDecimal remainCapacity = minRange.subtract(eachPb);
+                BigDecimal eqCDf = minCDF.subtract(remainCapacity);
+                pvAndPbList.put(eqCDf, new LinkedList<>(Collections.singletonList(parameter)));
+                minRange = remainCapacity;
+            }
+        } else if (!tempParameterList.isEmpty()) {
             BigDecimal remainCapacity = minRange.subtract(probability);
             BigDecimal eqCDf = minCDF.subtract(remainCapacity);
             pvAndPbList.put(eqCDf, new LinkedList<>(tempParameterList));
@@ -223,38 +265,56 @@ public class Distribution {
 
     public void applyUniVarConstraint(BigDecimal probability, CompareOperator operator, List<Parameter> parameters) throws TouchstoneException {
         switch (operator) {
-            case NE, NOT_LIKE, NOT_IN -> insertEqualProbability(BigDecimal.ONE.subtract(probability), parameters);
+            case NE, NOT_LIKE, NOT_IN ->
+                    insertEqualProbability(pvAndPbList.lastKey().subtract(probability), parameters);
             case EQ, LIKE, IN -> insertEqualProbability(probability, parameters);
             case GT, LT, GE, LE -> insertNonEqProbability(probability, operator, parameters);
             default -> throw new UnsupportedOperationException();
         }
     }
 
-    private List<Long> generateAttributeData(BigDecimal bSize) {
-        // 存储符合CDF的属性值
-        List<Long> attributeData = new ArrayList<>(bSize.intValue());
+    private long[] generateAttributeData(BigDecimal bSize) {
+        // 如果全列数据为空，则不需要填充属性值
+        if (paraData2Probability.size() == 1 && paraData2Probability.lastKey() == -1) {
+            return new long[0];
+        }
         // 生成为左开右闭，因此lastParaData始终比上一右边界大
         long lastParaData = 1;
         BigDecimal cumulativeError = BigDecimal.ZERO;
         List<Long> allBoundPvs = offset2Pv.values().stream().toList();
+        List<long[]> rangeValues = new ArrayList<>();
         for (Map.Entry<Long, BigDecimal> data2Probability : paraData2Probability.entrySet()) {
             long currentParaData = data2Probability.getKey();
             if (!allBoundPvs.contains(currentParaData)) {
                 BigDecimal bGenerateSize = bSize.multiply(data2Probability.getValue());
                 var generateSizeAndCumulativeError = computeGenerateSize(bGenerateSize, cumulativeError);
                 cumulativeError = generateSizeAndCumulativeError.getValue();
-                List<Long> rangeData;
+                long[] rangeValue = new long[generateSizeAndCumulativeError.getKey()];
                 if (currentParaData == lastParaData) {
-                    rangeData = Collections.nCopies(generateSizeAndCumulativeError.getKey(), currentParaData);
+                    Arrays.fill(rangeValue, currentParaData);
                 } else {
-                    rangeData = ThreadLocalRandom.current().longs(generateSizeAndCumulativeError.getKey(), lastParaData, currentParaData + 1).boxed().toList();
+                    for (int i = 0; i < rangeValue.length; i++) {
+                        rangeValue[i] = ThreadLocalRandom.current().nextLong(lastParaData, currentParaData + 1);
+                    }
                 }
-                attributeData.addAll(rangeData);
+                rangeValues.add(rangeValue);
             }
             // 移动到右边界+1
             lastParaData = currentParaData + 1;
         }
-        return attributeData;
+        // 存储符合CDF的属性值
+        if (rangeValues.size() > 1) {
+            int allValueLength = rangeValues.stream().mapToInt(range -> range.length).sum();
+            long[] attributeData = new long[allValueLength];
+            int rangeIndex = 0;
+            for (long[] rangeValue : rangeValues) {
+                System.arraycopy(rangeValue, 0, attributeData, rangeIndex, rangeValue.length);
+                rangeIndex += rangeValue.length;
+            }
+            return attributeData;
+        } else {
+            return rangeValues.get(0);
+        }
     }
 
 
@@ -274,12 +334,13 @@ public class Distribution {
 
     /**
      * 在column中维护数据
+     * todo 列内随机生成，且有NULL的部分不要随机
      *
      * @param size column内部需要维护的数据大小
      */
     public long[] prepareTupleData(int size) {
         BigDecimal bSize = BigDecimal.valueOf(size);
-        List<Long> attributeData = generateAttributeData(bSize);
+        long[] attributeData = generateAttributeData(bSize);
         // 将属性值与bound值组合
         int currentIndex = 0;
         int attributeIndex = 0;
@@ -291,7 +352,7 @@ public class Distribution {
             var offsetAndCumulativeError = computeGenerateSize(bOffset, cumulativeOffsetError);
             cumulativeOffsetError = offsetAndCumulativeError.getValue();
             while (currentIndex < offsetAndCumulativeError.getKey()) {
-                columnData[currentIndex++] = attributeData.get(attributeIndex++);
+                columnData[currentIndex++] = attributeData[attributeIndex++];
             }
             // 确定bound的大小
             BigDecimal rangeProbability = paraData2Probability.get(pv2Offset.getValue());
@@ -303,15 +364,15 @@ public class Distribution {
             currentIndex += generateSize;
         }
         // 复制最后部分
-        int attributeRemain = attributeData.size() - attributeIndex;
+        int attributeRemain = attributeData.length - attributeIndex;
         int localRemain = size - currentIndex;
         attributeRemain = Math.min(attributeRemain, localRemain);
         for (int i = 0; i < attributeRemain; i++) {
-            columnData[currentIndex++] = attributeData.get(attributeIndex++);
+            columnData[currentIndex++] = attributeData[attributeIndex++];
         }
         // 使用Long.MIN_VALUE标记结尾的null值
-        if (currentIndex < size - 1) {
-            Arrays.fill(columnData, currentIndex, size - 1, Long.MIN_VALUE);
+        if (currentIndex < size) {
+            Arrays.fill(columnData, currentIndex, size, Long.MIN_VALUE);
         }
         return columnData;
     }
@@ -330,5 +391,10 @@ public class Distribution {
 
     public void setParaData2Probability(SortedMap<Long, BigDecimal> paraData2Probability) {
         this.paraData2Probability = paraData2Probability;
+    }
+
+
+    public void setIdList(List<List<Integer>> idList) {
+        this.idList = idList;
     }
 }

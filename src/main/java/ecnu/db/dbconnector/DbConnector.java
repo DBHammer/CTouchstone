@@ -76,7 +76,15 @@ public abstract class DbConnector {
             int columnType=rs.getInt("DATA_TYPE");
             ColumnManager.getInstance().addColumn(canonicalColumnName, new Column(ColumnType.getColumnType(columnType)));
             String originalType = switch (columnType) {
-                case Types.CHAR, Types.VARCHAR -> getTypeName(columnType) + "(" + rs.getInt("CHAR_OCTET_LENGTH") + ")";
+                case Types.CHAR -> getTypeName(columnType) + "(" + rs.getInt("CHAR_OCTET_LENGTH") + ")";
+                case Types.VARCHAR -> {
+                    int charLength = rs.getInt("CHAR_OCTET_LENGTH");
+                    if (charLength == Integer.MAX_VALUE) {
+                        yield "TEXT";
+                    } else {
+                        yield getTypeName(columnType) + "(" + charLength +")";
+                    }
+                }
                 case Types.NUMERIC -> "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")";
                 default -> getTypeName(columnType);
             } + (rs.getInt("NULLABLE") == 0 ? " NOT NULL" : " DEFAULT NULL");
@@ -195,12 +203,24 @@ public abstract class DbConnector {
             switch (ColumnManager.getInstance().getColumnType(canonicalColumnName)) {
                 case DATE, DATETIME, DECIMAL -> sql.append(String.format("min(%1$s), max(%1$s), ", canonicalColumnName));
                 case INTEGER -> sql.append(String.format("min(%1$s), max(%1$s), count(distinct %1$s),", canonicalColumnName));
-                case VARCHAR -> sql.append(String.format("min(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
+                case VARCHAR -> sql.append(String.format("avg(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
                 case BOOL -> sql.append(String.format("avg(%s)", canonicalColumnName));
                 default -> throw new TouchstoneException("未匹配到的类型");
             }
             sql.append(String.format("sum(case when %s IS NULL then 1 else 0 end),", canonicalColumnName));
         }
         return sql.substring(0, sql.length() - 1);
+    }
+
+    public List<String> getPrimaryKey(String canonicalTableName) throws SQLException {
+        String[] schemaAndTable = canonicalTableName.split("\\.");
+        List<String> primaryKeys = new ArrayList<>();
+        DatabaseMetaData databaseMetaData = conn.getMetaData();
+        ResultSet rs = databaseMetaData.getPrimaryKeys(null,schemaAndTable[0],schemaAndTable[1]);
+        while (rs.next()) {
+            String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
+            primaryKeys.add(canonicalColumnName);
+        }
+        return primaryKeys;
     }
 }

@@ -5,21 +5,13 @@
         {
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.web_sales.ws_sold_date_sk",
-          "pkTag" : 54,
-          "probability" : 0.009698575448,
-          "type" : "INNER_JOIN"
-        },
-        {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.customer_address.ca_address_sk",
-          "localCols" : "public.web_sales.ws_bill_addr_sk",
-          "pkTag" : 15,
-          "probability" : 0.3597534757,
+          "localCols" : "public.catalog_sales.cs_sold_date_sk",
+          "pkTag" : 64,
+          "probability" : 0.0338268306,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.web_sales"
+      "tableName" : "public.catalog_sales"
     },
     {
       "nodes" : [
@@ -34,27 +26,27 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 478,
-                        "data" : 4,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "EQ",
-                    "probability" : 0.0004243726814,
-                    "canonicalColumnName" : "public.date_dim.d_year",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 479,
-                        "data" : 4,
+                        "id" : 448,
+                        "data" : 21,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "EQ",
                     "probability" : 0.0004243726814,
                     "canonicalColumnName" : "public.date_dim.d_moy",
+                    "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "parameters" : [
+                      {
+                        "id" : 449,
+                        "data" : 21,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0.0004243726814,
+                    "canonicalColumnName" : "public.date_dim.d_year",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
@@ -68,44 +60,10 @@
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 54
+          "pkTag" : 64
         }
       ],
       "tableName" : "public.date_dim"
-    },
-    {
-      "nodes" : [
-        {
-          "constraintChainNodeType" : "FILTER",
-          "root" : {
-            "type" : "AND",
-            "children" : [
-              {
-                "parameters" : [
-                  {
-                    "id" : 477,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  }
-                ],
-                "operator" : "EQ",
-                "probability" : 0.36492,
-                "canonicalColumnName" : "public.customer_address.ca_gmt_offset",
-                "type" : "UNI_FILTER_OPERATION"
-              }
-            ]
-          },
-          "probability" : 0.36492
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "ca_address_sk"
-          ],
-          "pkTag" : 15
-        }
-      ],
-      "tableName" : "public.customer_address"
     }
   ]
 }

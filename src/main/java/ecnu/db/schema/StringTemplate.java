@@ -1,103 +1,73 @@
 package ecnu.db.schema;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Set;
+import java.util.TreeSet;
 
 class StringTemplate {
     private static final char[] randomCharSet = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray();
-    private static final char[] likeRandomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ-".toCharArray();
-    int minLength;
-    int rangeLength;
+    private static final char[] likeRandomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+
+    private static final char NO_EXIST_TAIL_CHAR = '-';
+
+    int avgLength;
+    int maxLength;
     long specialValue;
+    int tag;
 
-    private boolean hasNonEqConstraint;
-    Map<Long, boolean[]> likeIndex2Status = new HashMap<>();
+    TreeSet<Long> subStringIndex = new TreeSet<>();
 
-    public StringTemplate(int minLength, int rangeLength, long specialValue) {
-        this.minLength = minLength;
-        this.rangeLength = rangeLength;
+    public StringTemplate(int avgLength, int maxLength, long specialValue, long range) {
+        this.avgLength = avgLength;
+        this.maxLength = maxLength;
         this.specialValue = specialValue;
+        if (range < 1 || maxLength == 0) {
+            return;
+        }
+        this.tag = 1;
+        while ((range /= randomCharSet.length) > 0) {
+            tag++;
+        }
+        if (tag > this.avgLength) {
+            throw new UnsupportedOperationException("无法唯一绑定");
+        }
+
     }
 
     public String getParameterValue(long dataId) {
-        return new String(getParameterBuilder(dataId));
-    }
-
-    private char[] getParameterBuilder(long dataId) {
         Random random = new Random(specialValue * dataId);
-        char[] values = new char[minLength + random.nextInt(rangeLength + 1)];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
-        }
-        return values;
-    }
-
-    public String getLikeValue(long dataId, String originValue) {
-        char[] likeValue = getParameterBuilder(dataId);
-        likeIndex2Status.put(dataId, new boolean[3]);
-        int firstChangeIndex = 0;
-        if (originValue.startsWith("%")) {
-            likeValue[0] = '%';
-            originValue = originValue.substring(1);
-            likeIndex2Status.get(dataId)[0] = true;
-            firstChangeIndex = 1;
-        }
-        if (originValue.endsWith("%")) {
-            likeValue[likeValue.length - 1] = '%';
-            originValue = originValue.substring(0, originValue.length() - 1);
-            likeIndex2Status.get(dataId)[1] = true;
-        }
-        if (originValue.contains("%")) {
-            likeValue[likeValue.length / 2] = '%';
-            likeIndex2Status.get(dataId)[2] = true;
-        }
-        likeValue[firstChangeIndex] = likeRandomCharSet[likeValue[firstChangeIndex] % likeRandomCharSet.length];
-        return new String(likeValue);
-    }
-
-    public Map<Long, boolean[]> getLikeIndex2Status() {
-        return likeIndex2Status;
-    }
-
-    public void setLikeIndex2Status(Map<Long, boolean[]> likeIndex2Status) {
-        this.likeIndex2Status = likeIndex2Status;
-    }
-
-    //todo deal with the like operator and the compare operator at the same time
-    public String transferColumnData2Value(long data, long range) {
-        if (likeIndex2Status.size() > 0 && likeIndex2Status.containsKey(data)) {
-            char[] value = getParameterBuilder(data);
-            boolean[] status = likeIndex2Status.get(data);
-            int firstChangeIndex = 0;
-            if (status[0]) {
-                value[0] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
-                firstChangeIndex = 1;
+        char[] values = new char[avgLength];
+        if (dataId < 0) {
+            values[0] = NO_EXIST_TAIL_CHAR;
+            for (int i = 1; i < values.length; i++) {
+                values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
             }
-            if (status[1]) {
-                value[value.length - 1] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
-            }
-            if (status[2]) {
-                value[value.length / 2] = randomCharSet[ThreadLocalRandom.current().nextInt(randomCharSet.length)];
-            }
-            value[firstChangeIndex] = likeRandomCharSet[value[firstChangeIndex] % likeRandomCharSet.length];
-            return new String(value);
-        } else if (hasNonEqConstraint) {
-            char[] value = getParameterBuilder(data);
-            int length = Long.toString(range).length();
-            String currentData = Long.toString(data);
-            int lengthCurrent = currentData.length();
-            int diff = length - lengthCurrent;
-            for (int i = 0; i < diff; i++) {
-                value[i] = '0';
-            }
-            for (int i = 0; i < lengthCurrent; i++) {
-                value[i + diff] = currentData.charAt(i);
-            }
-            return new String(value);
         } else {
-            return getParameterValue(data);
+            if (subStringIndex.contains(dataId)) {
+                values[0] = likeRandomCharSet[subStringIndex.headSet(dataId).size()];
+            } else {
+                values[0] = '+';
+            }
+            for (int i = tag; i > 0; i--) {
+                values[i] = randomCharSet[(int) (dataId % randomCharSet.length)];
+                dataId /= randomCharSet.length;
+            }
+            for (int i = tag + 1; i < values.length; i++) {
+                values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
+            }
         }
+        return new String(values);
+    }
+
+    public void addSubStringIndex(long dataId) {
+        subStringIndex.add(dataId);
+    }
+
+    public Set<Long> getLikeIndex2Status() {
+        return subStringIndex;
+    }
+
+    public void setLikeIndex2Status(TreeSet<Long> likeIndex) {
+        this.subStringIndex = likeIndex;
     }
 }

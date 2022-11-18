@@ -43,7 +43,7 @@
                     "parameters" : [
                       {
                         "id" : 32,
-                        "data" : 1,
+                        "data" : 2,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -95,7 +95,7 @@
                     "parameters" : [
                       {
                         "id" : 30,
-                        "data" : 1,
+                        "data" : 2,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -147,12 +147,12 @@
                     "parameters" : [
                       {
                         "id" : 34,
-                        "data" : 0,
+                        "data" : 3,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.8575899844,
                     "canonicalColumnName" : "public.date.d_year",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -160,12 +160,12 @@
                     "parameters" : [
                       {
                         "id" : 35,
-                        "data" : 5,
+                        "data" : 8,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.8575899844,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.date.d_year",
                     "type" : "UNI_FILTER_OPERATION"
                   }

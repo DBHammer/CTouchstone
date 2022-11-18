@@ -2,10 +2,10 @@ package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author wangqingshuai
@@ -28,6 +28,8 @@ public abstract class BoolExprNode {
      */
     protected abstract List<AbstractFilterOperation> pushDownProbability(BigDecimal probability);
 
+    public abstract void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList);
+
     /**
      * 获得当前布尔表达式节点的类型
      *
@@ -40,7 +42,7 @@ public abstract class BoolExprNode {
      *
      * @return evaluate表达式的布尔值
      */
-    protected abstract boolean[] evaluate() throws CannotFindColumnException;
+    protected abstract boolean[] evaluate();
 
     /**
      * 获取该filter条件中的所有参数
@@ -63,12 +65,30 @@ public abstract class BoolExprNode {
     public abstract List<String> getColumns();
 
     /**
+     * 获得改operation的最大null概率
+     *
+     * @return null的概率
+     */
+    @JsonIgnore
+    public abstract BigDecimal getNullProbability();
+
+    /**
+     * 获得改operation的过滤比
+     *
+     * @return 过滤比
+     */
+    @JsonIgnore
+    public abstract BigDecimal getFilterProbability();
+
+    /**
      * 判定子树是否可以标记为True
      *
      * @return 子树可以标记为True
      */
     @JsonIgnore
     public abstract boolean isTrue();
+
+
 
     /**
      * 判定子树是否包含其他的表
@@ -78,11 +98,4 @@ public abstract class BoolExprNode {
      */
     @JsonIgnore
     public abstract boolean isDifferentTable(String tableName);
-
-    /**
-     * 将逻辑树转换为SQL格式
-     *
-     * @return sql格式的逻辑树
-     */
-    public abstract String toSQL();
 }

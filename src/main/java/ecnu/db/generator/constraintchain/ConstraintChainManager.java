@@ -39,104 +39,6 @@ public class ConstraintChainManager {
         return INSTANCE;
     }
 
-    /**
-     * 返回所有约束链的参照表和参照的Tag
-     *
-     * @param constraintChains 需要分析的约束链
-     * @return 所有参照表和参照的Tag
-     */
-    public static SortedMap<String, List<Integer>> getInvolvedFks(List<ConstraintChain> constraintChains) {
-        SortedMap<String, List<Integer>> involveFks = new TreeMap<>();
-        // 找到涉及到的参照表和参照的tag
-        constraintChains.forEach(constraintChain -> constraintChain.getNodes().stream()
-                .filter(constraintChainNode -> constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
-                .map(ConstraintChainFkJoinNode.class::cast)
-                .forEach(fkJoinNode -> {
-                            involveFks.computeIfAbsent(fkJoinNode.getRefCols(), v -> new ArrayList<>());
-                            involveFks.get(fkJoinNode.getRefCols()).add(fkJoinNode.getPkTag());
-                        }
-                ));
-        //对所有的位置进行排序
-        involveFks.values().forEach(Collections::sort);
-        //标记约束链对应的status的位置
-        constraintChains.forEach(constraintChain -> constraintChain.getNodes().stream()
-                .filter(constraintChainNode -> constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
-                .map(ConstraintChainFkJoinNode.class::cast)
-                .forEach(fkJoinNode -> {
-                            fkJoinNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(fkJoinNode.getRefCols());
-                            fkJoinNode.joinStatusLocation = involveFks.get(fkJoinNode.getRefCols()).indexOf(fkJoinNode.getPkTag());
-                        }
-                )
-        );
-        //传递约束链
-        for (ConstraintChain constraintChain : constraintChains) {
-            for (int i = 0; i < constraintChain.getNodes().size(); i++) {
-                if (constraintChain.getNodes().get(i).getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE) {
-                    ConstraintChainAggregateNode aggregateNode = (ConstraintChainAggregateNode) constraintChain.getNodes().get(i);
-                    if (aggregateNode.getGroupKey() != null) {
-                        String fkCol = aggregateNode.getGroupKey().get(0);
-                        String[] cols = fkCol.split("\\.");
-                        try {
-                            String remoteCol = TableManager.getInstance().getSchema(cols[0] + "." + cols[1]).getForeignKeys().get(fkCol);
-                            aggregateNode.joinStatusIndex = involveFks.keySet().stream().toList().indexOf(remoteCol);
-                        } catch (CannotFindSchemaException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        aggregateNode.joinStatusIndex = -1;
-                    }
-                }
-            }
-        }
-        return involveFks;
-    }
-
-    /**
-     * 输入约束链，返回涉及到所有状态 组织结构如下
-     * pkCol1 ---- pkCol2 ----- pkCol3
-     * status1 --- status2 ---- status3
-     * status11--- status22---- status33
-     * ......
-     *
-     * @param col2AllStatus 涉及到参照主键
-     * @return 所有可能的状态组
-     */
-    public static List<List<boolean[]>> getAllDistinctStatus(List<List<boolean[]>> col2AllStatus) {
-        int diffStatusSize = 1;
-        for (List<boolean[]> tableStatus : col2AllStatus) {
-            diffStatusSize *= tableStatus.size();
-        }
-        int[] loopSize = new int[col2AllStatus.size()];
-        int currentSize = 1;
-        for (int i = 0; i < col2AllStatus.size(); i++) {
-            currentSize = col2AllStatus.get(i).size() * currentSize;
-            loopSize[i] = diffStatusSize / currentSize;
-        }
-        List<List<boolean[]>> allDiffStatus = IntStream.range(0, diffStatusSize)
-                .mapToObj(index -> {
-                    List<boolean[]> result = new ArrayList<>();
-                    for (int i = 0; i < col2AllStatus.size(); i++) {
-                        List<boolean[]> tableStatus = col2AllStatus.get(i);
-                        result.add(tableStatus.get((index) / loopSize[i] % tableStatus.size()));
-                    }
-                    return result;
-                }).toList();
-        return allDiffStatus;
-    }
-
-    public static List<StringBuilder> generateAttRows(List<String> attColumnNames, int range) {
-        List<Column> columns = attColumnNames.stream().map(col -> ColumnManager.getInstance().getColumn(col)).toList();
-        return IntStream.range(0, range).parallel()
-                .mapToObj(
-                        rowId -> {
-                            StringBuilder row = new StringBuilder(columns.get(0).output(rowId));
-                            for (int i = 1; i < columns.size(); i++) {
-                                row.append(',').append(columns.get(i).output(rowId));
-                            }
-                            return row;
-                        }
-                ).toList();
-    }
 
     public void setResultDir(String resultDir) {
         this.resultDir = resultDir;
@@ -179,34 +81,6 @@ public class ConstraintChainManager {
                     logger.info(rb.getString("RemoveConstraintChain1"), query2ConstraintChains.getKey(), constraintChain);
                     constraintChainIterator.remove();
                 }
-            }
-        }
-    }
-
-    /**
-     * 对一组约束链进行分类
-     *
-     * @param allChains              输入的约束链
-     * @param haveFkConstrainChains  含有外键和Agg的约束链
-     * @param onlyPkConstrainChains  只有主键的约束链
-     * @param fkAndPkConstrainChains 既含有主键又含有外键的约束链
-     */
-    public static void classifyConstraintChain(List<ConstraintChain> allChains, List<ConstraintChain> haveFkConstrainChains,
-                                               List<ConstraintChain> onlyPkConstrainChains, List<ConstraintChain> fkAndPkConstrainChains) {
-        if (allChains == null) {
-            return;
-        }
-        for (ConstraintChain constraintChain : allChains) {
-            if (constraintChain.getNodes().stream().allMatch(node ->
-                    node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN ||
-                            node.getConstraintChainNodeType() == ConstraintChainNodeType.FILTER)) {
-                onlyPkConstrainChains.add(constraintChain);
-            } else {
-                if (constraintChain.getNodes().stream().anyMatch(node ->
-                        node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN)) {
-                    fkAndPkConstrainChains.add(constraintChain);
-                }
-                haveFkConstrainChains.add(constraintChain);
             }
         }
     }

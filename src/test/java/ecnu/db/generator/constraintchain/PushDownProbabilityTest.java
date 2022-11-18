@@ -2,6 +2,7 @@ package ecnu.db.generator.constraintchain;
 
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
+import ecnu.db.schema.ColumnManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,9 @@ class PushDownProbabilityTest {
     @BeforeAll
     static void init() throws IOException {
         String configPath = "src/test/resources/data/query-instantiation/TPCH/";
-        Map<String, List<ConstraintChain> >query2chains = ConstraintChainManager.loadConstrainChainResult(configPath);
+        Map<String, List<ConstraintChain>>query2chains = ConstraintChainManager.loadConstrainChainResult(configPath);
+        ColumnManager.getInstance().setResultDir(configPath);
+        ColumnManager.getInstance().loadColumnMetaData();
         for (String query : query2chains.keySet()) {
             List<ConstraintChain> chains = query2chains.get(query);
             for (ConstraintChain chain : chains) {
@@ -68,11 +71,7 @@ class PushDownProbabilityTest {
 
         operations = query2operations.get("19_1.sql_public.lineitem");
         assertEquals(8, operations.size());
-        assertEquals(0, operations.get(2).getProbability().doubleValue(), 0.0000001);
-
-        operations = query2operations.get("19_1.sql_public.lineitem");
-        assertEquals(8, operations.size());
-        assertEquals( 0.01924177021, operations.get(7).getProbability().doubleValue(), 0.0000001);
+        assertEquals(1.0, operations.get(2).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.part");
         assertEquals(10, operations.size());
@@ -88,7 +87,7 @@ class PushDownProbabilityTest {
 
         operations = query2operations.get("6_1.sql_public.lineitem");
         assertEquals(5, operations.size());
-        assertEquals(1.0, operations.get(0).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0.0190413108, operations.get(0).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("6_1.sql_public.lineitem");
         assertEquals(5, operations.size());
@@ -101,9 +100,5 @@ class PushDownProbabilityTest {
         operations = query2operations.get("6_1.sql_public.lineitem");
         assertEquals(5, operations.size());
         assertEquals(1.0, operations.get(3).getProbability().doubleValue(), 0.0000001);
-
-        operations = query2operations.get("6_1.sql_public.lineitem");
-        assertEquals(5, operations.size());
-        assertEquals(0.0190413108, operations.get(4).getProbability().doubleValue(), 0.0000001);
     }
 }

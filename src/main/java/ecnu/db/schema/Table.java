@@ -16,7 +16,9 @@ public class Table {
     private long tableSize;
     private List<String> primaryKeys;
     private List<String> canonicalColumnNames;
-    private Map<String, String> foreignKeys = new HashMap<>();
+    private Map<String, String> foreignKeys = new TreeMap<>();
+    @JsonIgnore
+    private final Map<String, String> tmpForeignKeys = new TreeMap<>();
     @JsonIgnore
     private int joinTag = 0;
 
@@ -34,10 +36,9 @@ public class Table {
         return canonicalColumnNames;
     }
 
-
     @JsonIgnore
-    public List<String> getCanonicalColumnNamesNotFk() {
-        List<String> canonicalColumnNamesNotKey = new LinkedList<>(canonicalColumnNames);
+    public List<String> getAttributeColumnNames() {
+        List<String> canonicalColumnNamesNotKey = new ArrayList<>(canonicalColumnNames);
         canonicalColumnNamesNotKey.removeAll(primaryKeys);
         canonicalColumnNamesNotKey.removeAll(foreignKeys.keySet());
         return canonicalColumnNamesNotKey;
@@ -45,6 +46,12 @@ public class Table {
 
     public synchronized int getJoinTag() {
         return joinTag++;
+    }
+
+    public void cleanPrimaryKey() {
+        while (primaryKeys.size() > 1) {
+            primaryKeys.remove(0);
+        }
     }
 
 
@@ -63,28 +70,43 @@ public class Table {
         }
     }
 
+    @JsonIgnore
+    public SortedMap<String, Long> getFk2PkTableSize() {
+        SortedMap<String, Long> fk2PkTableSize = new TreeMap<>();
+        for (Map.Entry<String, String> foreignKey : foreignKeys.entrySet()) {
+            fk2PkTableSize.put(foreignKey.getKey(), TableManager.getInstance().getTableSizeWithCol(foreignKey.getValue()));
+        }
+        return fk2PkTableSize;
+    }
+
     public boolean isRefTable(String refTable) {
         return foreignKeys.values().stream().anyMatch(remoteColumn -> remoteColumn.contains(refTable));
     }
 
-
     public void addForeignKey(String localTable, String localColumnName,
                               String referencingTable, String referencingInfo) throws TouchstoneException {
+        addForeignKey(foreignKeys, localTable, localColumnName, referencingTable, referencingInfo);
+    }
+
+    public void addTmpForeignKey(String localTable, String localColumnName,
+                              String referencingTable, String referencingInfo) throws TouchstoneException {
+        addForeignKey(tmpForeignKeys, localTable, localColumnName, referencingTable, referencingInfo);
+    }
+
+    private void addForeignKey(Map<String, String> foreignKeyMap, String localTable, String localColumnName,
+                               String referencingTable, String referencingInfo) throws TouchstoneException {
         String[] columnNames = localColumnName.split(",");
         String[] refColumnNames = referencingInfo.split(",");
-        if (foreignKeys == null) {
-            foreignKeys = new HashMap<>(columnNames.length);
-        }
         for (int i = 0; i < columnNames.length; i++) {
-            if (foreignKeys.containsKey(columnNames[i])) {
-                if (!(referencingTable + "." + refColumnNames[i]).equals(foreignKeys.get(columnNames[i]))) {
+            if (foreignKeyMap.containsKey(columnNames[i])) {
+                if (!(referencingTable + "." + refColumnNames[i]).equals(foreignKeyMap.get(columnNames[i]))) {
                     throw new TouchstoneException("冲突的主外键连接");
                 } else {
                     return;
                 }
             }
-            foreignKeys.put(localTable + "." + columnNames[i], referencingTable + "." + refColumnNames[i]);
-            primaryKeys.remove(columnNames[i]);
+            foreignKeyMap.put(localTable + "." + columnNames[i], referencingTable + "." + refColumnNames[i]);
+            primaryKeys.remove(localTable + "." + columnNames[i]);
         }
     }
 
@@ -139,7 +161,7 @@ public class Table {
         return primaryKeys;
     }
 
-    public void toSQL(DbConnector dbConnector, String tableName) throws SQLException, TouchstoneException {
+    public void toSQL(DbConnector dbConnector, String tableName) throws SQLException {
         StringBuilder head = new StringBuilder("CREATE TABLE ");
         head.append(tableName).append(" (");
         List<String> allColumns = new ArrayList<>(canonicalColumnNames);
@@ -188,5 +210,15 @@ public class Table {
     @Override
     public String toString() {
         return "Schema{tableSize=" + tableSize + '}';
+    }
+
+
+    public void adjustFks() {
+        for (Map.Entry<String, String> tmpFK : tmpForeignKeys.entrySet()) {
+            if (!foreignKeys.containsKey(tmpFK.getKey())) {
+                foreignKeys.put(tmpFK.getKey(), tmpFK.getValue());
+                primaryKeys.remove(tmpFK.getKey());
+            }
+        }
     }
 }

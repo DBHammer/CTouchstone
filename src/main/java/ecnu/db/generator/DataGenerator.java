@@ -1,27 +1,28 @@
 package ecnu.db.generator;
 
 
-import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
+import ecnu.db.generator.constraintchain.ConstraintChainNode;
+import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
+import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
 import ecnu.db.generator.joininfo.JoinStatus;
-import ecnu.db.generator.joininfo.RuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
-import ecnu.db.utils.CommonUtils;
+import org.jgrapht.Graph;
+import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.stream.IntStream;
 
 
 @CommandLine.Command(name = "generate", description = "generate database according to gathered information",
@@ -43,8 +44,15 @@ public class DataGenerator implements Callable<Integer> {
 
     private DataWriter dataWriter;
 
-    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
+    // batch生成的起始位置
+    private long batchStart;
+
+    // batch生成的大小
+    private long batchSize;
+
+    // 下一次batch需要推进的range
+    private long stepRange;
     private static Map<String, List<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
         Map<String, List<ConstraintChain>> schema2chains = new HashMap<>();
         for (List<ConstraintChain> chains : query2chains.values()) {
@@ -68,7 +76,7 @@ public class DataGenerator implements Callable<Integer> {
         ColumnManager.getInstance().loadColumnDistribution();
         //载入约束链，并进行transform
         ConstraintChainManager.getInstance().setResultDir(configPath);
-        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
+        Map<String, List<ConstraintChain>> query2chains = ConstraintChainManager.loadConstrainChainResult(configPath);
         ConstraintChainManager.getInstance().cleanConstrainChains(query2chains);
         schema2chains = getSchema2Chains(query2chains);
         // 删除上次生成的数据
@@ -80,6 +88,129 @@ public class DataGenerator implements Callable<Integer> {
         }
         // 初始化数据生成器
         dataWriter = new DataWriter(outputPath, generatorId);
+
+        stepRange = (long) stepSize * (generatorNum - 1);
+    }
+
+    private List<List<String>> classifyFkDependency(List<ConstraintChain> haveFkConstrainChains) {
+        Graph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        HashSet<String> allFkCols = new HashSet<>();
+        for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
+            for (ConstraintChainFkJoinNode fkJoinNode : haveFkConstrainChain.getFkNodes()) {
+                allFkCols.add(fkJoinNode.getLocalCols());
+            }
+        }
+        for (String fkCol : allFkCols) {
+            graph.addVertex(fkCol);
+        }
+        for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
+            List<ConstraintChainFkJoinNode> fkJoinNodes = haveFkConstrainChain.getFkNodes();
+            String lastColName = fkJoinNodes.get(0).getLocalCols();
+            for (int i = 1; i < fkJoinNodes.size(); i++) {
+                String currentColName = fkJoinNodes.get(i).getLocalCols();
+                graph.addEdge(lastColName, currentColName);
+                lastColName = currentColName;
+            }
+        }
+        List<Set<String>> fkSets = new KosarajuStrongConnectivityInspector<>(graph).stronglyConnectedSets();
+        return fkSets.stream().map(fkSet -> fkSet.stream().toList()).toList();
+    }
+
+    private void computeStepRange(long tableSize) {
+        if ((long) stepSize * generatorNum > tableSize) {
+            batchSize = tableSize / generatorNum;
+        } else {
+            batchSize = stepSize;
+        }
+        batchStart = batchSize * generatorId;
+    }
+
+
+    private boolean[][] generateStatusViewOfEachRow(List<ConstraintChain> constraintChains, int range) {
+        // 计算外键的filter status
+        boolean[][] statusVectorOfEachRow = new boolean[range][constraintChains.size()];
+        constraintChains.stream().parallel().forEach(chain -> {
+            boolean[] statusVector = chain.evaluateFilterStatus(range);
+            int chainIndex = chain.getChainIndex();
+            for (int rowId = 0; rowId < statusVector.length; rowId++) {
+                statusVectorOfEachRow[rowId][chainIndex] = statusVector[rowId];
+            }
+        });
+        return statusVectorOfEachRow;
+    }
+
+    private StringBuilder[] generatePks(boolean[][] statusVectorOfEachRow, int[] pkStatusChainIndexes, int range, String pkName) {
+        //todo 处理多列主键
+        StringBuilder[] rowData = new StringBuilder[range];
+        if (pkStatusChainIndexes.length > 0) {
+            //创建主键状态矩阵
+            JoinStatus[] allStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
+                    .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, pkStatusChainIndexes)).toArray(JoinStatus[]::new);
+            Map<JoinStatus, Long> pkHistogram = FkGenerator.generateStatusHistogram(allStatuses);
+            logger.info("{}的状态表为", pkName);
+            for (Map.Entry<JoinStatus, Long> joinStatusLongEntry : pkHistogram.entrySet()) {
+                logger.info("size:{}, status:{}", joinStatusLongEntry.getValue(), joinStatusLongEntry.getKey().status());
+            }
+            var pkStatus2Location = RuleTableManager.getInstance().addRuleTable(pkName, pkHistogram, batchStart);
+            IntStream.range(0, range).parallel().forEach(i -> {
+                JoinStatus status = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[i], pkStatusChainIndexes);
+                rowData[i] = new StringBuilder().append(pkStatus2Location.get(status).getAndIncrement()).append(',');
+            });
+        }
+        //处理不需要外键填充的主键状态
+        else if (!pkName.isEmpty()) {
+            IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder().append(batchStart + i).append(','));
+        } else {
+            IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder());
+        }
+        return rowData;
+    }
+
+    private Map<String, long[]> generateFks(boolean[][] statusVectorOfEachRow, FkGenerator[] fkGenerators,
+                                            List<List<String>> fkGroups) {
+        Map<String, long[]> fkCol2Values = new TreeMap<>();
+        for (int groupIndex = 0; groupIndex < fkGenerators.length; groupIndex++) {
+            long[][] fkValues = fkGenerators[groupIndex].generateFK(statusVectorOfEachRow);
+            List<String> fkGroup = fkGroups.get(groupIndex);
+            for (int fkColIndex = 0; fkColIndex < fkGroup.size(); fkColIndex++) {
+                fkCol2Values.put(fkGroup.get(fkColIndex), fkValues[fkColIndex]);
+            }
+        }
+        return fkCol2Values;
+    }
+
+    private void generateFksNoConstraints(Map<String, long[]> fkCol2Values, SortedMap<String, Long> allFk2TableSize, int range) {
+        for (Map.Entry<String, Long> fk2TableSize : allFk2TableSize.entrySet()) {
+            if (!fkCol2Values.containsKey(fk2TableSize.getKey())) {
+                long[] fks = ThreadLocalRandom.current().longs(range, 1, fk2TableSize.getValue()+1).toArray();
+                fkCol2Values.put(fk2TableSize.getKey(), fks);
+            }
+        }
+    }
+
+    private int[] getPkStatusChainIndexes(List<ConstraintChain> allChains) {
+        TreeMap<Integer, Integer> pkJoinTag2ChainIndex = new TreeMap<>();
+        for (ConstraintChain constraintChain : allChains) {
+            for (ConstraintChainNode node : constraintChain.getNodes()) {
+                if (node instanceof ConstraintChainPkJoinNode pkJoinNode) {
+                    pkJoinTag2ChainIndex.put(pkJoinNode.getPkTag(), constraintChain.getChainIndex());
+                }
+            }
+        }
+        return pkJoinTag2ChainIndex.values().stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    private void generateTableWithoutChains(long pkStart, long tableSize, String schemaName) {
+        while (batchStart < tableSize) {
+            int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
+            //生成属性列数据
+            ColumnManager.getInstance().prepareGeneration(range);
+            String[] attRows = ColumnManager.getInstance().generateAttRows(range);
+            StringBuilder[] rowData = new StringBuilder[range];
+            IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder().append(batchStart + i + pkStart).append(","));
+            dataWriter.addWriteTask(schemaName, rowData, attRows);
+            batchStart += range + stepRange;
+        }
     }
 
     @Override
@@ -87,107 +218,61 @@ public class DataGenerator implements Callable<Integer> {
         init();
         long start = System.currentTimeMillis();
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
-            logger.info("开始输出表数据{}", schemaName);
-            dataWriter.reset();
-            //对约束链进行分类
-            List<ConstraintChain> allChains = schema2chains.get(schemaName);
-            List<ConstraintChain> haveFkConstrainChains = new ArrayList<>();
-            List<ConstraintChain> onlyPkConstrainChains = new ArrayList<>();
-            List<ConstraintChain> fkAndPkConstrainChains = new ArrayList<>();
-            ConstraintChainManager.classifyConstraintChain(allChains,
-                    haveFkConstrainChains, onlyPkConstrainChains, fkAndPkConstrainChains);
-            logger.debug(rb.getString("ConstraintChainClassification"),
-                    haveFkConstrainChains.size(), onlyPkConstrainChains.size(), fkAndPkConstrainChains.size());
-            KeysGenerator keysGenerator = new KeysGenerator(haveFkConstrainChains);
             long tableSize = TableManager.getInstance().getTableSize(schemaName);
-            long resultStart;
-            long stepRange;
-            long batchSize;
-            if (stepSize * generatorNum > tableSize) {
-                batchSize = tableSize / generatorNum;
-                resultStart = batchSize * generatorId;
-                if (generatorId == generatorNum - 1) {
-                    batchSize = tableSize - resultStart;
-                }
-            } else {
-                batchSize = stepSize;
-                resultStart = stepSize * generatorId;
-            }
-            stepRange = stepSize * (generatorNum - 1);
-            List<String> attColumnNames = TableManager.getInstance().getColumnNamesNotKey(schemaName);
+            String pkName = TableManager.getInstance().getPrimaryKeys(schemaName);
+            computeStepRange(tableSize);
+            logger.info("开始输出表数据{}, 数据总量为{}", schemaName, tableSize);
+            // 准备生成的属性列生成器
+            List<String> attColumnNames = TableManager.getInstance().getAttributeColumnNames(schemaName);
             ColumnManager.getInstance().cacheAttributeColumn(attColumnNames);
-            String pkName = TableManager.getInstance().getPrimaryKeyColumn(schemaName);
-            int totolSize = 0;
-            while (resultStart < tableSize) {
-                int range = (int) (Math.min(resultStart + batchSize, tableSize) - resultStart);
-                //生成属性列数据
-                ColumnManager.getInstance().prepareGeneration(range, true);
+            // 获得所有约束链
+            List<ConstraintChain> allChains = schema2chains.get(schemaName);
+            if (allChains == null) {
+                // todo 当前假设主键是连续的
+                generateTableWithoutChains(ColumnManager.getInstance().getMin(pkName), tableSize, schemaName);
+                continue;
+            }
+            // 设置chain的索引
+            for (int i = 0; i < allChains.size(); i++) {
+                allChains.get(i).setChainIndex(i);
+            }
+            // 获取外键约束链
+            List<ConstraintChain> haveFkConstrainChains = allChains.stream().filter(ConstraintChain::hasFkNode).toList();
+            // 根据外键列的连接依赖性划外键列生成组
+            List<List<String>> fkGroups = classifyFkDependency(haveFkConstrainChains);
+            SortedMap<String, Long> allFk2TableSize = TableManager.getInstance().getFk2PkTableSize(schemaName);
+            FkGenerator[] fkGenerators = new FkGenerator[fkGroups.size()];
+            for (int i = 0; i < fkGenerators.length; i++) {
+                fkGenerators[i] = new FkGenerator(allChains, fkGroups.get(i), tableSize);
+            }
+            int[] pkStatusChainIndexes = getPkStatusChainIndexes(allChains);
+            // 开始生成
+            while (batchStart < tableSize) {
+                int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
+                ColumnManager.getInstance().prepareGeneration(range);
+                boolean[][] statusVectorOfEachRow = generateStatusViewOfEachRow(allChains, range);
+                Map<String, long[]> fkCol2Values = generateFks(statusVectorOfEachRow, fkGenerators, fkGroups);
+                generateFksNoConstraints(fkCol2Values, allFk2TableSize, range);
+                StringBuilder[] keyData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, range, pkName);
+                IntStream.range(0, keyData.length).parallel().forEach(index -> {
+                    StringBuilder row = keyData[index];
+                    for (long[] fks : fkCol2Values.values()) {
+                        long fk = fks[index];
+                        if (fk == Long.MIN_VALUE) {
+                            row.append("\\N,");
+                        } else {
+                            row.append(fk).append(",");
+                        }
+                    }
+                });
                 //转换为字符串准备输出
-                ExecutorService service = Executors.newSingleThreadExecutor();
-                Future<List<StringBuilder>> futureRowData = service.submit(() -> ConstraintChainManager.generateAttRows(attColumnNames, range));
-                //创建主键状态矩阵
-                boolean[][] pkStatus = new boolean[onlyPkConstrainChains.size() + fkAndPkConstrainChains.size()][range];
-                //处理不需要外键填充的主键状态
-                onlyPkConstrainChains.stream().parallel().forEach(constraintChain ->
-                        pkStatus[constraintChain.getJoinTag()] = constraintChain.evaluateFilterStatus(range));
-                List<long[]> fksList = null;
-                // 如果存在外键，进行外键填充
-                if (!haveFkConstrainChains.isEmpty()) {
-                    ConstructCpModel.setPkRange(BigDecimal.valueOf(range).divide(BigDecimal.valueOf(tableSize), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION));
-                    // 计算外键的filter status
-                    boolean[][] filterStatus = haveFkConstrainChains.stream().parallel()
-                            .map(constraintChain -> constraintChain.evaluateFilterStatus(range)).toArray(boolean[][]::new);
-                    // 生成每一行对应的主键状态 row -> col -> col_status
-                    List<List<Map.Entry<boolean[], Long>>> fkStatus = keysGenerator.populateFkStatus(haveFkConstrainChains, filterStatus, range);
-                    // 根据外键状态和filter status推演主键状态表
-                    int chainIndex = 0;
-                    for (ConstraintChain fkAndPkConstrainChain : haveFkConstrainChains) {
-                        if (fkAndPkConstrainChains.contains(fkAndPkConstrainChain)) {
-                            fkAndPkConstrainChain.computePkStatus(fkStatus, filterStatus[chainIndex], pkStatus);
-                        }
-                        chainIndex++;
-                    }
-                    //生成外键的填充
-                    fksList = keysGenerator.populateFks(fkStatus);
-                }
-                List<StringBuilder> rowData = futureRowData.get();
-                if (fksList != null) {
-                    for (int i = 0; i < rowData.size(); i++) {
-                        StringBuilder row = new StringBuilder();
-                        for (long l : fksList.get(i)) {
-                            row.append(l).append(',');
-                        }
-                        rowData.get(i).insert(0, row);
-                    }
-                }
-                if (pkStatus.length > 0) {
-                    Map<JoinStatus, Long> pkHistogram = keysGenerator.printPkStatusMatrix(pkStatus);
-                    var pkStatus2Location = RuleTableManager.getInstance().addRuleTable(pkName, pkHistogram, resultStart);
-                    for (int i = 0; i < rowData.size(); i++) {
-                        boolean[] status = new boolean[pkStatus.length];
-                        for (int colIndex = 0; colIndex < pkStatus.length; colIndex++) {
-                            status[colIndex] = pkStatus[colIndex][i];
-                        }
-                        rowData.get(i).insert(0, pkStatus2Location.get(new JoinStatus(status)).getAndIncrement() + ",");
-                    }
-                } else if (!pkName.isEmpty()) {
-                    for (int i = 0; i < rowData.size(); i++) {
-                        rowData.get(i).insert(0, (resultStart + i) + ",");
-                    }
-                }
-                dataWriter.addWriteTask(schemaName, rowData);
-                totolSize += range;
-                resultStart += range + stepRange;
+                String[] data = ColumnManager.getInstance().generateAttRows(range);
+                dataWriter.addWriteTask(schemaName, keyData, data);
+                batchStart += range + stepRange;
             }
-            if (pkName != null && !pkName.isEmpty()) {
-                RuleTable ruleTable = RuleTableManager.getInstance().getRuleTable(pkName);
-                if (ruleTable != null) {
-                    ruleTable.setScaleFactor((double) tableSize / totolSize);
-                }
-            }
-            if (dataWriter.waitWriteFinish()) {
-                logger.info("输出表数据{}完成", schemaName);
-            }
+        }
+        if (dataWriter.waitWriteFinish()) {
+            logger.info("输出表数据完成");
         }
         logger.info("总用时:{}", System.currentTimeMillis() - start);
         return 0;

@@ -5,13 +5,13 @@
         {
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 30,
-          "probability" : 0.2350729273,
+          "localCols" : "public.web_sales.ws_sold_date_sk",
+          "pkTag" : 37,
+          "probability" : 0.1992329549,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.store_sales"
+      "tableName" : "public.web_sales"
     },
     {
       "nodes" : [
@@ -21,95 +21,46 @@
             "type" : "AND",
             "children" : [
               {
-                "type" : "OR",
+                "type" : "AND",
                 "children" : [
                   {
                     "parameters" : [
                       {
-                        "id" : 203,
-                        "data" : 15,
+                        "id" : 229,
+                        "data" : 2400,
                         "type" : "ACTUAL"
                       }
                     ],
-                    "operator" : "EQ",
-                    "probability" : 0.005859080891,
-                    "canonicalColumnName" : "public.date_dim.d_year",
+                    "operator" : "GE",
+                    "probability" : 0.005010335528,
+                    "canonicalColumnName" : "public.date_dim.d_month_seq",
                     "type" : "UNI_FILTER_OPERATION"
                   },
                   {
-                    "type" : "AND",
-                    "children" : [
+                    "parameters" : [
                       {
-                        "parameters" : [
-                          {
-                            "id" : 206,
-                            "data" : -1,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0,
-                        "canonicalColumnName" : "public.date_dim.d_year",
-                        "type" : "UNI_FILTER_OPERATION"
-                      },
-                      {
-                        "parameters" : [
-                          {
-                            "id" : 207,
-                            "data" : -1,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0,
-                        "canonicalColumnName" : "public.date_dim.d_moy",
-                        "type" : "UNI_FILTER_OPERATION"
+                        "id" : 230,
+                        "data" : 2402,
+                        "type" : "ACTUAL"
                       }
-                    ]
-                  },
-                  {
-                    "type" : "AND",
-                    "children" : [
-                      {
-                        "parameters" : [
-                          {
-                            "id" : 204,
-                            "data" : -1,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0,
-                        "canonicalColumnName" : "public.date_dim.d_year",
-                        "type" : "UNI_FILTER_OPERATION"
-                      },
-                      {
-                        "parameters" : [
-                          {
-                            "id" : 205,
-                            "data" : -1,
-                            "type" : "ACTUAL"
-                          }
-                        ],
-                        "operator" : "EQ",
-                        "probability" : 0,
-                        "canonicalColumnName" : "public.date_dim.d_moy",
-                        "type" : "UNI_FILTER_OPERATION"
-                      }
-                    ]
+                    ],
+                    "operator" : "LE",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.date_dim.d_month_seq",
+                    "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.005859080891
+          "probability" : 0.005010335528
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
             "d_date_sk"
           ],
-          "pkTag" : 30
+          "pkTag" : 37
         }
       ],
       "tableName" : "public.date_dim"

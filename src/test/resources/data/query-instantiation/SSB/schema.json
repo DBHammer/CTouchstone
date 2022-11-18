@@ -19,12 +19,12 @@
       "public.date.d_lastdayinweekfl",
       "public.date.d_lastdayinmonthfl",
       "public.date.d_holidayfl",
-      "public.date.d_weekdayfl",
-      "public.date.dummy"
+      "public.date.d_weekdayfl"
     ]
   },
   "public.lineorder" : {
     "tableSize" : 6001171,
+    "primaryKeys" : "public.lineorder.lo_linenumber",
     "canonicalColumnNames" : [
       "public.lineorder.lo_orderkey",
       "public.lineorder.lo_linenumber",
@@ -42,14 +42,13 @@
       "public.lineorder.lo_supplycost",
       "public.lineorder.lo_tax",
       "public.lineorder.lo_commitdate",
-      "public.lineorder.lo_shipmode",
-      "public.lineorder.dummy"
+      "public.lineorder.lo_shipmode"
     ],
     "foreignKeys" : {
-      "public.lineorder.lo_partkey" : "public.part.p_partkey",
-      "public.lineorder.lo_suppkey" : "public.supplier.s_suppkey",
+      "public.lineorder.lo_custkey" : "public.customer.c_custkey",
       "public.lineorder.lo_orderdate" : "public.date.d_datekey",
-      "public.lineorder.lo_custkey" : "public.customer.c_custkey"
+      "public.lineorder.lo_partkey" : "public.part.p_partkey",
+      "public.lineorder.lo_suppkey" : "public.supplier.s_suppkey"
     }
   },
   "public.supplier" : {
@@ -62,8 +61,7 @@
       "public.supplier.s_city",
       "public.supplier.s_nation",
       "public.supplier.s_region",
-      "public.supplier.s_phone",
-      "public.supplier.dummy"
+      "public.supplier.s_phone"
     ]
   },
   "public.part" : {
@@ -78,8 +76,7 @@
       "public.part.p_color",
       "public.part.p_type",
       "public.part.p_size",
-      "public.part.p_container",
-      "public.part.dummy"
+      "public.part.p_container"
     ]
   },
   "public.customer" : {
@@ -93,8 +90,7 @@
       "public.customer.c_nation",
       "public.customer.c_region",
       "public.customer.c_phone",
-      "public.customer.c_mktsegment",
-      "public.customer.dummy"
+      "public.customer.c_mktsegment"
     ]
   }
 }

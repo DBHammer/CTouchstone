@@ -1,21 +1,12 @@
 package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ecnu.db.LanguageManager;
-import ecnu.db.generator.ConstructCpModel;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
-import ecnu.db.generator.joininfo.JoinStatus;
-import ecnu.db.schema.TableManager;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 
 /**
@@ -24,11 +15,13 @@ import java.util.*;
 public class ConstraintChain {
 
     private final List<ConstraintChainNode> nodes = new ArrayList<>();
-    private final Logger logger = LoggerFactory.getLogger(ConstraintChain.class);
 
     @JsonIgnore
     private final Set<String> joinTables = new HashSet<>();
     private String tableName;
+
+    @JsonIgnore
+    private int chainIndex;
 
     public ConstraintChain() {
     }
@@ -53,6 +46,17 @@ public class ConstraintChain {
         return nodes;
     }
 
+    private boolean involvedNode(ConstraintChainNode node, List<String> fkCols) {
+        boolean involvedFk = node instanceof ConstraintChainFkJoinNode fkNode && fkCols.contains(fkNode.getLocalCols());
+        // todo 处理复合的groupby key
+        boolean involvedAgg = node instanceof ConstraintChainAggregateNode aggNode && aggNode.getGroupKey() != null && fkCols.contains(aggNode.getGroupKey().get(0));
+        return involvedFk || involvedAgg;
+    }
+
+    public List<ConstraintChainNode> getInvolvedNodes(List<String> fkCols) {
+        return nodes.stream().filter(node -> involvedNode(node, fkCols)).toList();
+    }
+
     public String getTableName() {
         return tableName;
     }
@@ -60,9 +64,6 @@ public class ConstraintChain {
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-
-    @JsonIgnore
-    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     @JsonIgnore
     public List<Parameter> getParameters() {
@@ -84,102 +85,24 @@ public class ConstraintChain {
      * @return filter状态
      */
     public boolean[] evaluateFilterStatus(int range) {
-        if (nodes.get(0).getConstraintChainNodeType() == ConstraintChainNodeType.FILTER) {
-            try {
-                return ((ConstraintChainFilterNode) nodes.get(0)).evaluate();
-            } catch (CannotFindColumnException e) {
-                e.printStackTrace();
-                return new boolean[0];
-            }
+        if (nodes.get(0) instanceof ConstraintChainFilterNode filterNode) {
+            return filterNode.evaluate();
         } else {
-            boolean[] ret = new boolean[range];
-            Arrays.fill(ret, true);
-            return ret;
+            boolean[] result = new boolean[range];
+            Arrays.fill(result, true);
+            return result;
         }
     }
 
-    public boolean hasCardinalityConstraint() {
-        boolean hasCardinalityConstraint;
-        hasCardinalityConstraint = nodes.stream()
-                .filter(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
-                .map(ConstraintChainFkJoinNode.class::cast)
-                .anyMatch(node -> node.getType().hasCardinalityConstraint());
-        hasCardinalityConstraint |= nodes.stream()
-                .filter(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE)
-                .map(ConstraintChainAggregateNode.class::cast)
-                .anyMatch(node -> node.getGroupKey() != null);
-        return hasCardinalityConstraint;
+    public boolean hasFkNode() {
+        return nodes.stream().anyMatch(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN);
     }
 
-    public void computePkStatus(List<List<Map.Entry<boolean[], Long>>> fkStatus, boolean[] filterStatus, boolean[][] pkStatus) {
-        for (ConstraintChainNode node : nodes) {
-            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN) {
-                ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
-                int joinStatusIndex = fkJoinNode.joinStatusIndex;
-                int joinStatusLocation = fkJoinNode.joinStatusLocation;
-                boolean status = !fkJoinNode.getType().isAnti();
-                for (int i = 0; i < fkStatus.size(); i++) {
-                    if (filterStatus[i]) {
-                        filterStatus[i] = fkStatus.get(i).get(joinStatusIndex).getKey()[joinStatusLocation] == status;
-                    }
-                }
-            } else if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
-                pkStatus[((ConstraintChainPkJoinNode) node).getPkTag()] = filterStatus;
-                break;
-            }
-        }
-    }
-
-    public void addConstraint2Model(int filterIndex, int filterSize, int unFilterSize,
-                                    List<Map<Integer, Long>> statusHash2Size,
-                                    List<Map.Entry<JoinStatus, List<boolean[]>>> filterStatus2PkStatus) {
-        // 每一组填充状态是否能到达这个算子
-        boolean[] canBeInput = new boolean[filterStatus2PkStatus.size()];
-        Arrays.fill(canBeInput, true);
-        for (ConstraintChainNode node : nodes) {
-            // filter的状态 根据其filter status对应的index的位置获得
-            switch (node.getConstraintChainNodeType()) {
-                case FILTER -> {
-                    int i = 0;
-                    for (Map.Entry<JoinStatus, List<boolean[]>> status2PkStatus : filterStatus2PkStatus) {
-                        canBeInput[i++] = status2PkStatus.getKey().status()[filterIndex];
-                    }
-                }
-                case FK_JOIN -> {
-                    ConstraintChainFkJoinNode fkJoinNode = (ConstraintChainFkJoinNode) node;
-                    if (!fkJoinNode.getType().isSemi()) {
-                        if (fkJoinNode.getProbabilityWithFailFilter() != null) {
-                            int indexJoinSize = fkJoinNode.getProbabilityWithFailFilter().multiply(BigDecimal.valueOf(unFilterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                            ConstructCpModel.addIndexJoinFkConstraint(indexJoinSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
-                        }
-                        filterSize = fkJoinNode.getProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                        ConstructCpModel.addEqJoinFkConstraint(filterSize, fkJoinNode, canBeInput, filterStatus2PkStatus);
-                    }
-                    if (fkJoinNode.getType().hasCardinalityConstraint()) {
-                        // 获取join对应的位置
-                        int joinStatusIndex = fkJoinNode.joinStatusIndex;
-                        int joinStatusLocation = fkJoinNode.joinStatusLocation;
-                        int pkSize = fkJoinNode.getPkDistinctProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                        int cardinalityBound = TableManager.getInstance().cardinalityConstraint(fkJoinNode.getLocalCols());
-                        logger.info(rb.getString("StateOfTable"), joinStatusIndex, joinStatusLocation, pkSize);
-                        ConstructCpModel.addCardinalityConstraint(joinStatusIndex, joinStatusLocation,
-                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2PkStatus);
-                    }
-                }
-                case AGGREGATE -> {
-                    ConstraintChainAggregateNode aggregateNode = (ConstraintChainAggregateNode) node;
-                    if (aggregateNode.joinStatusIndex >= 0) {
-                        int pkSize = aggregateNode.getAggProbability().multiply(BigDecimal.valueOf(filterSize)).setScale(0, RoundingMode.HALF_UP).intValue();
-                        logger.info(rb.getString("LocationOfAgg"), aggregateNode.joinStatusIndex, pkSize);
-                        int cardinalityBound = TableManager.getInstance().cardinalityConstraint(aggregateNode.getGroupKey().get(0));
-                        ConstructCpModel.addAggCardinalityConstraint(aggregateNode.joinStatusIndex,
-                                pkSize, cardinalityBound, statusHash2Size, canBeInput, filterStatus2PkStatus);
-                    }
-                }
-                default -> {
-                }
-            }
-        }
+    @JsonIgnore
+    public List<ConstraintChainFkJoinNode> getFkNodes() {
+        return nodes.stream().filter(constraintChainNode ->
+                        constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
+                .map(ConstraintChainFkJoinNode.class::cast).toList();
     }
 
     public StringBuilder presentConstraintChains(Map<String, SubGraph> subGraphHashMap, String color) {
@@ -265,19 +188,13 @@ public class ConstraintChain {
         return graph;
     }
 
-    @JsonIgnore
-    public int getJoinTag() {
-        int joinTag = Integer.MIN_VALUE;
-        for (ConstraintChainNode node : nodes) {
-            if (node.getConstraintChainNodeType() == ConstraintChainNodeType.PK_JOIN) {
-                if (joinTag == Integer.MIN_VALUE) {
-                    joinTag = ((ConstraintChainPkJoinNode) node).getPkTag();
-                } else {
-                    throw new UnsupportedOperationException(rb.getString("DoublePKInConstraintChain"));
-                }
-            }
-        }
-        return joinTag;
+
+    public void setChainIndex(int chainIndex) {
+        this.chainIndex = chainIndex;
+    }
+
+    public int getChainIndex() {
+        return chainIndex;
     }
 
     static class SubGraph {

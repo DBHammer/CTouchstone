@@ -3,7 +3,7 @@
     "0" : 1
   },
   "public.lineitem.l_shipmode" : {
-    "0" : 2
+    "0" : 3
   },
   "public.part.p_brand" : {
     "0" : 2,

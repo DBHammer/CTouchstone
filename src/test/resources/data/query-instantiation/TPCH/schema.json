@@ -1,6 +1,7 @@
 {
   "public.lineitem" : {
     "tableSize" : 6001215,
+    "primaryKeys" : "public.lineitem.l_linenumber",
     "canonicalColumnNames" : [
       "public.lineitem.l_orderkey",
       "public.lineitem.l_partkey",
@@ -99,8 +100,8 @@
       "public.partsupp.ps_comment"
     ],
     "foreignKeys" : {
-      "public.partsupp.ps_suppkey" : "public.supplier.s_suppkey",
-      "public.partsupp.ps_partkey" : "public.part.p_partkey"
+      "public.partsupp.ps_partkey" : "public.part.p_partkey",
+      "public.partsupp.ps_suppkey" : "public.supplier.s_suppkey"
     }
   },
   "public.part" : {

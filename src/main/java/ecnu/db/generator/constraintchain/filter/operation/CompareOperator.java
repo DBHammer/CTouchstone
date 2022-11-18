@@ -86,6 +86,13 @@ public enum CompareOperator {
         };
     }
 
+    public boolean isBigger() {
+        return switch (this) {
+            case GT, GE -> true;
+            default -> false;
+        };
+    }
+
     public boolean isMultiEqual() {
         return switch (this) {
             case IN, NOT_IN -> true;

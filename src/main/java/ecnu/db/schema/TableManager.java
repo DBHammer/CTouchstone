@@ -26,11 +26,16 @@ public class TableManager {
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
     private File schemaInfoPath;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+
     public TableManager() {
     }
 
     public static TableManager getInstance() {
         return INSTANCE;
+    }
+
+    public SortedMap<String, Long> getFk2PkTableSize(String schemaName) {
+        return schemas.get(schemaName).getFk2PkTableSize();
     }
 
     public LinkedHashMap<String, Table> getSchemas() {
@@ -42,6 +47,8 @@ public class TableManager {
     }
 
     public void storeSchemaInfo() throws IOException {
+        // todo 假设主键是单列的
+        schemas.values().forEach(Table::cleanPrimaryKey);
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
         CommonUtils.writeFile(schemaInfoPath.getPath(), content);
     }
@@ -59,25 +66,15 @@ public class TableManager {
         return getSchema(tableName).getPrimaryKeys();
     }
 
-    /**
-     * 输出指定行的基数
-     *
-     * @param fkCol 外键列
-     * @return 外键行的基数
-     */
-    public int cardinalityConstraint(String fkCol) {
-        String[] cols = fkCol.split("\\.");
-        String tableName = cols[0] + "." + cols[1];
-        String pkCol = schemas.get(tableName).getForeignKeys().get(fkCol);
-        String[] pkCols = pkCol.split("\\.");
-        String pkTable = pkCols[0] + "." + pkCols[1];
-        double scale = CommonUtils.CardinalityScale;
-        if (tableName.equals("public.orders")) {
-            scale = 1.5;
+    public String getRefKey(String localCol) {
+        String[] nameArray = localCol.split("\\.");
+        String tableName = nameArray[0] + "." + nameArray[1];
+        Table table = schemas.get(tableName);
+        if (table == null) {
+            return null;
         }
-        return (int) (scale * schemas.get(tableName).getTableSize() / schemas.get(pkTable).getTableSize());
+        return table.getForeignKeys().get(localCol);
     }
-
 
     public boolean isPrimaryKey(String canonicalColumnName) {
         String[] nameArray = canonicalColumnName.split("\\.");
@@ -107,6 +104,12 @@ public class TableManager {
         return getSchema(tableName).getTableSize();
     }
 
+    public long getTableSizeWithCol(String columnName) {
+        String[] cols = columnName.split("\\.");
+        String tableName = cols[0] + "." + cols[1];
+        return schemas.get(tableName).getTableSize();
+    }
+
     public int getJoinTag(String tableName) throws CannotFindSchemaException {
         return getSchema(tableName).getJoinTag();
     }
@@ -119,6 +122,10 @@ public class TableManager {
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
         logger.debug(rb.getString("AddReferenceDependencies"), localTable, localColumns, refTable, refColumns);
         getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
+    }
+
+    public void setTmpForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
+        getSchema(localTable).addTmpForeignKey(localTable, localColumns, refTable, refColumns);
     }
 
     public boolean isRefTable(String locTable, String locColumn, String remoteColumn) throws CannotFindSchemaException {
@@ -152,21 +159,8 @@ public class TableManager {
         return orderedSchemas;
     }
 
-    public List<String> getColumnNamesNotKey(String schemaName) throws CannotFindSchemaException {
-        return getSchema(schemaName).getCanonicalColumnNamesNotFk();
-    }
-
-    public List<String> getColumnNames(String schemaName) throws CannotFindSchemaException {
-        return getSchema(schemaName).getCanonicalColumnNames();
-    }
-
-    public String getPrimaryKeyColumn(String schemaName) throws CannotFindSchemaException {
-        List<String> pkNames = new ArrayList<>(getSchema(schemaName).getPrimaryKeysList());
-        var fks = getSchema(schemaName).getForeignKeys();
-        if (fks != null) {
-            pkNames.removeAll(fks.keySet());
-        }
-        return String.join(",", pkNames);
+    public List<String> getAttributeColumnNames(String schemaName) throws CannotFindSchemaException {
+        return getSchema(schemaName).getAttributeColumnNames();
     }
 
     public Table getSchema(String tableName) throws CannotFindSchemaException {
@@ -175,5 +169,9 @@ public class TableManager {
             throw new CannotFindSchemaException(tableName);
         }
         return schema;
+    }
+
+    public void adjustFks(){
+        schemas.values().forEach(Table::adjustFks);
     }
 }

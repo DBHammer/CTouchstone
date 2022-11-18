@@ -3,19 +3,6 @@
     {
       "nodes" : [
         {
-          "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.store_sales.ss_sold_date_sk",
-          "pkTag" : 25,
-          "probability" : 0.1931263809,
-          "type" : "INNER_JOIN"
-        }
-      ],
-      "tableName" : "public.store_sales"
-    },
-    {
-      "nodes" : [
-        {
           "constraintChainNodeType" : "FILTER",
           "root" : {
             "type" : "AND",
@@ -26,44 +13,135 @@
                   {
                     "parameters" : [
                       {
-                        "id" : 129,
-                        "data" : 0,
+                        "id" : 170,
+                        "data" : 99,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_month_seq",
+                    "probability" : 0.009457353894,
+                    "canonicalColumnName" : "public.store_sales.ss_quantity",
                     "type" : "UNI_FILTER_OPERATION"
+                  },
+                  {
+                    "type" : "OR",
+                    "children" : [
+                      {
+                        "type" : "AND",
+                        "children" : [
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 172,
+                                "data" : 0,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "GE",
+                            "probability" : 1,
+                            "canonicalColumnName" : "public.store_sales.ss_list_price",
+                            "type" : "UNI_FILTER_OPERATION"
+                          },
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 173,
+                                "data" : 19902,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "LE",
+                            "probability" : 1,
+                            "canonicalColumnName" : "public.store_sales.ss_list_price",
+                            "type" : "UNI_FILTER_OPERATION"
+                          }
+                        ]
+                      },
+                      {
+                        "type" : "AND",
+                        "children" : [
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 176,
+                                "data" : 9902,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "GE",
+                            "probability" : 0,
+                            "canonicalColumnName" : "public.store_sales.ss_wholesale_cost",
+                            "type" : "UNI_FILTER_OPERATION"
+                          },
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 177,
+                                "data" : 9902,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "LE",
+                            "probability" : 1,
+                            "canonicalColumnName" : "public.store_sales.ss_wholesale_cost",
+                            "type" : "UNI_FILTER_OPERATION"
+                          }
+                        ]
+                      },
+                      {
+                        "type" : "AND",
+                        "children" : [
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 174,
+                                "data" : 1758827,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "GE",
+                            "probability" : 0,
+                            "canonicalColumnName" : "public.store_sales.ss_coupon_amt",
+                            "type" : "UNI_FILTER_OPERATION"
+                          },
+                          {
+                            "parameters" : [
+                              {
+                                "id" : 175,
+                                "data" : 1758827,
+                                "type" : "ACTUAL"
+                              }
+                            ],
+                            "operator" : "LE",
+                            "probability" : 1,
+                            "canonicalColumnName" : "public.store_sales.ss_coupon_amt",
+                            "type" : "UNI_FILTER_OPERATION"
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
                     "parameters" : [
                       {
-                        "id" : 130,
-                        "data" : 1,
+                        "id" : 171,
+                        "data" : 101,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.004996646087,
-                    "canonicalColumnName" : "public.date_dim.d_month_seq",
+                    "probability" : 1,
+                    "canonicalColumnName" : "public.store_sales.ss_quantity",
                     "type" : "UNI_FILTER_OPERATION"
                   }
                 ]
               }
             ]
           },
-          "probability" : 0.004996646087
-        },
-        {
-          "constraintChainNodeType" : "PK_JOIN",
-          "pkColumns" : [
-            "d_date_sk"
-          ],
-          "pkTag" : 25
+          "probability" : 0.009454923684
         }
       ],
-      "tableName" : "public.date_dim"
+      "tableName" : "public.store_sales"
     }
   ]
 }

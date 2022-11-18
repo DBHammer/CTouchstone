@@ -2,18 +2,13 @@ package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
-import ecnu.db.utils.exception.schema.CannotFindColumnException;
+import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static ecnu.db.generator.constraintchain.filter.BoolExprType.AND;
-import static ecnu.db.generator.constraintchain.filter.BoolExprType.OR;
+import static ecnu.db.generator.constraintchain.filter.BoolExprType.*;
 
 public class LogicNode extends BoolExprNode {
     private BoolExprType type;
@@ -32,9 +27,10 @@ public class LogicNode extends BoolExprNode {
         return children.stream().anyMatch(BoolExprNode::hasKeyColumn);
     }
 
+
     @Override
     public List<AbstractFilterOperation> pushDownProbability(BigDecimal probability) {
-        List<AbstractFilterOperation> operations = new ArrayList<>();
+        List<List<AbstractFilterOperation>> operationsOfTrees = new ArrayList<>();
         // 如果当前节点为 OR 且 概率不为 1， 则反转该树为AND
         boolean hasReverse = false;
         if (getRealType() == OR) {
@@ -44,29 +40,37 @@ public class LogicNode extends BoolExprNode {
         }
 
         boolean allTrue = true;
-        int onlyNoEqlOperations = 0;
+        List<Integer> onlyNoEqlOperations = new ArrayList<>();
         for (int index = 0; index < children.size(); index++) {
             BoolExprNode child = children.get(index);
             if (child.isTrue()) {
                 List<AbstractFilterOperation> subOperations = child.pushDownProbability(BigDecimal.ONE);
                 if (subOperations.stream().noneMatch(operation -> operation.getOperator().isEqual())) {
-                    onlyNoEqlOperations = index;
+                    onlyNoEqlOperations.add(index);
                 }
-                operations.addAll(subOperations);
+                operationsOfTrees.add(subOperations);
             } else {
                 allTrue = false;
-                operations.addAll(child.pushDownProbability(probability));
+                operationsOfTrees.add(child.pushDownProbability(probability));
             }
         }
-        if (allTrue) {
-            operations.removeAll(children.get(onlyNoEqlOperations).pushDownProbability(BigDecimal.ONE));
-            operations.addAll(onlyNoEqlOperations, children.get(onlyNoEqlOperations).pushDownProbability(probability));
+        if (allTrue && probability.compareTo(BigDecimal.ONE) < 0) {
+            int index = onlyNoEqlOperations.isEmpty() ? 0 : onlyNoEqlOperations.remove(0);
+            operationsOfTrees.set(index, children.get(index).pushDownProbability(probability));
         }
         if (hasReverse) {
             this.reverse();
         }
-        return operations;
+        return operationsOfTrees.stream().flatMap(Collection::stream).toList();
     }
+
+    @Override
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
+        if (children.size() == 1 && children.get(0) instanceof UniVarFilterOperation uniVarFilterOperation) {
+            uniVarFilterOperation.getColumn2ParameterBucket(column2Value2ParameterList);
+        }
+    }
+
 
     public void removeOtherTablesOperation(String tableName) {
         BoolExprNode root = this.children.get(0);
@@ -91,22 +95,24 @@ public class LogicNode extends BoolExprNode {
     }
 
     @Override
-    public boolean[] evaluate() throws CannotFindColumnException {
+    public boolean[] evaluate() {
         boolean[][] computeVectors = new boolean[children.size()][];
         for (int i = 0; i < children.size(); i++) {
             computeVectors[i] = children.get(i).evaluate();
         }
-        boolean[] resultVector = new boolean[computeVectors[0].length];
+        boolean[] resultVector = computeVectors[0];
         if (getRealType() == AND) {
-            Arrays.fill(resultVector, true);
-            Arrays.stream(computeVectors).forEach(
-                    computeVector -> IntStream.range(0, resultVector.length)
-                            .forEach(i -> resultVector[i] &= computeVector[i]));
+            for (int i = 0; i < resultVector.length; i++) {
+                for (int j = 1; j < computeVectors.length; j++) {
+                    resultVector[i] &= computeVectors[j][i];
+                }
+            }
         } else if (getRealType() == OR) {
-            Arrays.fill(resultVector, false);
-            Arrays.stream(computeVectors).forEach(
-                    computeVector -> IntStream.range(0, resultVector.length)
-                            .forEach(i -> resultVector[i] |= computeVector[i]));
+            for (int i = 0; i < resultVector.length; i++) {
+                for (int j = 1; j < computeVectors.length; j++) {
+                    resultVector[i] |= computeVectors[j][i];
+                }
+            }
         }
         return resultVector;
     }
@@ -121,6 +127,44 @@ public class LogicNode extends BoolExprNode {
     @Override
     public List<String> getColumns() {
         return children.stream().map(BoolExprNode::getColumns).flatMap(Collection::stream).toList();
+    }
+
+    @Override
+    public BigDecimal getNullProbability() {
+        BigDecimal maxNull = BigDecimal.ZERO;
+        if (type == AND) {
+            for (BoolExprNode child : children) {
+                maxNull = maxNull.max(child.getNullProbability());
+            }
+        } else if (type == OR) {
+            for (BoolExprNode child : children) {
+                if (child.getFilterProbability().compareTo(BigDecimal.ZERO) > 0) {
+                    maxNull = maxNull.max(child.getNullProbability());
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        return maxNull;
+    }
+
+    @Override
+    public BigDecimal getFilterProbability() {
+        if (type == AND) {
+            BigDecimal minProbability = BigDecimal.ONE;
+            for (BoolExprNode child : children) {
+                minProbability = minProbability.min(child.getFilterProbability());
+            }
+            return minProbability;
+        } else if (type == OR) {
+            BigDecimal maxProbability = BigDecimal.ZERO;
+            for (BoolExprNode child : children) {
+                maxProbability = maxProbability.max(child.getFilterProbability());
+            }
+            return maxProbability;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override
@@ -149,20 +193,6 @@ public class LogicNode extends BoolExprNode {
         return children.stream().anyMatch(child -> child.isDifferentTable(tableName));
     }
 
-    @Override
-    public String toSQL() {
-        String lowerType = switch (type) {
-            case AND -> "and";
-            case OR -> "or";
-            default -> throw new UnsupportedOperationException();
-        };
-        if (children.size() > 1) {
-            return "(" + children.stream().map(BoolExprNode::toSQL).collect(Collectors.joining(" " + lowerType + " ")) + ")";
-        } else {
-            return children.get(0).toSQL();
-        }
-    }
-
     private BoolExprType getRealType() {
         if (isReverse) {
             return switch (type) {
@@ -184,9 +214,9 @@ public class LogicNode extends BoolExprNode {
             default -> throw new UnsupportedOperationException();
         };
         if (children.size() > 1) {
-            return String.format("%s(%s)", lowerType, children.stream().map(BoolExprNode::toString).collect(Collectors.joining("," + System.lineSeparator())));
+            return "(" + children.stream().map(BoolExprNode::toString).collect(Collectors.joining(" " + lowerType + System.lineSeparator())) + ")";
         } else {
-            return String.format("%s(%s)", lowerType, children.get(0).toString());
+            return children.get(0).toString();
         }
     }
 }

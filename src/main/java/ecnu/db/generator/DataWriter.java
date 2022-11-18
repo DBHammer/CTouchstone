@@ -1,10 +1,9 @@
 package ecnu.db.generator;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -14,26 +13,42 @@ public class DataWriter {
     String outputPath;
     int generatorId;
 
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    String lastSchemaName = null;
+
+    BufferedWriter lastBufferedWriter = null;
+
+    ExecutorService executorService = Executors.newFixedThreadPool(6);
 
     public DataWriter(String outputPath, int generatorId) {
         this.outputPath = outputPath;
         this.generatorId = generatorId;
     }
 
-    public void addWriteTask(String schemaName, List<StringBuilder> rowData) {
+    public void addWriteTask(String schemaName, StringBuilder[] keyData, String[] attData) {
+        if (!schemaName.equals(lastSchemaName)) {
+            File file = new File(outputPath + "/" + schemaName + generatorId);
+            try {
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
+                lastBufferedWriter = new BufferedWriter(new FileWriter(file, true));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        BufferedWriter finalWriter = lastBufferedWriter;
         executorService.submit(() -> {
             try {
-                Files.write(Paths.get(outputPath + "/" + schemaName + generatorId), rowData,
-                        StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+                StringBuilder file = new StringBuilder();
+                for (int i = 0; i < keyData.length; i++) {
+                    file.append(keyData[i]).append(attData[i]).append(System.lineSeparator());
+                }
+                finalWriter.write(file.toString());
+                finalWriter.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
-    }
-
-    public void reset() {
-        executorService = Executors.newSingleThreadExecutor();
     }
 
     public boolean waitWriteFinish() throws InterruptedException {

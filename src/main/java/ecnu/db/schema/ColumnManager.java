@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static ecnu.db.utils.CommonUtils.*;
 
@@ -73,6 +75,18 @@ public class ColumnManager {
         }
     }
 
+    public String[] generateAttRows(int range) {
+        return IntStream.range(0, range).parallel().mapToObj(
+                rowId -> attributeColumns.stream()
+                        .map(attributeColumn -> attributeColumn.output(rowId))
+                        .collect(Collectors.joining(","))
+        ).toArray(String[]::new);
+    }
+
+    public long getMin(String columnName){
+        return columns.get(columnName).getMin();
+    }
+
     public boolean[] evaluate(String columnName, CompareOperator operator, List<Parameter> parameters) {
         return columns.get(columnName).evaluate(operator, parameters);
     }
@@ -125,7 +139,7 @@ public class ColumnManager {
         if (!distribution.exists()) {
             distribution.mkdir();
         }
-        Map<String, Map<Long, boolean[]>> columName2StringTemplate = new HashMap<>();
+        Map<String, Set<Long>> columName2StringTemplate = new HashMap<>();
         for (Map.Entry<String, Column> column : columns.entrySet()) {
             if (column.getValue().getColumnType() == ColumnType.VARCHAR &&
                     column.getValue().getStringTemplate().getLikeIndex2Status() != null) {
@@ -168,9 +182,9 @@ public class ColumnManager {
     public void loadColumnDistribution() throws IOException {
         File distribution = new File(distributionInfoPath + "/distribution");
         String content = CommonUtils.readFile(distribution.getPath() + COLUMN_STRING_INFO);
-        Map<String, Map<Long, boolean[]>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        Map<String, TreeSet<Long>> columName2StringTemplate = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
         });
-        for (Map.Entry<String, Map<Long, boolean[]>> template : columName2StringTemplate.entrySet()) {
+        for (Map.Entry<String, TreeSet<Long>> template : columName2StringTemplate.entrySet()) {
             columns.get(template.getKey()).getStringTemplate().setLikeIndex2Status(template.getValue());
         }
         content = CommonUtils.readFile(distribution.getPath() + COLUMN_DISTRIBUTION_INFO);
@@ -187,6 +201,22 @@ public class ColumnManager {
         }
     }
 
+    public void storeColumnName2IdList(Map<String, List<List<Integer>>> columnName2IdList) throws IOException {
+        String resultDir = distributionInfoPath.getPath();
+        String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columnName2IdList);
+        CommonUtils.writeFile(resultDir + "/column2IdList", content);
+    }
+    public void loadColumnName2IdList() throws IOException {
+        String resultDir = distributionInfoPath.getPath();
+        String content = CommonUtils.readFile(resultDir + "/column2IdList");
+        Map<String, List<List<Integer>>> column2IdList = CommonUtils.MAPPER.readValue(content, new TypeReference<>() {
+        });
+        for (Map.Entry<String, List<List<Integer>>> stringListEntry : column2IdList.entrySet()) {
+            String columnName = stringListEntry.getKey();
+            List<List<Integer>> idList = stringListEntry.getValue();
+            columns.get(columnName).getDistribution().setIdList(idList);
+        }
+    }
     /**
      * 提取col的range信息(最大值，最小值)
      *
@@ -219,9 +249,8 @@ public class ColumnManager {
                         specialValue = (int) ((maxBound - min + 1) / range);
                     }
                     case VARCHAR -> {
-                        column.setMinLength(Integer.parseInt(minResult));
-                        //todo avg length
-                        column.setRangeLength(Integer.parseInt(maxResult) - column.getMinLength());
+                        column.setAvgLength((int) Math.round(Double.parseDouble(minResult)));
+                        column.setMaxLength(Integer.parseInt(maxResult));
                         min = 0;
                         range = Integer.parseInt(sqlResult[index++]);
                         specialValue = ThreadLocalRandom.current().nextInt();
@@ -260,15 +289,7 @@ public class ColumnManager {
         attributeColumns.addAll(columnNames.stream().map(this::getColumn).toList());
     }
 
-    public void prepareGeneration(int size, boolean shuffle) {
+    public void prepareGeneration(int size) {
         attributeColumns.stream().parallel().forEach(column -> column.prepareTupleData(size));
-        if (shuffle) {
-            List<Integer> rowIndex = new ArrayList<>();
-            for (int i = 0; i < size; i++) {
-                rowIndex.add(i);
-            }
-            Collections.shuffle(rowIndex);
-            attributeColumns.stream().parallel().forEach(column -> column.shuffleRows(rowIndex));
-        }
     }
 }

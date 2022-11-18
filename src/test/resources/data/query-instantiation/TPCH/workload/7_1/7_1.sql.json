@@ -34,7 +34,7 @@
                     "parameters" : [
                       {
                         "id" : 133,
-                        "data" : 2,
+                        "data" : 4,
                         "type" : "ACTUAL"
                       }
                     ],
@@ -106,12 +106,12 @@
                     "parameters" : [
                       {
                         "id" : 131,
-                        "data" : 0,
+                        "data" : 1754,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "GE",
-                    "probability" : 1,
+                    "probability" : 0.304679969,
                     "canonicalColumnName" : "public.lineitem.l_shipdate",
                     "type" : "UNI_FILTER_OPERATION"
                   },
@@ -119,12 +119,12 @@
                     "parameters" : [
                       {
                         "id" : 132,
-                        "data" : 773,
+                        "data" : 2527,
                         "type" : "ACTUAL"
                       }
                     ],
                     "operator" : "LE",
-                    "probability" : 0.304679969,
+                    "probability" : 1,
                     "canonicalColumnName" : "public.lineitem.l_shipdate",
                     "type" : "UNI_FILTER_OPERATION"
                   }
@@ -188,7 +188,7 @@
                     "parameters" : [
                       {
                         "id" : 135,
-                        "data" : 2,
+                        "data" : 5,
                         "type" : "ACTUAL"
                       }
                     ],

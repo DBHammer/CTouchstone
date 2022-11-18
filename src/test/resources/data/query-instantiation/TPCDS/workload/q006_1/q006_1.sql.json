@@ -5,13 +5,13 @@
         {
           "constraintChainNodeType" : "FK_JOIN",
           "refCols" : "public.date_dim.d_date_sk",
-          "localCols" : "public.web_sales.ws_sold_date_sk",
+          "localCols" : "public.store_returns.sr_returned_date_sk",
           "pkTag" : 4,
-          "probability" : 0.2022438642,
+          "probability" : 0.110652003,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.web_sales"
+      "tableName" : "public.store_returns"
     },
     {
       "nodes" : [
@@ -21,35 +21,17 @@
             "type" : "AND",
             "children" : [
               {
-                "type" : "AND",
-                "children" : [
+                "parameters" : [
                   {
-                    "parameters" : [
-                      {
-                        "id" : 17,
-                        "data" : 0,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "GE",
-                    "probability" : 1,
-                    "canonicalColumnName" : "public.date_dim.d_month_seq",
-                    "type" : "UNI_FILTER_OPERATION"
-                  },
-                  {
-                    "parameters" : [
-                      {
-                        "id" : 18,
-                        "data" : 1,
-                        "type" : "ACTUAL"
-                      }
-                    ],
-                    "operator" : "LE",
-                    "probability" : 0.004996646087,
-                    "canonicalColumnName" : "public.date_dim.d_month_seq",
-                    "type" : "UNI_FILTER_OPERATION"
+                    "id" : 17,
+                    "data" : 35,
+                    "type" : "ACTUAL"
                   }
-                ]
+                ],
+                "operator" : "EQ",
+                "probability" : 0.004996646087,
+                "canonicalColumnName" : "public.date_dim.d_year",
+                "type" : "UNI_FILTER_OPERATION"
               }
             ]
           },

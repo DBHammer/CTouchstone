@@ -24,15 +24,15 @@ public class TidbSelectOperatorInfoParserTest {
     @ParameterizedTest
     @CsvSource(delimiter = ';', value = {
             "ge(db.table.col1, 2);" +
-                    "and(ge(db.table.col1, {id:0, data:2}))",
+                    "col1 >= '2'",
             "ge(mul(db.table.col1, plus(db.table.col2, 3)), 2);" +
-                    "and(ge(MUL(db.table.col1, PLUS(db.table.col2, 3)), {id:0, data:2}))",
+                    "db.table.col1 * db.table.col2 + 3 >= 2",
             "or(ge(db.table.col1, 2), lt(db.table.col4, 3.0));" +
-                    "and(or(ge(db.table.col1, {id:0, data:2}), lt(db.table.col4, {id:1, data:3.0})))",
+                    "(col1 >= '2' or col4 < '3.0')",
             "or(ge(db.table.col1, 2), not(in(db.table.col3, \"3\", \"2\")));" +
-                    "and(or(ge(db.table.col1, {id:0, data:2}), not_in(db.table.col3, {id:1, data:3}, {id:2, data:2})))",
+                    "(col1 >= '2' or col3 not in ('3','2'))",
             "or(ge(db.table.col1, 2), not(isnull(db.table.col2)));" +
-                    "and(or(ge(db.table.col1, {id:0, data:2}), not_isnull(db.table.col2)))"
+                    "(col1 >= '2' or col2 is not null )"
     })
     void testTidbParse(String input, String output) throws Exception {
         LogicNode node = parser.parseSelectOperatorInfo(input);

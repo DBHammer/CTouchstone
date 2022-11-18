@@ -4,14 +4,14 @@
       "nodes" : [
         {
           "constraintChainNodeType" : "FK_JOIN",
-          "refCols" : "public.customer_address.ca_address_sk",
-          "localCols" : "public.customer.c_current_addr_sk",
-          "pkTag" : 5,
-          "probability" : 0.00737,
+          "refCols" : "public.date_dim.d_date_sk",
+          "localCols" : "public.catalog_sales.cs_sold_date_sk",
+          "pkTag" : 18,
+          "probability" : 0.03857311723,
           "type" : "INNER_JOIN"
         }
       ],
-      "tableName" : "public.customer"
+      "tableName" : "public.catalog_sales"
     },
     {
       "nodes" : [
@@ -21,51 +21,64 @@
             "type" : "AND",
             "children" : [
               {
-                "parameters" : [
+                "type" : "AND",
+                "children" : [
                   {
-                    "id" : 52,
-                    "data" : 1,
-                    "type" : "ACTUAL"
+                    "parameters" : [
+                      {
+                        "id" : 73,
+                        "data" : 29,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "EQ",
+                    "probability" : 0.001656422401,
+                    "canonicalColumnName" : "public.date_dim.d_year",
+                    "type" : "UNI_FILTER_OPERATION"
                   },
                   {
-                    "id" : 53,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  },
-                  {
-                    "id" : 54,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  },
-                  {
-                    "id" : 55,
-                    "data" : 1,
-                    "type" : "ACTUAL"
-                  },
-                  {
-                    "id" : 56,
-                    "data" : 1,
-                    "type" : "ACTUAL"
+                    "parameters" : [
+                      {
+                        "id" : 74,
+                        "data" : 29,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 75,
+                        "data" : 29,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 76,
+                        "data" : 29,
+                        "type" : "ACTUAL"
+                      },
+                      {
+                        "id" : 77,
+                        "data" : 29,
+                        "type" : "ACTUAL"
+                      }
+                    ],
+                    "operator" : "IN",
+                    "probability" : 0.001656422401,
+                    "canonicalColumnName" : "public.date_dim.d_moy",
+                    "type" : "UNI_FILTER_OPERATION"
                   }
-                ],
-                "operator" : "IN",
-                "probability" : 0.00764,
-                "canonicalColumnName" : "public.customer_address.ca_county",
-                "type" : "UNI_FILTER_OPERATION"
+                ]
               }
             ]
           },
-          "probability" : 0.00764
+          "probability" : 0.001656422401
         },
         {
           "constraintChainNodeType" : "PK_JOIN",
           "pkColumns" : [
-            "ca_address_sk"
+            "d_date_sk"
           ],
-          "pkTag" : 5
+          "pkTag" : 18
         }
       ],
-      "tableName" : "public.customer_address"
+      "tableName" : "public.date_dim"
     }
   ]
 }

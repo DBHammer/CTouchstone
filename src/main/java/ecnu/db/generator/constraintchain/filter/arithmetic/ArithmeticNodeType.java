@@ -43,5 +43,11 @@ public enum ArithmeticNodeType {
     /**
      * MAX类型计算节点
      */
-    MAX
+    MAX;
+    public boolean isUniComparator(){
+        return switch (this){
+            case MAX,MIN,AVG,SUM -> true;
+            default -> false;
+        };
+    }
 }

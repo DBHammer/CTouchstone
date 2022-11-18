@@ -30,7 +30,7 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 @CommandLine.Command(name = "instantiate", description = "instantiate the query")
 public class QueryInstantiate implements Callable<Integer> {
 
-    private static final Pattern PATTERN = Pattern.compile("'(\\d+)'");
+    private static final Pattern PATTERN = Pattern.compile("'Mirage#(\\d+)'");
     private static final String WORKLOAD_DIR = "/workload";
     private static final String QUERIES = "/queries";
     private final Logger logger = LoggerFactory.getLogger(QueryInstantiate.class);
@@ -123,7 +123,7 @@ public class QueryInstantiate implements Callable<Integer> {
                 .flatMap(Collection::stream).collect(Collectors.toSet());
 
         ColumnManager.getInstance().cacheAttributeColumn(prepareSamplingColumnName);
-        ColumnManager.getInstance().prepareGeneration(samplingSize, false);
+        ColumnManager.getInstance().prepareGeneration(samplingSize);
 
         filterOperations.parallelStream()
                 .filter(MultiVarFilterOperation.class::isInstance)
@@ -191,6 +191,7 @@ public class QueryInstantiate implements Callable<Integer> {
         ColumnManager.getInstance().loadColumnMetaData();
         //载入约束链，并进行transform
         ConstraintChainManager.getInstance().setResultDir(configPath);
+        ColumnManager.getInstance().loadColumnName2IdList();
         query2constraintChains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
     }
 
