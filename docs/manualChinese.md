@@ -146,7 +146,7 @@ NOT)IN，(NOT)LIKE。这个文件的主要作用是在参数实例化的时候�
 里是每个查询的查询计划，查询模板，约束链信息。如上面的目录结构所示
 其中dot文件是该查询的查询计划，以graphviz的格式呈现，以TPC-H第三个查询为例。
 
-![Alt text](https%3A%2F%2Fraw.githubusercontent.com%2FDBHammer%2FMirage%2FManualEdit%2Fdocs%2FmanualChinese.md%3Ftoken%3DGHSAT0AAAAAAB3K7XBEMIOZXP7BVZPEJ4ZQY3XF5SQ)
+![Alt text](https://g.gravizo.com/source/custom_mark10?https%3A%2F%2Fraw.githubusercontent.com%2FDBHammer%2FMirage%2FManualEdit%2Fdocs%2FmanualChinese.md%3Ftoken%3DGHSAT0AAAAAAB3K7XBEMIOZXP7BVZPEJ4ZQY3XF5SQ)
 <details> 
 <summary></summary>
 custom_mark10
