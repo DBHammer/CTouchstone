@@ -165,7 +165,7 @@ distribution.json文件记录了相关列的数据分布信息，如下所示，
 ```
 ## 常见异常及处理方式
 
-### 冲突参数替换
+### 冲突实参替换
 一般来说，大部分的参数实例化都可以由Mirage自动完成，但是由于参数替换的复杂性，这部分的功能并未完全做好，所以一些参数需要手动填写。执行参数实例化的日志会展示有哪些参数替换失败，格式见下面的例子：
 未被成功替换的参数如下`[{id:37, data:1.00}, {id:95, data:interval '-340' day}, {id:100, data:-1000.00}, {id:109, data:-1000.00}, {id:129, data:0.12}, {id:133, data:4u9gf47}, {id:134, data:-xjfrez}, {id:135, data:5j98fqm}, {id:136, data:-xjfrez}]`
 需要手动填写的信息一般会以注释的形式在queries文件夹中的sql文件的第一行中展示。格式见下面的例子：
@@ -181,7 +181,9 @@ where l_shipdate >= date '1998-10-14'
 ```
 
 例子中第一行会展示未填充成功的参数id和原始的参数值，找到日志信息中有相同参数id的参数值，替换上去即可。在这个例子中，第一行的data为0.04，即查询中的0.03+0.01，找到日志中id为129的data为0.12，则将0.03+0.01替换为0.12即可。<br>
-除此了上述实“参数”（即原查询中存在的的参数）外，还存在一些虚参需要手动填写。<br>
+
+### 冲突虚参替换
+除此了上述实“参数”（即原查询中存在的的参数）外，还存在一些虚参需要手动填写。虚拟参数是值并不实际存在于原查询，而是Mirage算法会生成的一些用于仿真查询的参数。<br>
 例如TPCH第21个查询中，有一个where条件是`l1.l_receiptdate > l1.l_commitdate`， Mirage会将它转换为`l1.l_receiptdate - l1.l_commitdate > Parameter`，这里的Parameter就是 虚参。而日志中的{id:95, data:interval '-340'day}就是这个虚参应该填的值，所以这里应该填l1.l_receiptdate > l1.l_commitdate - 340 day。<br>
 另外一种情况的虚参是当查询计划为两个查询树时，一个查询数的输出结果会变成另外一个查询计划里使用的参数，那这个输出结果就会变为虚参，比如TPCH第22个查询。内层循环的查询计划结果作为外层循环的查询条件参数。从queries文件夹中22_1.sql第一行可以看到
 cannotFindArgs:{id:109,data:'$0',operand:public.customer.c_acctbal},{id:100,data:'0.0',operand:
@@ -198,4 +200,12 @@ and c_acctbal > (select avg(c_acctbal)
 
 这里的填参方法其实是构造c_acctbal > -1000，即运行内部查询得到结果，再使用加法或者乘法是外层大于号右边的数字变为-1000。
 
-
+## 不能处理的算子
+### 连接
+Mirage只能处理连接符号两边分别为一个表的主键和另一个表的外键的连接，不支持外键之间的连接，也不能支持属性列的连接。<br>
+对于主外键之间的连接，Mirage支持equal join，semi join，anti join，anti-semi join。<br>
+Mirage不支持self join，即一个表与自己进行连接（例如TPC-H第19个查询）。
+### 选择
+Mirage能处理整型数，浮点数，字符，日期的等值（=，≠，in，not in，not like）和不等值算子（>，<，≥，≤）。但是不支持类似substring这种算子（尚未开发完全）<br>
+### 聚合
+Mirage支持key上的聚合，并支持sum，count，min，max等算子，但是不支持不在key上的聚合
