@@ -20,23 +20,15 @@ java -jar Mirage-{$version}.jar prepare -c config.json -t db_type -l
 ```json lines
 {
   "databaseConnectorConfig": {
-    "databaseIp": "",
-    //数据库IP
-    "databaseName": "",
-    //数据库名字
-    "databasePort": "",
-    //数据库端口
-    "databasePwd": "",
-    //数据库密码
-    "databaseUser": ""
-    //数据库用户
+    "databaseIp": "127.0.0.1", //数据库IP
+    "databaseName": "tpch1", //数据库名字
+    "databasePort": "5432", //数据库端口
+    "databasePwd": "mima123", //数据库密码
+    "databaseUser": "postgres" //数据库用户
   },
-  "queriesDirectory": "",
-  //查询所在目录
-  "resultDirectory": "",
-  //执行结果存放目录
-  "defaultSchemaName": ""
-  //数据库默认schema名称
+  "queriesDirectory": "conf/sql", //查询所在目录
+  "resultDirectory": "result", //执行结果存放目录
+  "defaultSchemaName": "public" //数据库默认schema名称
 }
 ```
 
@@ -64,7 +56,7 @@ java -jar Mirage-{$version}.jar prepare -c config.json -t db_type -l
 ```bash
 java -jar Mirage-{$version}.jar instantiate -c result
 ```
-其中只需要填写参数-c，即在查询解析阶段的输出目录（上一个阶段的resultDirectory）。执行结束后，输出目录会多出两个文件夹，分别为distribution文件夹和queries文件夹（见上图）。
+其中只需要填写参数-c，即在查询解析阶段的输出目录（上一个阶段的resultDirectory）。执行结束后，输出目录会多出两个文件夹，分别为distribution文件夹和queries文件夹（见收集信息内容）。
 其中queries文件夹中是参数实例化后的各个查询，也就是生成的仿真查询，这一过程叫做查询重写。
 
 ### 数据生成
@@ -85,8 +77,25 @@ java -jar Mirage-{$version}.jar create -c result -d demo -o createSql
 生成完数据库后，就可以进行验证了。
 
 ## 收集信息内容
-
-**补充Json版本的目录结构**
+如前文所说，Mirage解析负载得到的收集信息放在了查询解析阶段设置的queryDictionary文件夹下，以TPC-H第7个查询为例，解析得到的文件结构如下
+```
+.
+├── column.csv
+├── column2IdList
+├── distribution
+│   ├── boundPara.json
+│   ├── distribution.json
+│   └── stringTemplate.json
+├── queries
+│   └── 7_1.sql
+├── schema.json
+└── workload
+    └── 7_1
+        ├── 7_1.sql.dot
+        ├── 7_1.sql.json
+        └── 7_1Template.sql
+```
+下面分别介绍这些文件的意义
 
 ### schema.json
 文件是解析得到的数据库表信息，下面以一个例子说明它的结构。
@@ -132,13 +141,34 @@ java -jar Mirage-{$version}.jar create -c result -d demo -o createSql
 
 ### column2IdList
 是等值一元基数约束相关的列和它们对应的参数ID，由于Mirage需要对原查询的参数进行匿名化，所以会对每个参数附一个独有的参数ID。一元基数约束的形式为A·Pk，其中A指的是列名，Pk指的是符号化的参数，·指的是符号，包括＝，≠，＜，＞，≤，≥，(
-NOT)IN，(NOT)LIKE。这个文件的主要作用是在参数实例化的时候进行概率复用，这个后面会讲到。
+NOT)IN，(NOT)LIKE。这个文件的主要作用是在参数实例化的时候进行概率复用。
 ### Workload文件夹
-里是每个查询的查询计划，查询模板，约束链信息。如下图所示
-
+里是每个查询的查询计划，查询模板，约束链信息。如上面的目录结构所示
 其中dot文件是该查询的查询计划，以graphviz的格式呈现，以TPC-H第三个查询为例。
 
-查看图片可能需要借助graphviz的绘图软件，可以看见这是该查询执行的树形结构，其中有代表关系表的叶子节点，有选择节点和连接节点。
+![Alt text](https://g.gravizo.com/source/custom_mark10?https%3A%2F%2Fraw.githubusercontent.com%2FDBHammer%2FMirage%2FManualEdit%2Fdocs%2FmanualChinese.md?token=GHSAT0AAAAAAB3K7XBEIWIDQPTV7ZBSXLDYY3XFJOA)
+<details> 
+<summary></summary>
+custom_mark10
+   digraph G {
+    size ="4,4"
+    main [shape=box]
+    main -> parse [weight=8]
+    parse -> execute
+    main -> init [style=dotted]
+    main -> cleanup
+    execute -> { make_string; printf}
+    init -> make_string
+    edge [color=red]
+    main -> printf [style=bold,label="100 times"]
+    make_string [label="make a string"]
+    node [shape=box,style=filled,color=".7 .3 1.0"]
+    execute -> compare
+  } 
+custom_mark10
+</details>
+
+图片为dot格式，查看图片可能需要借助graphviz的渲染插件，可以看见这是该查询执行的树形结构，其中有代表关系表的叶子节点，有选择节点和连接节点。
 Json文件中是解析查询得到的约束链信息，约束链的定义见论文。
 Template.sql文件是提取的查询模板，即将参数匿名化后的原始查询。
 
