@@ -146,32 +146,23 @@ NOT)IN，(NOT)LIKE。这个文件的主要作用是在参数实例化的时候�
 里是每个查询的查询计划，查询模板，约束链信息。如上面的目录结构所示
 其中dot文件是该查询的查询计划，以graphviz的格式呈现，以TPC-H第三个查询为例。
 
-![Alt text](https://g.gravizo.com/source/custom_mark10?https%3A%2F%2Fraw.githubusercontent.com%2FDBHammer%2FMirage%2FManualEdit%2Fdocs%2FmanualChinese.md%3Ftoken%3DGHSAT0AAAAAAB3K7XBEMIOZXP7BVZPEJ4ZQY3XF5SQ)
-<details> 
-<summary></summary>
-custom_mark10
-  digraph G {
-    size ="4,4"
-    main [shape=box]
-    main -> parse [weight=8]
-    parse -> execute
-    main -> init [style=dotted]
-    main -> cleanup
-    execute -> { make_string; printf}
-    init -> make_string
-    edge [color=red]
-    main -> printf [style=bold,label="100 times"]
-    make_string [label="make a string"]
-    node [shape=box,style=filled,color=".7 .3 1.0"]
-    execute -> compare
-  }
-custom_mark10
-</details>
+![Alt text](https://github.com/DBHammer/Mirage/blob/ManualEdit/docs/3.png)
 
 图片为dot格式，查看图片可能需要借助graphviz的渲染插件，可以看见这是该查询执行的树形结构，其中有代表关系表的叶子节点，有选择节点和连接节点。
 Json文件中是解析查询得到的约束链信息，约束链的定义见论文。
 Template.sql文件是提取的查询模板，即将参数匿名化后的原始查询。
-
+### distribution文件夹
+如前面的文件结构所示，distribution文件夹里有三个文件。<br>
+其中boundPara.json文件是为了记录那些跨多个属性列的谓词条件。由于参数实例化阶段是对匿名化的参数进行实例化，Mirage本身是不知道原始列的数据分布的（即不清楚这些参数在概率空间的相对位置），所以对于跨多个属性列的谓词条件，需要记录下来，在对属性列进行生成的时候，需要先对这些列的部分参数进行生成。<br>
+distribution.json文件记录了相关列的数据分布信息，如下所示，该文件记录了参与过滤条件的每个列的参数ID和它们的累计概率密度。
+```json
+{
+  "public.customer.c_mktsegment" : {
+    "1" : 0.1997866667,
+    "5" : 0.8002133333
+  }
+}
+```
 ## 常见异常及处理方式
 
 ### 冲突参数替换
@@ -189,12 +180,9 @@ where l_shipdate >= date '1998-10-14'
   and l_quantity < '50.03';
 ```
 
-例子中第一行会展示未填充成功的参数id和原始的参数值，找到日志信息中有相同参数id
-的参数值，替换上去即可。在这个例子中，第一行的data为0.04，即查询中的0.03+0.01，找到日志中id为129的data为0.12，则将0.03+0.01替换为0.12即可。
-除此了上述实“参数”（即原查询中存在的的参数）外，还存在一些虚参需要手动填写。
-例如TPCH第21个查询中，有一个where条件是`l1.l_receiptdate > l1.l_commitdate`， Mirage会将它转换为`l1.l_receiptdate -
-l1.l_commitdate > Parameter`，这里的Parameter就是虚参。而日志中的{id:95, data:interval '-340'
-day}就是这个虚参应该填的值，所以这里应该填l1.l_receiptdate > l1.l_commitdate - 340 day。
+例子中第一行会展示未填充成功的参数id和原始的参数值，找到日志信息中有相同参数id的参数值，替换上去即可。在这个例子中，第一行的data为0.04，即查询中的0.03+0.01，找到日志中id为129的data为0.12，则将0.03+0.01替换为0.12即可。<br>
+除此了上述实“参数”（即原查询中存在的的参数）外，还存在一些虚参需要手动填写。<br>
+例如TPCH第21个查询中，有一个where条件是`l1.l_receiptdate > l1.l_commitdate`， Mirage会将它转换为`l1.l_receiptdate - l1.l_commitdate > Parameter`，这里的Parameter就是 虚参。而日志中的{id:95, data:interval '-340'day}就是这个虚参应该填的值，所以这里应该填l1.l_receiptdate > l1.l_commitdate - 340 day。<br>
 另外一种情况的虚参是当查询计划为两个查询树时，一个查询数的输出结果会变成另外一个查询计划里使用的参数，那这个输出结果就会变为虚参，比如TPCH第22个查询。内层循环的查询计划结果作为外层循环的查询条件参数。从queries文件夹中22_1.sql第一行可以看到
 cannotFindArgs:{id:109,data:'$0',operand:public.customer.c_acctbal},{id:100,data:'0.0',operand:
 public.customer.c_acctbal}
@@ -209,11 +197,5 @@ and c_acctbal > (select avg(c_acctbal)
 ```
 
 这里的填参方法其实是构造c_acctbal > -1000，即运行内部查询得到结果，再使用加法或者乘法是外层大于号右边的数字变为-1000。
-distribution文件夹有三个文件，全都是json格式。
-
-其中`boundPara.json`
-文件是为了记录那些跨多个属性列的谓词条件。由于参数实例化阶段是对匿名化的参数进行实例化，Mirage本身是不知道原始列的数据分布的（即不清楚这些参数在概率空间的相对位置），所以对于跨多个属性列的谓词条件，需要记录下来，在对属性列进行生成的时候，需要先对这些列的部分参数进行生成。
-`distribution.json`文件记录了相关列的数据分布信息，如下图所示，该文件记录了参与过滤条件的每个列的参数ID和它们的累计概率密度。
-
 
 
