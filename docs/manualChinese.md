@@ -203,9 +203,11 @@ and c_acctbal > (select avg(c_acctbal)
 ## 不能处理的算子
 ### 连接
 Mirage只能处理连接符号两边分别为一个表的主键和另一个表的外键的连接，不支持外键之间的连接，也不能支持属性列的连接。<br>
-对于主外键之间的连接，Mirage支持equal join，semi join，anti join，anti-semi join。<br>
-Mirage不支持self join，即一个表与自己进行连接（例如TPC-H第19个查询）。
+对于主外键之间的连接，Mirage支持equal join，semi join，anti join，outer join，anti-semi join。<br>
+Mirage不支持self join，即一个表与自己进行连接（例如TPC-H第19个查询）。<br>
+对于postgresql中join的类型，Mirage支持hash join，nested loop和merge join。
 ### 选择
 Mirage能处理整型数，浮点数，字符，日期的等值（=，≠，in，not in，not like）和不等值算子（>，<，≥，≤）。但是不支持类似substring这种算子（尚未开发完全）。<br>
+对于postgresql中scan的类型，Mirage支持顺序扫描（seq scan），索引扫描（index scan）和位图扫描（bitmap scan）。
 ### 聚合
 Mirage支持key上的聚合，并支持sum，count，min，max等算子，但是不支持不在key上的聚合。
