@@ -84,8 +84,8 @@ java -jar Mirage-{$version}.jar create -c result -d demo -o createSql
 ├── column2IdList
 ├── distribution
 │   ├── boundPara.json
-│   ├── distribution.json
-│   └── stringTemplate.json
+│   └──  distribution.json
+│   
 ├── queries
 │   └── 7_1.sql
 ├── schema.json
