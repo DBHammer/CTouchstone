@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
-@CommandLine.Command(name = "instantiate", description = "instantiate the query")
+@CommandLine.Command(name = "instantiate", description = "instantiate the query", mixinStandardHelpOptions = true)
 public class QueryInstantiate implements Callable<Integer> {
 
     private static final Pattern PATTERN = Pattern.compile("'Mirage#(\\d+)'");
@@ -192,7 +192,7 @@ public class QueryInstantiate implements Callable<Integer> {
         //载入约束链，并进行transform
         ConstraintChainManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnName2IdList();
-        query2constraintChains = ConstraintChainManager.getInstance().loadConstrainChainResult(configPath);
+        query2constraintChains = ConstraintChainManager.loadConstrainChainResult(configPath);
     }
 
     public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {

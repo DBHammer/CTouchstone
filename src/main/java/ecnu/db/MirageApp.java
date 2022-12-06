@@ -7,24 +7,21 @@ import ecnu.db.schema.DDLGenerator;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-@Command(name = "touchstone",
-        version = {"touchstone 0.1.0",
+@Command(name = "Mirage",
+        version = {"${COMMAND-NAME} 0.1.0",
                 "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
                 "OS: ${os.name} ${os.version} ${os.arch}"},
         description = "tool for generating test database", sortOptions = false,
         subcommands = {TaskConfigurator.class, DataGenerator.class, DDLGenerator.class, QueryInstantiate.class},
-        mixinStandardHelpOptions = true,
+        mixinStandardHelpOptions = true, usageHelpAutoWidth = true,
         header = {
-                "@|green  _____                _         _ |@",
-                "@|green |_   _|__  _   _  ___| |__  ___| |_ ___  _ __   ___ |@",
-                "@|green   | |/ _ \\| | | |/ __| '_ \\/ __| __/ _ \\| '_ \\ / _ \\ |@",
-                "@|green   | | (_) | |_| | (__| | | \\__ \\ || (_) | | | |  __/ |@",
-                "@|green   |_|\\___/ \\__,_|\\___|_| |_|___/\\__\\___/|_| |_|\\___| |@",
-                ""}
+                "@|green  _  _ _ ____ ____ ____ ____ |@",
+                "@|green  |\\/| | |__/ |__| | __ |___  |@",
+                "@|green  |  | | |  \\ |  | |__] |___  |@"}
 )
-public class TouchstoneApp {
+public class MirageApp {
     public static void main(String... args) {
-        int exitCode = new CommandLine(new TouchstoneApp()).execute(args);
+        int exitCode = new CommandLine(new MirageApp()).execute(args);
         System.exit(exitCode);
     }
 }

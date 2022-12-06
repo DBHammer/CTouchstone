@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.MAPPER;
 
@@ -40,8 +41,8 @@ import static ecnu.db.utils.CommonUtils.MAPPER;
  * @author alan
  */
 
-@CommandLine.Command(name = "prepare", description = "get database information, instantiate queries, prepare for data generation",
-        mixinStandardHelpOptions = true)
+@CommandLine.Command(name = "prepare", description = "extract database information for data generation",
+        mixinStandardHelpOptions = true, usageHelpAutoWidth = true)
 public class TaskConfigurator implements Callable<Integer> {
     public static final String SQL_FILE_POSTFIX = ".sql";
     private final Logger logger = LoggerFactory.getLogger(TaskConfigurator.class);
@@ -168,9 +169,10 @@ public class TaskConfigurator implements Callable<Integer> {
             constraintChains.removeAll(reduceConstraintChains);
             if (!reduceConstraintChains.isEmpty()) {
                 logger.error(rb.getString("RemoveSomeChainsWithFilterOnKeysFrom"), query2constrainChain.getKey());
-                for (ConstraintChain reduceConstraintChain : reduceConstraintChains) {
-                    logger.error(reduceConstraintChain.toString());
-                }
+                String reduceChains = reduceConstraintChains.stream()
+                        .map(ConstraintChain::toString)
+                        .collect(Collectors.joining(System.lineSeparator()));
+                logger.error(reduceChains);
             }
             constraintChains.removeIf(constraintChain -> constraintChain.getNodes().isEmpty());
         }
