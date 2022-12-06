@@ -14,7 +14,73 @@ Mirage的工作流程分为四个步骤，分别是：查询解析；参数实�
 ```bash
 export version=0.1.0
 ```
-查询解析的命令行的模板是
+> **indexScan基数的精确识别:** 由于postgresql的查询计划中，indexScan的rows（即indexScan算子的列）显示为输入的总行数row除以循环数loops，若结果为浮点数，则会取整。
+> 如下所示，第一行为原版pg在执行indexScan后查询计划中关于行数的信息，第二行是正确的行数的信息。
+```diff
+- Index Scan using lineitem_orderkey on lineitem (actual rows=0 loops=157474)
++ Index Scan using lineitem_orderkey on lineitem (actual rows=0.4174 loops=157474)
+```
+因此，在进行查询解析之前，需要对postgresql中关于explain的源码进行修改，使其显示更精确的行数信息。以pg15为例，只需要修改postgres-REL_15_1/src/backend/commands/explain.c文件即可（修改方法所有版本通用），修改的方法如下：
+```diff
+--- tmp_postgres-REL_15/postgres-REL_15_1/src/backend/commands/explain.c 2022-11-08 05:36:53.000000000 +0800
++++ postgres-REL_15_1/src/backend/commands/explain.c 2022-11-25 10:43:37.378649399 +0800
+@@ -1625,11 +1625,11 @@ ExplainNode(PlanState *planstate, List *
+   {
+    if (es->timing)
+     appendStringInfo(es->str,
+-         " (actual time=%.3f..%.3f rows=%.0f loops=%.0f)",
++         " (actual time=%.3f..%.3f rows=%.4f loops=%.0f)",
+          startup_ms, total_ms, rows, nloops);
+    else
+     appendStringInfo(es->str,
+-         " (actual rows=%.0f loops=%.0f)",
++         " (actual rows=%.4f loops=%.0f)",
+          rows, nloops);
+   }
+   else
+@@ -1641,7 +1641,7 @@ ExplainNode(PlanState *planstate, List *
+     ExplainPropertyFloat("Actual Total Time", "ms", total_ms,
+           3, es);
+    }
+-   ExplainPropertyFloat("Actual Rows", NULL, rows, 0, es);
++   ExplainPropertyFloat("Actual Rows", NULL, rows, 4, es);
+    ExplainPropertyFloat("Actual Loops", NULL, nloops, 0, es);
+   }
+  }
+@@ -1691,11 +1691,11 @@ ExplainNode(PlanState *planstate, List *
+     ExplainIndentText(es);
+     if (es->timing)
+      appendStringInfo(es->str,
+-          "actual time=%.3f..%.3f rows=%.0f loops=%.0f\n",
++          "actual time=%.3f..%.3f rows=%.4f loops=%.0f\n",
+           startup_ms, total_ms, rows, nloops);
+     else
+      appendStringInfo(es->str,
+-          "actual rows=%.0f loops=%.0f\n",
++          "actual rows=%.4f loops=%.0f\n",
+           rows, nloops);
+    }
+    else
+@@ -1707,7 +1707,7 @@ ExplainNode(PlanState *planstate, List *
+      ExplainPropertyFloat("Actual Total Time", "ms",
+            total_ms, 3, es);
+     }
+-    ExplainPropertyFloat("Actual Rows", NULL, rows, 0, es);
++    ExplainPropertyFloat("Actual Rows", NULL, rows, 4, es);
+     ExplainPropertyFloat("Actual Loops", NULL, nloops, 0, es);
+    }
+ 
+@@ -3422,7 +3422,7 @@ show_instrumentation_count(const char *q
+  if (nfiltered > 0 || es->format != EXPLAIN_FORMAT_TEXT)
+  {
+   if (nloops > 0)
+-   ExplainPropertyFloat(qlabel, NULL, nfiltered / nloops, 0, es);
++   ExplainPropertyFloat(qlabel, NULL, nfiltered / nloops, 4, es);
+   else
+    ExplainPropertyFloat(qlabel, NULL, 0.0, 0, es);
+  }
+```
+修改完成后，就可以进行查询解析了，查询解析的命令行的模板是
 
 ```bash
 java -jar Mirage-${version}.jar prepare -c config.json -t db_type -l
