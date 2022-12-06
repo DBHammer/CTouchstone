@@ -7,6 +7,7 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeType;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ColumnNode;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 
@@ -162,8 +163,18 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         double postSmallestNumber = vector[pos];
         long internalValue = (long) (postSmallestNumber * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         parameters.forEach(param -> param.setData(internalValue));
-        //todo check parameter type
-        parameters.forEach(param -> param.setDataValue("interval '" + internalValue + "' day"));
+        var columns = arithmeticTree.getColumns();
+        boolean isDate = ColumnManager.getInstance().isDateColumn(columns.get(0));
+        for (int i = 1; i < columns.size(); i++) {
+            if (isDate != ColumnManager.getInstance().isDateColumn(columns.get(i))) {
+                throw new UnsupportedOperationException("不支持混合计算date和数值类型");
+            }
+        }
+        if (isDate) {
+            parameters.forEach(param -> param.setDataValue("interval '" + internalValue + "' day"));
+        } else {
+            parameters.forEach(param -> param.setDataValue(" '" + internalValue + "' "));
+        }
     }
 
     @Override
