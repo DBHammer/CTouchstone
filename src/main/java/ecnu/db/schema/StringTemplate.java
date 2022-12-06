@@ -43,16 +43,16 @@ class StringTemplate {
                 values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
             }
         } else {
+            int startId = 0;
             if (subStringIndex.contains(dataId)) {
                 values[0] = likeRandomCharSet[subStringIndex.headSet(dataId).size()];
-            } else {
-                values[0] = '+';
+                startId++;
             }
-            for (int i = tag; i > 0; i--) {
+            for (int i = tag - 1; i >= startId; i--) {
                 values[i] = randomCharSet[(int) (dataId % randomCharSet.length)];
                 dataId /= randomCharSet.length;
             }
-            for (int i = tag + 1; i < values.length; i++) {
+            for (int i = tag; i < values.length; i++) {
                 values[i] = randomCharSet[random.nextInt(randomCharSet.length)];
             }
         }
