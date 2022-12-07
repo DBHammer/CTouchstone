@@ -210,7 +210,7 @@ java -jar Mirage-${version}.jar create -c result -d demo -o createSql
 里是每个查询的查询计划，查询模板，约束链信息。如上面的目录结构所示
 其中dot文件是该查询的查询计划，以graphviz的格式呈现，以TPC-H第三个查询为例。
 
-<img src="3.svg" alt="Alt text" style="zoom:40%;" />
+<img src="3.svg" alt="Alt text" style="zoom:60%;" />
 
 图片为dot格式，查看图片可能需要借助graphviz的渲染插件，可以看见这是该查询执行的树形结构，其中有代表关系表的叶子节点，有选择节点和连接节点。
 Json文件中是解析查询得到的约束链信息。
