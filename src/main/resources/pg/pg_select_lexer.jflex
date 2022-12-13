@@ -16,6 +16,7 @@ ecnu.db.utils.exception.TouchstoneException
 
 %{
   private StringBuilder str_buff = new StringBuilder();
+  private boolean isInState = false;
   private Symbol symbol(int type) {
     return new Token(PgSelectSymbol.terminalNames, type, yycolumn+1);
   }
@@ -193,6 +194,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   /* inlist start */
   "'{" {
     str_buff.setLength(0);
+    isInState = true;
     yybegin(IN_LIST);
   }
 
@@ -212,7 +214,11 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
 
 <STRING_LITERAL_DOUBLE_QUOTATION> {
   \" {
-    yybegin(IN_LIST);
+    if(isInState){
+        yybegin(IN_LIST);
+    } else {
+        yybegin(YYINITIAL);
+    }
     return symbol(STRING, str_buff.toString());
   }
   [^\n\r\"\\]+                   { str_buff.append( yytext() ); }
@@ -226,6 +232,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
 <IN_LIST> {
   "}'" {
     yybegin(YYINITIAL);
+    isInState = false;
   }
 
   {STRING} {
