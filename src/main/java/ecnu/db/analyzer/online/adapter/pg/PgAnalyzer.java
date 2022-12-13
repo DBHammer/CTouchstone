@@ -41,6 +41,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private static final String TIMESTAMP = String.format("'(%s|%s|%s)'::timestamp(\\([0-9]+\\))? without time zone", TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final Pattern REDUNDANCY = Pattern.compile(INTEGER + "|" + NUMERIC + "|" + DATE + "|" + TIMESTAMP);
     private static final Pattern CanonicalColumnName = Pattern.compile("(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.[a-zA-Z0-9_]+");
+    private static final Pattern FullCanonicalColumnName = Pattern.compile("([a-zA-Z][a-zA-Z0-9$_]*)\\.(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.[a-zA-Z0-9_]+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private static final Pattern HASH_SUB_PLAN = Pattern.compile("\\(NOT \\(hashed SubPlan [0-9]+\\)\\)");
@@ -368,7 +369,16 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (filterInfo == null) {
             return null;
         }
-        Matcher m = CanonicalColumnName.matcher(filterInfo);
+        // todo: delete if open-gauss fix the output bug
+        StringBuilder tmpStr = new StringBuilder();
+        Matcher matcherOnlyForOpenGauss = FullCanonicalColumnName.matcher(filterInfo);
+        while (matcherOnlyForOpenGauss.find()) {
+            String[] tableNameAndColName = matcherOnlyForOpenGauss.group().split("\\.");
+            aliasDic.put(tableNameAndColName[1], tableNameAndColName[0] + "." + tableNameAndColName[1]);
+            matcherOnlyForOpenGauss.appendReplacement(tmpStr, tableNameAndColName[1] + "." + tableNameAndColName[2]);
+        }
+        matcherOnlyForOpenGauss.appendTail(tmpStr);
+        Matcher m = CanonicalColumnName.matcher(tmpStr.toString());
         StringBuilder filter = new StringBuilder();
         while (m.find()) {
             String[] tableNameAndColName = m.group().split("\\.");
