@@ -16,7 +16,6 @@ ecnu.db.utils.exception.TouchstoneException
 
 %{
   private StringBuilder str_buff = new StringBuilder();
-  private boolean isInState = false;
   private Symbol symbol(int type) {
     return new Token(PgSelectSymbol.terminalNames, type, yycolumn+1);
   }
@@ -48,7 +47,8 @@ DIGIT=[0-9]
 STRING=[A-Za-z0-9\-$_]+
 WHITE_SPACE_CHAR=[\n\r\ \t\b\012]
 SCHEMA_NAME_CHAR=[A-Za-z0-9$_]
-FLOAT=(0|([1-9]({DIGIT}*)))\.({DIGIT}*)
+SUBSTRING_CMD=((\"substring\")|(SUBSTRING))
+FLOAT=(0|([1-9]({DIGIT}*)))?\.({DIGIT}*)
 INTEGER=(0|-[1-9]({DIGIT}*)|[1-9]({DIGIT}*))
 CANONICAL_COL_NAME=({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+\.({SCHEMA_NAME_CHAR})+
 DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGIT}{6})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2})|({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}))
@@ -62,7 +62,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   {OR} {
     return symbol(OR);
   }
-  "SUBSTRING" {
+  {SUBSTRING_CMD} {
     return symbol(SUBSTRING);
   }
   "sum" {
@@ -186,15 +186,9 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
     str_buff.setLength(0); yybegin(STRING_LITERAL);
   }
 
-  /* string by double quotation start */
-  \" {
-    str_buff.setLength(0); yybegin(STRING_LITERAL_DOUBLE_QUOTATION);
-  }
-
   /* inlist start */
   "'{" {
     str_buff.setLength(0);
-    isInState = true;
     yybegin(IN_LIST);
   }
 
@@ -214,11 +208,7 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
 
 <STRING_LITERAL_DOUBLE_QUOTATION> {
   \" {
-    if(isInState){
-        yybegin(IN_LIST);
-    } else {
-        yybegin(YYINITIAL);
-    }
+    yybegin(IN_LIST);
     return symbol(STRING, str_buff.toString());
   }
   [^\n\r\"\\]+                   { str_buff.append( yytext() ); }
@@ -232,7 +222,6 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
 <IN_LIST> {
   "}'" {
     yybegin(YYINITIAL);
-    isInState = false;
   }
 
   {STRING} {

@@ -60,10 +60,6 @@ non terminal          AbstractFilterOperation   not_expr;
 non terminal          CompareOperator           in_expr;
 non terminal          CompareOperator           like_expr;
 
-/* precedence */
-precedence left         OR;
-precedence left         AND;
-
 /* start with */
 start with expr;
 
@@ -206,6 +202,24 @@ in_compare_expr ::=
                                                                                             RESULT = operation;
                                                                                           :}
         |LPAREN SUBSTRING LPAREN CANONICAL_COLUMN_NAME:col INTEGER:leftInt INTEGER:rightInt RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN {:
+                                                                                   List<Parameter> parameterList = new ArrayList<>();
+                                                                                   for (String argument: arguments) {
+
+                                                                                       if(leftInt > 1){
+                                                                                          argument = "%" + argument;
+                                                                                       }
+                                                                                       argument = argument + "%";
+                                                                                       Parameter parameter = new Parameter(parameterId++, col, argument);
+                                                                                       parameter.setType(Parameter.ParameterType.SUBSTRING);
+                                                                                       parameterList.add(parameter);
+                                                                                   }
+                                                                                   UniVarFilterOperation operation = new UniVarFilterOperation(col, inornotin, parameterList);
+                                                                                   if(inornotin == CompareOperator.NOT_IN){
+                                                                                       operation.setOperator(CompareOperator.NOT_IN);
+                                                                                   }
+                                                                                    RESULT = operation;
+                                                                                  :}
+        |LPAREN SUBSTRING LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN INTEGER:leftInt INTEGER:rightInt RPAREN in_expr:inornotin LPAREN in_arguments:arguments RPAREN RPAREN {:
                                                                                    List<Parameter> parameterList = new ArrayList<>();
                                                                                    for (String argument: arguments) {
 
