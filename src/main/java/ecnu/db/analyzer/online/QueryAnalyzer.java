@@ -165,7 +165,10 @@ public class QueryAnalyzer {
         }
         // 如果当前的join节点，不属于之前遍历的节点
         if (!constraintChain.getTableName().equals(localTable) && !constraintChain.getTableName().equals(externalTable)) {
-            return STOP_CONSTRUCT;
+            if (node.getJoinTag() == SKIP_JOIN_TAG)
+                return node.getOutputRows();
+            else
+                return STOP_CONSTRUCT;
         }
         //将本表的信息放在前面，交换位置
         if (constraintChain.getTableName().equals(externalTable)) {
