@@ -32,7 +32,7 @@ public class PgConnector extends DbConnector {
 
     @Override
     protected String getExplainFormat() {
-        return "EXPLAIN (ANALYZE, VERBOSE, FORMAT JSON) %s";
+        return "EXPLAIN (ANALYZE, VERBOSE, FORMAT JSON, COSTS FALSE, TIMING FALSE) %s";
     }
 
 
