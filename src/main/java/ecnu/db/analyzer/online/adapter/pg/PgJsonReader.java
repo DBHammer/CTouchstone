@@ -1,9 +1,6 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.ReadContext;
+import com.jayway.jsonpath.*;
 import net.minidev.json.JSONObject;
 
 import java.util.Collections;
@@ -13,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PgJsonReader {
-    private static ReadContext readContext;
+    private static DocumentContext readContext;
 
     private PgJsonReader() {
     }
@@ -31,6 +28,9 @@ public class PgJsonReader {
         return readContext.read(path + "['Node Type']");
     }
 
+    static void deleteTree(StringBuilder path) {
+        readContext.delete(String.valueOf(path));
+    }
     // move cursor in json
 
     static StringBuilder move2LeftChild(StringBuilder path) {

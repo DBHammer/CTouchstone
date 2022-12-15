@@ -101,8 +101,8 @@ public class TaskConfigurator implements Callable<Integer> {
             case POSTGRESQL -> {
                 dbConnector = new PgConnector(config.getDatabaseConnectorConfig());
                 abstractAnalyzer = new PgAnalyzer();
-                queryWriter.setDbType(DbType.mysql);
-                queryReader.setDbType(DbType.mysql);
+                queryWriter.setDbType(DbType.postgresql);
+                queryReader.setDbType(DbType.postgresql);
             }
             default -> throw new TouchstoneException(rb.getString("UnsupportedDatabaseType"));
         }
