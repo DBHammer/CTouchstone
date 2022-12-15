@@ -59,7 +59,38 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public ExecutionNode getExecutionTree(List<String[]> queryPlans) throws TouchstoneException, IOException, SQLException {
         String queryPlan = queryPlans.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
         PgJsonReader.setReadContext(queryPlan);
+        if (queryPlan.contains("= subquery")) {
+            transformHashJoin2AggForOpenGauss();
+        }
         return getExecutionTreeRes(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
+    }
+
+    public void transformHashJoin2AggForOpenGauss() {
+        StringBuilder subQueryJoinNodePath = getJoinNodeWithSubQuery(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
+        StringBuilder leftChildNode = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(subQueryJoinNodePath));
+        String leftPlan = PgJsonReader.readPlan(leftChildNode, 0) + "," + PgJsonReader.readPlan(leftChildNode, 1);
+        if (PgJsonReader.readPlan(subQueryJoinNodePath, 1).contains(leftPlan)) {
+            PgJsonReader.deleteTree(leftChildNode);
+        }
+    }
+
+    public StringBuilder getJoinNodeWithSubQuery(StringBuilder currentNode) {
+        if (PgJsonReader.readNodeType(currentNode).equals("Hash Join") &&
+                PgJsonReader.readJoinCond(currentNode).contains("= subquery")) {
+            return currentNode;
+        }
+        int plansCount = PgJsonReader.readPlansCount(currentNode);
+        if (plansCount == 0) {
+            return null;
+        } else {
+            StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(currentNode));
+            StringBuilder leftNodePath = getJoinNodeWithSubQuery(leftChildPath);
+            if (leftNodePath == null && plansCount > 1) {
+                StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNode));
+                leftNodePath = getJoinNodeWithSubQuery(rightChildPath);
+            }
+            return leftNodePath;
+        }
     }
 
     public ExecutionNode getExecutionTreeRes(StringBuilder currentNodePath) throws TouchstoneException, IOException, SQLException {
