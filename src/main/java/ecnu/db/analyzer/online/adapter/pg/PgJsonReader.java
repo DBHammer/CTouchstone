@@ -129,7 +129,11 @@ public class PgJsonReader {
     }
 
     static List<String> readGroupKey(StringBuilder path) {
-        return readContext.read(path + "['Group Key']");
+        List<String> keys = readContext.read(path + "['Group Key']");
+        if (keys == null) {
+            keys = readContext.read(path + "['Group By Key']");
+        }
+        return keys;
     }
 
 

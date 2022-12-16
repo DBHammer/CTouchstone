@@ -124,8 +124,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
         node.setLeftNode(leftNode);
         node.setRightNode(rightNode);
         if (node.getType() == ExecutionNodeType.JOIN) {
-            assert rightNode != null;
-            if (rightNode.getType() == ExecutionNodeType.FILTER && rightNode.getInfo() != null && ((FilterNode) rightNode).isIndexScan()) {
+            if (rightNode == null) {
+                // fix for opengauss
+                logger.info("generate agg from hash join for opengauss");
+                node = leftNode;
+            } else if (rightNode.getType() == ExecutionNodeType.FILTER && rightNode.getInfo() != null && ((FilterNode) rightNode).isIndexScan()) {
                 long rowsRemoveByFilterAfterJoin = PgJsonReader.readRowsRemoved(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath)));
                 ((JoinNode) node).setRowsRemoveByFilterAfterJoin(rowsRemoveByFilterAfterJoin);
                 String indexJoinFilter = PgJsonReader.readFilterInfo(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath)));
@@ -327,7 +330,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (groupKey != null) {
             //todo multiple table name
             groupKeyInfo = groupKey.stream().map(this::transColumnName).collect(Collectors.joining(";"));
-            tableName = aliasDic.get(groupKey.get(0).split("\\.")[0]);
+            String[] splitColumns = groupKey.get(0).split("\\.");
+            if (splitColumns.length == 2) {
+                tableName = aliasDic.get(splitColumns[0]);
+            } else {
+                tableName = splitColumns[0] + "." + splitColumns[1];
+            }
             if (aggFilterInfo != null) {
                 aggFilter = new FilterNode(path.toString(), rowCount, transColumnName(aggFilterInfo));
                 rowCount += PgJsonReader.readRowsRemoved(path);
