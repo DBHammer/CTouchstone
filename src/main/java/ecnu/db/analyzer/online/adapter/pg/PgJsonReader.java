@@ -260,4 +260,9 @@ public class PgJsonReader {
         }
         return (int) Math.ceil(actualRows * actualLoops);
     }
+
+    public static void deleteOutPut() {
+        readContext.delete("$..Output");
+        readContext.delete("$..['Peak Memory Usage']");
+    }
 }

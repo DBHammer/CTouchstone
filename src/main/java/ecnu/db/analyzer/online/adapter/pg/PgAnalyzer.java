@@ -60,16 +60,19 @@ public class PgAnalyzer extends AbstractAnalyzer {
         String queryPlan = queryPlans.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
         PgJsonReader.setReadContext(queryPlan);
         if (queryPlan.contains("= subquery")) {
-            transformHashJoin2AggForOpenGauss();
+            transformHashJoin2AggForOpenGauss(queryPlan);
         }
         return getExecutionTreeRes(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
     }
 
-    public void transformHashJoin2AggForOpenGauss() {
+    public void transformHashJoin2AggForOpenGauss(String queryPlan) {
         StringBuilder subQueryJoinNodePath = getJoinNodeWithSubQuery(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
         StringBuilder leftChildNode = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(subQueryJoinNodePath));
+        PgJsonReader.deleteOutPut();
         String leftPlan = PgJsonReader.readPlan(leftChildNode, 0) + "," + PgJsonReader.readPlan(leftChildNode, 1);
-        if (PgJsonReader.readPlan(subQueryJoinNodePath, 1).contains(leftPlan)) {
+        String rightPlan = PgJsonReader.readPlan(subQueryJoinNodePath, 1);
+        PgJsonReader.setReadContext(queryPlan);
+        if (rightPlan.contains(leftPlan)) {
             PgJsonReader.deleteTree(leftChildNode);
         }
     }
