@@ -230,10 +230,6 @@ public class PgJsonReader {
         return readJoinType(path).equals("Full");
     }
 
-    static boolean isSemiJoin(StringBuilder path) {
-        return readJoinType(path).contains("Semi") || readJoinType(path).equals("Anti");
-    }
-
     static boolean isAntiJoin(StringBuilder path) {
         return readJoinType(path).equals("Anti");
     }

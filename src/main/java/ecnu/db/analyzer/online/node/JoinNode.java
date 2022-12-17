@@ -5,7 +5,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class JoinNode extends ExecutionNode {
     private final boolean antiJoin;
-    private final boolean semiJoin;
+    private final String output;
     private final CountDownLatch waitSetJoinTag = new CountDownLatch(1);
     /**
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
@@ -15,10 +15,11 @@ public class JoinNode extends ExecutionNode {
     private long rowsRemoveByFilterAfterJoin;
     private String indexJoinFilter;
 
-    public JoinNode(String id, long outputRows, String info, boolean antiJoin, boolean semiJoin, BigDecimal pkDistinctProbability) {
+
+    public JoinNode(String id, long outputRows, String info, boolean antiJoin, String output, BigDecimal pkDistinctProbability) {
         super(id, ExecutionNodeType.JOIN, outputRows, info);
         this.antiJoin = antiJoin;
-        this.semiJoin = semiJoin;
+        this.output = output;
         this.pkDistinctProbability = pkDistinctProbability;
     }
 
@@ -56,8 +57,8 @@ public class JoinNode extends ExecutionNode {
         this.indexJoinFilter = indexJoinFilter;
     }
 
-    public boolean isSemiJoin() {
-        return semiJoin;
+    public boolean isSemiJoin(String foreignKeyTable) {
+        return !output.contains(foreignKeyTable);
     }
 
     public long getRowsRemoveByFilterAfterJoin() {

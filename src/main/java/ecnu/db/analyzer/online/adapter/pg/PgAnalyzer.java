@@ -240,7 +240,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         }
         joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
-        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, BigDecimal.ZERO);
+        return new JoinNode(path.toString(), rowCount, joinInfo, true, transColumnName(joinInfo), BigDecimal.ZERO);
     }
 
     private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
@@ -259,7 +259,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
             int pkRowCount, fkRowCount;
-            int joinAccess = 0;
             if (PgJsonReader.isRightOuterJoin(path)) {
                 pkRowCount = PgJsonReader.readRowCount(rightChildPath);
                 fkRowCount = PgJsonReader.readRowCount(leftChildPath);
@@ -276,7 +275,8 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             rowCount = PgJsonReader.readRowCount(leftChildPath) - rowCount;
         }
-        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), PgJsonReader.isSemiJoin(path), pkDistinctProbability);
+        String output= transColumnName(PgJsonReader.readOutput(path).toString());
+        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), output, pkDistinctProbability);
     }
 
     String readDeep(StringBuilder path){
