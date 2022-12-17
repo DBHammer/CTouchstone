@@ -5,10 +5,12 @@ import ecnu.db.LanguageManager;
 import ecnu.db.analyzer.online.AbstractAnalyzer;
 import ecnu.db.analyzer.online.QueryAnalyzer;
 import ecnu.db.analyzer.online.adapter.pg.PgAnalyzer;
+import ecnu.db.analyzer.online.adapter.pg.PgJsonReader;
 import ecnu.db.analyzer.online.adapter.tidb.TidbAnalyzer;
 import ecnu.db.analyzer.statical.QueryReader;
 import ecnu.db.analyzer.statical.QueryWriter;
 import ecnu.db.dbconnector.DbConnector;
+import ecnu.db.dbconnector.adapter.GaussConnector;
 import ecnu.db.dbconnector.adapter.PgConnector;
 import ecnu.db.dbconnector.adapter.Tidb3Connector;
 import ecnu.db.dbconnector.adapter.Tidb4Connector;
@@ -97,6 +99,13 @@ public class TaskConfigurator implements Callable<Integer> {
                 abstractAnalyzer = new TidbAnalyzer();
                 queryWriter.setDbType(DbType.mysql);
                 queryReader.setDbType(DbType.mysql);
+            }
+            case GAUSS -> {
+                dbConnector = new GaussConnector(config.getDatabaseConnectorConfig());
+                abstractAnalyzer = new PgAnalyzer();
+                queryWriter.setDbType(DbType.mysql);
+                queryReader.setDbType(DbType.mysql);
+                PgJsonReader.setIsGauss();
             }
             case POSTGRESQL -> {
                 dbConnector = new PgConnector(config.getDatabaseConnectorConfig());

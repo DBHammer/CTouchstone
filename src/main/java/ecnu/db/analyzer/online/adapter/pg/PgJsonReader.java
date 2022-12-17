@@ -1,6 +1,9 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
-import com.jayway.jsonpath.*;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
 import net.minidev.json.JSONObject;
 
 import java.util.Collections;
@@ -12,6 +15,8 @@ import java.util.regex.Pattern;
 public class PgJsonReader {
     private static DocumentContext readContext;
 
+    private static boolean isGauss = false;
+
     private PgJsonReader() {
     }
 
@@ -20,6 +25,10 @@ public class PgJsonReader {
                 .addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL)
                 .addOptions(Option.SUPPRESS_EXCEPTIONS);
         PgJsonReader.readContext = JsonPath.using(conf).parse(plan);
+    }
+
+    public static void setIsGauss() {
+        isGauss = true;
     }
 
     // read node type
@@ -258,6 +267,8 @@ public class PgJsonReader {
         } else {
             throw new UnsupportedOperationException();
         }
+        if (isGauss)
+            return (int) Math.ceil(actualRows);
         return (int) Math.ceil(actualRows * actualLoops);
     }
 
