@@ -12,6 +12,6 @@ public class GaussConnector extends PgConnector{
 
     @Override
     protected String[] preExecutionCommands() {
-        return new String[]{};
+        return new String[]{"SET join_collapse_limit = 1;"};
     }
 }
