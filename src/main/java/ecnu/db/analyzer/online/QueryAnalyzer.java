@@ -188,7 +188,13 @@ public class QueryAnalyzer {
                 constraintChain.addJoinTable(externalTable);
             }
             boolean pkAllRowsInput = TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount;
-            boolean fkColIsNotNull = ColumnManager.getInstance().getNullPercentage(externalTable + "." + externalCol).compareTo(BigDecimal.ZERO) == 0;
+            boolean fkColIsNotNull = true;
+            if (externalCol.contains(",")) {
+                for (String col : externalCol.split(",")) {
+                    fkColIsNotNull &= ColumnManager.getInstance().getNullPercentage(externalTable + "." + col)
+                            .compareTo(BigDecimal.ZERO) == 0;
+                }
+            }
             boolean joinIsNotOuterJoin = node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0;
             if (pkAllRowsInput && fkColIsNotNull && joinIsNotOuterJoin) {
                 logger.debug(rb.getString("SkipNodeDueToFullTableScan"), node.getInfo());
