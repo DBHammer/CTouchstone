@@ -129,9 +129,6 @@ public class Parameter {
     }
 
     public String getDataValue() {
-        if (data < 0) {
-            return "#" + id;
-        }
         return dataValue;
     }
 
@@ -162,7 +159,7 @@ public class Parameter {
 
     @Override
     public String toString() {
-        return "{id:" + id + ", data:" + dataValue + "}";
+        return "{id:" + id + ", data:" + data + "}";
     }
 
     @JsonIgnore
