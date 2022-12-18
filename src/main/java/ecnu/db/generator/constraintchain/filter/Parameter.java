@@ -1,6 +1,7 @@
 package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.schema.ColumnManager;
 
 import java.util.ArrayList;
@@ -129,6 +130,8 @@ public class Parameter {
     }
 
     public String getDataValue() {
+        if (ConstraintChainManager.getInstance().isDraw())
+            return "#" + id;
         return dataValue;
     }
 
@@ -159,7 +162,7 @@ public class Parameter {
 
     @Override
     public String toString() {
-        return "{id:" + id + ", data:" + data + "}";
+        return "{id:" + id + ", data:" + dataValue + "}";
     }
 
     @JsonIgnore
