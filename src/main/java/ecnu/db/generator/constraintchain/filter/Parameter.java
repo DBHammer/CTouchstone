@@ -24,7 +24,7 @@ public class Parameter {
     /**
      * parameter的内部data，用于快速计算
      */
-    private long data;
+    private long data = -1;
 
     private ParameterType type = ParameterType.ACTUAL;
 
@@ -129,6 +129,9 @@ public class Parameter {
     }
 
     public String getDataValue() {
+        if (data < 0) {
+            return "#" + id;
+        }
         return dataValue;
     }
 
