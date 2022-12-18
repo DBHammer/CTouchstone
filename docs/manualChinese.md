@@ -90,7 +90,7 @@ export version=0.1.0
 java -jar Mirage-${version}.jar prepare -c config.json -t db_type -l
 ```
 
-其中`-c`输入的是配置文件，`-t`是数据库的类型（目前，查询解析阶段只支持了POSTGRESQL），而`-l`决定是否复用Schema信息。
+其中`-c`输入的是配置文件，`-t`是数据库的类型（目前，查询解析阶段支持了POSTGRESQL和GAUSS），而`-l`决定是否复用Schema信息。
 > **复用Schema信息:** 由于Mirage使用的解析算法中会解析所有表主外键依赖的拓扑关系，所以解析过程会比较耗时，前文提到的-l参数，就是为了在有表列信息的文件的情况下，可以解析表列信息跳过这一步，使程序不会做重复的工作。
 
 具体地，配置文件config.json的格式包含数据库连接信息和目录信息等信息。
