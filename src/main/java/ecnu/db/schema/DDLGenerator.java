@@ -17,6 +17,9 @@ public class DDLGenerator implements Callable<Integer> {
     private String dataBase;
     @CommandLine.Option(names = {"-o", "--output"}, defaultValue = "./ddl", description = "the output path for dll")
     private String outputPath;
+    private String createSchemaPath;
+    private String createIndexPath;
+    private String importData;
 
     public void init() throws IOException {
         TableManager.getInstance().setResultDir(configPath);
@@ -27,10 +30,6 @@ public class DDLGenerator implements Callable<Integer> {
         createIndexPath = outputPath + "/CreateIndex.sql";
         importData = outputPath + "/importData.sql";
     }
-
-    private String createSchemaPath;
-    private String createIndexPath;
-    private String importData;
 
     @Override
     public Integer call() throws IOException {

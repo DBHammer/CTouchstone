@@ -13,12 +13,12 @@ import java.util.*;
  * @author wangqingshuai
  */
 public class Table {
+    @JsonIgnore
+    private final Map<String, String> tmpForeignKeys = new TreeMap<>();
     private long tableSize;
     private List<String> primaryKeys;
     private List<String> canonicalColumnNames;
     private Map<String, String> foreignKeys = new TreeMap<>();
-    @JsonIgnore
-    private final Map<String, String> tmpForeignKeys = new TreeMap<>();
     @JsonIgnore
     private int joinTag = 0;
 
@@ -89,7 +89,7 @@ public class Table {
     }
 
     public void addTmpForeignKey(String localTable, String localColumnName,
-                              String referencingTable, String referencingInfo) throws TouchstoneException {
+                                 String referencingTable, String referencingInfo) throws TouchstoneException {
         addForeignKey(tmpForeignKeys, localTable, localColumnName, referencingTable, referencingInfo);
     }
 

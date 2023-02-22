@@ -21,7 +21,8 @@ import picocli.CommandLine;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 
@@ -53,6 +54,7 @@ public class DataGenerator implements Callable<Integer> {
 
     // 下一次batch需要推进的range
     private long stepRange;
+
     private static Map<String, List<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
         Map<String, List<ConstraintChain>> schema2chains = new HashMap<>();
         for (List<ConstraintChain> chains : query2chains.values()) {
@@ -182,7 +184,7 @@ public class DataGenerator implements Callable<Integer> {
     private void generateFksNoConstraints(Map<String, long[]> fkCol2Values, SortedMap<String, Long> allFk2TableSize, int range) {
         for (Map.Entry<String, Long> fk2TableSize : allFk2TableSize.entrySet()) {
             if (!fkCol2Values.containsKey(fk2TableSize.getKey())) {
-                long[] fks = ThreadLocalRandom.current().longs(range, 1, fk2TableSize.getValue()+1).toArray();
+                long[] fks = ThreadLocalRandom.current().longs(range, 1, fk2TableSize.getValue() + 1).toArray();
                 fkCol2Values.put(fk2TableSize.getKey(), fks);
             }
         }

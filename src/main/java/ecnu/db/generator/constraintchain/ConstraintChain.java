@@ -188,13 +188,12 @@ public class ConstraintChain {
         return graph;
     }
 
+    public int getChainIndex() {
+        return chainIndex;
+    }
 
     public void setChainIndex(int chainIndex) {
         this.chainIndex = chainIndex;
-    }
-
-    public int getChainIndex() {
-        return chainIndex;
     }
 
     static class SubGraph {

@@ -16,6 +16,8 @@ import java.math.RoundingMode;
  */
 public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     @JsonIgnore
+    private final Logger logger = LoggerFactory.getLogger(ConstraintChainFkJoinNode.class);
+    @JsonIgnore
     public int joinStatusIndex;
     @JsonIgnore
     public int joinStatusLocation;
@@ -26,12 +28,8 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     private BigDecimal probabilityWithFailFilter;
     private BigDecimal pkDistinctProbability;
     private ConstraintNodeJoinType type = ConstraintNodeJoinType.INNER_JOIN;
-
     @JsonIgnore
     private boolean[] joinResultStatus;
-
-    @JsonIgnore
-    private final Logger logger = LoggerFactory.getLogger(ConstraintChainFkJoinNode.class);
 
     public ConstraintChainFkJoinNode() {
         super(ConstraintChainNodeType.FK_JOIN);

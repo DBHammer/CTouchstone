@@ -25,8 +25,8 @@ public class QueryWriter {
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
     private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
     private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
-    private DbType dbType;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+    private DbType dbType;
 
     public void setDbType(DbType dbType) {
         this.dbType = dbType;
@@ -85,11 +85,11 @@ public class QueryWriter {
                 if (!col.equals("DATE")) {
                     lastColumn = col;
                 }
-            } else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS||token == Token.SUB) {
-                if(token == Token.SUB){
+            } else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS || token == Token.SUB) {
+                if (token == Token.SUB) {
                     nextIntIsNegavive = true;
                 }
-                if(token == Token.LITERAL_INT && nextIntIsNegavive){
+                if (token == Token.LITERAL_INT && nextIntIsNegavive) {
                     lastPos--;
                     nextIntIsNegavive = false;
                 }
@@ -194,7 +194,7 @@ public class QueryWriter {
     public String evaluate(String str, boolean isDate) throws SQLException {
         String h2ConnUrl = "jdbc:h2:mem:h2DB;MODE=MYSQL;";
         try (Connection conn = DriverManager.getConnection(h2ConnUrl, "root", "root")) {
-            try (Statement statement = conn.createStatement();) {
+            try (Statement statement = conn.createStatement()) {
                 String date = isDate ? "DATE " : " ";
                 ResultSet resultSet = statement.executeQuery("SELECT " + date + str);
                 return resultSet.next() ? "'" + resultSet.getString(1) + "'" : "";

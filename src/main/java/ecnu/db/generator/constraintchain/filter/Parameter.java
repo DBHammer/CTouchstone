@@ -28,20 +28,8 @@ public class Parameter {
     private long data = -1;
 
     private ParameterType type = ParameterType.ACTUAL;
-
-
-    @JsonIgnore
-    public boolean isEqualPredicate() {
-        return isEqualPredicate;
-    }
-
-    public void setEqualPredicate(boolean equalPredicate) {
-        isEqualPredicate = equalPredicate;
-    }
-
     @JsonIgnore
     private boolean isEqualPredicate = false;
-
     /**
      * 操作数
      */
@@ -52,21 +40,10 @@ public class Parameter {
      */
     @JsonIgnore
     private String dataValue;
-
     @JsonIgnore
     private boolean isSubPlan = false;
-
     @JsonIgnore
     private boolean canMerge = true;
-
-    @JsonIgnore
-    public boolean isCanMerge() {
-        return canMerge;
-    }
-
-    public void setCanMerge(boolean canMerge) {
-        this.canMerge = canMerge;
-    }
 
     public Parameter() {
     }
@@ -86,6 +63,24 @@ public class Parameter {
         }
 
         this.dataValue = dataValue;
+    }
+
+    @JsonIgnore
+    public boolean isEqualPredicate() {
+        return isEqualPredicate;
+    }
+
+    public void setEqualPredicate(boolean equalPredicate) {
+        isEqualPredicate = equalPredicate;
+    }
+
+    @JsonIgnore
+    public boolean isCanMerge() {
+        return canMerge;
+    }
+
+    public void setCanMerge(boolean canMerge) {
+        this.canMerge = canMerge;
     }
 
     public ParameterType getType() {
@@ -171,13 +166,13 @@ public class Parameter {
     }
 
     @JsonIgnore
-    public boolean isSubString() {
-        return type == ParameterType.SUBSTRING;
+    public void setSubPlan(boolean subPlan) {
+        isSubPlan = subPlan;
     }
 
     @JsonIgnore
-    public void setSubPlan(boolean subPlan) {
-        isSubPlan = subPlan;
+    public boolean isSubString() {
+        return type == ParameterType.SUBSTRING;
     }
 
     public enum ParameterType {

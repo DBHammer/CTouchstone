@@ -33,15 +33,15 @@ public class Column {
     @JsonIgnore
     private Distribution distribution;
 
-    public Distribution getDistribution() {
-        return distribution;
-    }
-
     public Column() {
     }
 
     public Column(ColumnType columnType) {
         this.columnType = columnType;
+    }
+
+    public Distribution getDistribution() {
+        return distribution;
     }
 
     public String getOriginalType() {
@@ -212,7 +212,7 @@ public class Column {
         };
     }
 
-    public void addSubStringIndex(long dataId){
+    public void addSubStringIndex(long dataId) {
         stringTemplate.addSubStringIndex(dataId);
     }
 

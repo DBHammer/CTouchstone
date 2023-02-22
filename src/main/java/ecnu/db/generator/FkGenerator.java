@@ -73,6 +73,20 @@ public class FkGenerator {
         }
     }
 
+    public static SortedMap<JoinStatus, Long> generateStatusHistogram(JoinStatus[] involvedStatuses) {
+        Map<JoinStatus, Long> histogram = Arrays.stream(involvedStatuses).parallel()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        return new TreeMap<>(histogram);
+    }
+
+    public static JoinStatus chooseCorrespondingStatus(boolean[] originStatus, int[] involvedChainIndexes) {
+        boolean[] ret = new boolean[involvedChainIndexes.length];
+        int i = 0;
+        for (int involvedChainIndex : involvedChainIndexes) {
+            ret[i++] = originStatus[involvedChainIndex];
+        }
+        return new JoinStatus(ret);
+    }
 
     private void applySharePkConstraint(ConstructCpModel cpModel, int range) {
         BigDecimal batchPercentage = BigDecimal.valueOf(range).divide(BigDecimal.valueOf(tableSize), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
@@ -124,7 +138,6 @@ public class FkGenerator {
         applySharePkConstraint(constructCpModel, range);
         return constructCpModel;
     }
-
 
     public long[][] generateFK(boolean[][] statusVectorOfEachRow) {
         // 统计每种状态的数据量
@@ -249,22 +262,6 @@ public class FkGenerator {
             allDiffStatus[index] = result;
         }
         return allDiffStatus;
-    }
-
-
-    public static SortedMap<JoinStatus, Long> generateStatusHistogram(JoinStatus[] involvedStatuses) {
-        Map<JoinStatus, Long> histogram = Arrays.stream(involvedStatuses).parallel()
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        return new TreeMap<>(histogram);
-    }
-
-    public static JoinStatus chooseCorrespondingStatus(boolean[] originStatus, int[] involvedChainIndexes) {
-        boolean[] ret = new boolean[involvedChainIndexes.length];
-        int i = 0;
-        for (int involvedChainIndex : involvedChainIndexes) {
-            ret[i++] = originStatus[involvedChainIndex];
-        }
-        return new JoinStatus(ret);
     }
 
     private JoinStatus[] computeOutputStatus(int allChainSize) {

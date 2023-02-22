@@ -31,9 +31,8 @@ public class ColumnManager {
     private final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
 
     private final List<Column> attributeColumns = new LinkedList<>();
-
-    private File distributionInfoPath;
     private final Logger logger = LoggerFactory.getLogger(ColumnManager.class);
+    private File distributionInfoPath;
 
     // Private constructor suppresses
     // default public constructor
@@ -83,7 +82,7 @@ public class ColumnManager {
         ).toArray(String[]::new);
     }
 
-    public long getMin(String columnName){
+    public long getMin(String columnName) {
         return columns.get(columnName).getMin();
     }
 
@@ -92,7 +91,7 @@ public class ColumnManager {
     }
 
     public BigDecimal getNullPercentage(String columnName) {
-        return columns.get(columnName).getNullPercentage();
+            return columns.get(columnName).getNullPercentage();
     }
 
     public double[] calculate(String columnName) {
@@ -206,6 +205,7 @@ public class ColumnManager {
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columnName2IdList);
         CommonUtils.writeFile(resultDir + "/column2IdList", content);
     }
+
     public void loadColumnName2IdList() throws IOException {
         String resultDir = distributionInfoPath.getPath();
         String content = CommonUtils.readFile(resultDir + "/column2IdList");
@@ -217,6 +217,7 @@ public class ColumnManager {
             columns.get(columnName).getDistribution().setIdList(idList);
         }
     }
+
     /**
      * 提取col的range信息(最大值，最小值)
      *

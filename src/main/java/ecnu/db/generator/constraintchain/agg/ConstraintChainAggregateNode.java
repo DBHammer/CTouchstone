@@ -20,9 +20,9 @@ public class ConstraintChainAggregateNode extends ConstraintChainNode {
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     @JsonIgnore
     public int joinStatusIndex = -1;
+    ConstraintChainFilterNode aggFilter;
     private List<String> groupKey;
     private BigDecimal aggProbability;
-    ConstraintChainFilterNode aggFilter;
 
 
     public ConstraintChainAggregateNode(List<String> groupKeys, BigDecimal aggProbability) {

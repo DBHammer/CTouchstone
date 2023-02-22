@@ -89,7 +89,6 @@ public abstract class BoolExprNode {
     public abstract boolean isTrue();
 
 
-
     /**
      * 判定子树是否包含其他的表
      *

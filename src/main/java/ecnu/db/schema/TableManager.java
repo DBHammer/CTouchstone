@@ -23,9 +23,9 @@ public class TableManager {
     public static final String SCHEMA_MANAGE_INFO = "/schema.json";
     protected static final Logger logger = LoggerFactory.getLogger(TableManager.class);
     private static final TableManager INSTANCE = new TableManager();
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     private LinkedHashMap<String, Table> schemas = new LinkedHashMap<>();
     private File schemaInfoPath;
-    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     public TableManager() {
     }
@@ -171,7 +171,7 @@ public class TableManager {
         return schema;
     }
 
-    public void adjustFks(){
+    public void adjustFks() {
         schemas.values().forEach(Table::adjustFks);
     }
 }

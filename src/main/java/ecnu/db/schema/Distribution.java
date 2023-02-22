@@ -16,17 +16,11 @@ public class Distribution {
     private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.15);
 
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
-
+    private final NavigableMap<BigDecimal, List<Parameter>> pvAndPbList = new TreeMap<>();
+    private final long range;
     // bound PV的偏移位置
     private SortedMap<BigDecimal, Long> offset2Pv = new TreeMap<>();
-
-
-    private final NavigableMap<BigDecimal, List<Parameter>> pvAndPbList = new TreeMap<>();
-
     private SortedMap<Long, BigDecimal> paraData2Probability = new TreeMap<>();
-
-    private final long range;
-
     private List<List<Integer>> idList = new ArrayList<>();
 
     public Distribution(BigDecimal nullPercentage, long range) {

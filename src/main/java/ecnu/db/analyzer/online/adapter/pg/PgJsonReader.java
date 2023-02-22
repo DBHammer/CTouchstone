@@ -76,8 +76,8 @@ public class PgJsonReader {
         return new StringBuilder("$.[0]['Plan']");
     }
 
-    static String formatPlan(String query){
-        return  "[{\"Plan\":" + query + "}]";
+    static String formatPlan(String query) {
+        return "[{\"Plan\":" + query + "}]";
     }
 
     // deal with subPlan

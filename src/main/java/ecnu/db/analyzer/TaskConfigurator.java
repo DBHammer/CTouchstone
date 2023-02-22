@@ -47,13 +47,12 @@ import static ecnu.db.utils.CommonUtils.MAPPER;
         mixinStandardHelpOptions = true, usageHelpAutoWidth = true)
 public class TaskConfigurator implements Callable<Integer> {
     public static final String SQL_FILE_POSTFIX = ".sql";
+    private static final String WORKLOAD_DIR = "/workload";
+    private static final HashMap<String, Map<String, List<Integer>>> columnName2ParameterID = new HashMap<>();
     private final Logger logger = LoggerFactory.getLogger(TaskConfigurator.class);
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     @CommandLine.ArgGroup(exclusive = false, multiplicity = "1")
     private TaskConfiguratorConfig taskConfiguratorConfig;
-    private static final String WORKLOAD_DIR = "/workload";
-    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
-
-    private static final HashMap<String, Map<String, List<Integer>>> columnName2ParameterID = new HashMap<>();
 
     @Override
     public Integer call() throws Exception {

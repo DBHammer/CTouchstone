@@ -17,11 +17,11 @@ import java.util.*;
  * @author wangqingshuai 数据库驱动连接器
  */
 public abstract class DbConnector {
+    private static final List<Field> ALL_FIELDS = Arrays.stream(Types.class.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers())).toList();
     private final Logger logger = LoggerFactory.getLogger(DbConnector.class);
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
     private final int[] sqlInfoColumns;
     private final Connection conn;
-    private static final List<Field> ALL_FIELDS = Arrays.stream(Types.class.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers())).toList();
 
     protected DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig)
             throws TouchstoneException, SQLException {
@@ -46,6 +46,19 @@ public abstract class DbConnector {
             throw new TouchstoneException(String.format("无法建立数据库连接,连接信息为: '%s'", url));
         }
         sqlInfoColumns = getSqlInfoColumns();
+    }
+
+    private static String getTypeName(int type) {
+        for (Field field : ALL_FIELDS) {
+            try {
+                if (field.getInt(null) == type) {
+                    return field.getName();
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     /**
@@ -73,7 +86,7 @@ public abstract class DbConnector {
         while (rs.next()) {
             String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
             columnNames.add(canonicalColumnName);
-            int columnType=rs.getInt("DATA_TYPE");
+            int columnType = rs.getInt("DATA_TYPE");
             ColumnManager.getInstance().addColumn(canonicalColumnName, new Column(ColumnType.getColumnType(columnType)));
             String originalType = switch (columnType) {
                 case Types.CHAR -> getTypeName(columnType) + "(" + rs.getInt("CHAR_OCTET_LENGTH") + ")";
@@ -82,10 +95,11 @@ public abstract class DbConnector {
                     if (charLength == Integer.MAX_VALUE) {
                         yield "TEXT";
                     } else {
-                        yield getTypeName(columnType) + "(" + charLength +")";
+                        yield getTypeName(columnType) + "(" + charLength + ")";
                     }
                 }
-                case Types.NUMERIC -> "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")";
+                case Types.NUMERIC ->
+                        "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")";
                 default -> getTypeName(columnType);
             } + (rs.getInt("NULLABLE") == 0 ? " NOT NULL" : " DEFAULT NULL");
             ColumnManager.getInstance().getColumn(canonicalColumnName).setOriginalType(originalType);
@@ -94,19 +108,6 @@ public abstract class DbConnector {
             }
         }
         return columnNames;
-    }
-
-    private static String getTypeName(int type) {
-        for (Field field : ALL_FIELDS) {
-            try {
-                if (field.getInt(null) == type) {
-                    return field.getName();
-                }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
     }
 
     public String[] getDataRange(String canonicalTableName, List<String> canonicalColumnNames)
@@ -201,9 +202,12 @@ public abstract class DbConnector {
         StringBuilder sql = new StringBuilder();
         for (String canonicalColumnName : canonicalColumnNames) {
             switch (ColumnManager.getInstance().getColumnType(canonicalColumnName)) {
-                case DATE, DATETIME, DECIMAL -> sql.append(String.format("min(%1$s), max(%1$s), ", canonicalColumnName));
-                case INTEGER -> sql.append(String.format("min(%1$s), max(%1$s), count(distinct %1$s),", canonicalColumnName));
-                case VARCHAR -> sql.append(String.format("avg(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
+                case DATE, DATETIME, DECIMAL ->
+                        sql.append(String.format("min(%1$s), max(%1$s), ", canonicalColumnName));
+                case INTEGER ->
+                        sql.append(String.format("min(%1$s), max(%1$s), count(distinct %1$s),", canonicalColumnName));
+                case VARCHAR ->
+                        sql.append(String.format("avg(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
                 case BOOL -> sql.append(String.format("avg(%s)", canonicalColumnName));
                 default -> throw new TouchstoneException("未匹配到的类型");
             }
@@ -216,7 +220,7 @@ public abstract class DbConnector {
         String[] schemaAndTable = canonicalTableName.split("\\.");
         List<String> primaryKeys = new ArrayList<>();
         DatabaseMetaData databaseMetaData = conn.getMetaData();
-        ResultSet rs = databaseMetaData.getPrimaryKeys(null,schemaAndTable[0],schemaAndTable[1]);
+        ResultSet rs = databaseMetaData.getPrimaryKeys(null, schemaAndTable[0], schemaAndTable[1]);
         while (rs.next()) {
             String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
             primaryKeys.add(canonicalColumnName);

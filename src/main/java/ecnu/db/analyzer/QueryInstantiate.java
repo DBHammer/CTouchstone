@@ -41,27 +41,6 @@ public class QueryInstantiate implements Callable<Integer> {
     private String samplingSize;
     private Map<String, List<ConstraintChain>> query2constraintChains;
 
-    @Override
-    public Integer call() throws IOException {
-        init();
-        Map<String, String> queryName2QueryTemplates = getQueryName2QueryTemplates();
-        logger.info(rb.getString("StartInstantiatingTheQueryPlan"));
-        List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
-        Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, Integer.parseInt(samplingSize));
-        logger.info(rb.getString("TheInstantiatedQueryPlanSucceed"), id2Parameter.values());
-        logger.info(rb.getString("StartPersistentQueryPlanWithNewDataDistribution"));
-        ConstraintChainManager.getInstance().storeConstraintChain(query2constraintChains);
-        ColumnManager.getInstance().storeColumnDistribution();
-        logger.info(rb.getString("PersistentQueryPlanCompleted"));
-        logger.info(rb.getString("StartPopulatingTheQueryTemplate"));
-        writeQuery(queryName2QueryTemplates, id2Parameter);
-        logger.info(rb.getString("FillInTheQueryTemplateComplete"));
-        if (id2Parameter.size() > 0) {
-            logger.info(rb.getString("TheParametersThatWereNotSuccessfullyReplaced"), id2Parameter.values());
-        }
-        return null;
-    }
-
     private static List<List<AbstractFilterOperation>> pushDownProbability(List<ConstraintChain> constraintChains) {
         return constraintChains.stream()
                 .map(ConstraintChain::getNodes)
@@ -184,6 +163,27 @@ public class QueryInstantiate implements Callable<Integer> {
         filterOperations.stream().map(AbstractFilterOperation::getParameters).flatMap(Collection::stream)
                 .forEach(parameter -> id2Parameter.put(parameter.getId(), parameter));
         return id2Parameter;
+    }
+
+    @Override
+    public Integer call() throws IOException {
+        init();
+        Map<String, String> queryName2QueryTemplates = getQueryName2QueryTemplates();
+        logger.info(rb.getString("StartInstantiatingTheQueryPlan"));
+        List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
+        Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, Integer.parseInt(samplingSize));
+        logger.info(rb.getString("TheInstantiatedQueryPlanSucceed"), id2Parameter.values());
+        logger.info(rb.getString("StartPersistentQueryPlanWithNewDataDistribution"));
+        ConstraintChainManager.getInstance().storeConstraintChain(query2constraintChains);
+        ColumnManager.getInstance().storeColumnDistribution();
+        logger.info(rb.getString("PersistentQueryPlanCompleted"));
+        logger.info(rb.getString("StartPopulatingTheQueryTemplate"));
+        writeQuery(queryName2QueryTemplates, id2Parameter);
+        logger.info(rb.getString("FillInTheQueryTemplateComplete"));
+        if (id2Parameter.size() > 0) {
+            logger.info(rb.getString("TheParametersThatWereNotSuccessfullyReplaced"), id2Parameter.values());
+        }
+        return null;
     }
 
     private void init() throws IOException {

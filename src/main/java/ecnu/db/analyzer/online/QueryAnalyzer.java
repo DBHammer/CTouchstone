@@ -38,8 +38,8 @@ public class QueryAnalyzer {
     private static final int SKIP_SELF_JOIN = -4;
     private final AbstractAnalyzer abstractAnalyzer;
     private final DbConnector dbConnector;
-    protected double skipNodeThreshold = 0.01;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+    protected double skipNodeThreshold = 0.01;
 
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector) {

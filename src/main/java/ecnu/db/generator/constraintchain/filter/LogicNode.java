@@ -5,10 +5,14 @@ import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperatio
 import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static ecnu.db.generator.constraintchain.filter.BoolExprType.*;
+import static ecnu.db.generator.constraintchain.filter.BoolExprType.AND;
+import static ecnu.db.generator.constraintchain.filter.BoolExprType.OR;
 
 public class LogicNode extends BoolExprNode {
     private BoolExprType type;

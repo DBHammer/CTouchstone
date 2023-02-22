@@ -11,21 +11,21 @@ import java.util.*;
 public class ConstructCpModel {
 
     private static final double DISTINCT_FK_SKEW = 2;
+
+    static {
+        Loader.loadNativeLibraries();
+    }
+
     private final Logger logger = LoggerFactory.getLogger(ConstructCpModel.class);
     private final CpModel model = new CpModel();
     private final CpSolver solver = new CpSolver();
-    private IntVar[][] vars;
     private final Map<Integer, IntVar[][]> fkDistinctVars = new HashMap<>();
     private final List<IntVar> involvedVars = new LinkedList<>();
 
     private final Map<Integer, Map<Integer, Set<IntVar>>> fkSharePkVars = new HashMap<>();
 
     private final Map<Integer, List<List<IntVar>>> fkDistinctInvolvedVars = new HashMap<>();
-
-
-    static {
-        Loader.loadNativeLibraries();
-    }
+    private IntVar[][] vars;
 
     public long[][] solve() {
         solver.getParameters().setEnumerateAllSolutions(false);

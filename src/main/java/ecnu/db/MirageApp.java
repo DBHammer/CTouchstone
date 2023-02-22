@@ -1,7 +1,7 @@
 package ecnu.db;
 
-import ecnu.db.analyzer.TaskConfigurator;
 import ecnu.db.analyzer.QueryInstantiate;
+import ecnu.db.analyzer.TaskConfigurator;
 import ecnu.db.generator.DataGenerator;
 import ecnu.db.schema.DDLGenerator;
 import picocli.CommandLine;

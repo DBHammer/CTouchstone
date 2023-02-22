@@ -23,10 +23,9 @@ public class ConstraintChainManager {
     private static final ConstraintChainManager INSTANCE = new ConstraintChainManager();
     private static final String[] COLOR_LIST = {"#FFFFCC", "#CCFFFF", "#FFCCCC"};
     private static final String GRAPH_TEMPLATE = "digraph \"%s\" {rankdir=BT;" + System.lineSeparator() + "%s}";
-    private String resultDir;
-    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     private static final String WORKLOAD_DIR = "/workload";
-
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+    private String resultDir;
     private boolean isDraw = false;
 
     private ConstraintChainManager() {
@@ -34,11 +33,6 @@ public class ConstraintChainManager {
 
     public static ConstraintChainManager getInstance() {
         return INSTANCE;
-    }
-
-
-    public void setResultDir(String resultDir) {
-        this.resultDir = resultDir;
     }
 
     public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
@@ -62,6 +56,10 @@ public class ConstraintChainManager {
             }
         }
         return result;
+    }
+
+    public void setResultDir(String resultDir) {
+        this.resultDir = resultDir;
     }
 
     /**
@@ -118,7 +116,7 @@ public class ConstraintChainManager {
                     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                     String currentTime = format.format(date.getTime());
                     String newPath = resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0] + "/" + currentTime + stringListEntry.getKey() + ".dot";
-                    CommonUtils.writeFile(newPath + "", graph);
+                    CommonUtils.writeFile(newPath, graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());
                 }
             }
