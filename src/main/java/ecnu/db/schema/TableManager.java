@@ -38,7 +38,7 @@ public class TableManager {
         return schemas.get(schemaName).getFk2PkTableSize();
     }
 
-    public LinkedHashMap<String, Table> getSchemas() {
+    public Map<String, Table> getSchemas() {
         return schemas;
     }
 
