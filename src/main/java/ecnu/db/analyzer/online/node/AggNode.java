@@ -17,4 +17,22 @@ public class AggNode extends ExecutionNode {
     public void setAggFilter(FilterNode aggFilter) {
         this.aggFilter = aggFilter;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        AggNode aggNode = (AggNode) o;
+
+        return aggFilter.equals(aggNode.aggFilter);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + aggFilter.hashCode();
+        return result;
+    }
 }
