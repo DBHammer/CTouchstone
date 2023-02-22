@@ -85,6 +85,79 @@ public class Column {
         columnData = distribution.prepareTupleData(size);
     }
 
+    private boolean[] computeEqualComparatorResult(long value) {
+        boolean[] ret = new boolean[columnData.length];
+        for (int i = 0; i < columnData.length; i++) {
+            ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] == value;
+        }
+        return ret;
+    }
+
+    private boolean[] computeNotEqualComparatorResult(long value) {
+        boolean[] ret = new boolean[columnData.length];
+        for (int i = 0; i < columnData.length; i++) {
+            ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] != value;
+        }
+        return ret;
+    }
+
+    private boolean[] computeGreaterComparatorResult(long value) {
+        boolean[] ret = new boolean[columnData.length];
+        for (int i = 0; i < columnData.length; i++) {
+            ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] > value;
+        }
+        return ret;
+    }
+
+    private boolean[] computeGreaterOrEqualComparatorResult(long value) {
+        boolean[] ret = new boolean[columnData.length];
+        for (int i = 0; i < columnData.length; i++) {
+            ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] >= value;
+        }
+        return ret;
+    }
+
+    private boolean[] computeLessComparatorResult(long value) {
+        boolean[] ret = new boolean[columnData.length];
+        for (int i = 0; i < columnData.length; i++) {
+            ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] < value;
+        }
+        return ret;
+    }
+
+    private boolean[] computeLessOrEqualComparatorResult(long value) {
+        boolean[] ret = new boolean[columnData.length];
+        for (int i = 0; i < columnData.length; i++) {
+            ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] <= value;
+        }
+        return ret;
+    }
+
+
+    private boolean[] computeInComparator(List<Parameter> parameters) {
+        boolean[] ret = new boolean[columnData.length];
+        HashSet<Long> parameterData = new HashSet<>();
+        for (Parameter parameter : parameters) {
+            parameterData.add(parameter.getData());
+        }
+        for (int i = 0; i < columnData.length; i++) {
+            ret[i] = columnData[i] != Long.MIN_VALUE && parameterData.contains(columnData[i]);
+        }
+        return ret;
+    }
+
+    private boolean[] computeNotInComparator(List<Parameter> parameters) {
+        boolean[] ret = new boolean[columnData.length];
+        HashSet<Long> parameterData = new HashSet<>();
+        for (Parameter parameter : parameters) {
+            parameterData.add(parameter.getData());
+        }
+        for (int i = 0; i < columnData.length; i++) {
+            ret[i] = columnData[i] != Long.MIN_VALUE && !parameterData.contains(columnData[i]);
+        }
+        return ret;
+    }
+
 
     /**
      * 无运算比较，针对传入的参数，对于单操作符进行比较
@@ -100,59 +173,17 @@ public class Column {
         } else {
             value = parameters.get(0).getData();
         }
-        boolean[] ret = new boolean[columnData.length];
-        switch (operator) {
-            case EQ, LIKE, ISNULL -> {
-                for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] == value;
-                }
-            }
-            case NE, NOT_LIKE, IS_NOT_NULL -> {
-                for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] != value;
-                }
-            }
-            case LT -> {
-                for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] < value;
-                }
-            }
-            case LE -> {
-                for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] <= value;
-                }
-            }
-            case GT -> {
-                for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] > value;
-                }
-            }
-            case GE -> {
-                for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] >= value;
-                }
-            }
-            case IN -> {
-                HashSet<Long> parameterData = new HashSet<>();
-                for (Parameter parameter : parameters) {
-                    parameterData.add(parameter.getData());
-                }
-                for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] != Long.MIN_VALUE && parameterData.contains(columnData[i]);
-                }
-            }
-            case NOT_IN -> {
-                HashSet<Long> parameterData = new HashSet<>();
-                for (Parameter parameter : parameters) {
-                    parameterData.add(parameter.getData());
-                }
-                for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] != Long.MIN_VALUE && !parameterData.contains(columnData[i]);
-                }
-            }
+        return switch (operator) {
+            case EQ, LIKE, ISNULL -> computeEqualComparatorResult(value);
+            case NE, NOT_LIKE, IS_NOT_NULL -> computeNotEqualComparatorResult(value);
+            case LT -> computeLessComparatorResult(value);
+            case LE -> computeLessOrEqualComparatorResult(value);
+            case GT -> computeGreaterComparatorResult(value);
+            case GE -> computeGreaterOrEqualComparatorResult(value);
+            case IN -> computeInComparator(parameters);
+            case NOT_IN -> computeNotInComparator(parameters);
             default -> throw new UnsupportedOperationException();
-        }
-        return ret;
+        };
     }
 
     /**
