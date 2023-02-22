@@ -131,7 +131,7 @@ public class Table {
 
     @JsonGetter
     @SuppressWarnings("unused")
-    public String getPrimaryKeys() {
+    public synchronized String getPrimaryKeys() {
         return String.join(",", primaryKeys);
     }
 
