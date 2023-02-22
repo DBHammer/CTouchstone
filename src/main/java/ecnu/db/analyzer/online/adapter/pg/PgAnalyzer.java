@@ -252,13 +252,13 @@ public class PgAnalyzer extends AbstractAnalyzer {
         };
         if (joinInfo.equals("needReadDeep")) {
             joinInfo = readDeep(path);
-            System.out.println(joinInfo);
         }
         BigDecimal pkDistinctProbability = BigDecimal.ZERO;
         if (PgJsonReader.isOutJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
-            int pkRowCount, fkRowCount;
+            int pkRowCount;
+            int fkRowCount;
             if (PgJsonReader.isRightOuterJoin(path)) {
                 pkRowCount = PgJsonReader.readRowCount(rightChildPath);
                 fkRowCount = PgJsonReader.readRowCount(leftChildPath);
@@ -531,7 +531,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         String leftNodeType = PgJsonReader.readNodeType(leftPath);
         String tableName = PgJsonReader.readTableName(path.toString()).split("\\.")[1];
         if (nodeTypeRef.isAggregateNode(leftNodeType) && nodeTypeRef.isIndexScanNode(nodeType)) {
-            logger.error("cannot deal with " + path);
+            logger.error("cannot deal with {}", path);
             getExecutionTreeRes(PgJsonReader.move2LeftChild(leftPath));
             return !tableName.equals(getTableNameFromOutput(leftPath));
         } else {
