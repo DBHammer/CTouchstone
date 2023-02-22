@@ -1,6 +1,9 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
-import com.jayway.jsonpath.*;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
 import net.minidev.json.JSONObject;
 
 import java.util.Collections;
@@ -12,6 +15,8 @@ import java.util.regex.Pattern;
 public class PgJsonReader {
     private static DocumentContext readContext;
 
+    private static boolean isGauss = false;
+
     private PgJsonReader() {
     }
 
@@ -20,6 +25,10 @@ public class PgJsonReader {
                 .addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL)
                 .addOptions(Option.SUPPRESS_EXCEPTIONS);
         PgJsonReader.readContext = JsonPath.using(conf).parse(plan);
+    }
+
+    public static void setIsGauss() {
+        isGauss = true;
     }
 
     // read node type
@@ -129,7 +138,11 @@ public class PgJsonReader {
     }
 
     static List<String> readGroupKey(StringBuilder path) {
-        return readContext.read(path + "['Group Key']");
+        List<String> keys = readContext.read(path + "['Group Key']");
+        if (keys == null) {
+            keys = readContext.read(path + "['Group By Key']");
+        }
+        return keys;
     }
 
 
@@ -217,10 +230,6 @@ public class PgJsonReader {
         return readJoinType(path).equals("Full");
     }
 
-    static boolean isSemiJoin(StringBuilder path) {
-        return readJoinType(path).equals("Semi") || readJoinType(path).equals("Anti");
-    }
-
     static boolean isAntiJoin(StringBuilder path) {
         return readJoinType(path).equals("Anti");
     }
@@ -254,6 +263,13 @@ public class PgJsonReader {
         } else {
             throw new UnsupportedOperationException();
         }
+        if (isGauss)
+            return (int) Math.ceil(actualRows);
         return (int) Math.ceil(actualRows * actualLoops);
+    }
+
+    public static void deleteOutPut() {
+        readContext.delete("$..Output");
+        readContext.delete("$..['Peak Memory Usage']");
     }
 }

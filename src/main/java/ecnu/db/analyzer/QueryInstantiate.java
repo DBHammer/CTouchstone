@@ -235,6 +235,9 @@ public class QueryInstantiate implements Callable<Integer> {
         assert sqlArray != null;
         Map<String, String> queryName2QueryTemplates = new HashMap<>();
         for (File file : sqlArray) {
+            if (!file.isDirectory()) {
+                continue;
+            }
             File[] eachFile = file.listFiles();
             assert eachFile != null;
             for (File sqlTemplate : eachFile) {

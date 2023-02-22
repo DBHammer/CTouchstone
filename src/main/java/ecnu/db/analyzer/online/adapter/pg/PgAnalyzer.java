@@ -60,16 +60,19 @@ public class PgAnalyzer extends AbstractAnalyzer {
         String queryPlan = queryPlans.stream().map(queryPlanLine -> queryPlanLine[0]).collect(Collectors.joining());
         PgJsonReader.setReadContext(queryPlan);
         if (queryPlan.contains("= subquery")) {
-            transformHashJoin2AggForOpenGauss();
+            transformHashJoin2AggForOpenGauss(queryPlan);
         }
         return getExecutionTreeRes(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
     }
 
-    public void transformHashJoin2AggForOpenGauss() {
+    public void transformHashJoin2AggForOpenGauss(String queryPlan) {
         StringBuilder subQueryJoinNodePath = getJoinNodeWithSubQuery(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
         StringBuilder leftChildNode = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(subQueryJoinNodePath));
+        PgJsonReader.deleteOutPut();
         String leftPlan = PgJsonReader.readPlan(leftChildNode, 0) + "," + PgJsonReader.readPlan(leftChildNode, 1);
-        if (PgJsonReader.readPlan(subQueryJoinNodePath, 1).contains(leftPlan)) {
+        String rightPlan = PgJsonReader.readPlan(subQueryJoinNodePath, 1);
+        PgJsonReader.setReadContext(queryPlan);
+        if (rightPlan.contains(leftPlan)) {
             PgJsonReader.deleteTree(leftChildNode);
         }
     }
@@ -124,8 +127,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
         node.setLeftNode(leftNode);
         node.setRightNode(rightNode);
         if (node.getType() == ExecutionNodeType.JOIN) {
-            assert rightNode != null;
-            if (rightNode.getType() == ExecutionNodeType.FILTER && rightNode.getInfo() != null && ((FilterNode) rightNode).isIndexScan()) {
+            if (rightNode == null) {
+                // fix for opengauss
+                logger.info("generate agg from hash join for opengauss");
+                node = leftNode;
+            } else if (rightNode.getType() == ExecutionNodeType.FILTER && rightNode.getInfo() != null && ((FilterNode) rightNode).isIndexScan()) {
                 long rowsRemoveByFilterAfterJoin = PgJsonReader.readRowsRemoved(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath)));
                 ((JoinNode) node).setRowsRemoveByFilterAfterJoin(rowsRemoveByFilterAfterJoin);
                 String indexJoinFilter = PgJsonReader.readFilterInfo(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(currentNodePath)));
@@ -234,7 +240,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         }
         joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
-        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, BigDecimal.ZERO);
+        return new JoinNode(path.toString(), rowCount, joinInfo, true, transColumnName(joinInfo), BigDecimal.ZERO);
     }
 
     private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
@@ -253,7 +259,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
             int pkRowCount, fkRowCount;
-            int joinAccess = 0;
             if (PgJsonReader.isRightOuterJoin(path)) {
                 pkRowCount = PgJsonReader.readRowCount(rightChildPath);
                 fkRowCount = PgJsonReader.readRowCount(leftChildPath);
@@ -270,7 +275,8 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             rowCount = PgJsonReader.readRowCount(leftChildPath) - rowCount;
         }
-        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), PgJsonReader.isSemiJoin(path), pkDistinctProbability);
+        String output= transColumnName(PgJsonReader.readOutput(path).toString());
+        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), output, pkDistinctProbability);
     }
 
     String readDeep(StringBuilder path){
@@ -327,7 +333,12 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (groupKey != null) {
             //todo multiple table name
             groupKeyInfo = groupKey.stream().map(this::transColumnName).collect(Collectors.joining(";"));
-            tableName = aliasDic.get(groupKey.get(0).split("\\.")[0]);
+            String[] splitColumns = groupKey.get(0).split("\\.");
+            if (splitColumns.length == 2) {
+                tableName = aliasDic.get(splitColumns[0]);
+            } else {
+                tableName = splitColumns[0] + "." + splitColumns[1];
+            }
             if (aggFilterInfo != null) {
                 aggFilter = new FilterNode(path.toString(), rowCount, transColumnName(aggFilterInfo));
                 rowCount += PgJsonReader.readRowsRemoved(path);

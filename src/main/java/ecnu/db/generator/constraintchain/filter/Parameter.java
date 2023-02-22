@@ -1,6 +1,7 @@
 package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.schema.ColumnManager;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class Parameter {
     /**
      * parameter的内部data，用于快速计算
      */
-    private long data;
+    private long data = -1;
 
     private ParameterType type = ParameterType.ACTUAL;
 
@@ -129,6 +130,8 @@ public class Parameter {
     }
 
     public String getDataValue() {
+        if (ConstraintChainManager.getInstance().isDraw())
+            return "#" + id;
         return dataValue;
     }
 

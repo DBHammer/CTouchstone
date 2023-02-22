@@ -1,9 +1,9 @@
 {
   "databaseConnectorConfig": {
-    "databaseIp": "biui.me",
+    "databaseIp": "49.52.27.20",
     "databaseName": "tpch1",
-    "databasePort": "5432",
-    "databasePwd": "Biui1227..",
+    "databasePort": "15432",
+    "databasePwd": "0peng@uss",
     "databaseUser": "postgres"
   },
   "queriesDirectory": "conf/sqls",

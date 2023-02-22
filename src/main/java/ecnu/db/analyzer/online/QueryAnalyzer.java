@@ -188,7 +188,13 @@ public class QueryAnalyzer {
                 constraintChain.addJoinTable(externalTable);
             }
             boolean pkAllRowsInput = TableManager.getInstance().getTableSize(localTable) == lastNodeLineCount;
-            boolean fkColIsNotNull = ColumnManager.getInstance().getNullPercentage(externalTable + "." + externalCol).compareTo(BigDecimal.ZERO) == 0;
+            boolean fkColIsNotNull = true;
+            if (externalCol.contains(",")) {
+                for (String col : externalCol.split(",")) {
+                    fkColIsNotNull &= ColumnManager.getInstance().getNullPercentage(externalTable + "." + col)
+                            .compareTo(BigDecimal.ZERO) == 0;
+                }
+            }
             boolean joinIsNotOuterJoin = node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0;
             if (pkAllRowsInput && fkColIsNotNull && joinIsNotOuterJoin) {
                 logger.debug(rb.getString("SkipNodeDueToFullTableScan"), node.getInfo());
@@ -236,7 +242,7 @@ public class QueryAnalyzer {
                 BigDecimal probabilityWithFailFilter = computeFilterProbability(node.getRowsRemoveByFilterAfterJoin(), rowsRemovedByScanFilter);
                 fkJoinNode.setProbabilityWithFailFilter(probabilityWithFailFilter);
             }
-            if (node.isSemiJoin()) {
+            if (node.isSemiJoin(localTable)) {
                 if (node.isAntiJoin()) {
                     fkJoinNode.setType(ConstraintNodeJoinType.ANTI_SEMI_JOIN);
                 } else {
