@@ -23,8 +23,8 @@ import static ecnu.db.analyzer.online.adapter.pg.PgAnalyzer.TIME_OR_DATE;
  */
 public class QueryWriter {
     private static final Logger logger = LoggerFactory.getLogger(QueryWriter.class);
-    private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '[0-9]+' (month|year|day)");
-    private static final Pattern NumberCompute = Pattern.compile("[0-9]+\\.*[0-9]* (([+\\-]) [0-9]+\\.*[0-9]*)+");
+    private static final Pattern DATECompute = Pattern.compile("(?i)'*" + TIME_OR_DATE + "'* ([+\\-]) interval '\\d+' (month|year|day)");
+    private static final Pattern NumberCompute = Pattern.compile("\\d+\\.*\\d* (([+\\-]) \\d+\\.*\\d*)+");
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     private DbType dbType;
 

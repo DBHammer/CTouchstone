@@ -143,8 +143,8 @@ public class ConstraintChainManager {
 
 
     private String removeData(String graph) {
-        String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
-        newGraph = newGraph.replaceAll("key[0-9]+", "key");
+        String newGraph = graph.replaceAll("\\{id:\\d+, data:[^}]+", "");
+        newGraph = newGraph.replaceAll("key\\d+", "key");
         newGraph = newGraph.replaceAll("color=\"#[F|C]+\"", "color");
         return newGraph;
     }

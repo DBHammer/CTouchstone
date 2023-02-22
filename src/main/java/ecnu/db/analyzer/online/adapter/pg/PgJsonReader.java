@@ -106,7 +106,7 @@ public class PgJsonReader {
     static String readSubPlanIndex(StringBuilder path) {
         String subPlanName = readContext.read(path + "['Subplan Name']");
         if (subPlanName != null && subPlanName.contains("InitPlan")) {
-            Pattern returnRegex = Pattern.compile("returns \\$[0-9]+");
+            Pattern returnRegex = Pattern.compile("returns \\$\\d+");
             Matcher matcher = returnRegex.matcher(subPlanName);
             if (matcher.find()) {
                 return matcher.group().replace("returns ", "");

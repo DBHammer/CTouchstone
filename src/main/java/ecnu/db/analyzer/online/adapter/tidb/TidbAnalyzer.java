@@ -28,12 +28,12 @@ import static ecnu.db.utils.CommonUtils.matchPattern;
 public class TidbAnalyzer extends AbstractAnalyzer {
 
 
-    private static final Pattern ROW_COUNTS = Pattern.compile("rows:[0-9]+");
-    private static final Pattern ITER = Pattern.compile("iters:([0-9]+)");
+    private static final Pattern ROW_COUNTS = Pattern.compile("rows:\\d+");
+    private static final Pattern ITER = Pattern.compile("iters:(\\d+)");
     private static final Pattern INNER_JOIN_OUTER_KEY = Pattern.compile("outer key:(.+),");
     private static final Pattern INNER_JOIN_INNER_KEY = Pattern.compile("inner key:(.+)");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("(equal:\\[.*]|equal cond:)");
-    private static final Pattern PLAN_ID = Pattern.compile("([a-zA-Z]+_[0-9]+)");
+    private static final Pattern PLAN_ID = Pattern.compile("([a-zA-Z]+_\\d+)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("eq\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+), ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
     private static final Pattern INNER_JOIN = Pattern.compile("(inner join)|(semi join)");
     private static final Pattern RANGE = Pattern.compile("range.+(?=, keep order)");
