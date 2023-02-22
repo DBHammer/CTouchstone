@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  */
 public class Parameter {
 
-    private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+");
+    private static final Pattern CanonicalColumnName = Pattern.compile("[a-zA-Z][a-zA-Z0-9$_]*\\.\\w+\\.\\w+");
 
     /**
      * parameter的id，用于后续实例化
