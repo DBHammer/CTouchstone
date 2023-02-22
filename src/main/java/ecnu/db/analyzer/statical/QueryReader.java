@@ -63,15 +63,15 @@ public class QueryReader {
             }
         }
         List<SQLStatement> statementList = SQLUtils.parseStatements(fileContents.toString(), dbType, true);
-        List<String> sqls = new ArrayList<>();
+        List<String> sqlList = new ArrayList<>();
         for (SQLStatement sqlStatement : statementList) {
             String sql = SQLUtils.format(sqlStatement.toString(), dbType);
             sql = sql.replace(System.lineSeparator(), " ");
             sql = sql.replace('\t', ' ');
             sql = sql.replaceAll(" +", " ");
-            sqls.add(sql);
+            sqlList.add(sql);
         }
-        return sqls;
+        return sqlList;
     }
 
     public Set<String> getTableName(String sql) throws IllegalQueryTableNameException {
