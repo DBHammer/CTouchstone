@@ -55,13 +55,13 @@ public class DDLGenerator implements Callable<Integer> {
     }
 
     public void importData() throws IOException {
-        StringBuilder importData = new StringBuilder("\\c " + dataBase + ";\n");
+        StringBuilder importDataSQL = new StringBuilder("\\c " + dataBase + ";\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
             String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM " + "'" + "./data/" + tableName + "0" + "' DELIMITER ',';\n";
-            importData.append(inData);
+            importDataSQL.append(inData);
         }
-        CommonUtils.writeFile(this.importData, importData.toString());
+        CommonUtils.writeFile(importData, importDataSQL.toString());
     }
 
     public void createIndex() throws IOException {
