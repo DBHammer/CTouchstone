@@ -2,6 +2,7 @@ package ecnu.db.schema;
 
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 class StringTemplate {
@@ -15,7 +16,7 @@ class StringTemplate {
     long specialValue;
     int tag;
 
-    TreeSet<Long> subStringIndex = new TreeSet<>();
+    SortedSet<Long> subStringIndex = new TreeSet<>();
 
     public StringTemplate(int avgLength, int maxLength, long specialValue, long range) {
         this.avgLength = avgLength;
@@ -67,7 +68,7 @@ class StringTemplate {
         return subStringIndex;
     }
 
-    public void setLikeIndex2Status(TreeSet<Long> likeIndex) {
+    public void setLikeIndex2Status(SortedSet<Long> likeIndex) {
         this.subStringIndex = likeIndex;
     }
 }
