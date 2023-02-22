@@ -10,6 +10,8 @@ import ecnu.db.generator.joininfo.RuleTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,6 +26,8 @@ import java.util.stream.IntStream;
 
 public class FkGenerator {
     private final long tableSize;
+
+    private static final Logger logger = LoggerFactory.getLogger(FkGenerator.class);
 
     private final Map<Integer, Long> distinctFkIndex2Cardinality = new HashMap<>();
     private final int[] involvedChainIndexes;
@@ -205,9 +209,13 @@ public class FkGenerator {
         }
         executorPool.shutdown();
         try {
-            executorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            if (!executorPool.awaitTermination(1, TimeUnit.HOURS)) {
+                logger.error("fill fks fail");
+                executorPool.shutdownNow();
+            }
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            logger.error("cannot fill fks", e);
+            Thread.currentThread().interrupt();
         }
 
         // 计算每一行数据的输出状态
