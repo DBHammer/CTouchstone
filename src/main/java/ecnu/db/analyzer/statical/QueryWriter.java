@@ -155,9 +155,9 @@ public class QueryWriter {
                 }
             } else {
                 if (parameter.isSubPlan()) {
-                    var subplanranges = matches.stream().findFirst().get().range;
-                    var subplanrange = subplanranges.get(subplanranges.size() - 1);
-                    replaceParams.put(subplanrange.getKey(), new AbstractMap.SimpleEntry<>(parameter, subplanrange));
+                    var subPlanRanges = matches.stream().findFirst().get().range;
+                    var subPlanRange = subPlanRanges.get(subPlanRanges.size() - 1);
+                    replaceParams.put(subPlanRange.getKey(), new AbstractMap.SimpleEntry<>(parameter, subPlanRange));
                 } else {
                     var pair = matches.stream().findFirst().get().range;
                     for (Map.Entry<Integer, Integer> range : pair) {
