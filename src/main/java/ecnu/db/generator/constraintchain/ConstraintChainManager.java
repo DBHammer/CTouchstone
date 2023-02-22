@@ -36,7 +36,7 @@ public class ConstraintChainManager {
     }
 
     public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
-        String path = resultDir + "/workload";
+        String path = resultDir + WORKLOAD_DIR;
         File sqlDic = new File(path);
         File[] sqlArray = sqlDic.listFiles();
         assert sqlArray != null;
@@ -90,7 +90,7 @@ public class ConstraintChainManager {
         }
         for (Map.Entry<String, List<ConstraintChain>> entry : query2constraintChains.entrySet()) {
             String constraintChainsContent = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(entry);
-            File sqlDic = new File(resultDir + WORKLOAD_DIR + "/" + entry.getKey().split("\\.")[0]);
+            File sqlDic = new File(resultDir + WORKLOAD_DIR, entry.getKey().split("\\.")[0]);
             if (!sqlDic.exists()) {
                 sqlDic.mkdir();
             }
