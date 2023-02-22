@@ -217,7 +217,7 @@ public class TaskConfigurator implements Callable<Integer> {
                     buildColumnName2ParameterID(constraintChains);
                     parameters.addAll(constraintChains.stream().flatMap((c -> c.getParameters().stream())).toList());
                 }
-                queryName2QueryTemplates.put(queryCanonicalName, queryWriter.templatizeSql(queryCanonicalName, query, parameters));
+                queryName2QueryTemplates.put(queryCanonicalName, queryWriter.templateSql(queryCanonicalName, query, parameters));
             }
         }
         writeWithoutParameterValue();

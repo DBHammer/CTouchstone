@@ -37,7 +37,7 @@ class QueryWriterTest {
         String sql = "select * from test where a=" + sqlValue;
         List<Parameter> parameters = new ArrayList<>();
         parameters.add(new Parameter(0, null, dataValue));
-        String modified = queryWriter.templatizeSql("Test Query", sql, parameters);
+        String modified = queryWriter.templateSql("Test Query", sql, parameters);
         modified = modified.replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
         assertEquals("select * from test where a = 'Mirage#0'", modified);
     }
@@ -50,7 +50,7 @@ class QueryWriterTest {
         ColumnManager.getInstance().addColumn("db.test.b", new Column(ColumnType.INTEGER));
         parameters.add(new Parameter(0, "db.test.a", "5"));
         parameters.add(new Parameter(1, "db.test.b", "5"));
-        String modified = queryWriter.templatizeSql("q5", sql, parameters);
+        String modified = queryWriter.templateSql("q5", sql, parameters);
         modified = modified.replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
         assertEquals("select * from test where a = 'Mirage#0' or b = 'Mirage#1'", modified.replace('\n', ' '));
     }
@@ -61,7 +61,7 @@ class QueryWriterTest {
         List<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter(0, "db.test.b", "6");
         parameters.add(parameter);
-        String modified = queryWriter.templatizeSql("q6", sql, parameters);
+        String modified = queryWriter.templateSql("q6", sql, parameters);
         modified = modified.replace(System.lineSeparator(), " ").replace('\n', ' ').replace('\t', ' ').replaceAll(" +", " ");
         assertEquals("-- cannotFindArgs:{id:0,data:'6',operand:db.test.b} select * from test where a = '5' or b = '5'", modified);
     }

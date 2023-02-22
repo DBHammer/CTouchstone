@@ -40,7 +40,7 @@ public class QueryWriter {
      * @param parameters         需要模板化的参数
      * @return 模板化的SQL语句
      */
-    public String templatizeSql(String queryCanonicalName, String query, List<Parameter> parameters) throws SQLException {
+    public String templateSql(String queryCanonicalName, String query, List<Parameter> parameters) throws SQLException {
         Matcher matcher = DATECompute.matcher(query);
         while (matcher.find()) {
             String dateCompute = matcher.group();
