@@ -4,7 +4,7 @@ public class FilterNode extends ExecutionNode {
     /**
      * 是否为新生成的节点
      */
-    public boolean isAdd = false;
+    private boolean isAdd = false;
     private boolean isIndexScan = false;
     private String filterInfoWithQuote;
 
