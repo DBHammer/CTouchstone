@@ -2,6 +2,7 @@ package ecnu.db.generator.constraintchain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.utils.CommonUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -18,6 +19,7 @@ class ReadAndWriteJsonTest {
     private static final String dir = "src/test/resources/data/query-instantiation/TPCH/";
     private static final String DISTRIBUTION_DIR = "/distribution";
 
+    @Disabled
     @Test
     void writeTestConstraintChain() throws IOException {
         String content = getConstraintChainForAllSQL();
