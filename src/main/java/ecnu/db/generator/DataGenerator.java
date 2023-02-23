@@ -172,9 +172,9 @@ public class DataGenerator implements Callable<Integer> {
                                             List<List<String>> fkGroups) {
         Map<String, long[]> fkCol2Values = new TreeMap<>();
         for (int groupIndex = 0; groupIndex < fkGenerators.length; groupIndex++) {
-            long[][] fkValues = fkGenerators[groupIndex].generateFK(statusVectorOfEachRow);
             List<String> fkGroup = fkGroups.get(groupIndex);
             logger.info("处理外键组{}", fkGroup);
+            long[][] fkValues = fkGenerators[groupIndex].generateFK(statusVectorOfEachRow);
             for (int fkColIndex = 0; fkColIndex < fkGroup.size(); fkColIndex++) {
                 fkCol2Values.put(fkGroup.get(fkColIndex), fkValues[fkColIndex]);
             }
