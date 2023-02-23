@@ -1,6 +1,8 @@
 package ecnu.db.analyzer;
 
 import ecnu.db.LanguageManager;
+import ecnu.db.analyzer.statical.QueryReader;
+import ecnu.db.analyzer.statical.QueryWriter;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
@@ -10,29 +12,19 @@ import ecnu.db.generator.constraintchain.filter.operation.MultiVarFilterOperatio
 import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.Distribution;
-import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static ecnu.db.utils.CommonUtils.matchPattern;
 
 @CommandLine.Command(name = "instantiate", description = "instantiate the query", mixinStandardHelpOptions = true)
 public class QueryInstantiate implements Callable<Integer> {
 
-    private static final Pattern PATTERN = Pattern.compile("'Mirage#(\\d+)'");
-    private static final String WORKLOAD_DIR = "/workload";
-    private static final String QUERIES = "/queries";
     private final Logger logger = LoggerFactory.getLogger(QueryInstantiate.class);
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     @CommandLine.Option(names = {"-c", "--config_path"}, required = true, description = "the config path for instantiating query ")
@@ -40,6 +32,8 @@ public class QueryInstantiate implements Callable<Integer> {
     @CommandLine.Option(names = {"-s", "--sampling_size"}, defaultValue = "4000000", description = "samplingSize")
     private String samplingSize;
     private Map<String, List<ConstraintChain>> query2constraintChains;
+
+    private static final String WORKLOAD_DIR = "/workload";
 
     private static List<List<AbstractFilterOperation>> pushDownProbability(List<ConstraintChain> constraintChains) {
         return constraintChains.stream()
@@ -169,7 +163,7 @@ public class QueryInstantiate implements Callable<Integer> {
     @Override
     public Integer call() throws IOException {
         init();
-        Map<String, String> queryName2QueryTemplates = getQueryName2QueryTemplates();
+        Map<String, String> queryName2QueryTemplates = QueryReader.getQueryName2QueryTemplates(configPath + WORKLOAD_DIR);
         logger.info(rb.getString("StartInstantiatingTheQueryPlan"));
         List<ConstraintChain> allConstraintChains = query2constraintChains.values().stream().flatMap(Collection::stream).toList();
         Map<Integer, Parameter> id2Parameter = queryInstantiation(allConstraintChains, Integer.parseInt(samplingSize));
@@ -179,7 +173,7 @@ public class QueryInstantiate implements Callable<Integer> {
         ColumnManager.getInstance().storeColumnDistribution();
         logger.info(rb.getString("PersistentQueryPlanCompleted"));
         logger.info(rb.getString("StartPopulatingTheQueryTemplate"));
-        writeQuery(queryName2QueryTemplates, id2Parameter);
+        QueryWriter.writeQuery(configPath, queryName2QueryTemplates, id2Parameter);
         logger.info(rb.getString("FillInTheQueryTemplateComplete"));
         if (id2Parameter.size() > 0) {
             logger.info(rb.getString("TheParametersThatWereNotSuccessfullyReplaced"), id2Parameter.values());
@@ -194,68 +188,5 @@ public class QueryInstantiate implements Callable<Integer> {
         ConstraintChainManager.getInstance().setResultDir(configPath);
         ColumnManager.getInstance().loadColumnName2IdList();
         query2constraintChains = ConstraintChainManager.loadConstrainChainResult(configPath);
-    }
-
-    public void writeQuery(Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {
-        for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
-            String query = queryName2QueryTemplate.getValue();
-            File queryPath = new File(configPath + QUERIES);
-            if (!queryPath.exists()) {
-                queryPath.mkdir();
-            }
-            String path = configPath + QUERIES + '/' + queryName2QueryTemplate.getKey();
-            List<List<String>> matches = matchPattern(PATTERN, query);
-            if (matches.isEmpty()) {
-                CommonUtils.writeFile(path, query);
-            } else {
-                for (List<String> group : matches) {
-                    int parameterId = Integer.parseInt(group.get(1));
-                    Parameter parameter = id2Parameter.remove(parameterId);
-                    if (parameter != null) {
-                        String parameterData = parameter.getDataValue();
-                        try {
-                            if (parameterData.contains("interval")) {
-                                query = query.replaceAll(group.get(0), String.format("%s", parameterData));
-                            } else {
-                                query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
-                            }
-                        } catch (IllegalArgumentException e) {
-                            logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
-                        }
-                    }
-                    CommonUtils.writeFile(path, query);
-                }
-            }
-        }
-    }
-
-    private Map<String, String> getQueryName2QueryTemplates() throws IOException {
-        String path = configPath + WORKLOAD_DIR;
-        File sqlDic = new File(path);
-        File[] sqlArray = sqlDic.listFiles();
-        assert sqlArray != null;
-        Map<String, String> queryName2QueryTemplates = new HashMap<>();
-        for (File file : sqlArray) {
-            if (!file.isDirectory()) {
-                continue;
-            }
-            File[] eachFile = file.listFiles();
-            assert eachFile != null;
-            for (File sqlTemplate : eachFile) {
-                if (sqlTemplate.getName().contains("Template")) {
-                    String key = sqlTemplate.getName().replace("Template", "");
-                    StringBuilder buffer = new StringBuilder();
-                    try (BufferedReader bf = new BufferedReader(new FileReader(sqlTemplate.getPath()))) {
-                        String s;
-                        while ((s = bf.readLine()) != null) {//使用readLine方法，一次读一行
-                            buffer.append(s.trim()).append("\n");
-                        }
-                    }
-                    String value = buffer.toString();
-                    queryName2QueryTemplates.put(key, value);
-                }
-            }
-        }
-        return queryName2QueryTemplates;
     }
 }

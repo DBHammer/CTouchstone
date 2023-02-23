@@ -6,9 +6,12 @@ import com.alibaba.druid.sql.parser.Lexer;
 import com.alibaba.druid.sql.parser.Token;
 import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.filter.Parameter;
+import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -16,6 +19,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ecnu.db.analyzer.online.adapter.pg.PgAnalyzer.TIME_OR_DATE;
+import static ecnu.db.utils.CommonUtils.matchPattern;
 
 
 /**
@@ -27,6 +31,8 @@ public class QueryWriter {
     private static final Pattern NumberCompute = Pattern.compile("\\d+\\.*\\d* (([+\\-]) \\d+\\.*\\d*)+");
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     private DbType dbType;
+    private static final Pattern PATTERN = Pattern.compile("'Mirage#(\\d+)'");
+    private static final String QUERIES = "/queries";
 
     public void setDbType(DbType dbType) {
         this.dbType = dbType;
@@ -198,6 +204,39 @@ public class QueryWriter {
                 String date = isDate ? "DATE " : " ";
                 ResultSet resultSet = statement.executeQuery("SELECT " + date + str);
                 return resultSet.next() ? "'" + resultSet.getString(1) + "'" : "";
+            }
+        }
+    }
+
+    public static void writeQuery(String configPath, Map<String, String> queryName2QueryTemplates, Map<Integer, Parameter> id2Parameter) throws IOException {
+        for (Map.Entry<String, String> queryName2QueryTemplate : queryName2QueryTemplates.entrySet()) {
+            String query = queryName2QueryTemplate.getValue();
+            File queryPath = new File(configPath + QUERIES);
+            if (!queryPath.exists()) {
+                queryPath.mkdir();
+            }
+            String path = configPath + QUERIES + '/' + queryName2QueryTemplate.getKey();
+            List<List<String>> matches = matchPattern(PATTERN, query);
+            if (matches.isEmpty()) {
+                CommonUtils.writeFile(path, query);
+            } else {
+                for (List<String> group : matches) {
+                    int parameterId = Integer.parseInt(group.get(1));
+                    Parameter parameter = id2Parameter.remove(parameterId);
+                    if (parameter != null) {
+                        String parameterData = parameter.getDataValue();
+                        try {
+                            if (parameterData.contains("interval")) {
+                                query = query.replaceAll(group.get(0), String.format("%s", parameterData));
+                            } else {
+                                query = query.replaceAll(group.get(0), String.format("'%s'", parameterData));
+                            }
+                        } catch (IllegalArgumentException e) {
+                            logger.error("query is " + query + "; group is " + group + "; parameter data is " + parameterData, e);
+                        }
+                    }
+                    CommonUtils.writeFile(path, query);
+                }
             }
         }
     }

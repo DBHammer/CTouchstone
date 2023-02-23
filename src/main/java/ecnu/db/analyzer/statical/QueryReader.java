@@ -74,6 +74,35 @@ public class QueryReader {
         return sqlList;
     }
 
+    public static Map<String, String> getQueryName2QueryTemplates(String path) throws IOException {
+        File sqlDic = new File(path);
+        File[] sqlArray = sqlDic.listFiles();
+        assert sqlArray != null;
+        Map<String, String> queryName2QueryTemplates = new HashMap<>();
+        for (File file : sqlArray) {
+            if (!file.isDirectory()) {
+                continue;
+            }
+            File[] eachFile = file.listFiles();
+            assert eachFile != null;
+            for (File sqlTemplate : eachFile) {
+                if (sqlTemplate.getName().contains("Template")) {
+                    String key = sqlTemplate.getName().replace("Template", "");
+                    StringBuilder buffer = new StringBuilder();
+                    try (BufferedReader bf = new BufferedReader(new FileReader(sqlTemplate.getPath()))) {
+                        String s;
+                        while ((s = bf.readLine()) != null) {//使用readLine方法，一次读一行
+                            buffer.append(s.trim()).append("\n");
+                        }
+                    }
+                    String value = buffer.toString();
+                    queryName2QueryTemplates.put(key, value);
+                }
+            }
+        }
+        return queryName2QueryTemplates;
+    }
+
     public Set<String> getTableName(String sql) throws IllegalQueryTableNameException {
         List<SQLStatement> stmtList = SQLUtils.parseStatements(sql, dbType);
         SQLStatement stmt = stmtList.get(0);
