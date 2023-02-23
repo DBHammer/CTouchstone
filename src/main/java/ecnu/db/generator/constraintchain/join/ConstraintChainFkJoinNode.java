@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.join;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.ConstructCpModel;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
@@ -31,6 +32,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     @JsonIgnore
     private boolean[] joinResultStatus;
 
+    @JsonCreator
     public ConstraintChainFkJoinNode() {
         super(ConstraintChainNodeType.FK_JOIN);
     }
@@ -114,8 +116,9 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         }
         BigDecimal bIndexJoinSize = BigDecimal.valueOf(unFilterSize).multiply(probabilityWithFailFilter);
         long indexJoinSize = bIndexJoinSize.setScale(0, RoundingMode.HALF_UP).longValue();
+        logger.info("indexJoin {} 输入的数据量为:{}, 输出的数据量为:{}, 为第{}个表的第{}个状态",
+                pkTag, unFilterSize, indexJoinSize, joinStatusIndex, joinStatusLocation);
         cpModel.addJoinCardinalityConstraint(indexJoinSize);
-        logger.info("indexJoin输出的数据量为:{}, 为第{}个表的第{}个状态", indexJoinSize, joinStatusIndex, joinStatusLocation);
     }
 
     private long addJoinCardinalityConstraint(ConstructCpModel cpModel, long filterSize, boolean[][] canBeInput) {
@@ -129,10 +132,11 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
             }
         }
         BigDecimal bFilterSize = BigDecimal.valueOf(filterSize).multiply(probability);
-        filterSize = bFilterSize.setScale(0, RoundingMode.HALF_UP).longValue();
-        cpModel.addJoinCardinalityConstraint(filterSize);
-        logger.info("输出的数据量为:{}, 为第{}个表的第{}个状态", filterSize, joinStatusIndex, joinStatusLocation);
-        return filterSize;
+        long joinSize = bFilterSize.setScale(0, RoundingMode.HALF_UP).longValue();
+        logger.info("Join {} 输入的数据量为:{}, 输出的数据量为:{}, 为第{}个表的第{}个状态",
+                pkTag, filterSize, joinSize, joinStatusIndex, joinStatusLocation);
+        cpModel.addJoinCardinalityConstraint(joinSize);
+        return joinSize;
     }
 
     public void addJoinDistinctConstraint(ConstructCpModel cpModel, long filterSize, boolean[][] canBeInput) {
