@@ -1,5 +1,6 @@
 package ecnu.db.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -22,6 +23,7 @@ public class Table {
     @JsonIgnore
     private int joinTag = 0;
 
+    @JsonCreator
     public Table() {
         this.primaryKeys = new ArrayList<>();
     }
@@ -119,7 +121,7 @@ public class Table {
         this.tableSize = tableSize;
     }
 
-    public Map<String, String> getForeignKeys() {
+    public synchronized Map<String, String> getForeignKeys() {
         return foreignKeys;
     }
 
@@ -135,7 +137,7 @@ public class Table {
         return String.join(",", primaryKeys);
     }
 
-    public void setPrimaryKeys(List<String> primaryKeys) {
+    public synchronized void setPrimaryKeys(List<String> primaryKeys) {
         this.primaryKeys = primaryKeys;
     }
 
