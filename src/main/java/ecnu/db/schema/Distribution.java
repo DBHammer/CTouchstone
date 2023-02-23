@@ -298,7 +298,7 @@ public class Distribution {
         }
         // 存储符合CDF的属性值
         if (rangeValues.size() > 1) {
-            int allValueLength = rangeValues.stream().mapToInt(range -> range.length).sum();
+            int allValueLength = rangeValues.stream().mapToInt(v -> v.length).sum();
             long[] attributeData = new long[allValueLength];
             int rangeIndex = 0;
             for (long[] rangeValue : rangeValues) {
