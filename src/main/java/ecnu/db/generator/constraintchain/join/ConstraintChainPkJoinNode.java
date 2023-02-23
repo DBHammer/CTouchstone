@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.join;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
 
@@ -12,6 +13,7 @@ public class ConstraintChainPkJoinNode extends ConstraintChainNode {
     private String[] pkColumns;
     private int pkTag;
 
+    @JsonCreator
     public ConstraintChainPkJoinNode() {
         super(ConstraintChainNodeType.PK_JOIN);
     }

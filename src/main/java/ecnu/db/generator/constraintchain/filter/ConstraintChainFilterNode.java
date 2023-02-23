@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.filter;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
@@ -15,6 +16,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
     private LogicNode root;
     private BigDecimal probability;
 
+    @JsonCreator
     public ConstraintChainFilterNode() {
         super(ConstraintChainNodeType.FILTER);
     }
