@@ -1,5 +1,8 @@
 package ecnu.db.generator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -10,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DataWriter {
 
+    private static final Logger logger = LoggerFactory.getLogger(DataWriter.class);
     String outputPath;
     int generatorId;
 
@@ -28,12 +32,13 @@ public class DataWriter {
         if (!schemaName.equals(lastSchemaName)) {
             File file = new File(outputPath, schemaName + generatorId);
             try {
-                if (!file.exists()) {
-                    file.createNewFile();
+                if (!file.exists() && file.createNewFile()) {
+                    logger.info("创建文件{}", file.getName());
                 }
                 lastBufferedWriter = new BufferedWriter(new FileWriter(file, true));
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                logger.error("写入文件失败{}", schemaName, e);
+                System.exit(-1);
             }
         }
         BufferedWriter finalWriter = lastBufferedWriter;
