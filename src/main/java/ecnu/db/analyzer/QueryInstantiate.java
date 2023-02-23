@@ -76,6 +76,7 @@ public class QueryInstantiate implements Callable<Integer> {
         List<List<AbstractFilterOperation>> boundOperations = new ArrayList<>();
         for (List<AbstractFilterOperation> filterOperation : allFilterOperations) {
             var validOperations = new ArrayList<>(filterOperation.stream()
+                    .filter(node -> node.getOperator().isEqual())
                     .filter(node -> node.getProbability().compareTo(BigDecimal.ONE) != 0)
                     .filter(node -> node.getProbability().compareTo(BigDecimal.ZERO) != 0).toList());
             if (validOperations.size() > 1) {
