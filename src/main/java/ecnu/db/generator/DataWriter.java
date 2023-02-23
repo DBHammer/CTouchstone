@@ -20,8 +20,7 @@ public class DataWriter {
     String lastSchemaName = null;
 
     BufferedWriter lastBufferedWriter = null;
-
-    ExecutorService executorService = Executors.newFixedThreadPool(6);
+    ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
     public DataWriter(String outputPath, int generatorId) {
         this.outputPath = outputPath;
