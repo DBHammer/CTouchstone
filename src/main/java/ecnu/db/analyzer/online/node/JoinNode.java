@@ -1,9 +1,42 @@
 package ecnu.db.analyzer.online.node;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
 public class JoinNode extends ExecutionNode {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        JoinNode joinNode = (JoinNode) o;
+
+        if (antiJoin != joinNode.antiJoin) return false;
+        if (joinTag != joinNode.joinTag) return false;
+        if (rowsRemoveByFilterAfterJoin != joinNode.rowsRemoveByFilterAfterJoin) return false;
+        if (!Objects.equals(output, joinNode.output)) return false;
+        if (!waitSetJoinTag.equals(joinNode.waitSetJoinTag))
+            return false;
+        if (!Objects.equals(pkDistinctProbability, joinNode.pkDistinctProbability))
+            return false;
+        return Objects.equals(indexJoinFilter, joinNode.indexJoinFilter);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (antiJoin ? 1 : 0);
+        result = 31 * result + (output != null ? output.hashCode() : 0);
+        result = 31 * result + waitSetJoinTag.hashCode();
+        result = 31 * result + (pkDistinctProbability != null ? pkDistinctProbability.hashCode() : 0);
+        result = 31 * result + joinTag;
+        result = 31 * result + (int) (rowsRemoveByFilterAfterJoin ^ (rowsRemoveByFilterAfterJoin >>> 32));
+        result = 31 * result + (indexJoinFilter != null ? indexJoinFilter.hashCode() : 0);
+        return result;
+    }
+
     private final boolean antiJoin;
     private final String output;
     private final CountDownLatch waitSetJoinTag = new CountDownLatch(1);

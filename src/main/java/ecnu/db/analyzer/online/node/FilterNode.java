@@ -6,7 +6,6 @@ public class FilterNode extends ExecutionNode {
      */
     private boolean isAdd = false;
     private boolean isIndexScan = false;
-    private String filterInfoWithQuote;
 
     public FilterNode(String id, long outputRows, String info) {
         super(id, ExecutionNodeType.FILTER, outputRows, info);
@@ -27,12 +26,23 @@ public class FilterNode extends ExecutionNode {
     public void setIndexScan(boolean indexScan) {
         isIndexScan = indexScan;
     }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
 
-    public String getFilterInfoWithQuote() {
-        return filterInfoWithQuote;
+        FilterNode that = (FilterNode) o;
+
+        if (isAdd != that.isAdd) return false;
+        return isIndexScan == that.isIndexScan;
     }
 
-    public void setFilterInfoWithQuote(String filterInfoWithQuote) {
-        this.filterInfoWithQuote = filterInfoWithQuote;
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (isAdd ? 1 : 0);
+        result = 31 * result + (isIndexScan ? 1 : 0);
+        return result;
     }
 }

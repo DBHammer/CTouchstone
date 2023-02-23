@@ -48,7 +48,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     private static final Pattern SUB_QUERY = Pattern.compile("(\\()(\\s)*(SELECT)(.+)(FROM)(.+)(\\))");
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
-    public StringBuilder pathForSplit = null;
+    private StringBuilder pathForSplit = null;
 
     public PgAnalyzer() {
         super();
@@ -214,7 +214,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
                     node.setOutputRows(TableManager.getInstance().getTableSize(tableName));
                 } else {
                     node.setIndexScan(true);
-                    node.setFilterInfoWithQuote(transColumnName(removeRedundancy(filterInfo, true)));
                 }
             }
             return node;
