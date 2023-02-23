@@ -26,7 +26,7 @@ public class DataWriter {
 
     public void addWriteTask(String schemaName, StringBuilder[] keyData, String[] attData) {
         if (!schemaName.equals(lastSchemaName)) {
-            File file = new File(outputPath + "/" + schemaName + generatorId);
+            File file = new File(outputPath, schemaName + generatorId);
             try {
                 if (!file.exists()) {
                     file.createNewFile();
