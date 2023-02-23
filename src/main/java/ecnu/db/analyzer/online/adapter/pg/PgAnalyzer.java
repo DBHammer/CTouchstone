@@ -194,9 +194,9 @@ public class PgAnalyzer extends AbstractAnalyzer {
         String planId = path.toString();
         String filterInfo = PgJsonReader.readFilterInfo(path);
         if (filterInfo != null && filterInfo.contains("(NOT (hashed SubPlan")) {
-            Matcher HashSubPlan = HASH_SUB_PLAN.matcher(filterInfo);
+            Matcher hashSubPlan = HASH_SUB_PLAN.matcher(filterInfo);
             int count = 0;
-            while (HashSubPlan.find()) {
+            while (hashSubPlan.find()) {
                 count++;
             }
             if (count == 1) {
@@ -424,7 +424,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         StringBuilder filter = new StringBuilder();
         while (m.find()) {
             String[] tableNameAndColName = m.group().split("\\.");
-            m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0].replaceAll("\"", "")) + "." + tableNameAndColName[1]);
+            m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0].replace("\"", "")) + "." + tableNameAndColName[1]);
         }
         m.appendTail(filter);
         return removeRedundancy(filter.toString(), false);
