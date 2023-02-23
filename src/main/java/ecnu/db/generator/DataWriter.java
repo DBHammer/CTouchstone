@@ -16,9 +16,7 @@ public class DataWriter {
     private static final Logger logger = LoggerFactory.getLogger(DataWriter.class);
     String outputPath;
     int generatorId;
-
     String lastSchemaName = null;
-
     BufferedWriter lastBufferedWriter = null;
     ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
