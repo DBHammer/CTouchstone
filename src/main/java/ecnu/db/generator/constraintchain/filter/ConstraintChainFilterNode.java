@@ -43,8 +43,7 @@ public class ConstraintChainFilterNode extends ConstraintChainNode {
         BigDecimal maxNullProbability = root.getNullProbability();
         for (AbstractFilterOperation operation : operations) {
             // 选在所有概率有效的GT和GE operation
-            if (operation.getProbability().compareTo(BigDecimal.ZERO) > 0 &&
-                    operation.getProbability().compareTo(BigDecimal.ONE) < 0 && operation.getOperator().isBigger()) {
+            if (operation.probabilityValid() && operation.getOperator().isBigger()) {
                 BigDecimal selfNull = operation.getNullProbability();
                 if (maxNullProbability.compareTo(selfNull) > 0) {
                     operation.setProbability(operation.getProbability().add(maxNullProbability).subtract(selfNull));

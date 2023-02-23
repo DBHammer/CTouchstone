@@ -1,5 +1,6 @@
 package ecnu.db.generator.constraintchain.filter.operation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.BoolExprNode;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 
@@ -23,6 +24,7 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
      * 此filter operation的过滤比
      */
     protected BigDecimal probability;
+
     AbstractFilterOperation(CompareOperator operator) {
         this.operator = operator;
     }
@@ -57,6 +59,11 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
             case NE, NOT_LIKE, NOT_IN -> !isReverse;
             case IS_NOT_NULL, ISNULL, RANGE -> throw new UnsupportedOperationException();
         };
+    }
+
+    @JsonIgnore
+    public boolean probabilityValid() {
+        return probability.compareTo(BigDecimal.ZERO) > 0 && probability.compareTo(BigDecimal.ONE) < 0;
     }
 
     public List<Parameter> getParameters() {
