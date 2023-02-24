@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.*;
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.GE;
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.LT;
 
 
 /**
@@ -57,7 +58,7 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
 
     @Override
     public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
-        if (operator != IN && operator != EQ) {
+        if (!operator.isEqual()) {
             return;
         }
         for (Parameter parameter : parameters) {
