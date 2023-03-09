@@ -69,9 +69,11 @@ public class LogicNode extends BoolExprNode {
     }
 
     @Override
-    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
-        if (children.size() == 1 && children.get(0) instanceof UniVarFilterOperation uniVarFilterOperation) {
-            uniVarFilterOperation.getColumn2ParameterBucket(column2Value2ParameterList);
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList, String predicate) {
+        for (BoolExprNode child : children) {
+            if (child instanceof LogicNode || child instanceof UniVarFilterOperation) {
+                child.getColumn2ParameterBucket(column2Value2ParameterList, predicate);
+            }
         }
     }
 
