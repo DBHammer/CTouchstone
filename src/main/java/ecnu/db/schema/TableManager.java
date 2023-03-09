@@ -62,8 +62,13 @@ public class TableManager {
         schemas.put(tableName, schema);
     }
 
-    public String getPrimaryKeys(String tableName) throws CannotFindSchemaException {
-        return getSchema(tableName).getPrimaryKeys();
+    public String getPrimaryKeys(String tableName) {
+        try {
+            return getSchema(tableName).getPrimaryKeys();
+        } catch (CannotFindSchemaException e) {
+            logger.error("找不到表", e);
+            return null;
+        }
     }
 
     public String getRefKey(String localCol) {
