@@ -57,30 +57,14 @@ public class UniVarFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList, String predicate) {
         if (!operator.isEqual()) {
             return;
         }
-        for (Parameter parameter : parameters) {
-            String dataValue = parameter.getDataValue();
-            if (column2Value2ParameterList.containsKey(canonicalColumnName)) {
-                Map<String, List<Integer>> dataValue2ID = column2Value2ParameterList.get(canonicalColumnName);
-                if (dataValue2ID.containsKey(dataValue)) {
-                    List<Integer> idList = dataValue2ID.get(dataValue);
-                    idList.add(parameter.getId());
-                } else {
-                    List<Integer> idList = new ArrayList<>();
-                    idList.add(parameter.getId());
-                    dataValue2ID.put(dataValue, idList);
-                }
-            } else {
-                Map<String, List<Integer>> dataValue2ID = new HashMap<>();
-                List<Integer> idList = new ArrayList<>();
-                idList.add(parameter.getId());
-                dataValue2ID.put(dataValue, idList);
-                column2Value2ParameterList.put(canonicalColumnName, dataValue2ID);
-            }
-        }
+        column2Value2ParameterList.computeIfAbsent(canonicalColumnName, v -> new HashMap<>());
+        column2Value2ParameterList.get(canonicalColumnName).computeIfAbsent(predicate, v -> new ArrayList<>());
+        List<Integer> parameterIds = parameters.stream().mapToInt(Parameter::getId).boxed().toList();
+        column2Value2ParameterList.get(canonicalColumnName).get(predicate).addAll(parameterIds);
     }
 
     @Override

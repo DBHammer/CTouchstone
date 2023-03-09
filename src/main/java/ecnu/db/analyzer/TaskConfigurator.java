@@ -247,7 +247,7 @@ public class TaskConfigurator implements Callable<Integer> {
         for (ConstraintChain constraintChain : constraintChains) {
             ConstraintChainNode node = constraintChain.getNodes().get(0);
             if (node instanceof ConstraintChainFilterNode filterNode) {
-                filterNode.getRoot().getColumn2ParameterBucket(columnName2ParameterID);
+                filterNode.getRoot().getColumn2ParameterBucket(columnName2ParameterID, filterNode.getRoot().toString());
             }
         }
     }

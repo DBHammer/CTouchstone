@@ -59,7 +59,7 @@ public class IsNullFilterOperation extends AbstractFilterOperation {
     }
 
     @Override
-    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList) {
+    public void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList, String predicate) {
         throw new UnsupportedOperationException();
     }
 
