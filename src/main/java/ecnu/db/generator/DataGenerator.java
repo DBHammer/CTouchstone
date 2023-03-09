@@ -14,12 +14,14 @@ import org.jgrapht.Graph;
 import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.nio.dot.DOTExporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
@@ -114,6 +116,11 @@ public class DataGenerator implements Callable<Integer> {
                 lastColName = currentColName;
             }
         }
+        DOTExporter<String, DefaultEdge> dotExporter = new DOTExporter<>(v->v.replace('.', '_'));
+        StringWriter graphDotWriter = new StringWriter();
+        dotExporter.exportGraph(graph, graphDotWriter);
+        String fkDepGraph = graphDotWriter.toString();
+        logger.info("Fk Dep Graph is {}", fkDepGraph);
         List<Set<String>> fkSets = new KosarajuStrongConnectivityInspector<>(graph).stronglyConnectedSets();
         return fkSets.stream().map(fkSet -> fkSet.stream().toList()).toList();
     }
