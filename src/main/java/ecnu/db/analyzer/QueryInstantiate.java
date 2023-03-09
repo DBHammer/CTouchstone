@@ -47,7 +47,7 @@ public class QueryInstantiate implements Callable<Integer> {
     private static void applyUniVarConstraints(List<AbstractFilterOperation> filterOperations) {
         List<UniVarFilterOperation> uniFilters = filterOperations.stream()
                 .filter(UniVarFilterOperation.class::isInstance)
-                .sorted(Comparator.comparing(AbstractFilterOperation::getProbability))
+                .sorted((op1, op2) -> op2.getProbability().compareTo(op1.getProbability()))
                 .map(UniVarFilterOperation.class::cast).toList();
         uniFilters.stream()
                 .filter(uniFilter -> !uniFilter.getOperator().isEqual())
