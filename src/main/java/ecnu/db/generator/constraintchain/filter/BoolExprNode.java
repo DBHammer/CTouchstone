@@ -28,7 +28,7 @@ public abstract class BoolExprNode {
      */
     protected abstract List<AbstractFilterOperation> pushDownProbability(BigDecimal probability);
 
-    public abstract void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList);
+    public abstract void getColumn2ParameterBucket(Map<String, Map<String, List<Integer>>> column2Value2ParameterList, String predicate);
 
     /**
      * 获得当前布尔表达式节点的类型
