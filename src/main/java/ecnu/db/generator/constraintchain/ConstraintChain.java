@@ -7,6 +7,7 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -103,6 +104,47 @@ public class ConstraintChain {
         return nodes.stream().filter(constraintChainNode ->
                         constraintChainNode.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN)
                 .map(ConstraintChainFkJoinNode.class::cast).toList();
+    }
+
+    public void removeInvalidFkJoin(Map<String, List<Integer>> pkTag2InvalidTags) {
+        ConstraintChainNode lastNode = nodes.get(nodes.size() - 1);
+        if (lastNode instanceof ConstraintChainFkJoinNode fkJoinNode) {
+            var tags = pkTag2InvalidTags.get(fkJoinNode.getRefCols());
+            if (tags != null && tags.contains(fkJoinNode.getPkTag())) {
+                nodes.remove(nodes.size() - 1);
+            }
+        }
+    }
+
+    /**
+     * todo deal with multiple pk join
+     * @return invalid pk tag
+     */
+    @JsonIgnore
+    public int getInvalidPkTag() {
+        BigDecimal lastProbability = BigDecimal.ONE;
+        int i;
+        for (i = 0; i < nodes.size(); i++) {
+            if (lastProbability.compareTo(BigDecimal.ZERO) == 0) {
+                break;
+            }
+            ConstraintChainNode node = nodes.get(i);
+            lastProbability = switch (node.constraintChainNodeType) {
+                case FILTER -> ((ConstraintChainFilterNode) node).getProbability();
+                case AGGREGATE -> ((ConstraintChainAggregateNode) node).getAggFilter().getProbability();
+                case FK_JOIN -> ((ConstraintChainFkJoinNode) node).getProbability();
+                case PK_JOIN -> lastProbability;
+            };
+        }
+        int returnTag = -1;
+        List<ConstraintChainNode> removeNodes = nodes.subList(i, nodes.size());
+        for (ConstraintChainNode removeNode : removeNodes) {
+            if (removeNode instanceof ConstraintChainPkJoinNode pkJoinNode) {
+                returnTag = pkJoinNode.getPkTag();
+            }
+        }
+        removeNodes.clear();
+        return returnTag;
     }
 
     public StringBuilder presentConstraintChains(Map<String, SubGraph> subGraphHashMap, String color) {

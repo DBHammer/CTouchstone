@@ -3,6 +3,7 @@ package ecnu.db.generator.constraintchain;
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
+import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +69,19 @@ public class ConstraintChainManager {
      * @param query2chains query和约束链的map
      */
     public void cleanConstrainChains(Map<String, List<ConstraintChain>> query2chains) {
+        Map<String, List<Integer>> pkTag2InvalidTags = new HashMap<>();
+        for (List<ConstraintChain> chains : query2chains.values()) {
+            for (ConstraintChain chain : chains) {
+                String pkCol = TableManager.getInstance().getPrimaryKeys(chain.getTableName());
+                pkTag2InvalidTags.computeIfAbsent(pkCol, v -> new ArrayList<>());
+                int invalidPkTag = chain.getInvalidPkTag();
+                if (invalidPkTag >= 0) {
+                    pkTag2InvalidTags.get(pkCol).add(invalidPkTag);
+                }
+            }
+        }
+        query2chains.values().forEach(constraintChains ->
+                constraintChains.forEach(chain -> chain.removeInvalidFkJoin(pkTag2InvalidTags)));
         for (var query2ConstraintChains : query2chains.entrySet()) {
             Iterator<ConstraintChain> constraintChainIterator = query2ConstraintChains.getValue().iterator();
             while (constraintChainIterator.hasNext()) {
