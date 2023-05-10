@@ -15,6 +15,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Distribution {
     private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.15);
 
+    private static final int MAX_RANGE_DELTA = 100;
+
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
     private final NavigableMap<BigDecimal, List<Parameter>> pvAndPbList = new TreeMap<>();
     private final long range;
@@ -67,7 +69,7 @@ public class Distribution {
             pvAndPbList.putIfAbsent(probability, new ArrayList<>());
             pvAndPbList.get(probability).addAll(parameters);
         } else {
-            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? -1 : range + 1;
+            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? -1 : range + MAX_RANGE_DELTA;
             for (Parameter parameter : parameters) {
                 parameter.setData(dataIndex);
             }
