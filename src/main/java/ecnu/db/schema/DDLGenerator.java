@@ -1,10 +1,12 @@
 package ecnu.db.schema;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.utils.CommonUtils;
 import picocli.CommandLine;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -59,7 +61,7 @@ public class DDLGenerator implements Callable<Integer> {
         StringBuilder importData = new StringBuilder("\\c " + dataBase + ";\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
-            String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM " + "'" + "./data/" + tableName + "0" + "' DELIMITER ',';\n";
+            String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM " + "'" + "./data/" + tableName.split("\\.")[1] + "_0.txt" + "' DELIMITER ',' NULL 'null';\n";
             importData.append(inData);
         }
         CommonUtils.writeFile(this.importData, importData.toString());

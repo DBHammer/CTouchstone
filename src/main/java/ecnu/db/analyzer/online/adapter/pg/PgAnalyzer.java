@@ -62,6 +62,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         if (queryPlan.contains("= subquery")) {
             transformHashJoin2AggForOpenGauss(queryPlan);
         }
+        ExecutionNode a = getExecutionTreeRes(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
         return getExecutionTreeRes(PgJsonReader.skipNodes(PgJsonReader.getRootPath()));
     }
 

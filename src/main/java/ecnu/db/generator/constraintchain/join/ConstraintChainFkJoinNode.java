@@ -154,6 +154,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         long pkSize = bPkSize.setScale(0, RoundingMode.HALF_UP).longValue();
         // 合法性约束，每个pkStatus不能超过提供的数量
         cpModel.addJoinCardinalityConstraint(pkSize);
+        logger.info("JDC:输出的数据量为:{}, 为第{}个表的第{}个状态", filterSize, joinStatusIndex, joinStatusLocation);
     }
 
     public long addJoinCardinalityConstraint(ConstructCpModel cpModel, long filterSize, long unFilerSize, boolean[][] canBeInput) {

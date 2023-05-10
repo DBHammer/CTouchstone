@@ -17,6 +17,11 @@ import java.util.List;
 @JsonPropertyOrder({"columnType", "nullPercentage", "specialValue", "min", "range", "minLength", "rangeLength", "originalType"})
 public class Column {
     private ColumnType columnType;
+
+    public void setColumnType(ColumnType columnType) {
+        this.columnType = columnType;
+    }
+
     private long min;
     private String originalType;
     private long range;

@@ -133,6 +133,30 @@ public abstract class DbConnector {
         }
     }
 
+    public int getSqlResult(String sql) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
+    public List<String[]> getQueryPlan(String sql) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            String explanSql = "explain (analyse,summary false,timing false ,costs false ) " + sql;
+            ResultSet rs = stmt.executeQuery(explanSql);
+            ArrayList<String[]> result = new ArrayList<>();
+            while (rs.next()) {
+                String[] infos = new String[sqlInfoColumns.length];
+                for (int i = 0; i < sqlInfoColumns.length; i++) {
+                    infos[i] = rs.getString(sqlInfoColumns[i]);
+                }
+                result.add(formatQueryPlan(infos));
+            }
+            return result;
+        }
+    }
+
     public List<String[]> explainQuery(Map.Entry<String, String> tableNameAndFilterInfo) throws SQLException {
         return explainQuery(String.format("SELECT COUNT(*) FROM %s WHERE %s;",
                 tableNameAndFilterInfo.getKey(), tableNameAndFilterInfo.getValue()));

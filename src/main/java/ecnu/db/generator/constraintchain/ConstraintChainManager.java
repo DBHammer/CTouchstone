@@ -111,7 +111,8 @@ public class ConstraintChainManager {
             } else {
                 String oldGraph = Files.readString(Paths.get(path));
                 String graph = presentConstraintChains(stringListEntry.getKey(), stringListEntry.getValue());
-                if (removeData(graph).equals(removeData(oldGraph))) {
+                CommonUtils.writeFile(path, graph);
+                /*if (removeData(graph).equals(removeData(oldGraph))) {
                     CommonUtils.writeFile(path, graph);
                 } else {
                     Calendar date = Calendar.getInstance();
@@ -120,7 +121,7 @@ public class ConstraintChainManager {
                     String newPath = resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0] + "/" + currentTime + stringListEntry.getKey() + ".dot";
                     CommonUtils.writeFile(newPath + "", graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());
-                }
+                }*/
             }
         }
     }
@@ -140,7 +141,8 @@ public class ConstraintChainManager {
 
 
     private String removeData(String graph) {
-        String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
+        //String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
+        String newGraph = graph;
         newGraph = newGraph.replaceAll("key[0-9]+", "key");
         newGraph = newGraph.replaceAll("color=\"#[F|C]+\"", "color");
         return newGraph;

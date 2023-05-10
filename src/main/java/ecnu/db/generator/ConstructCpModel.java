@@ -43,6 +43,9 @@ public class ConstructCpModel {
             }
             return rowCountForEachStatus;
         } else {
+            for (ConstraintProto constraintProto : model.model().getConstraintsList()) {
+                System.out.println(constraintProto.toString());
+            }
             throw new UnsupportedOperationException("No solution found.");
         }
     }

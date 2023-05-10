@@ -131,16 +131,26 @@ public class FkGenerator {
         if (involvedChainIndexes.length == 0) {
             return new long[0][0];
         }
+        long start5 = System.currentTimeMillis();
         JoinStatus[] involvedStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
                 .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, involvedChainIndexes)).toArray(JoinStatus[]::new);
         SortedMap<JoinStatus, Long> statusHistogram = generateStatusHistogram(involvedStatuses);
         int range = statusVectorOfEachRow.length;
+        long start2 = System.currentTimeMillis();
         ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
+        DataGenerator.constructCP += System.currentTimeMillis() - start5;
+        // construct cp
+        //Solve CP
+        long start3 = System.currentTimeMillis();
         long[][] populateSolution = cpModel.solve();
         Map<Integer, FkRange[][]> fkIndex2Range = new HashMap<>();
         for (Integer fkIndex : distinctFkIndex2Cardinality.keySet()) {
             fkIndex2Range.put(fkIndex, cpModel.getDistinctResult(fkIndex));
         }
+        DataGenerator.solveCP += System.currentTimeMillis() - start3;
+        // Solve CP
+        //Populate key
+        long start4 = System.currentTimeMillis();
         HashMap<JoinStatus, Integer> status2Index = new HashMap<>();
         int i = 0;
         for (JoinStatus joinStatus : statusHistogram.keySet()) {
@@ -196,6 +206,8 @@ public class FkGenerator {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        DataGenerator.populateKey += System.currentTimeMillis() - start4;
+        //Populate key
 
         // 计算每一行数据的输出状态
         int chainSize = statusVectorOfEachRow[0].length;

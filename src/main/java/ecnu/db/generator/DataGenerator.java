@@ -39,6 +39,8 @@ public class DataGenerator implements Callable<Integer> {
     private int generatorNum;
     @CommandLine.Option(names = {"-l", "--step_size"}, description = "the size of each batch", defaultValue = "7000000")
     private int stepSize;
+    @CommandLine.Option(names = {"-t", "--thread_num"}, description = "the thread num of generator", defaultValue = "16")
+    private int threadNum;
 
     private Map<String, List<ConstraintChain>> schema2chains;
 
@@ -53,6 +55,7 @@ public class DataGenerator implements Callable<Integer> {
 
     // 下一次batch需要推进的range
     private long stepRange;
+
     private static Map<String, List<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
         Map<String, List<ConstraintChain>> schema2chains = new HashMap<>();
         for (List<ConstraintChain> chains : query2chains.values()) {
@@ -65,6 +68,19 @@ public class DataGenerator implements Callable<Integer> {
         }
         return schema2chains;
     }
+
+    public static long populateKey = 0;
+
+    public static long solveCP = 0;
+
+    public static long generate = 0;
+
+    public static long transferTime = 0;
+
+    public static long populatePk = 0;
+    public static long generateView = 0;
+
+    public static long constructCP = 0;
 
     private void init() throws IOException {
         //载入schema配置文件
@@ -182,7 +198,7 @@ public class DataGenerator implements Callable<Integer> {
     private void generateFksNoConstraints(Map<String, long[]> fkCol2Values, SortedMap<String, Long> allFk2TableSize, int range) {
         for (Map.Entry<String, Long> fk2TableSize : allFk2TableSize.entrySet()) {
             if (!fkCol2Values.containsKey(fk2TableSize.getKey())) {
-                long[] fks = ThreadLocalRandom.current().longs(range, 1, fk2TableSize.getValue()+1).toArray();
+                long[] fks = ThreadLocalRandom.current().longs(range, 1, fk2TableSize.getValue() + 1).toArray();
                 fkCol2Values.put(fk2TableSize.getKey(), fks);
             }
         }
@@ -215,6 +231,7 @@ public class DataGenerator implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", String.valueOf(threadNum));
         init();
         long start = System.currentTimeMillis();
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
@@ -249,11 +266,19 @@ public class DataGenerator implements Callable<Integer> {
             // 开始生成
             while (batchStart < tableSize) {
                 int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
-                ColumnManager.getInstance().prepareGeneration(range);
+                //生成属性列数据
+                long start1 = System.currentTimeMillis();
+                ColumnManager.getInstance().prepareGeneration(range);//generate统计
+                generate += (System.currentTimeMillis() - start1);
+                // 生成每一行的视图
+                long start5 = System.currentTimeMillis();
                 boolean[][] statusVectorOfEachRow = generateStatusViewOfEachRow(allChains, range);
+                generateView += System.currentTimeMillis() - start5;
                 Map<String, long[]> fkCol2Values = generateFks(statusVectorOfEachRow, fkGenerators, fkGroups);
                 generateFksNoConstraints(fkCol2Values, allFk2TableSize, range);
+                long startNew = System.currentTimeMillis();
                 StringBuilder[] keyData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, range, pkName);
+                populatePk += System.currentTimeMillis() - startNew;
                 IntStream.range(0, keyData.length).parallel().forEach(index -> {
                     StringBuilder row = keyData[index];
                     for (long[] fks : fkCol2Values.values()) {
@@ -266,15 +291,25 @@ public class DataGenerator implements Callable<Integer> {
                     }
                 });
                 //转换为字符串准备输出
+                long start2 = System.currentTimeMillis();
                 String[] data = ColumnManager.getInstance().generateAttRows(range);
+                transferTime += (System.currentTimeMillis() - start2);
                 dataWriter.addWriteTask(schemaName, keyData, data);
                 batchStart += range + stepRange;
             }
         }
+
+        logger.info("ge:{}", generate);
+        logger.info("tr:{}", transferTime);
+        logger.info("gv:{}", generateView);
+        logger.info("cc:{}", constructCP);
+        logger.info("sc:{}", solveCP);
+        logger.info("pk:{}", populateKey);
+        logger.info("pp:{}", populatePk);
+        logger.info("总用时:{}", System.currentTimeMillis() - start);
         if (dataWriter.waitWriteFinish()) {
             logger.info("输出表数据完成");
         }
-        logger.info("总用时:{}", System.currentTimeMillis() - start);
         return 0;
     }
 }
