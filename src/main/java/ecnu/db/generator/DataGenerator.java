@@ -39,6 +39,8 @@ public class DataGenerator implements Callable<Integer> {
     private int generatorNum;
     @CommandLine.Option(names = {"-l", "--step_size"}, description = "the size of each batch", defaultValue = "7000000")
     private int stepSize;
+    /*@CommandLine.Option(names = {"-t", "--thread_num"}, description = "the thread num", defaultValue = "8")
+    private String threadNum;*/
 
     private Map<String, List<ConstraintChain>> schema2chains;
 
@@ -53,6 +55,7 @@ public class DataGenerator implements Callable<Integer> {
 
     // 下一次batch需要推进的range
     private long stepRange;
+
     private static Map<String, List<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
         Map<String, List<ConstraintChain>> schema2chains = new HashMap<>();
         for (List<ConstraintChain> chains : query2chains.values()) {
@@ -76,6 +79,7 @@ public class DataGenerator implements Callable<Integer> {
 
     public static long populatePk = 0;
     public static long generateView = 0;
+
     private void init() throws IOException {
         //载入schema配置文件
         TableManager.getInstance().setResultDir(configPath);
@@ -192,7 +196,7 @@ public class DataGenerator implements Callable<Integer> {
     private void generateFksNoConstraints(Map<String, long[]> fkCol2Values, SortedMap<String, Long> allFk2TableSize, int range) {
         for (Map.Entry<String, Long> fk2TableSize : allFk2TableSize.entrySet()) {
             if (!fkCol2Values.containsKey(fk2TableSize.getKey())) {
-                long[] fks = ThreadLocalRandom.current().longs(range, 1, fk2TableSize.getValue()+1).toArray();
+                long[] fks = ThreadLocalRandom.current().longs(range, 1, fk2TableSize.getValue() + 1).toArray();
                 fkCol2Values.put(fk2TableSize.getKey(), fks);
             }
         }
@@ -225,6 +229,7 @@ public class DataGenerator implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+        //System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", threadNum);
         init();
         long start = System.currentTimeMillis();
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {

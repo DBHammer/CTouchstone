@@ -131,6 +131,7 @@ public class FkGenerator {
         if (involvedChainIndexes.length == 0) {
             return new long[0][0];
         }
+        long start2 = System.currentTimeMillis();
         JoinStatus[] involvedStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
                 .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, involvedChainIndexes)).toArray(JoinStatus[]::new);
         SortedMap<JoinStatus, Long> statusHistogram = generateStatusHistogram(involvedStatuses);
@@ -141,6 +142,8 @@ public class FkGenerator {
         for (Integer fkIndex : distinctFkIndex2Cardinality.keySet()) {
             fkIndex2Range.put(fkIndex, cpModel.getDistinctResult(fkIndex));
         }
+        DataGenerator.solveCP += System.currentTimeMillis() - start2;
+        long start4 = System.currentTimeMillis();
         HashMap<JoinStatus, Integer> status2Index = new HashMap<>();
         int i = 0;
         for (JoinStatus joinStatus : statusHistogram.keySet()) {
@@ -196,7 +199,7 @@ public class FkGenerator {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
+        DataGenerator.populateKey += System.currentTimeMillis() - start4;
         // 计算每一行数据的输出状态
         int chainSize = statusVectorOfEachRow[0].length;
         IntStream.range(0, statusVectorOfEachRow.length).parallel().forEach(rowId -> {
