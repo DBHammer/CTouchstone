@@ -66,6 +66,16 @@ public class DataGenerator implements Callable<Integer> {
         return schema2chains;
     }
 
+    public static long populateKey = 0;
+
+    public static long solveCP = 0;
+
+    public static long generate = 0;
+
+    public static long transferTime = 0;
+
+    public static long populatePk = 0;
+    public static long generateView = 0;
     private void init() throws IOException {
         //载入schema配置文件
         TableManager.getInstance().setResultDir(configPath);
@@ -249,11 +259,17 @@ public class DataGenerator implements Callable<Integer> {
             // 开始生成
             while (batchStart < tableSize) {
                 int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
+                long start1 = System.currentTimeMillis();
                 ColumnManager.getInstance().prepareGeneration(range);
+                generate += (System.currentTimeMillis() - start1);
+                long start5 = System.currentTimeMillis();
                 boolean[][] statusVectorOfEachRow = generateStatusViewOfEachRow(allChains, range);
+                generateView += System.currentTimeMillis() - start5;
                 Map<String, long[]> fkCol2Values = generateFks(statusVectorOfEachRow, fkGenerators, fkGroups);
                 generateFksNoConstraints(fkCol2Values, allFk2TableSize, range);
+                long startNew = System.currentTimeMillis();
                 StringBuilder[] keyData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, range, pkName);
+                populatePk += System.currentTimeMillis() - startNew;
                 IntStream.range(0, keyData.length).parallel().forEach(index -> {
                     StringBuilder row = keyData[index];
                     for (long[] fks : fkCol2Values.values()) {
@@ -266,15 +282,24 @@ public class DataGenerator implements Callable<Integer> {
                     }
                 });
                 //转换为字符串准备输出
+                long start2 = System.currentTimeMillis();
                 String[] data = ColumnManager.getInstance().generateAttRows(range);
+                transferTime += (System.currentTimeMillis() - start2);
                 dataWriter.addWriteTask(schemaName, keyData, data);
                 batchStart += range + stepRange;
             }
         }
+        logger.info("ge:{}", generate);
+        logger.info("tr:{}", transferTime);
+        logger.info("gv:{}", generateView);
+        logger.info("sc:{}", solveCP);
+        logger.info("pk:{}", populateKey);
+        logger.info("pp:{}", populatePk);
+        logger.info("总用时:{}", System.currentTimeMillis() - start);
         if (dataWriter.waitWriteFinish()) {
             logger.info("输出表数据完成");
         }
-        logger.info("总用时:{}", System.currentTimeMillis() - start);
+        //logger.info("总用时:{}", System.currentTimeMillis() - start);
         return 0;
     }
 }
