@@ -45,6 +45,10 @@ public abstract class AbstractFilterOperation extends BoolExprNode {
         return chain;
     }
 
+    @Override
+    public void randomMoveRangePredicate() {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public void reverse() {

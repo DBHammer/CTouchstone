@@ -56,6 +56,12 @@ public abstract class BoolExprNode {
      */
     public abstract void reverse();
 
+
+    /**
+     * 如果一个and算子下被实例化的是range算子的一部分，则对其随机平移减少选择数据的过度集中
+     */
+    public abstract void randomMoveRangePredicate();
+
     /**
      * 获取该filter条件中的所有列名
      *

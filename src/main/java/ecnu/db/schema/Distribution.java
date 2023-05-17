@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Distribution {
-    private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.15);
+    private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.2);
 
     private static final int MAX_RANGE_DELTA = 100;
 
@@ -76,37 +76,51 @@ public class Distribution {
         }
     }
 
-    private BigDecimal subReuse(List<Integer> containIdList, BigDecimal probability, Parameter parameter) {
-        for (Integer paraId : containIdList) {
-            for (Map.Entry<BigDecimal, List<Parameter>> pb2pvList : pvAndPbList.entrySet()) {
-                for (Parameter assignParameter : pb2pvList.getValue()) {
-                    if (Objects.equals(assignParameter.getId(), paraId)) {
-                        pb2pvList.getValue().add(parameter);
-                        return probability.subtract(getRange(pb2pvList.getKey()));
-                    }
-                }
-            }
-        }
-        return probability;
-    }
-
-    public BigDecimal reusePb(List<Parameter> tempParameterList, BigDecimal probability) {
-        var parIter = tempParameterList.iterator();
-        while (parIter.hasNext()) {
-            Parameter parameter = parIter.next();
+    public BigDecimal reusePb(List<Parameter> constraintParameterList, BigDecimal probability) {
+        List<Parameter> reusedParameters = new ArrayList<>();
+        for (Parameter parameter : constraintParameterList) {
             int id = parameter.getId();
-            List<Integer> containIdList = idList.stream().filter(list -> list.contains(id)).findAny().orElse(null);
+            List<Integer> containIdList = idList.stream()
+                    .filter(list -> list.contains(id)).findAny().orElse(null);
+            AbstractMap.SimpleEntry<BigDecimal, List<Parameter>> maxRange2ParameterList = null;
+            BigDecimal finalProbability = probability;
             if (containIdList != null) {
-                BigDecimal tempProbability = subReuse(containIdList, probability, parameter);
-                if (tempProbability.compareTo(probability) < 0) {
-                    probability = tempProbability;
-                    parIter.remove();
-                }
-                if (BigDecimal.ZERO.compareTo(probability) == 0) {
-                    break;
+                maxRange2ParameterList = pvAndPbList.entrySet().stream()
+                        // 找到含有这个bucket的桶
+                        .filter(entry -> entry.getValue().stream().anyMatch(p -> containIdList.contains(p.getId())))
+                        // 将这些桶转换为bucket space 2 parameterList
+                        .map(entry -> new AbstractMap.SimpleEntry<>(getRange(entry.getKey()), entry.getValue()))
+                        // 保留range比当前的需求要小的桶
+                        .filter(range2ParameterList -> range2ParameterList.getKey().compareTo(finalProbability) <= 0)
+                        // 找到最大的range
+                        .max(Map.Entry.comparingByKey()).orElse(null);
+            }
+            if (maxRange2ParameterList == null && probability.compareTo(reuseEqProbabilityLimit) > 0) {
+                maxRange2ParameterList = pvAndPbList.entrySet().stream()
+                        // 将这些桶转换为bucket space 2 parameterList
+                        .map(entry -> new AbstractMap.SimpleEntry<>(getRange(entry.getKey()), entry.getValue()))
+                        // 保留range比当前的需求要小的桶
+                        .filter(range2ParameterList -> range2ParameterList.getKey().compareTo(finalProbability) <= 0)
+                        // 找到最大的range
+                        .max(Map.Entry.comparingByKey()).orElse(null);
+            }
+            if (maxRange2ParameterList != null) {
+                // 当前有多个参数没有重用
+                boolean remainingParameterIsMultiple = constraintParameterList.size() - reusedParameters.size() > 1;
+                // 重用概率完全一致
+                boolean wholeCover = maxRange2ParameterList.getKey().compareTo(probability) == 0;
+                if (remainingParameterIsMultiple || wholeCover) {
+                    maxRange2ParameterList.getValue().add(parameter);
+                    reusedParameters.add(parameter);
+                    probability = probability.subtract(maxRange2ParameterList.getKey());
                 }
             }
+            // 如果概率为0，则不需要继续重用了
+            if (probability.compareTo(BigDecimal.ZERO) == 0) {
+                break;
+            }
         }
+        constraintParameterList.removeAll(reusedParameters);
         return probability;
     }
 
@@ -126,23 +140,6 @@ public class Distribution {
                     parameters.stream().mapToInt(Parameter::getId).boxed().toList(), error);
         }
     }
-
-
-    private boolean canBeReused(List<Parameter> parameters, BigDecimal probability) {
-        boolean status = true;
-        for (Parameter parameter : parameters) {
-            for (List<Integer> integers : idList) {
-                if (integers.contains(parameter.getId())) {
-                    status = false;
-                }
-            }
-        }
-        if (!isNonEqualRange(parameters) && probability.compareTo(reuseEqProbabilityLimit) <= 0) {
-            status = false;
-        }
-        return status;
-    }
-
 
     private void insertEqualProbability(BigDecimal probability, List<Parameter> parameters) throws TouchstoneException {
         adjustNullPercentage(probability, parameters);
@@ -167,20 +164,14 @@ public class Distribution {
         BigDecimal minCDF = BigDecimal.ZERO;
         for (var currentCDF : pvAndPbList.entrySet()) {
             BigDecimal currentRange = getRange(currentCDF.getKey());
-            // 当前空间可以被完全利用
-            if (currentRange.compareTo(probability) == 0 && canBeReused(currentCDF.getValue(), probability)) {
-                currentCDF.getValue().addAll(tempParameterList);
-                return;
-            } else {
-                // 找到可以放置的最小空间
-                boolean enoughCapacity = currentRange.compareTo(probability) > 0;
-                boolean isMinRange = minRange.compareTo(currentRange) > 0;
-                // 如果cdf中包含等值的参数 则该range为一个等值的range，不可分割
-                boolean isNonEqualRange = isNonEqualRange(currentCDF.getValue());
-                if (enoughCapacity && isMinRange && isNonEqualRange) {
-                    minRange = currentRange;
-                    minCDF = currentCDF.getKey();
-                }
+            // 找到可以放置的最小空间
+            boolean enoughCapacity = currentRange.compareTo(probability) > 0;
+            boolean isMinRange = minRange.compareTo(currentRange) > 0;
+            // 如果cdf中包含等值的参数 则该range为一个等值的range，不可分割
+            boolean isNonEqualRange = isNonEqualRange(currentCDF.getValue());
+            if (enoughCapacity && isMinRange && isNonEqualRange) {
+                minRange = currentRange;
+                minCDF = currentCDF.getKey();
             }
         }
         // 如果没有找到

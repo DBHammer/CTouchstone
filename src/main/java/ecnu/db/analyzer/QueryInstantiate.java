@@ -36,12 +36,24 @@ public class QueryInstantiate implements Callable<Integer> {
     private static final String WORKLOAD_DIR = "/workload";
 
     private static List<List<AbstractFilterOperation>> pushDownProbability(List<ConstraintChain> constraintChains) {
-        return constraintChains.stream()
+        List<ConstraintChainFilterNode> filterNodes = constraintChains.stream()
                 .map(ConstraintChain::getNodes)
                 .flatMap(Collection::stream)
                 .filter(ConstraintChainFilterNode.class::isInstance)
                 .map(ConstraintChainFilterNode.class::cast)
-                .map(ConstraintChainFilterNode::pushDownProbability).toList();
+                .toList();
+
+        List<List<AbstractFilterOperation>> operations = new ArrayList<>();
+
+        for (ConstraintChainFilterNode filterNode : filterNodes) {
+            if (filterNode.getRoot().isRangePredicate()) {
+                operations.add(filterNode.getRoot().getRangeOperations());
+            } else {
+                operations.add(filterNode.pushDownProbability());
+                filterNode.getRoot().randomMoveRangePredicate();
+            }
+        }
+        return operations;
     }
 
     private static void applyUniVarConstraints(List<AbstractFilterOperation> filterOperations) {

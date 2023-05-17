@@ -2,13 +2,13 @@ package ecnu.db.generator.constraintchain.filter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ecnu.db.generator.constraintchain.filter.operation.AbstractFilterOperation;
+import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.generator.constraintchain.filter.operation.UniVarFilterOperation;
+import ecnu.db.schema.ColumnManager;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static ecnu.db.generator.constraintchain.filter.BoolExprType.AND;
@@ -59,7 +59,7 @@ public class LogicNode extends BoolExprNode {
             }
         }
         if (allTrue && probability.compareTo(BigDecimal.ONE) < 0) {
-            int index = onlyNoEqlOperations.isEmpty() ? 0 : onlyNoEqlOperations.remove(0);
+            int index = onlyNoEqlOperations.isEmpty() ? children.size() - 1 : onlyNoEqlOperations.remove(0);
             operationsOfTrees.set(index, children.get(index).pushDownProbability(probability));
         }
         if (hasReverse) {
@@ -124,6 +124,58 @@ public class LogicNode extends BoolExprNode {
     }
 
     @JsonIgnore
+    public boolean isRangePredicate() {
+        // range predicate的条件为2个1UCC
+        if (type != AND) {
+            return false;
+        }
+        if (children.size() == 1 && children.get(0) instanceof LogicNode logicNode && logicNode.type == AND) {
+            return logicNode.isRangePredicate();
+        } else if (children.size() == 2 && children.stream().allMatch(UniVarFilterOperation.class::isInstance)) {
+            List<UniVarFilterOperation> uniVarFilterOperations = children.stream()
+                    .map(UniVarFilterOperation.class::cast).collect(Collectors.toList());
+            // 两个UCC的列名必须一致
+            if (uniVarFilterOperations.get(0).getCanonicalColumnName().equals(uniVarFilterOperations.get(1).getCanonicalColumnName()) &&
+                    //2个UCC不能包含等值操作符
+                    uniVarFilterOperations.stream().map(AbstractFilterOperation::getOperator).noneMatch(CompareOperator::isEqual)) {
+                // 如果后一个为>符号则交换
+                if (uniVarFilterOperations.get(1).getOperator().isBigger()) {
+                    Collections.swap(children, 0, 1);
+                    Collections.swap(uniVarFilterOperations, 0, 1);
+                }
+                // 交换后应该为小于号
+                return !uniVarFilterOperations.get(1).getOperator().isBigger();
+            }
+        }
+        return false;
+    }
+
+    @JsonIgnore
+    public List<AbstractFilterOperation> getRangeOperations() {
+        LogicNode logicNode = (LogicNode) children.get(0);
+        return logicNode.children.stream().map(AbstractFilterOperation.class::cast).toList();
+    }
+
+    @JsonIgnore
+    public String generateRangeRightBoundPredicate() {
+        LogicNode logicNode = (LogicNode) children.get(0);
+        return logicNode.children.get(1).toString();
+    }
+
+    @JsonIgnore
+    public void setRangeProbability(BigDecimal rangeProbability, BigDecimal rightBoundProbability) {
+        LogicNode logicNode = (LogicNode) children.get(0);
+        List<BoolExprNode> rangeOperations = logicNode.children;
+        String columnName = ((UniVarFilterOperation) rangeOperations.get(0)).getCanonicalColumnName();
+        BigDecimal nullProbability = ColumnManager.getInstance().getNullPercentage(columnName);
+        BigDecimal validProbability = BigDecimal.ONE.subtract(nullProbability);
+        BigDecimal leftLessThanBound = rightBoundProbability.subtract(rangeProbability);
+        BigDecimal leftBoundProbability = validProbability.subtract(leftLessThanBound);
+        rangeOperations.get(0).pushDownProbability(leftBoundProbability);
+        rangeOperations.get(1).pushDownProbability(rightBoundProbability);
+    }
+
+    @JsonIgnore
     @Override
     public List<Parameter> getParameters() {
         return children.stream().map(BoolExprNode::getParameters).flatMap(Collection::stream).toList();
@@ -182,6 +234,63 @@ public class LogicNode extends BoolExprNode {
         }
         for (BoolExprNode child : children) {
             child.reverse();
+        }
+    }
+
+    private void randomMoveOperations(List<UniVarFilterOperation> operationWithProbability) {
+        // 如果只有一个operation，则不需要移动range
+        if (operationWithProbability.size() == 1) {
+            return;
+        }
+        UniVarFilterOperation validOperation = operationWithProbability.stream().
+                filter(AbstractFilterOperation::probabilityValid).findFirst().orElse(null);
+        if (validOperation == null) {
+            throw new IllegalStateException();
+        }
+        boolean isBigger = validOperation.getOperator().isBigger();
+        // 找到operation操作符与其相反的其他operation
+        List<UniVarFilterOperation> pairOperations = operationWithProbability.stream()
+                .filter(operation -> operation.getOperator().isBigger() != isBigger).toList();
+        // 如果不存在则返回
+        if (pairOperations.isEmpty()) {
+            return;
+        }
+        // 随机移动range
+        BigDecimal nullProbability = ColumnManager.getInstance().getNullPercentage(validOperation.getCanonicalColumnName());
+        double remainingBound = BigDecimal.ONE.subtract(nullProbability).subtract(validOperation.getProbability()).doubleValue();
+        remainingBound = Math.min(0.5, remainingBound);
+        BigDecimal moveProbability = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(remainingBound));
+        validOperation.setProbability(validOperation.getProbability().add(moveProbability));
+        BigDecimal boundProbability = BigDecimal.ONE.subtract(nullProbability).subtract(moveProbability);
+        for (UniVarFilterOperation pairOperation : pairOperations) {
+            if (pairOperation.getProbability().compareTo(BigDecimal.ONE) != 0) {
+                throw new IllegalStateException();
+            }
+            pairOperation.setProbability(boundProbability);
+        }
+    }
+
+    @Override
+    public void randomMoveRangePredicate() {
+        if (type == AND) {
+            // 按照列名对一元的operation分组
+            Map<String, List<UniVarFilterOperation>> columnName2Operation = children.stream()
+                    .filter(UniVarFilterOperation.class::isInstance).map(UniVarFilterOperation.class::cast)
+                    .filter(uniVarFilterOperation -> !uniVarFilterOperation.getOperator().isEqual())
+                    .collect(Collectors.groupingBy(UniVarFilterOperation::getCanonicalColumnName));
+            // 找到有概率约束的组
+            List<List<UniVarFilterOperation>> validOperations = columnName2Operation.values().stream()
+                    .filter(operations -> operations.stream().anyMatch(AbstractFilterOperation::probabilityValid)).toList();
+            if (validOperations.isEmpty()) {
+                children.stream().filter(LogicNode.class::isInstance).map(LogicNode.class::cast)
+                        .forEach(LogicNode::randomMoveRangePredicate);
+            } else if (validOperations.size() == 1) {
+                randomMoveOperations(validOperations.get(0));
+            } else {
+                throw new IllegalStateException();
+            }
+        } else if (type != OR) {
+            throw new UnsupportedOperationException();
         }
     }
 
