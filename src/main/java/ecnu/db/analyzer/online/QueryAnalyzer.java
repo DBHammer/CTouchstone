@@ -286,7 +286,13 @@ public class QueryAnalyzer {
                     int rowsAfterFilter = dbConnector.getRowsAfterFilter(filterNode.getTableName(), result.toString());
                     filterNode.setOutputRows(rowsAfterFilter);
                 }
-                BigDecimal ratio = computeFilterProbability(filterNode.getOutputRows(), TableManager.getInstance().getTableSize(filterNode.getTableName()));
+                long tableSize = TableManager.getInstance().getTableSize(filterNode.getTableName());
+                BigDecimal ratio = computeFilterProbability(filterNode.getOutputRows(), tableSize);
+                if (result.isRangePredicate()) {
+                    String predicate = result.generateRangeRightBoundPredicate();
+                    int count = dbConnector.getRowsAfterFilter(headNode.getTableName(), predicate);
+                    result.setRangeProbability(ratio, computeFilterProbability(count, tableSize));
+                }
                 constraintChain.addNode(new ConstraintChainFilterNode(ratio, result));
             }
             lastNodeLineCount = filterNode.getOutputRows();
