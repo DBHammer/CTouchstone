@@ -39,7 +39,6 @@ public class FkGenerator {
 
     private final MergedRuleTable[] ruleTables;
 
-
     FkGenerator(List<ConstraintChain> fkConstrainChains, List<String> fkGroup, long tableSize) {
         this.tableSize = tableSize;
         List<Integer> involvedChainIndexesList = new ArrayList<>();
@@ -147,10 +146,19 @@ public class FkGenerator {
         // 统计每种状态的数据量
         if (involvedChainIndexes.length == 0) {
             return new long[0][0];
+        } else {
+            logger.info("总计需要处理{}条约束链", involvedChainIndexes.length);
+            for (JoinStatus[] pkStatus : jointPkStatus) {
+                String rowStatus = Arrays.stream(pkStatus).map(JoinStatus::toString).collect(Collectors.joining(","));
+                logger.debug("参照主键状态表为:{}", rowStatus);
+            }
         }
         JoinStatus[] involvedStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
                 .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, involvedChainIndexes)).toArray(JoinStatus[]::new);
         SortedMap<JoinStatus, Long> statusHistogram = generateStatusHistogram(involvedStatuses);
+        for (JoinStatus involvedStatus : statusHistogram.keySet()) {
+            logger.debug("输入状态表为:{}", involvedStatus);
+        }
         int range = statusVectorOfEachRow.length;
         ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
         long[][] populateSolution = cpModel.solve();
