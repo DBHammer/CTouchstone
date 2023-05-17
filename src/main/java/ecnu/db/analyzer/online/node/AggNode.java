@@ -32,7 +32,9 @@ public class AggNode extends ExecutionNode {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + aggFilter.hashCode();
+        if (aggFilter != null) {
+            result = 31 * result + aggFilter.hashCode();
+        }
         return result;
     }
 }
