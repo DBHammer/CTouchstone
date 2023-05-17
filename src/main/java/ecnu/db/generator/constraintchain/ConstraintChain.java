@@ -118,6 +118,7 @@ public class ConstraintChain {
 
     /**
      * todo deal with multiple pk join
+     *
      * @return invalid pk tag
      */
     @JsonIgnore
@@ -131,7 +132,14 @@ public class ConstraintChain {
             ConstraintChainNode node = nodes.get(i);
             lastProbability = switch (node.constraintChainNodeType) {
                 case FILTER -> ((ConstraintChainFilterNode) node).getProbability();
-                case AGGREGATE -> ((ConstraintChainAggregateNode) node).getAggFilter().getProbability();
+                case AGGREGATE -> {
+                    ConstraintChainFilterNode filterNode = ((ConstraintChainAggregateNode) node).getAggFilter();
+                    if (filterNode == null) {
+                        yield BigDecimal.ZERO;
+                    } else {
+                        yield filterNode.getProbability();
+                    }
+                }
                 case FK_JOIN -> ((ConstraintChainFkJoinNode) node).getProbability();
                 case PK_JOIN -> lastProbability;
             };
