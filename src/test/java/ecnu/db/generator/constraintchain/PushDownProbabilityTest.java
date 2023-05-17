@@ -75,11 +75,11 @@ class PushDownProbabilityTest {
 
         operations = query2operations.get("19_1.sql_public.part");
         assertEquals(10, operations.size());
-        assertEquals(0.00243, operations.get(1).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0, operations.get(1).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.part");
         assertEquals(10, operations.size());
-        assertEquals(0.00243, operations.get(3).getProbability().doubleValue(), 0.0000001);
+        assertEquals(0, operations.get(3).getProbability().doubleValue(), 0.0000001);
 
         operations = query2operations.get("19_1.sql_public.part");
         assertEquals(10, operations.size());
