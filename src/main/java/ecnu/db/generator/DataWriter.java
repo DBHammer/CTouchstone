@@ -43,8 +43,11 @@ public class DataWriter {
                 for (int i = 0; i < keyData.length; i++) {
                     file.append(keyData[i]).append(attData[i]).append(System.lineSeparator());
                 }
-                finalWriter.write(file.toString());
-                finalWriter.flush();
+                String fileContent = file.toString();
+                synchronized (this){
+                    finalWriter.write(fileContent);
+                    finalWriter.flush();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
