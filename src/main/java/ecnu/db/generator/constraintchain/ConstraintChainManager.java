@@ -3,12 +3,7 @@ package ecnu.db.generator.constraintchain;
 import com.fasterxml.jackson.core.type.TypeReference;
 import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.agg.ConstraintChainAggregateNode;
-import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
-import ecnu.db.schema.Column;
-import ecnu.db.schema.ColumnManager;
-import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.schema.CannotFindSchemaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +14,6 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static ecnu.db.utils.CommonUtils.readFile;
 
@@ -32,6 +26,9 @@ public class ConstraintChainManager {
     private String resultDir;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     private static final String WORKLOAD_DIR = "/workload";
+
+    private boolean isDraw = false;
+
     private ConstraintChainManager() {
     }
 
@@ -51,6 +48,9 @@ public class ConstraintChainManager {
         assert sqlArray != null;
         Map<String, List<ConstraintChain>> result = new HashMap<>();
         for (File file : sqlArray) {
+            if (!file.isDirectory()) {
+                continue;
+            }
             File[] graphArray = file.listFiles();
             assert graphArray != null;
             for (File file1 : graphArray) {
@@ -126,16 +126,21 @@ public class ConstraintChainManager {
         }
     }
 
+    public boolean isDraw() {
+        return isDraw;
+    }
+
     private String presentConstraintChains(String queryName, List<ConstraintChain> constraintChains) {
         StringBuilder graph = new StringBuilder();
         HashMap<String, ConstraintChain.SubGraph> subGraphHashMap = new HashMap<>(constraintChains.size());
         constraintChains.sort(Comparator.comparing(ConstraintChain::getTableName));
+        isDraw = true;
         for (int i = 0; i < constraintChains.size(); i++) {
             graph.append(constraintChains.get(i).presentConstraintChains(subGraphHashMap, COLOR_LIST[i % COLOR_LIST.length]));
         }
         String subGraphs = subGraphHashMap.values().stream().
                 map(ConstraintChain.SubGraph::toString).sorted().collect(Collectors.joining(""));
-
+        isDraw = false;
         return String.format(GRAPH_TEMPLATE, queryName, subGraphs + graph);
     }
 
