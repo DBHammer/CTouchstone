@@ -15,21 +15,21 @@ import java.util.List;
 
 public class getOutPut {
     public static void main(String[] args) throws IOException, SQLException, TouchstoneException {
-        File oldSqlFile = new File("D:\\eclipse-workspace\\Mirage\\conf\\queriesTPCDS");
-        File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\conf\\queries");
+        File oldSqlFile = new File("D:\\eclipse-workspace\\Mirage\\conf\\queriesSSB");
+        File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultSSB\\queries");
         List<String> arrayList1 = new ArrayList<>();
         List<String> arrayList2 = new ArrayList<>();
         List<String> requireFileOld = getRequireFile(oldSqlFile, ".sql", arrayList1);
         List<String> requireFileNew = getRequireFile(newSqlFile, ".sql", arrayList2);
-        DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "tpcds");
+        DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "ssb");
         DbConnector dbConnector1 = new PgConnector(config1);
-        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "tpcdsdemo");
+        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "ssbdemo");
         DbConnector dbConnector2 = new PgConnector(config2);
         for (int i = 0; i < requireFileOld.size(); i++) {
             String sql1 = requireFileOld.get(i);
             String sql2 = requireFileNew.get(i);
-            //sql1 = replaceCount(sql1);
-            //sql2 = replaceCount(sql2);
+            sql1 = replaceCount(sql1);
+            sql2 = replaceCount(sql2);
             sql1 = sql1.replaceFirst("\\*", "count(*)");
             sql2 = sql2.replaceFirst("\\*", "count(*)");
             /*for (int i1 = 0; i1 < 3; i1++) {
@@ -67,7 +67,7 @@ public class getOutPut {
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     if (!line.trim().startsWith("--")) {
-                        content.append(line).append(" ");
+                        content.append(line).append("\n");
                     }
                 }
                 arrayList.add(content.toString());
