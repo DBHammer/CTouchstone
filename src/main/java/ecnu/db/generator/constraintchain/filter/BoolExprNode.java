@@ -35,7 +35,7 @@ public abstract class BoolExprNode {
      *
      * @return 类型
      */
-    protected abstract BoolExprType getType();
+    public abstract BoolExprType getType();
 
     /**
      * 获取生成好column以后，evaluate表达式的布尔值
