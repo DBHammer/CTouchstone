@@ -143,7 +143,12 @@ public class ConstructCpModel {
     }
 
     public void addJoinCardinalityConstraint(long eqJoinSize) {
-        model.addEquality(LinearExpr.sum(involvedVars.toArray(new IntVar[0])), eqJoinSize);
+        if (eqJoinSize == 1 || eqJoinSize == 2) {
+            model.addLinearConstraint(LinearExpr.sum(involvedVars.toArray(new IntVar[0])), eqJoinSize - 2, eqJoinSize + 2);
+        } else {
+            model.addEquality(LinearExpr.sum(involvedVars.toArray(new IntVar[0])), eqJoinSize);
+        }
+
         involvedVars.clear();
     }
 }
