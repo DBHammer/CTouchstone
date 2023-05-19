@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public class removeTable {
 
     public static void main(String[] args) throws IOException {
-        File sqlFile = new File("D:\\eclipse-workspace\\Mirage\\conf\\queriesTPCDS");
+        File sqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultTPCDS\\queries");
         Map<String, String> queryName2Sql = new HashMap<>();
         read(queryName2Sql, sqlFile);
         Map<String, List<String>> sql2JoinOrder = sqlName2JoinOrder("D:\\eclipse-workspace\\Mirage\\resultTPCDS");
@@ -25,10 +25,10 @@ public class removeTable {
             String queryName = q2Sql.getKey();
             String sql = q2Sql.getValue();
             //转换成result中的查询文件名
-            String newQueryName = queryName.split("\\.")[0] + "_1." + queryName.split("\\.")[1];
+            String newQueryName = queryName.split("\\.")[0] + "." + queryName.split("\\.")[1];
             List<String> joinOrder = sql2JoinOrder.get(newQueryName);
             String newSql = removeTable(sql, joinOrder);
-            FileWriter fileWriter = new FileWriter("D:\\eclipse-workspace\\Mirage\\TpcdsInMirageWithSameJoinOrder\\tpcdsOrigin" + "\\" + queryName);
+            FileWriter fileWriter = new FileWriter("D:\\eclipse-workspace\\Mirage\\TpcdsInMirageWithSameJoinOrder\\tpcdsNew" + "\\" + queryName);
             fileWriter.write(newSql);
             fileWriter.close();
         }

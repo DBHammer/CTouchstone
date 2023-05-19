@@ -6,10 +6,7 @@ import ecnu.db.dbconnector.adapter.PgConnector;
 import ecnu.db.utils.DatabaseConnectorConfig;
 import ecnu.db.utils.exception.TouchstoneException;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class getMirageError {
-    public static final Pattern ACTUAL_ROWS = Pattern.compile("(Hash Join \\(actual rows=[0-9]+|Seq Scan on [a-zA-Z_]+ \\(actual rows=[0-9]+)");
+    public static final Pattern ACTUAL_ROWS = Pattern.compile("(Hash Join \\(actual rows=[0-9]+|Seq Scan on [a-zA-Z_]+ \\(actual rows=[0-9]+|Seq Scan on [a-zA-Z_]+ [a-zA-Z0-9_]+ \\(actual rows=[0-9]+)");
 
     public static void main(String[] args) throws IOException, SQLException, TouchstoneException {
         File oldSqlFile = new File("D:\\eclipse-workspace\\Mirage\\TpcdsInMirageWithSameJoinOrder\\tpcdsOrigin");
@@ -30,11 +27,13 @@ public class getMirageError {
         DbConnector dbConnector1 = new PgConnector(config1);
         DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "tpcdsdemo");
         DbConnector dbConnector2 = new PgConnector(config2);
-        for (int i = 88; i < /*requireFileOld.size()*/89; i++) {
+        //记录结果
+        int[][] result = new int[11][200];
+        for (int i = 0; i < 100; i++) {
             String sql1 = requireFileOld.get(i);
             String sql2 = requireFileNew.get(i);
-            /*sql1 = sql1.replaceFirst("\\*", "count(*)");
-            sql2 = sql2.replaceFirst("\\*", "count(*)");*/
+            sql1 = sql1.replaceFirst("\\*", "count(*)");
+            sql2 = sql2.replaceFirst("\\*", "count(*)");
             List<String[]> r1 = dbConnector1.getQueryPlan(sql1);
             List<String[]> r2 = dbConnector2.getQueryPlan(sql2);
             String originPlan = join(r1);
@@ -55,10 +54,26 @@ public class getMirageError {
             System.out.println(i + 1 + ":");
             for (int i1 = 0; i1 < originRow.size(); i1++) {
                 System.out.println(originRow.get(i1) + " " + newRow.get(i1));
+                result[i1][2 * i] = originRow.get(i1);
+                result[i1][2 * i + 1] = newRow.get(i1);
             }
-            System.out.println(originPlan);
-            System.out.println(newPlan);
+//            System.out.println(originPlan);
+//            System.out.println(newPlan);
         }
+        FileWriter fw = new FileWriter(new File("D:\\eclipse-workspace\\Mirage\\TpcdsInMirageWithSameJoinOrder\\result"));
+        BufferedWriter bw = new BufferedWriter(fw);
+        for (int i = 0; i < 11; i++) {
+            for (int j = 0; j < 200; j++) {
+                if (result[i][j] != 0) {
+                    bw.write(result[i][j] + " ");
+                } else {
+                    bw.write("0 ");
+                }
+            }
+            bw.write("\n");
+        }
+        bw.close();
+        fw.close();
     }
 
     public static String join(List<String[]> list) {
