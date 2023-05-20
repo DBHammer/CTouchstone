@@ -17,21 +17,23 @@ public class getMirageError {
     public static final Pattern ACTUAL_ROWS = Pattern.compile("(Hash Join \\(actual rows=[0-9]+|Seq Scan on [a-zA-Z_]+ \\(actual rows=[0-9]+|Seq Scan on [a-zA-Z_]+ [a-zA-Z0-9_]+ \\(actual rows=[0-9]+)");
 
     public static void main(String[] args) throws IOException, SQLException, TouchstoneException {
-        File oldSqlFile = new File("D:\\eclipse-workspace\\Mirage\\TpcdsInMirageWithSameJoinOrder\\tpcdsOrigin");
-        File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\TpcdsInMirageWithSameJoinOrder\\tpcdsNew");
+        File oldSqlFile = new File("D:\\eclipse-workspace\\Mirage\\SSBInMirageWithSameJoinOrder\\ssbOrigin");
+        File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\SSBInMirageWithSameJoinOrder\\ssbNew");
         List<String> arrayList1 = new ArrayList<>();
         List<String> arrayList2 = new ArrayList<>();
         List<String> requireFileOld = getRequireFile(oldSqlFile, ".sql", arrayList1);
         List<String> requireFileNew = getRequireFile(newSqlFile, ".sql", arrayList2);
-        DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "tpcds");
+        DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "ssb");
         DbConnector dbConnector1 = new PgConnector(config1);
-        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "tpcdsdemo");
+        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "ssbdemo");
         DbConnector dbConnector2 = new PgConnector(config2);
         //记录结果
         int[][] result = new int[11][200];
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 13; i++) {
             String sql1 = requireFileOld.get(i);
             String sql2 = requireFileNew.get(i);
+            sql1 = replaceCount(sql1);
+            sql2 = replaceCount(sql2);
             sql1 = sql1.replaceFirst("\\*", "count(*)");
             sql2 = sql2.replaceFirst("\\*", "count(*)");
             List<String[]> r1 = dbConnector1.getQueryPlan(sql1);
@@ -96,7 +98,7 @@ public class getMirageError {
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     if (!line.trim().startsWith("--")) {
-                        content.append(line).append(" ");
+                        content.append(line).append("\n");
                     }
                 }
                 arrayList.add(content.toString());
@@ -105,5 +107,16 @@ public class getMirageError {
             }
         }
         return arrayList;
+    }
+
+    public static String replaceCount(String query){
+        String[] queryRow= query.split("\n");
+        String queryFirstRow = queryRow[0];
+        StringBuilder result = new StringBuilder("select *");
+        for (int i = 1; i < queryRow.length; i++) {
+            result.append(queryRow[i]);
+            result.append("\n");
+        }
+        return result.toString();
     }
 }

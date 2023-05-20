@@ -44,7 +44,7 @@ public class removeTable {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 if (!line.trim().startsWith("--")) {
-                    content.append(line).append(" ");
+                    content.append(line).append("\n");
                 }
             }
             map.put(file.getName(), content.toString());
