@@ -17,10 +17,10 @@ import java.util.regex.Pattern;
 public class removeTable {
 
     public static void main(String[] args) throws IOException {
-        File sqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultTPCDS\\queries");
+        File sqlFile = new File("D:\\eclipse-workspace\\Mirage\\conf\\queriesSSB");
         Map<String, String> queryName2Sql = new HashMap<>();
         read(queryName2Sql, sqlFile);
-        Map<String, List<String>> sql2JoinOrder = sqlName2JoinOrder("D:\\eclipse-workspace\\Mirage\\resultTPCDS");
+        Map<String, List<String>> sql2JoinOrder = sqlName2JoinOrder("D:\\eclipse-workspace\\Mirage\\resultSSB");
         for (Map.Entry<String, String> q2Sql : queryName2Sql.entrySet()) {
             String queryName = q2Sql.getKey();
             String sql = q2Sql.getValue();
@@ -28,7 +28,7 @@ public class removeTable {
             String newQueryName = queryName.split("\\.")[0] + "." + queryName.split("\\.")[1];
             List<String> joinOrder = sql2JoinOrder.get(newQueryName);
             String newSql = removeTable(sql, joinOrder);
-            FileWriter fileWriter = new FileWriter("D:\\eclipse-workspace\\Mirage\\TpcdsInMirageWithSameJoinOrder\\tpcdsNew" + "\\" + queryName);
+            FileWriter fileWriter = new FileWriter("D:\\eclipse-workspace\\Mirage\\SSBInMirageWithSameJoinOrder\\ssbOrigin" + "\\" + queryName);
             fileWriter.write(newSql);
             fileWriter.close();
         }
