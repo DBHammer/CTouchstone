@@ -29,6 +29,8 @@ public class Distribution {
 
     private List<List<Integer>> idList = new ArrayList<>();
 
+    private BigDecimal cumulativeError = BigDecimal.ZERO;
+
     public Distribution(BigDecimal nullPercentage, long range) {
         this.range = range;
         // 初始化pvAndPbList 插入pve
@@ -280,16 +282,14 @@ public class Distribution {
         }
         // 生成为左开右闭，因此lastParaData始终比上一右边界大
         long lastParaData = 1;
-        BigDecimal cumulativeError = BigDecimal.ZERO;
         List<Long> allBoundPvs = offset2Pv.values().stream().toList();
         List<long[]> rangeValues = new ArrayList<>();
         for (Map.Entry<Long, BigDecimal> data2Probability : paraData2Probability.entrySet()) {
             long currentParaData = data2Probability.getKey();
             if (!allBoundPvs.contains(currentParaData)) {
                 BigDecimal bGenerateSize = bSize.multiply(data2Probability.getValue());
-                var generateSizeAndCumulativeError = computeGenerateSize(bGenerateSize, cumulativeError);
-                cumulativeError = generateSizeAndCumulativeError.getValue();
-                long[] rangeValue = new long[generateSizeAndCumulativeError.getKey()];
+                int generateSize = computeGenerateSize(bGenerateSize);
+                long[] rangeValue = new long[generateSize];
                 if (currentParaData == lastParaData) {
                     Arrays.fill(rangeValue, currentParaData);
                 } else {
@@ -318,7 +318,7 @@ public class Distribution {
     }
 
 
-    private Map.Entry<Integer, BigDecimal> computeGenerateSize(BigDecimal generateSize, BigDecimal cumulativeError) {
+    private int computeGenerateSize(BigDecimal generateSize) {
         BigDecimal roundOffset = generateSize.setScale(0, RoundingMode.HALF_UP);
         cumulativeError = cumulativeError.add(roundOffset.subtract(generateSize));
         int offset = roundOffset.intValue();
@@ -329,7 +329,7 @@ public class Distribution {
             cumulativeError = cumulativeError.add(BigDecimal.ONE);
             offset++;
         }
-        return new AbstractMap.SimpleEntry<>(offset, cumulativeError);
+        return offset;
     }
 
     /**
@@ -345,21 +345,16 @@ public class Distribution {
         int currentIndex = 0;
         int attributeIndex = 0;
         long[] columnData = new long[size];
-        BigDecimal cumulativeOffsetError = BigDecimal.ZERO;
         for (Map.Entry<BigDecimal, Long> pv2Offset : offset2Pv.entrySet()) {
             // 确定bound的开始offset
-            BigDecimal bOffset = bSize.multiply(pv2Offset.getKey());
-            var offsetAndCumulativeError = computeGenerateSize(bOffset, cumulativeOffsetError);
-            cumulativeOffsetError = offsetAndCumulativeError.getValue();
-            while (currentIndex < offsetAndCumulativeError.getKey()) {
+            int bOffset = bSize.multiply(pv2Offset.getKey()).intValue();
+            while (currentIndex < bOffset) {
                 columnData[currentIndex++] = attributeData[attributeIndex++];
             }
             // 确定bound的大小
             BigDecimal rangeProbability = paraData2Probability.get(pv2Offset.getValue());
             BigDecimal bPvSize = bSize.multiply(rangeProbability);
-            var pvSizeAndCumulativeError = computeGenerateSize(bPvSize, cumulativeOffsetError);
-            int generateSize = pvSizeAndCumulativeError.getKey();
-            cumulativeOffsetError = pvSizeAndCumulativeError.getValue();
+            int generateSize = computeGenerateSize(bPvSize);
             Arrays.fill(columnData, currentIndex, currentIndex + generateSize, pv2Offset.getValue());
             currentIndex += generateSize;
         }
