@@ -171,6 +171,7 @@ public class FkGenerator {
             int finalFkColIndex = fkColIndex;
             if (fkIndex2Range.containsKey(fkColIndex)) {
                 executorPool.submit(() -> {
+                    ruleTables[finalFkColIndex].refreshRuleCounter();
                     FkRange[][] fkRangeForFk = fkIndex2Range.get(finalFkColIndex);
                     for (int rowId = 0; rowId < statusVectorOfEachRow.length; rowId++) {
                         int pkStatusIndex = pkStatuses[rowId];

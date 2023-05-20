@@ -10,15 +10,18 @@ public class MergedRuleTable {
     Map<JoinStatus, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
     Map<JoinStatus, Long> mergedSize;
     Map<JoinStatus, Long> ruleCounter;
+    Map<JoinStatus, Long> maxCounter;
 
     public MergedRuleTable(Map<JoinStatus, List<Map.Entry<Long, Long>>> mergedRules) {
         this.mergedRules = mergedRules;
         mergedSize = new HashMap<>();
         ruleCounter = new HashMap<>();
+        maxCounter = new HashMap<>();
         for (var mergedRule : mergedRules.entrySet()) {
             long size = mergedRule.getValue().stream().mapToLong(range -> range.getValue() - range.getKey()).sum();
             mergedSize.put(mergedRule.getKey(), size);
             ruleCounter.put(mergedRule.getKey(), 0L);
+            maxCounter.put(mergedRule.getKey(), 0L);
         }
     }
 
@@ -46,8 +49,12 @@ public class MergedRuleTable {
         return mergedSize.get(status);
     }
 
-    public Map<JoinStatus, Long> getRuleCounter() {
-        return ruleCounter;
+    public void refreshRuleCounter() {
+        for (Map.Entry<JoinStatus, Long> joinStatusLongEntry : maxCounter.entrySet()) {
+            var status = joinStatusLongEntry.getKey();
+            ruleCounter.put(status, ruleCounter.get(status) + joinStatusLongEntry.getValue());
+            maxCounter.put(status, 0L);
+        }
     }
 
     public long getKey(JoinStatus joinStatus, long index) {
@@ -58,6 +65,10 @@ public class MergedRuleTable {
         if (index < 0) {
             index = ThreadLocalRandom.current().nextLong(mergedSize.get(joinStatus));
         }
+        if (maxCounter.get(joinStatus) < index) {
+            maxCounter.put(joinStatus, index);
+        }
+        index += ruleCounter.get(joinStatus);
         long currentSize = 0;
         for (Map.Entry<Long, Long> range : mergedRules.get(joinStatus)) {
             long nextSize = currentSize + range.getValue() - range.getKey();
