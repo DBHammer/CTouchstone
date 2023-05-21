@@ -64,11 +64,12 @@ public class MergedRuleTable {
         }
         if (index < 0) {
             index = ThreadLocalRandom.current().nextLong(mergedSize.get(joinStatus));
+        } else {
+            if (maxCounter.get(joinStatus) < index) {
+                maxCounter.put(joinStatus, index);
+            }
+            index += ruleCounter.get(joinStatus);
         }
-        if (maxCounter.get(joinStatus) < index) {
-            maxCounter.put(joinStatus, index);
-        }
-        index += ruleCounter.get(joinStatus);
         long currentSize = 0;
         for (Map.Entry<Long, Long> range : mergedRules.get(joinStatus)) {
             long nextSize = currentSize + range.getValue() - range.getKey();
