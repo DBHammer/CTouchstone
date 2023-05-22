@@ -240,7 +240,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         }
         joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
-        return new JoinNode(path.toString(), rowCount, joinInfo, true, transColumnName(joinInfo), BigDecimal.ZERO);
+        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, transColumnName(joinInfo), BigDecimal.ZERO);
     }
 
     private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
@@ -250,7 +250,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             case "Merge Join" -> PgJsonReader.readMergeJoin(path);
             default -> throw new UnsupportedOperationException();
         };
-        if(joinInfo.equals("needReadDeep")){
+        if (joinInfo.equals("needReadDeep")) {
             joinInfo = readDeep(path);
             System.out.println(joinInfo);
         }
@@ -265,7 +265,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             } else if (PgJsonReader.isLeftOuterJoin(path)) {
                 fkRowCount = PgJsonReader.readRowCount(rightChildPath);
                 pkRowCount = PgJsonReader.readRowCount(leftChildPath);
-            }else{
+            } else {
                 throw new UnsupportedOperationException();
             }
             pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - rowCount)
@@ -275,55 +275,57 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             rowCount = PgJsonReader.readRowCount(leftChildPath) - rowCount;
         }
-        String output= transColumnName(PgJsonReader.readOutput(path).toString());
-        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), output, pkDistinctProbability);
+        String output = transColumnName(PgJsonReader.readOutput(path).toString());
+        boolean isSemiJoin = PgJsonReader.isAntiJoin(path) || PgJsonReader.isSemiJoin(path);
+        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), isSemiJoin, output, pkDistinctProbability);
     }
 
-    String readDeep(StringBuilder path){
+    String readDeep(StringBuilder path) {
         String currentJoinCond = null;
         StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
         StringBuilder rightChildPath = PgJsonReader.skipNodes(PgJsonReader.move2RightChild(path));
         String leftType = PgJsonReader.readNodeType(leftChildPath);
         String rightType = PgJsonReader.readNodeType(rightChildPath);
-        if(rightType.equals("Nested Loop")){
+        if (rightType.equals("Nested Loop")) {
             String joinCond = PgJsonReader.readIndexJoin(rightChildPath);
-            if(joinCond.equals("needReadDeep")){
+            if (joinCond.equals("needReadDeep")) {
                 currentJoinCond = readDeep(rightChildPath);
-            }else{
-                joinCond = joinCond.replace("Index Cond: (","");
-                joinCond = joinCond.substring(0,(joinCond.length()-1));
+            } else {
+                joinCond = joinCond.replace("Index Cond: (", "");
+                joinCond = joinCond.substring(0, (joinCond.length() - 1));
                 String table1 = PgJsonReader.readTableName(PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(rightChildPath)).toString()).split("\\.")[1];
                 String table2 = PgJsonReader.readTableName(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(rightChildPath)).toString()).split("\\.")[1];
                 List<String> joinCondList = List.of(joinCond.split("AND"));
                 for (String eachCond : joinCondList) {
-                    if(!eachCond.contains(table1)||!eachCond.contains(table2)){
+                    if (!eachCond.contains(table1) || !eachCond.contains(table2)) {
                         currentJoinCond = eachCond;
                     }
                 }
             }
-        }else if(leftType.equals("Nested Loop")){
+        } else if (leftType.equals("Nested Loop")) {
             String joinCond = PgJsonReader.readIndexJoin(leftChildPath);
-            if(joinCond.equals("needReadDeep")){
+            if (joinCond.equals("needReadDeep")) {
                 currentJoinCond = readDeep(leftChildPath);
-            }else{
+            } else {
                 String table1 = PgJsonReader.readTableName(PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(leftChildPath)).toString()).split("\\.")[1];
                 String table2 = PgJsonReader.readTableName(PgJsonReader.skipNodes(PgJsonReader.move2RightChild(leftChildPath)).toString()).split("\\.")[1];
                 List<String> joinCondList = List.of(joinCond.split("AND"));
                 for (String eachCond : joinCondList) {
-                    if(!eachCond.contains(table1)||!eachCond.contains(table2)){
+                    if (!eachCond.contains(table1) || !eachCond.contains(table2)) {
                         currentJoinCond = eachCond;
                     }
                 }
             }
-        }else{
+        } else {
             throw new UnsupportedOperationException();
         }
         assert currentJoinCond != null;
-        if(!currentJoinCond.contains("Index Cond:")){
+        if (!currentJoinCond.contains("Index Cond:")) {
             currentJoinCond = "Index Cond:" + currentJoinCond;
         }
         return currentJoinCond;
     }
+
     private ExecutionNode getAggregationNode(StringBuilder path, int rowCount) {
         List<String> groupKey = PgJsonReader.readGroupKey(path);
         String groupKeyInfo = null;
@@ -390,7 +392,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         return node;
     }
 
-    private ExecutionNode getExecutionNode(StringBuilder path) throws TouchstoneException{
+    private ExecutionNode getExecutionNode(StringBuilder path) throws TouchstoneException {
         String nodeType = PgJsonReader.readNodeType(path);
         if (nodeType == null) {
             return null;
@@ -424,7 +426,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         StringBuilder filter = new StringBuilder();
         while (m.find()) {
             String[] tableNameAndColName = m.group().split("\\.");
-            m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0].replaceAll("\"","")) + "." + tableNameAndColName[1]);
+            m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0].replaceAll("\"", "")) + "." + tableNameAndColName[1]);
         }
         m.appendTail(filter);
         return removeRedundancy(filter.toString(), false);

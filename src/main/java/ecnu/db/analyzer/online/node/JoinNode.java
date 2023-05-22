@@ -5,6 +5,9 @@ import java.util.concurrent.CountDownLatch;
 
 public class JoinNode extends ExecutionNode {
     private final boolean antiJoin;
+
+    private final boolean semiJoin;
+
     private final String output;
     private final CountDownLatch waitSetJoinTag = new CountDownLatch(1);
     /**
@@ -16,9 +19,10 @@ public class JoinNode extends ExecutionNode {
     private String indexJoinFilter;
 
 
-    public JoinNode(String id, long outputRows, String info, boolean antiJoin, String output, BigDecimal pkDistinctProbability) {
+    public JoinNode(String id, long outputRows, String info, boolean antiJoin, boolean semiJoin, String output, BigDecimal pkDistinctProbability) {
         super(id, ExecutionNodeType.JOIN, outputRows, info);
         this.antiJoin = antiJoin;
+        this.semiJoin = semiJoin;
         this.output = output;
         this.pkDistinctProbability = pkDistinctProbability;
     }
@@ -57,8 +61,8 @@ public class JoinNode extends ExecutionNode {
         this.indexJoinFilter = indexJoinFilter;
     }
 
-    public boolean isSemiJoin(String foreignKeyTable) {
-        return !output.contains(foreignKeyTable);
+    public boolean isSemiJoin() {
+        return semiJoin;
     }
 
     public long getRowsRemoveByFilterAfterJoin() {

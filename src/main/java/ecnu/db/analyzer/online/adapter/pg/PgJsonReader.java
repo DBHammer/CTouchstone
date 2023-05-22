@@ -234,6 +234,10 @@ public class PgJsonReader {
         return readJoinType(path).equals("Anti");
     }
 
+    static boolean isSemiJoin(StringBuilder path) {
+        return readJoinType(path).equals("Semi");
+    }
+
     // read rows count functions
 
     static int readRowCount(StringBuilder path) {
