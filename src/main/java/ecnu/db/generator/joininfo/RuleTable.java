@@ -8,16 +8,16 @@ import java.util.List;
 import java.util.Map;
 
 public class RuleTable {
-    Map<JoinStatus, List<Map.Entry<Long, Long>>> rules = new HashMap<>();
+    Map<JoinStatus, List<PkRange>> rules = new HashMap<>();
 
-    public void addRule(JoinStatus status, Map.Entry<Long, Long> range) {
+    public void addRule(JoinStatus status, long start, long end) {
         rules.computeIfAbsent(status, value -> new ArrayList<>());
-        rules.get(status).add(range);
+        rules.get(status).add(new PkRange(start, end));
     }
 
     public MergedRuleTable mergeRules(int[] location) {
-        Map<JoinStatus, List<Map.Entry<Long, Long>>> mergedRules = new HashMap<>();
-        for (Map.Entry<JoinStatus, List<Map.Entry<Long, Long>>> joinStatusListEntry : rules.entrySet()) {
+        Map<JoinStatus, List<PkRange>> mergedRules = new HashMap<>();
+        for (Map.Entry<JoinStatus, List<PkRange>> joinStatusListEntry : rules.entrySet()) {
             boolean[] joinStatus = joinStatusListEntry.getKey().status();
             JoinStatus pkStatus = FkGenerator.chooseCorrespondingStatus(joinStatus, location);
             mergedRules.computeIfAbsent(pkStatus, v -> new ArrayList<>());
@@ -25,6 +25,4 @@ public class RuleTable {
         }
         return new MergedRuleTable(mergedRules);
     }
-
-
 }

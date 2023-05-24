@@ -1,6 +1,5 @@
 package ecnu.db.generator.joininfo;
 
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,8 +25,7 @@ public class RuleTableManager {
         long accumulativeIndex = indexStart;
         for (Map.Entry<JoinStatus, Long> pk2Size : pkHistogram.entrySet()) {
             long size = pk2Size.getValue();
-            ruleTableMap.get(tableName).addRule(pk2Size.getKey(),
-                    new AbstractMap.SimpleEntry<>(accumulativeIndex, accumulativeIndex + size));
+            ruleTableMap.get(tableName).addRule(pk2Size.getKey(), accumulativeIndex, accumulativeIndex + size);
             pkStatus2Index.put(pk2Size.getKey(), new AtomicLong(accumulativeIndex));
             accumulativeIndex += size;
         }
