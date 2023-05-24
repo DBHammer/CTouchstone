@@ -77,6 +77,6 @@ public class MergedRuleTable {
             index += rule.assignCounter;
         }
         var beforeNum2PkRange = rule.mergedRules.floorEntry(index);
-        return index - beforeNum2PkRange.getValue();
+        return index + beforeNum2PkRange.getValue();
     }
 }
