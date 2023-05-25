@@ -1,11 +1,11 @@
 package ecnu.db.generator;
 
 public class FkRange {
-    public FkRange(long start, long range) {
+    public FkRange(int start, int range) {
         this.start = start;
         this.range = range;
     }
 
-    long start;
-    long range;
+    int start;
+    int range;
 }

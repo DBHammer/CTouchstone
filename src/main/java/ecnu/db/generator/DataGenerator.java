@@ -21,7 +21,10 @@ import picocli.CommandLine;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
@@ -153,23 +156,24 @@ public class DataGenerator implements Callable<Integer> {
         return statusVectorOfEachRow;
     }
 
-    private StringBuilder[] generatePks(boolean[][] statusVectorOfEachRow, int[] pkStatusChainIndexes, int range, String pkName) {
+    private StringBuilder[] generatePks(boolean[][] statusVectorOfEachRow, int[] pkStatusChainIndexes, String pkName) {
         //todo 处理多列主键
+        int range = statusVectorOfEachRow.length;
         StringBuilder[] rowData = new StringBuilder[range];
         if (pkStatusChainIndexes.length > 0) {
             //创建主键状态矩阵
-            JoinStatus[] allStatuses = Arrays.stream(statusVectorOfEachRow).parallel()
-                    .map(arr -> FkGenerator.chooseCorrespondingStatus(arr, pkStatusChainIndexes)).toArray(JoinStatus[]::new);
-            Map<JoinStatus, Long> pkHistogram = FkGenerator.generateStatusHistogram(allStatuses);
+            JoinStatus[] allStatuses = new JoinStatus[range];
+            IntStream.range(0, range).parallel().forEach(rowId ->
+                    allStatuses[rowId] = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[rowId], pkStatusChainIndexes));
+            Map<JoinStatus, Long> pkHistogram = Arrays.stream(allStatuses).parallel()
+                    .collect(Collectors.groupingByConcurrent(Function.identity(), Collectors.counting()));
             logger.info("{}的状态表为", pkName);
             for (Map.Entry<JoinStatus, Long> joinStatusLongEntry : pkHistogram.entrySet()) {
                 logger.info("size:{}, status:{}", joinStatusLongEntry.getValue(), joinStatusLongEntry.getKey().status());
             }
             var pkStatus2Location = RuleTableManager.getInstance().addRuleTable(pkName, pkHistogram, batchStart);
-            IntStream.range(0, range).parallel().forEach(i -> {
-                JoinStatus status = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[i], pkStatusChainIndexes);
-                rowData[i] = new StringBuilder().append(pkStatus2Location.get(status).getAndIncrement()).append(',');
-            });
+            IntStream.range(0, range).parallel().forEach(rowId ->
+                    rowData[rowId] = new StringBuilder().append(pkStatus2Location.get(allStatuses[rowId]).getAndIncrement()).append(','));
         }
         //处理不需要外键填充的主键状态
         else if (!pkName.isEmpty()) {
@@ -273,7 +277,7 @@ public class DataGenerator implements Callable<Integer> {
                 Map<String, long[]> fkCol2Values = generateFks(statusVectorOfEachRow, fkGenerators, fkGroups);
                 generateFksNoConstraints(fkCol2Values, allFk2TableSize, range);
                 long startNew = System.currentTimeMillis();
-                StringBuilder[] keyData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, range, pkName);
+                StringBuilder[] keyData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, pkName);
                 populatePk += System.currentTimeMillis() - startNew;
                 IntStream.range(0, keyData.length).parallel().forEach(index -> {
                     StringBuilder row = keyData[index];

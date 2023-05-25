@@ -51,9 +51,9 @@ public class ConstructCpModel {
         var involvedFkVars = fkDistinctInvolvedVars.remove(fkColIndex);
         FkRange[][] fkRanges = new FkRange[vars.length][vars[0].length];
         for (List<IntVar> samePkStatusVars : involvedFkVars) {
-            long start = 0L;
+            int start = 0;
             for (IntVar samePkStatusVar : samePkStatusVars) {
-                long range = solver.value(samePkStatusVar);
+                int range = (int) solver.value(samePkStatusVar);
                 String[] tags = samePkStatusVar.getName().split("-");
                 int filterIndex = Integer.parseInt(tags[1]);
                 int pkIndex = Integer.parseInt(tags[2]);
@@ -64,7 +64,7 @@ public class ConstructCpModel {
         for (int filterIndex = 0; filterIndex < vars.length; filterIndex++) {
             for (int pkIndex = 0; pkIndex < vars[0].length; pkIndex++) {
                 if (fkRanges[filterIndex][pkIndex] == null) {
-                    fkRanges[filterIndex][pkIndex] = new FkRange(-1L, -1L);
+                    fkRanges[filterIndex][pkIndex] = new FkRange(-1, -1);
                 }
             }
         }

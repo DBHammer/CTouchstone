@@ -1,34 +1,60 @@
 package ecnu.db.generator.joininfo;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class MergedRuleTable {
     Map<JoinStatus, Rule> status2Rule = new HashMap<>();
 
+    private Random random = new Random();
+
     private static class Rule {
-        TreeMap<Long, Long> mergedRules;
-        long totalSize;
+        long[] beforeNums;
+        long[] delta;
+        int totalSize;
         long assignCounter;
         long assignMaxIndexForTheBatchCounter;
 
-        public Rule(TreeMap<Long, Long> mergedRules, long totalSize, long assignCounter, long assignMaxIndexForTheBatchCounter) {
-            this.mergedRules = mergedRules;
+        public Rule(long[] beforeNums, long[] delta, int totalSize, long assignCounter, long assignMaxIndexForTheBatchCounter) {
+            this.beforeNums = beforeNums;
+            this.delta = delta;
             this.totalSize = totalSize;
             this.assignCounter = assignCounter;
             this.assignMaxIndexForTheBatchCounter = assignMaxIndexForTheBatchCounter;
+        }
+
+        public long findDelta(long fkIndex) {
+            int left = 0;
+            int right = beforeNums.length - 1;
+            int index = 0; // 初始值为-1，表示没有找到小于等于a的元素
+
+            while (left <= right) {
+                int mid = left + (right - left) / 2;
+
+                if (beforeNums[mid] <= fkIndex) {
+                    index = mid; // 更新结果
+                    left = mid + 1; // 继续在右侧查找更大的元素
+                } else {
+                    right = mid - 1; // 在左侧查找
+                }
+            }
+
+            return delta[index];
         }
     }
 
     public MergedRuleTable(Map<JoinStatus, List<PkRange>> mergedRules) {
         for (Map.Entry<JoinStatus, List<PkRange>> status2PkRanges : mergedRules.entrySet()) {
-            long totalNum = 0;
-            TreeMap<Long, Long> beforeNum2Range = new TreeMap<>();
+            int totalNum = 0;
+            long[] beforeNums = new long[status2PkRanges.getValue().size()];
+            long[] delta = new long[status2PkRanges.getValue().size()];
+            int i = 0;
             for (PkRange pkRange : status2PkRanges.getValue()) {
-                beforeNum2Range.put(totalNum, pkRange.start() - totalNum);
+                beforeNums[i] = totalNum;
+                delta[i] = pkRange.start() - totalNum;
                 totalNum += pkRange.end() - pkRange.start();
+                i++;
             }
-            status2Rule.put(status2PkRanges.getKey(), new Rule(beforeNum2Range, totalNum, 0L, 0L));
+            status2Rule.put(status2PkRanges.getKey(), new Rule(beforeNums, delta, totalNum, 0L, 0L));
         }
     }
 
@@ -63,20 +89,21 @@ public class MergedRuleTable {
         });
     }
 
-    public long getKey(JoinStatus joinStatus, long index) {
+    public long getKey(JoinStatus joinStatus, int index) {
         Rule rule = status2Rule.get(joinStatus);
         if (rule == null) {
             return Long.MIN_VALUE;
         }
         if (index < 0) {
-            index = ThreadLocalRandom.current().nextLong(rule.totalSize);
+            index = random.nextInt(rule.totalSize);
         } else {
             if (rule.assignMaxIndexForTheBatchCounter < index) {
                 rule.assignMaxIndexForTheBatchCounter = index;
             }
             index += rule.assignCounter;
         }
-        var beforeNum2PkRange = rule.mergedRules.floorEntry(index);
-        return index + beforeNum2PkRange.getValue();
+        return index + rule.findDelta(index);
     }
+
+
 }
