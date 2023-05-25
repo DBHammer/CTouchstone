@@ -14,12 +14,7 @@ import ecnu.db.utils.CommonUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 public class FkGenerator {
@@ -132,24 +127,37 @@ public class FkGenerator {
      *
      * @param statusVectorOfEachRow 每一行数据的filter status
      * @param pkStatuses            此行数据需要填充的pkStatus
-     * @param remainSize            此pkStatus剩余的未填充的数量
      * @param fkIndex2Range         每个FK列对应的JDC的解
      * @param filterIndexes         记录每行数据对应的status
      */
-    private void solveCP(boolean[][] statusVectorOfEachRow, int[] pkStatuses, long[] remainSize, int[] filterIndexes,
+    private void solveCP(boolean[][] statusVectorOfEachRow, int[] pkStatuses, int[] filterIndexes,
                          Map<Integer, FkRange[][]> fkIndex2Range) {
+        long start = System.currentTimeMillis();
         int range = statusVectorOfEachRow.length;
         JoinStatus[] involvedStatuses = new JoinStatus[range];
         // 抽取每一行涉及到的status
-        IntStream.range(0, range).parallel().forEach(rowId ->
-                involvedStatuses[rowId] = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[rowId], involvedChainIndexes));
+        ConcurrentSkipListSet<JoinStatus> joinStatuses = new ConcurrentSkipListSet<>();
+        IntStream.range(0, range).parallel().forEach(rowId -> {
+                    involvedStatuses[rowId] = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[rowId], involvedChainIndexes);
+                    joinStatuses.add(involvedStatuses[rowId]);
+                }
+        );
+        DataGenerator.solveCP1 += System.currentTimeMillis() - start;
         // 根据右表状态计算统计直方图
-        Map<JoinStatus, Long> statusHistogram = Arrays.stream(involvedStatuses).parallel()
-                .collect(Collectors.groupingByConcurrent(Function.identity(), Collectors.counting()));
-        statusHistogram = new TreeMap<>(statusHistogram);
+        Map<JoinStatus, Long> tmpStatusHistogram = new HashMap<>();
+        for (JoinStatus joinStatus : joinStatuses) {
+            tmpStatusHistogram.put(joinStatus, 0L);
+        }
+        Arrays.stream(involvedStatuses).forEach(involvedStatus -> {
+            tmpStatusHistogram.put(involvedStatus, tmpStatusHistogram.get(involvedStatus) + 1);
+        });
+        DataGenerator.solveCP2 += System.currentTimeMillis() - start;
+        Map<JoinStatus, Long> statusHistogram = new TreeMap<>(tmpStatusHistogram);
         // 构建并求解CP问题
         ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
+
         long[][] populateSolution = cpModel.solve();
+        DataGenerator.solveCP3 += System.currentTimeMillis() - start;
         // 记录JDC的解
         for (Integer fkIndex : distinctFkIndex2Cardinality.keySet()) {
             fkIndex2Range.put(fkIndex, cpModel.getDistinctResult(fkIndex));
@@ -173,15 +181,14 @@ public class FkGenerator {
                 filterStatusPkPopulatedIndex[filterIndex] = pkStatusIndex;
             }
             pkStatuses[rowId] = pkStatusIndex;
-            remainSize[rowId] = populateSolution[filterIndex][pkStatusIndex];
             populateSolution[filterIndex][pkStatusIndex]--;
         }
+        DataGenerator.solveCP += System.currentTimeMillis() - start;
     }
 
 
     private long[] populateFkForJDC(int fkColIndex, MergedRuleTable ruleTable, int[] pkStatuses,
-                                    long[] remainSize, int[] filterIndexes, FkRange[][] fkRangeForFk) {
-        Random random = new Random();
+                                    int[] filterIndexes, FkRange[][] fkRangeForFk) {
         ruleTable.refreshRuleCounter();
         int range = pkStatuses.length;
         long[] fkCol = new long[range];
@@ -191,8 +198,10 @@ public class FkGenerator {
             int filterIndex = filterIndexes[rowId];
             FkRange fkRange = fkRangeForFk[filterIndex][pkStatusIndex];
             int index = fkRange.start + fkRange.range - 1;
-            if (fkRange.range > 1 && random.nextDouble() * remainSize[rowId] <= fkRange.range) {
+            if (fkRange.range > 1) {
                 fkRange.range--;
+            } else if (fkRange.range != fkRange.totalRange) {
+                fkRange.range = fkRange.totalRange;
             }
             fkCol[rowId] = ruleTable.getKey(populateStatus, index);
         }
@@ -202,11 +211,11 @@ public class FkGenerator {
     private long[] populateFkForJCC(int fkColIndex, MergedRuleTable ruleTable, int[] pkStatuses) {
         int range = pkStatuses.length;
         long[] fkCol = new long[range];
-        for (int rowId = 0; rowId < range; rowId++) {
+        IntStream.range(0, range).parallel().forEach(rowId -> {
             int pkStatusIndex = pkStatuses[rowId];
             JoinStatus populateStatus = jointPkStatus[pkStatusIndex][fkColIndex];
             fkCol[rowId] = ruleTable.getKey(populateStatus, -1);
-        }
+        });
         return fkCol;
     }
 
@@ -217,14 +226,13 @@ public class FkGenerator {
         }
         int range = statusVectorOfEachRow.length;
         int[] pkStatuses = new int[range];
-        long[] remainSize = new long[range];
         // 记录每行数据对应的status
         int[] filterIndexes = new int[range];
         Map<Integer, FkRange[][]> fkIndex2Range = new HashMap<>();
+
+        solveCP(statusVectorOfEachRow, pkStatuses, filterIndexes, fkIndex2Range);
+
         long start = System.currentTimeMillis();
-        solveCP(statusVectorOfEachRow, pkStatuses, remainSize, filterIndexes, fkIndex2Range);
-        DataGenerator.solveCP += System.currentTimeMillis() - start;
-        start = System.currentTimeMillis();
         int fkColNum = jointPkStatus[0].length;
         long[][] fkColValues = new long[fkColNum][range];
         List<Future<long[]>> futureFkCols = new ArrayList<>();
@@ -233,7 +241,7 @@ public class FkGenerator {
             int finalFkColIndex = fkColIndex;
             if (fkIndex2Range.containsKey(fkColIndex)) {
                 futureFkCols.add(executorPool.submit(() ->
-                        populateFkForJDC(finalFkColIndex, ruleTable, pkStatuses, remainSize, filterIndexes, fkIndex2Range.get(finalFkColIndex))));
+                        populateFkForJDC(finalFkColIndex, ruleTable, pkStatuses, filterIndexes, fkIndex2Range.get(finalFkColIndex))));
             } else {
                 futureFkCols.add(executorPool.submit(() -> populateFkForJCC(finalFkColIndex, ruleTable, pkStatuses)));
             }
@@ -245,7 +253,6 @@ public class FkGenerator {
                 throw new RuntimeException(e);
             }
         }
-        DataGenerator.populateKey += System.currentTimeMillis() - start;
         // 计算每一行数据的输出状态
         int chainSize = statusVectorOfEachRow[0].length;
         IntStream.range(0, range).parallel().forEach(rowId -> {
@@ -254,6 +261,7 @@ public class FkGenerator {
                 statusVectorOfEachRow[rowId][fkColIndex] &= outputStatus[fkColIndex];
             }
         });
+        DataGenerator.populateKey += System.currentTimeMillis() - start;
         return fkColValues;
     }
 

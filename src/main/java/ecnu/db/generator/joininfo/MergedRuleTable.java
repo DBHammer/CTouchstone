@@ -1,11 +1,10 @@
 package ecnu.db.generator.joininfo;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class MergedRuleTable {
     Map<JoinStatus, Rule> status2Rule = new HashMap<>();
-
-    private Random random = new Random();
 
     private static class Rule {
         long[] beforeNums;
@@ -95,7 +94,7 @@ public class MergedRuleTable {
             return Long.MIN_VALUE;
         }
         if (index < 0) {
-            index = random.nextInt(rule.totalSize);
+            index = ThreadLocalRandom.current().nextInt(rule.totalSize);
         } else {
             if (rule.assignMaxIndexForTheBatchCounter < index) {
                 rule.assignMaxIndexForTheBatchCounter = index;

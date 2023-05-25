@@ -2,7 +2,41 @@ package ecnu.db.generator.joininfo;
 
 import java.util.Arrays;
 
-public record JoinStatus(boolean[] status) implements Comparable<JoinStatus> {
+public class JoinStatus implements Comparable<JoinStatus> {
+
+    boolean[] status;
+    private final int hashCode;
+
+    private final long[] longStatus;
+
+    public boolean[] status() {
+        return status;
+    }
+
+
+    public JoinStatus(boolean[] status) {
+        this.status = status;
+        hashCode = Arrays.hashCode(status);
+        int longSize = status().length / 63;
+        if (longSize * 63 < status.length) {
+            longSize++;
+        }
+        longStatus = new long[longSize];
+        Arrays.fill(longStatus, 0);
+        long start = 1;
+        int j = 0;
+        for (int i = 0; i < status.length; i++) {
+            if (status[i]) {
+                longStatus[j] += start;
+            }
+            start *= 2;
+            if ((i + 1) % 63 == 0) {
+                j++;
+                start = 1;
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return "JoinStatus{" +
@@ -15,12 +49,17 @@ public record JoinStatus(boolean[] status) implements Comparable<JoinStatus> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         JoinStatus that = (JoinStatus) o;
-        return Arrays.equals(status, that.status);
+        for (int i = 0; i < longStatus.length; i++) {
+            if (longStatus[i] != that.longStatus[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(status);
+        return hashCode;
     }
 
     @Override
