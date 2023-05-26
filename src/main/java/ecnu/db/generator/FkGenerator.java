@@ -14,7 +14,11 @@ import ecnu.db.utils.CommonUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 public class FkGenerator {
@@ -30,7 +34,9 @@ public class FkGenerator {
 
     private final MergedRuleTable[] ruleTables;
 
-    private static final ExecutorService executorPool = Executors.newFixedThreadPool(20);
+    private static final int CORE_NUM = Runtime.getRuntime().availableProcessors();
+
+    private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(CORE_NUM);
 
 
     FkGenerator(List<ConstraintChain> fkConstrainChains, List<String> fkGroup, long tableSize) {
@@ -122,6 +128,44 @@ public class FkGenerator {
         return constructCpModel;
     }
 
+    static void staticsStatusHistogram(boolean[][] statusVectorOfEachRow, JoinStatus[] involvedStatuses,
+                                       int[] chainIndexes, Map<JoinStatus, Long> statusHistogram) {
+        int range = statusVectorOfEachRow.length;
+        int histogramStaticsRange = range / CORE_NUM + 1;
+        int rangeStart = 0;
+        List<Future<Map<JoinStatus, AtomicLong>>> allStatusHistograms = new ArrayList<>();
+        for (int i = 0; i < CORE_NUM; i++) {
+            int finalRangeStart = rangeStart;
+            allStatusHistograms.add(THREAD_POOL.submit(() -> {
+                Map<JoinStatus, AtomicLong> selfStatusHistogram = new HashMap<>();
+                int endRange = Math.min(finalRangeStart + histogramStaticsRange, range);
+                for (int rowId = finalRangeStart; rowId < endRange; rowId++) {
+                    JoinStatus chooseCorrespondingStatus = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[rowId], chainIndexes);
+                    selfStatusHistogram.computeIfAbsent(chooseCorrespondingStatus, v -> new AtomicLong(0));
+                    selfStatusHistogram.get(chooseCorrespondingStatus).incrementAndGet();
+                    involvedStatuses[rowId] = chooseCorrespondingStatus;
+                }
+                return selfStatusHistogram;
+            }));
+            rangeStart += histogramStaticsRange;
+            if (rangeStart >= range) {
+                break;
+            }
+        }
+        for (Future<Map<JoinStatus, AtomicLong>> allStatusHistogram : allStatusHistograms) {
+            try {
+                var tmp = allStatusHistogram.get();
+                for (Map.Entry<JoinStatus, AtomicLong> selfStatusHistogram : tmp.entrySet()) {
+                    statusHistogram.putIfAbsent(selfStatusHistogram.getKey(), 0L);
+                    long totalNum = selfStatusHistogram.getValue().get() + statusHistogram.get(selfStatusHistogram.getKey());
+                    statusHistogram.put(selfStatusHistogram.getKey(), totalNum);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     /**
      * 计算CP问题的解
      *
@@ -135,29 +179,12 @@ public class FkGenerator {
         long start = System.currentTimeMillis();
         int range = statusVectorOfEachRow.length;
         JoinStatus[] involvedStatuses = new JoinStatus[range];
-        // 抽取每一行涉及到的status
-        ConcurrentSkipListSet<JoinStatus> joinStatuses = new ConcurrentSkipListSet<>();
-        IntStream.range(0, range).parallel().forEach(rowId -> {
-                    involvedStatuses[rowId] = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[rowId], involvedChainIndexes);
-                    joinStatuses.add(involvedStatuses[rowId]);
-                }
-        );
-        DataGenerator.solveCP1 += System.currentTimeMillis() - start;
         // 根据右表状态计算统计直方图
-        Map<JoinStatus, Long> tmpStatusHistogram = new HashMap<>();
-        for (JoinStatus joinStatus : joinStatuses) {
-            tmpStatusHistogram.put(joinStatus, 0L);
-        }
-        Arrays.stream(involvedStatuses).forEach(involvedStatus -> {
-            tmpStatusHistogram.put(involvedStatus, tmpStatusHistogram.get(involvedStatus) + 1);
-        });
-        DataGenerator.solveCP2 += System.currentTimeMillis() - start;
-        Map<JoinStatus, Long> statusHistogram = new TreeMap<>(tmpStatusHistogram);
+        Map<JoinStatus, Long> statusHistogram = new LinkedHashMap<>();
+        staticsStatusHistogram(statusVectorOfEachRow, involvedStatuses, involvedChainIndexes, statusHistogram);
         // 构建并求解CP问题
         ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
-
         long[][] populateSolution = cpModel.solve();
-        DataGenerator.solveCP3 += System.currentTimeMillis() - start;
         // 记录JDC的解
         for (Integer fkIndex : distinctFkIndex2Cardinality.keySet()) {
             fkIndex2Range.put(fkIndex, cpModel.getDistinctResult(fkIndex));
@@ -240,10 +267,10 @@ public class FkGenerator {
             MergedRuleTable ruleTable = ruleTables[fkColIndex];
             int finalFkColIndex = fkColIndex;
             if (fkIndex2Range.containsKey(fkColIndex)) {
-                futureFkCols.add(executorPool.submit(() ->
+                futureFkCols.add(THREAD_POOL.submit(() ->
                         populateFkForJDC(finalFkColIndex, ruleTable, pkStatuses, filterIndexes, fkIndex2Range.get(finalFkColIndex))));
             } else {
-                futureFkCols.add(executorPool.submit(() -> populateFkForJCC(finalFkColIndex, ruleTable, pkStatuses)));
+                futureFkCols.add(THREAD_POOL.submit(() -> populateFkForJCC(finalFkColIndex, ruleTable, pkStatuses)));
             }
         }
         for (int fkColIndex = 0; fkColIndex < fkColValues.length; fkColIndex++) {

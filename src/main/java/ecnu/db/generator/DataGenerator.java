@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
@@ -75,12 +73,6 @@ public class DataGenerator implements Callable<Integer> {
     public static long populateKey = 0;
 
     public static long solveCP = 0;
-
-    public static long solveCP1 = 0;
-
-    public static long solveCP2 = 0;
-
-    public static long solveCP3 = 0;
 
     public static long generate = 0;
 
@@ -169,10 +161,8 @@ public class DataGenerator implements Callable<Integer> {
         if (pkStatusChainIndexes.length > 0) {
             //创建主键状态矩阵
             JoinStatus[] allStatuses = new JoinStatus[range];
-            IntStream.range(0, range).parallel().forEach(rowId ->
-                    allStatuses[rowId] = FkGenerator.chooseCorrespondingStatus(statusVectorOfEachRow[rowId], pkStatusChainIndexes));
-            Map<JoinStatus, Long> pkHistogram = Arrays.stream(allStatuses)
-                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+            Map<JoinStatus, Long> pkHistogram = new HashMap<>();
+            FkGenerator.staticsStatusHistogram(statusVectorOfEachRow, allStatuses, pkStatusChainIndexes, pkHistogram);
             logger.info("{}的状态表为", pkName);
             for (Map.Entry<JoinStatus, Long> joinStatusLongEntry : pkHistogram.entrySet()) {
                 logger.info("size:{}, status:{}", joinStatusLongEntry.getValue(), joinStatusLongEntry.getKey().status());
@@ -307,7 +297,7 @@ public class DataGenerator implements Callable<Integer> {
         logger.info("ge:{}", generate);
         logger.info("tr:{}", transferTime);
         logger.info("gv:{}", generateView);
-        logger.info("sc:{} {} {} {}", solveCP, solveCP1, solveCP2, solveCP3);
+        logger.info("sc:{}", solveCP);
         logger.info("pk:{}", populateKey);
         logger.info("pp:{}", populatePk);
         logger.info("总用时:{}", System.currentTimeMillis() - start);
