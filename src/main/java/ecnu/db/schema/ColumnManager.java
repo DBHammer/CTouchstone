@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static ecnu.db.utils.CommonUtils.*;
@@ -76,14 +75,18 @@ public class ColumnManager {
     }
 
     public String[] generateAttRows(int range) {
-        return IntStream.range(0, range).parallel().mapToObj(
-                rowId -> attributeColumns.stream()
-                        .map(attributeColumn -> attributeColumn.output(rowId))
-                        .collect(Collectors.joining(","))
-        ).toArray(String[]::new);
+        String[] result = new String[range];
+        IntStream.range(0, range).parallel().forEach(rowId -> {
+            String[] buffers = new String[attributeColumns.size()];
+            for (int i = 0; i < attributeColumns.size(); i++) {
+                buffers[i] = attributeColumns.get(i).output(rowId);
+            }
+            result[rowId] = String.join(",", buffers);
+        });
+        return result;
     }
 
-    public long getMin(String columnName){
+    public long getMin(String columnName) {
         return columns.get(columnName).getMin();
     }
 
@@ -206,6 +209,7 @@ public class ColumnManager {
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(columnName2IdList);
         CommonUtils.writeFile(resultDir + "/column2IdList", content);
     }
+
     public void loadColumnName2IdList() throws IOException {
         String resultDir = distributionInfoPath.getPath();
         String content = CommonUtils.readFile(resultDir + "/column2IdList");
@@ -217,6 +221,7 @@ public class ColumnManager {
             columns.get(columnName).getDistribution().setIdList(idList);
         }
     }
+
     /**
      * 提取col的range信息(最大值，最小值)
      *
