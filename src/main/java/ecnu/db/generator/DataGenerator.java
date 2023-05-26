@@ -143,7 +143,10 @@ public class DataGenerator implements Callable<Integer> {
 
     private boolean[][] generateStatusViewOfEachRow(List<ConstraintChain> constraintChains, int range) {
         // 计算外键的filter status
-        boolean[][] statusVectorOfEachRow = new boolean[range][constraintChains.size()];
+        boolean[][] statusVectorOfEachRow = new boolean[range][];
+        for (int rowId = 0; rowId < range; rowId++) {
+            statusVectorOfEachRow[rowId] = new boolean[constraintChains.size()];
+        }
         constraintChains.stream().parallel().forEach(chain -> {
             boolean[] statusVector = chain.evaluateFilterStatus(range);
             int chainIndex = chain.getChainIndex();
