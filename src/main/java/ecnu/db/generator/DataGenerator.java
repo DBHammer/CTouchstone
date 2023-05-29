@@ -267,6 +267,7 @@ public class DataGenerator implements Callable<Integer> {
             // 开始生成
             while (batchStart < tableSize) {
                 int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
+                logger.info("开始生成{}到{}的数据", batchStart, batchStart + range);
                 long start1 = System.currentTimeMillis();
                 ColumnManager.getInstance().prepareGeneration(range);
                 generate += (System.currentTimeMillis() - start1);
