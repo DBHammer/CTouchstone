@@ -1,7 +1,6 @@
 package ecnu.db.generator;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -13,9 +12,9 @@ public class DataWriter {
     String outputPath;
     int generatorId;
 
-    String lastSchemaName = null;
+    private static final String FILE_PATH_PATTERN = "%s/%s-%d-%d";
 
-    BufferedWriter lastBufferedWriter = null;
+    int writeFileCounter = 0;
 
     ExecutorService executorService = Executors.newFixedThreadPool(6);
 
@@ -25,29 +24,17 @@ public class DataWriter {
     }
 
     public void addWriteTask(String schemaName, StringBuilder[] keyData, String[] attData) {
-        if (!schemaName.equals(lastSchemaName)) {
-            File file = new File(outputPath + "/" + schemaName + generatorId);
-            try {
-                if (!file.exists()) {
-                    file.createNewFile();
-                }
-                lastBufferedWriter = new BufferedWriter(new FileWriter(file, true));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        BufferedWriter finalWriter = lastBufferedWriter;
+        String fileName = String.format(FILE_PATH_PATTERN, outputPath, schemaName, generatorId, writeFileCounter);
+        writeFileCounter++;
         executorService.submit(() -> {
             try {
-                StringBuilder file = new StringBuilder();
+                BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
                 for (int i = 0; i < keyData.length; i++) {
-                    file.append(keyData[i]).append(attData[i]).append(System.lineSeparator());
+                    writer.write(keyData[i].toString());
+                    writer.write(attData[i]);
+                    writer.write(System.lineSeparator());
                 }
-                String fileContent = file.toString();
-                synchronized (this){
-                    finalWriter.write(fileContent);
-                    finalWriter.flush();
-                }
+                writer.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
