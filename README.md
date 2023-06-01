@@ -1,12 +1,12 @@
-# Mirage User Manual
+# Mirage
 
-This document is an instructional document for Mirage, a query-aware database generator, and will introduce the features and usage of Mirage. Mirage is a new query-aware database generator whose main function is to generate simulated queries and simulated databases by parsing the query plan of a query executed on a specific database, so that the intermediate results of the original query executed on the original database and the simulated query executed on the simulated database are the same when the same query plan is used (i.e., the same input and output for each operator) to achieve the purpose of simulating the data distribution of the original database.
+Mirage is a query-aware database generator. Mirage aims to generate simulated queries and simulated databases by parsing the query plan of a query executed on a specific database, so that the performance of the simulated query executed on the simulated database are the same with the original query executed on the original database.
  
-## Steps to use
-Mirage's workflow is divided into four steps: query parsing; parameter instantiation; data generation; and Schema generation, which can be executed directly using the given command line.
+## Manual
+Mirage's workflow is divided into four steps: query analysis; parameter instantiation; data generation; and schema generation, which can be executed directly using the given command line.
 
 
-### Query parsing
+### Query Analysis
 The main work of query parsing is to parse the table column information of the database, execute the original query to get the query plan, extract the query template and get the constraint chain information. All the results are stored in the parsing result storage directory set in the configuration file.
 
 Before using, please add the version of mirage to the environment variable with the following command.
@@ -253,9 +253,9 @@ The fill method here is actually constructing c_acctbal > -1000, that is, runnin
 
 ## Arithmetic supported
 ### Join
-Mirage can only handle PK-FK joins. For joins between primary and foreign keys, Mirage supports equal join，anti join，outer join，（anti）semi join。
+Mirage can only handle PK-FK joins. For joins between primary and foreign keys. Mirage supports equal join，anti join，outer join，（anti）semi join。
 
-Mirage cannot handel**foreign key join**，**non-key column join**和**self join**
+Mirage cannot handel**foreign key join**，**non-key column join** and **self join**
 ###   Select
 
 1. Unary selection: Mirage can handle equivalence (=, ≠, in, not in, not like) and inequality arithmetic (>, <, ≥, ≤) for integers, floating point numbers, characters, and dates.
