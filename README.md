@@ -1,6 +1,6 @@
 # Mirage
 
-Mirage is a query-aware database generator. Mirage aims to generate simulated queries and simulated databases by parsing the query plan of a query executed on a specific database so that the performance of the simulated query executed on the simulated database is the same as the original query executed on the original database.
+Mirage is a query-aware database generator. Mirage aims to generate a synthetic data processing environment to simulate the real-world application with specific  data and workload characteristics.
  
 ## Manual
 Mirage's workflow is divided into four steps: query analysis; parameter instantiation; data generation; and schema generation, which can be executed directly using the given command line.
