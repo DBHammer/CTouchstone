@@ -208,7 +208,7 @@ The file is the columns associated with the equivalence unary cardinality constr
 This file contains the query plan, query template, and constraint chain information for each query. As shown in the directory structure above
 where the dot file is the query plan for that query, presented in graphviz format, taking the third query of TPC-H as an example.
 
-<img src="3.svg" alt="Alt text" style="zoom:60%;" />
+<img src="assets/3.svg" alt="Alt text" style="zoom:60%;" />
 
 The image is ".dot" file, viewing the image may require the help of graphviz's rendering plugin. You can see that this is the tree structure of the query execution, where there are leaf nodes representing the relationship table, selection nodes, and join nodes.
 
