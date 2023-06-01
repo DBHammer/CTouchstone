@@ -1,27 +1,27 @@
 # Mirage
 
-Mirage is a query-aware database generator. Mirage aims to generate simulated queries and simulated databases by parsing the query plan of a query executed on a specific database, so that the performance of the simulated query executed on the simulated database are the same with the original query executed on the original database.
+Mirage is a query-aware database generator. Mirage aims to generate simulated queries and simulated databases by parsing the query plan of a query executed on a specific database so that the performance of the simulated query executed on the simulated database is the same as the original query executed on the original database.
  
 ## Manual
 Mirage's workflow is divided into four steps: query analysis; parameter instantiation; data generation; and schema generation, which can be executed directly using the given command line.
 
 
 ### Query Analysis
-The main work of query parsing is to parse the table column information of the database, execute the original query to get the query plan, extract the query template and get the constraint chain information. All the results are stored in the parsing result storage directory set in the configuration file.
+The main work of query parsing is to parse the table column information of the database, execute the original query to get the query plan, extract the query template, and get the constraint chain information. All the results are stored in the parsing result storage directory set in the configuration file.
 
-Before using, please add the version of mirage to the environment variable with the following command.
+Before using, please add the version of Mirage to the environment variable with the following command.
 ```bash
 export version=0.1.0
 ```
-> **Accurate identification of indexScan cardinality** Since the query plan of postgresql, the rows of indexScan (i.e. the column of indexScan operator) are shown as the total number of rows entered row divided by the number of loops, which will be rounded if the result is a floating point number.
+> **Accurate identification of indexScan cardinality** Since the query plan of Postgresql, the rows of indexScan (i.e. the column of indexScan operator) are shown as the total number of rows entered row divided by the number of loops, which will be rounded if the result is a floating point number.
 > As shown below, the first row is the information about the number of rows in the original pg query plan after the execution of indexScan, and the second row is the information about the correct number of rows.
 ```diff
 - Index Scan using lineitem_orderkey on lineitem (actual rows=0 loops=157474)
 + Index Scan using lineitem_orderkey on lineitem (actual rows=0.4174 loops=157474)
 ```
-Therefore, before parsing the query, you need to modify the source code of postgresql about explain to make it display more accurate information about the number of rows. Take pg15 as an example, you only need to modify the file postgres-REL_15_1/src/backend/commands/explain.c (the modification method is common to all versions), and the modification method is as follows:
+Therefore, before parsing the query, you need to modify the source code of Postgresql to explain to make it display more accurate information about the number of rows. Take pg15 as an example, you only need to modify the file postgres-REL_15_1/src/backend/commands/explain.c (the modification method is common to all versions), and the modification method is as follows:
 ```diff
---- tmp_postgres-REL_15/postgres-REL_15_1/src/backend/commands/explain.c 2022-11-08 05:36:53.000000000 +0800
+--- tmp_postgres-REL_15/Postgres-REL_15_1/src/backend/commands/explain.c 2022-11-08 05:36:53.000000000 +0800
 +++ postgres-REL_15_1/src/backend/commands/explain.c 2022-11-25 10:43:37.378649399 +0800
 @@ -1625,11 +1625,11 @@ ExplainNode(PlanState *planstate, List *
    {
@@ -86,13 +86,13 @@ java -jar Mirage-${version}.jar prepare -c config.json -t db_type -l
 ```
 
 Where `-c` is entered as the configuration file, `-t` is the type of database (currently, POSTGRESQL and GAUSS are supported in the query parsing phase), and `-l` determines whether to reuse the Schema information.
-> **Reuse Schema information:** Since Mirage uses a parsing algorithm that parses the topological relationships of all table primary and foreign key dependencies, the parsing process can be time-consuming. The -l parameter mentioned earlier is to allow parsing of table column information to skip this step in the case of files with table column information, so that the program does not do duplicate work.
+> **Reuse Schema information:** Since Mirage uses a parsing algorithm that parses the topological relationships of all table primary and foreign key dependencies, the parsing process can be time-consuming. The -l parameter mentioned earlier is to allow parsing of table column information to skip this step in the case of files with table column information so that the program does not do duplicate work.
 
 Specifically, the configuration file config.json is formatted to contain information such as database connection information and directory information.
 1. `databaseConnectorConfig`: Database connection information. It is the connection configuration information for connecting to the target database.
 2. `queriesDirectory`: The directory where the query is located refers to the query ready for simulation.
 3. `resultDirectory`: The execution result storage directory refers to the directory where the parsed database information is stored.
-4. `defaultSchemaName`: The default schema name of the database, this is due to the characteristics of postgresql, you must specify the schema that belongs to, here fill in the default public is good.
+4. `defaultSchemaName`: The default schema name of the database, this is due to the characteristics of Postgresql, you must specify the schema that belongs to, here fill in the default public is good.
 
 An example is shown below.
 ```json lines
@@ -194,23 +194,23 @@ The file is the database table information obtained by parsing, and the followin
 }
 ```
 
-As shown in the example above, schema.json mainly holds the table name, table size primary key information, foreign key information (foreign key and dependent primary key) and attribute column information for each table involved in the query.
+As shown in the example above, schema.json mainly holds the table name, table size primary key information, foreign key information (foreign key and dependent primary key), and attribute column information for each table involved in the query.
 ### column.csv
-The file contains the parsed column information, which are `columnName`, `columnType`, `nullPercentage`.
+The file contains the parsed column information, which is `columnName`, `columnType`, `nullPercentage`.
 
 `specialValue` (indicating the range of value fields), `min` (minimum value), `range` (range), `originalType` (the original data type obtained directly from the database).
 
 `avgLength` (average length of a string type column), `maxLength` (maximum length of a string type column).
 
 ### column2IdList
-The file is the columns associated with the equivalence unary cardinality constraint and their corresponding parameter IDs, and since Mirage needs to anonymize the parameters of the original query, a unique parameter ID is attached to each parameter. unary cardinality constraints are of the form A·Pk, where A refers to the column name, Pk refers to the symbolized parameter, and · refers to the symbol, including =, ≠, <, >, ≤, ≥, (NOT ) IN, (NOT) LIKE. the main purpose of this file is to perform probabilistic reuse during parameter instantiation.
+The file is the columns associated with the equivalence unary cardinality constraint and their corresponding parameter IDs, and since Mirage needs to anonymize the parameters of the original query, a unique parameter ID is attached to each parameter. Unary cardinality constraints are of form A·Pk, where A refers to the column name, Pk refers to the symbolized parameter, and · refers to the symbol, including =, ≠, <, >, ≤, ≥, (NOT ) IN, (NOT) LIKE. the main purpose of this file is to perform probabilistic reuse during parameter instantiation.
 ### Workload dictionary
 This file contains the query plan, query template, and constraint chain information for each query. As shown in the directory structure above
 where the dot file is the query plan for that query, presented in graphviz format, taking the third query of TPC-H as an example.
 
 <img src="3.svg" alt="Alt text" style="zoom:60%;" />
 
-The image is ".dot" file, viewing the image may require the help of graphviz's rendering plugin. You can see that this is the tree structure of the query execution, where there are leaf nodes representing the relationship table, selection nodes and join nodes.
+The image is ".dot" file, viewing the image may require the help of graphviz's rendering plugin. You can see that this is the tree structure of the query execution, where there are leaf nodes representing the relationship table, selection nodes, and join nodes.
 
 In the Json file is the constraint chain information obtained by parsing the query.
 
@@ -235,10 +235,10 @@ where l_shipdate >= date '1998-10-14'
   and l_quantity < '50.03';
 ```
 
-The first line in the example will show the parameter ids that are not filled successfully and the original parameter value, find the parameter value with the same parameter id in the log information and replace it on. In this example, the data in the first line is 0.04, which is 0.03+0.01 in the query, find the data with id 129 in the log is 0.12, then replace 0.03+0.01 with 0.12.<br>
+The first line in the example will show the parameter ids that are not filled successfully and the original parameter value, find the parameter value with the same parameter id in the log information, and replace it. In this example, the data in the first line is 0.04, which is 0.03+0.01 in the query, find the data with id 129 in the log is 0.12, then replace 0.03+0.01 with 0.12.<br>
 
 ### Conflicting virtual parameter replacement
-In addition to the above real "parameters" (i.e., parameters that exist in the original query), there are also some virtual parameters that need to be filled in manually. Virtual parameters are parameters that do not actually exist in the original query, but are generated by the Mirage algorithm to simulate the query. For example, in the 21st query of TPCH, there is a where condition `l1.l_receiptdate > l1.l_commitdate`, which Mirage converts to `l1.l_receiptdate - l1.l_commitdate > Parameter`, where the Parameter is the virtual parameter. And {id:95, data:interval '-340'day} in the log is the value that this virtual parameter should fill, so here it should fill `l1.l_receiptdate > l1.l_commitdate - 340 day`. Another case of virtual parameter is when the query plan is two query trees, the output result of one query will become the parameter used in the other query plan, then this output result will become a virtual parameter, for example, the 22nd query of TPCH. The query plan result of the inner loop is used as the query condition parameter of the outer loop. From the first line of 22_1.sql in the queries folder, you can see `cannotFindArgs:{id:109,data:'$0',operand:public.customer.c_acctbal},{id:100,data:'0.0',operand.
+In addition to the above real "parameters" (i.e., parameters that exist in the original query), there are also some virtual parameters that need to be filled in manually. Virtual parameters are parameters that do not actually exist in the original query but are generated by the Mirage algorithm to simulate the query. For example, in the 21st query of TPCH, there is a where condition `l1.l_receiptdate > l1.l_commitdate`, which Mirage converts to `l1.l_receiptdate - l1.l_commitdate > Parameter`, where the Parameter is the virtual parameter. And {id:95, data:interval '-340'day} in the log is the value that this virtual parameter should fill, so here it should fill `l1.l_receiptdate > l1.l_commitdate - 340 day`. Another case of a virtual parameter is when the query plan is two query trees, the output result of one query will become the parameter used in the other query plan, then this output result will become a virtual parameter, for example, the 22nd query of TPCH. The query plan result of the inner loop is used as the query condition parameter of the outer loop. From the first line of 22_1.sql in the queries folder, you can see `cannotFindArgs:{id:109,data:'$0',operand:public.customer.c_acctbal},{id:100,data:'0.0',operand.
 public.customer.c_acctbal}`. Here `$0` is the virtual parameter, and the corresponding parameter found in the log should be filled as `-1000`. The result of the inner query can be seen in the 22nd query of TPCH as the parameter of the outer loop. This is shown below
 
 ```sql
@@ -253,15 +253,15 @@ The fill method here is actually constructing c_acctbal > -1000, that is, runnin
 
 ## Arithmetic supported
 ### Join
-Mirage can only handle PK-FK joins. For joins between primary and foreign keys. Mirage supports equal join，anti join，outer join，（anti）semi join。
+Mirage can only handle PK-FK joins. For joins between primary and foreign keys. Mirage supports equal join, anti join, outer join,（anti）semi join。
 
-Mirage cannot handel**foreign key join**，**non-key column join** and **self join**
+Mirage cannot handel**foreign key join**,**non-key column join** and **self join**
 ###   Select
 
 1. Unary selection: Mirage can handle equivalence (=, ≠, in, not in, not like) and inequality arithmetic (>, <, ≥, ≤) for integers, floating point numbers, characters, and dates.
 
 2. Logical predicates: Mirage can handle arbitrary forms of logical expressions.
 
-3. Arithmetic predicates: Mirage can handle addition, subtraction, multiplication and division of integers, floating point numbers, and dates in any number of columns in the same table.
+3. Arithmetic predicates: Mirage can handle addition, subtraction, multiplication, and division of integers, floating point numbers, and dates in any number of columns in the same table.
 ### Aggregation
 Mirage supports aggregation on foreign key, and supports sum, count, min, max, and other operators, but does not support aggregation not on non-key.
