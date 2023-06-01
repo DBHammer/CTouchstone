@@ -3,7 +3,7 @@
 Mirage is a query-aware database generator. Mirage aims to generate a synthetic data processing environment to simulate the real-world application with specific  data and workload characteristics.
  
 ## Manual
-Mirage's workflow is divided into four steps: query analysis; parameter instantiation; data generation; and schema generation, which can be executed directly using the given command line.
+Mirage supports all the versions from PostgreSQL 12 to PostgreSQL 15. Mirage's workflow is divided into four steps: query analysis; parameter instantiation; data generation; and schema generation, which can be executed directly using the given command line.
 
 
 ### Query Analysis
