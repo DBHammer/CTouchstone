@@ -4,7 +4,7 @@ Mirage is a query-aware database generator. Mirage aims to generate a synthetic 
 
 ## Technical Report
 
-[Here](./Mirage-Tech-Report.pdf) is our techinial report, which is a extention of our submitted paper. Main new content is marked in blue.
+[Here](./Mirage-Tech-Report.pdf) is our technical report, which is a extention of our submitted paper. Main new content is marked in blue.
 
 1. In Section 2, we disscuss to add right semi join for projetion without child join view.
 2. In Section 3, we add two examples for constraints rewriting rules.
