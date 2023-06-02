@@ -1,5 +1,6 @@
 package ecnu.db.dbconnector;
 
+import ecnu.db.LanguageManager;
 import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.ColumnType;
@@ -21,6 +22,7 @@ public abstract class DbConnector {
     private final HashMap<String, Integer> multiColNdvMap = new HashMap<>();
     private final int[] sqlInfoColumns;
     private final Connection conn;
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
     private static final List<Field> ALL_FIELDS = Arrays.stream(Types.class.getDeclaredFields()).filter(f -> Modifier.isStatic(f.getModifiers())).toList();
 
     protected DbConnector(DatabaseConnectorConfig config, String dbType, String databaseConnectionConfig)
@@ -119,7 +121,7 @@ public abstract class DbConnector {
                 try {
                     infos[i - 1] = rs.getString(i).trim().toLowerCase();
                 } catch (NullPointerException e) {
-                    logger.error("所查列数据为空");
+                    logger.error(rb.getString("dataEmpty"));
                     infos[i - 1] = null;
                 }
             }

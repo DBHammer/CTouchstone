@@ -1,5 +1,6 @@
 package ecnu.db.schema;
 
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
@@ -16,6 +17,7 @@ public class Distribution {
     private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.15);
 
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     // bound PV的偏移位置
     private SortedMap<BigDecimal, Long> offset2Pv = new TreeMap<>();
@@ -128,7 +130,7 @@ public class Distribution {
             }
             BigDecimal error = probability.subtract(validCDFRange);
             pvAndPbList.put(probability, new ArrayList<>(List.of(new Parameter(-1, null, null))));
-            logger.error("参数{}请求range超过有效的CDF空间, 增加非Null概率，幅度为{}",
+            logger.error(rb.getString("beyondCDFRange"),
                     parameters.stream().mapToInt(Parameter::getId).boxed().toList(), error);
         }
     }

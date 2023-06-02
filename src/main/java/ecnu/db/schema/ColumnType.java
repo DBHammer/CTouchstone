@@ -1,10 +1,12 @@
 package ecnu.db.schema;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import ecnu.db.LanguageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Types;
+import java.util.ResourceBundle;
 
 /**
  * @author wangqingshuai
@@ -15,6 +17,7 @@ public enum ColumnType {
     INTEGER, VARCHAR, DECIMAL, BOOL, DATE, DATETIME;
 
     private static final Logger logger = LoggerFactory.getLogger(ColumnType.class);
+    private static final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     public static ColumnType getColumnType(int dataType) {
         return switch (dataType) {
@@ -24,7 +27,7 @@ public enum ColumnType {
             case Types.DATE -> DATE;
             case Types.TIMESTAMP -> DATETIME;
             default -> {
-                logger.error("未支持的算子转换{}", dataType);
+                logger.error(rb.getString("unsupportedOperatorConversions"), dataType);
                 throw new UnsupportedOperationException();
             }
         };

@@ -3,6 +3,7 @@ package ecnu.db.schema;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
@@ -33,6 +34,7 @@ public class ColumnManager {
 
     private File distributionInfoPath;
     private final Logger logger = LoggerFactory.getLogger(ColumnManager.class);
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     // Private constructor suppresses
     // default public constructor
@@ -69,7 +71,7 @@ public class ColumnManager {
             Distribution distribution = columnName2Column.getValue().getDistribution();
             long appendRow = distribution.initAllParameters();
             if (appendRow > 0) {
-                logger.error("{}的基数不足，增加{}", columnName2Column.getKey(), appendRow);
+                logger.error(rb.getString("cardinalityNotEnough"), columnName2Column.getKey(), appendRow);
             }
         }
     }
