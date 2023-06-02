@@ -181,7 +181,7 @@ public class QueryAnalyzer {
         if (isPrimaryKey(localTable, localCol, externalTable, externalCol)) {
             //设置主键
             if (constraintChain.getJoinTables().contains(externalTable)) {
-                logger.error("由于self join，跳过节点{}", node.getInfo());
+                logger.error(rb.getString("skipSelfJoin"), node.getInfo());
                 node.setJoinTag(SKIP_SELF_JOIN);
                 return STOP_CONSTRUCT;
             } else {

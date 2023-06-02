@@ -2,6 +2,7 @@ package ecnu.db.generator;
 
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.joininfo.JoinStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ public class ConstructCpModel {
 
     private final Map<Integer, List<List<IntVar>>> fkDistinctInvolvedVars = new HashMap<>();
 
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     static {
         Loader.loadNativeLibraries();
@@ -32,7 +34,7 @@ public class ConstructCpModel {
         solver.getParameters().setNumWorkers(Runtime.getRuntime().availableProcessors());
         CpSolverStatus status = solver.solve(model);
         if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
-            logger.info("用时{}ms", solver.wallTime() * 1000);
+            logger.info(rb.getString("constructCpModelCostTime"), solver.wallTime() * 1000);
             int filterStatusCount = vars.length;
             int pkStatusCount = vars[0].length;
             long[][] rowCountForEachStatus = new long[filterStatusCount][pkStatusCount];

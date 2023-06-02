@@ -1,6 +1,7 @@
 package ecnu.db.generator;
 
 
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.ConstraintChain;
 import ecnu.db.generator.constraintchain.ConstraintChainManager;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
@@ -57,6 +58,8 @@ public class DataGenerator implements Callable<Integer> {
     // 下一次batch需要推进的range
     private long stepRange;
 
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+
     private static Map<String, List<ConstraintChain>> getSchema2Chains(Map<String, List<ConstraintChain>> query2chains) {
         Map<String, List<ConstraintChain>> schema2chains = new HashMap<>();
         for (List<ConstraintChain> chains : query2chains.values()) {
@@ -81,6 +84,8 @@ public class DataGenerator implements Callable<Integer> {
     public static long populatePk = 0;
     public static long generateView = 0;
 
+    public static long constructHistogram = 0;
+
     private void init() throws IOException {
         //载入schema配置文件
         TableManager.getInstance().setResultDir(configPath);
@@ -99,7 +104,7 @@ public class DataGenerator implements Callable<Integer> {
         if (dataDir.isDirectory() && dataDir.listFiles() != null) {
             Arrays.stream(Objects.requireNonNull(dataDir.listFiles()))
                     .filter(File::delete)
-                    .forEach(file -> logger.info("删除{}", file.getName()));
+                    .forEach(file -> logger.info(rb.getString("deleteOldData"), file.getName()));
         }
         // 初始化数据生成器
         dataWriter = new DataWriter(outputPath, generatorId);
@@ -143,10 +148,7 @@ public class DataGenerator implements Callable<Integer> {
 
     private boolean[][] generateStatusViewOfEachRow(List<ConstraintChain> constraintChains, int range) {
         // 计算外键的filter status
-        boolean[][] statusVectorOfEachRow = new boolean[range][];
-        for (int rowId = 0; rowId < range; rowId++) {
-            statusVectorOfEachRow[rowId] = new boolean[constraintChains.size()];
-        }
+        boolean[][] statusVectorOfEachRow = new boolean[range][constraintChains.size()];
         constraintChains.stream().parallel().forEach(chain -> {
             boolean[] statusVector = chain.evaluateFilterStatus(range);
             int chainIndex = chain.getChainIndex();
@@ -166,7 +168,7 @@ public class DataGenerator implements Callable<Integer> {
             JoinStatus[] allStatuses = new JoinStatus[range];
             Map<JoinStatus, Long> pkHistogram = new HashMap<>();
             FkGenerator.staticsStatusHistogram(statusVectorOfEachRow, allStatuses, pkStatusChainIndexes, pkHistogram);
-            logger.info("{}的状态表为", pkName);
+            logger.info(rb.getString("showStatusVectorTable"), pkName);
             for (Map.Entry<JoinStatus, Long> joinStatusLongEntry : pkHistogram.entrySet()) {
                 logger.info("size:{}, status:{}", joinStatusLongEntry.getValue(), joinStatusLongEntry.getKey().status());
             }
@@ -239,7 +241,7 @@ public class DataGenerator implements Callable<Integer> {
             long tableSize = TableManager.getInstance().getTableSize(schemaName);
             String pkName = TableManager.getInstance().getPrimaryKeys(schemaName);
             computeStepRange(tableSize);
-            logger.info("开始输出表数据{}, 数据总量为{}", schemaName, tableSize);
+            logger.info(rb.getString("startDataOutPut"), schemaName, tableSize);
             // 准备生成的属性列生成器
             List<String> attColumnNames = TableManager.getInstance().getAttributeColumnNames(schemaName);
             ColumnManager.getInstance().cacheAttributeColumn(attColumnNames);
@@ -267,7 +269,7 @@ public class DataGenerator implements Callable<Integer> {
             // 开始生成
             while (batchStart < tableSize) {
                 int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
-                logger.info("开始生成{}到{}的数据", batchStart, batchStart + range);
+                logger.info(rb.getString("generateFromTo"), batchStart, batchStart + range);
                 long start1 = System.currentTimeMillis();
                 ColumnManager.getInstance().prepareGeneration(range);
                 generate += (System.currentTimeMillis() - start1);
@@ -298,17 +300,14 @@ public class DataGenerator implements Callable<Integer> {
                 batchStart += range + stepRange;
             }
         }
-        logger.info("ge:{}", generate);
-        logger.info("tr:{}", transferTime);
-        logger.info("gv:{}", generateView);
-        logger.info("sc:{}", solveCP);
-        logger.info("pk:{}", populateKey);
-        logger.info("pp:{}", populatePk);
-        logger.info("总用时:{}", System.currentTimeMillis() - start);
+        logger.info("GD:{}", generate);
+        logger.info("CS:{}", generateView + constructHistogram);
+        logger.info("CP:{}", solveCP);
+        logger.info("PF:{}", populateKey + populatePk);
+        logger.info("total time: {}", System.currentTimeMillis() - start);
         if (dataWriter.waitWriteFinish()) {
-            logger.info("输出表数据完成");
+            logger.info("Output table data completed");
         }
-        //logger.info("总用时:{}", System.currentTimeMillis() - start);
         return 0;
     }
 }

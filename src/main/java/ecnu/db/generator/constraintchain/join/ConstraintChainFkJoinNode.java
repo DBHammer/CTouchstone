@@ -1,6 +1,7 @@
 package ecnu.db.generator.constraintchain.join;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ecnu.db.LanguageManager;
 import ecnu.db.generator.ConstructCpModel;
 import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.ConstraintChainNodeType;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ResourceBundle;
 
 /**
  * @author wangqingshuai
@@ -36,6 +38,8 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
     public ConstraintChainFkJoinNode() {
         super(ConstraintChainNodeType.FK_JOIN);
     }
+
+    private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     public ConstraintChainFkJoinNode(String localCols, String refCols, int pkTag, BigDecimal probability) {
         super(ConstraintChainNodeType.FK_JOIN);
@@ -117,7 +121,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         BigDecimal bIndexJoinSize = BigDecimal.valueOf(unFilterSize).multiply(probabilityWithFailFilter);
         long indexJoinSize = bIndexJoinSize.setScale(0, RoundingMode.HALF_UP).longValue();
         cpModel.addJoinCardinalityConstraint(indexJoinSize);
-        logger.info("indexJoin输出的数据量为:{}, 为第{}个表的第{}个状态", indexJoinSize, joinStatusIndex, joinStatusLocation);
+        logger.info(rb.getString("indexJoinInfo"), indexJoinSize, joinStatusIndex, joinStatusLocation);
     }
 
     private long addJoinCardinalityConstraint(ConstructCpModel cpModel, long filterSize, boolean[][] canBeInput) {
@@ -133,7 +137,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         BigDecimal bFilterSize = BigDecimal.valueOf(filterSize).multiply(probability);
         filterSize = bFilterSize.setScale(0, RoundingMode.HALF_UP).longValue();
         cpModel.addJoinCardinalityConstraint(filterSize);
-        logger.info("输出的数据量为:{}, 为第{}个表的第{}个状态", filterSize, joinStatusIndex, joinStatusLocation);
+        logger.info(rb.getString("statusDataOutput"), filterSize, joinStatusIndex, joinStatusLocation);
         return filterSize;
     }
 
@@ -152,6 +156,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
 
         var bPkSize = BigDecimal.valueOf(filterSize).multiply(pkDistinctProbability);
         long pkSize = bPkSize.setScale(0, RoundingMode.HALF_UP).longValue();
+        logger.info(rb.getString("addDistinctConstraint"), this, pkSize);
         // 合法性约束，每个pkStatus不能超过提供的数量
         cpModel.addJoinCardinalityConstraint(pkSize);
     }

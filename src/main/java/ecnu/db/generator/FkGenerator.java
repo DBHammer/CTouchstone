@@ -182,13 +182,6 @@ public class FkGenerator {
         // 根据右表状态计算统计直方图
         Map<JoinStatus, Long> statusHistogram = new LinkedHashMap<>();
         staticsStatusHistogram(statusVectorOfEachRow, involvedStatuses, involvedChainIndexes, statusHistogram);
-        // 构建并求解CP问题
-        ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
-        long[][] populateSolution = cpModel.solve();
-        // 记录JDC的解
-        for (Integer fkIndex : distinctFkIndex2Cardinality.keySet()) {
-            fkIndex2Range.put(fkIndex, cpModel.getDistinctResult(fkIndex));
-        }
         // 标记直方图状态的位置
         HashMap<JoinStatus, Integer> status2Index = new HashMap<>();
         int i = 0;
@@ -197,8 +190,17 @@ public class FkGenerator {
         }
         // 为每一行数据记录位置
         IntStream.range(0, range).parallel().forEach(rowId -> filterIndexes[rowId] = status2Index.get(involvedStatuses[rowId]));
+        DataGenerator.constructHistogram += System.currentTimeMillis() - start;
+        start = System.currentTimeMillis();
         // 给定一个populateSolution，计算每一行数据需要填充的主键状态，以及剩余未填充的数据量
         int[] filterStatusPkPopulatedIndex = new int[statusHistogram.size()];
+        // 构建并求解CP问题
+        ConstructCpModel cpModel = constructConstraintProblem(statusHistogram, range);
+        long[][] populateSolution = cpModel.solve();
+        // 记录JDC的解
+        for (Integer fkIndex : distinctFkIndex2Cardinality.keySet()) {
+            fkIndex2Range.put(fkIndex, cpModel.getDistinctResult(fkIndex));
+        }
         Arrays.fill(filterStatusPkPopulatedIndex, 0);
         for (int rowId = 0; rowId < range; rowId++) {
             int filterIndex = filterIndexes[rowId];
