@@ -272,10 +272,10 @@ Mirage can only handle PK-FK joins. For joins between primary and foreign keys. 
 Mirage cannot handel**foreign key join**,**non-key column join** and **self join**
 ###   Select
 
-1. Unary selection: Mirage can handle equivalence (=, ≠, in, not in, not like) and inequality arithmetic (>, <, ≥, ≤) for integers, floating point numbers, characters, and dates.
+1. Unary selection: Mirage can handle equivalence (=, ≠, in, like, not in, not like) and inequality arithmetic (>, <, ≥, ≤) for integers, floating point numbers, characters, and dates.
 
 2. Logical predicates: Mirage can handle arbitrary forms of logical expressions.
 
 3. Arithmetic predicates: Mirage can handle addition, subtraction, multiplication, and division of integers, floating point numbers, and dates in any number of columns in the same table.
 ### Aggregation
-Mirage supports aggregation on foreign key, and supports sum, count, min, max, and other operators, but does not support aggregation not on non-key.
+Mirage supports aggregation on foreign key, and supports sum, count, min, max, and other operators, but does not support aggregation on non-key.
