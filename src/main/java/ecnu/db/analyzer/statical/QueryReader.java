@@ -5,7 +5,7 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
 import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
-import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
+import com.alibaba.druid.sql.dialect.postgresql.visitor.PGASTVisitorAdapter;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -113,7 +113,7 @@ public class QueryReader {
     }
 
 
-    private static class ExportTableAliasVisitor extends MySqlASTVisitorAdapter {
+    private static class ExportTableAliasVisitor extends PGASTVisitorAdapter {
         private final Map<String, String> aliasMap = new HashMap<>();
         private final String defaultDatabaseName;
 
