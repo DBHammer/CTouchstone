@@ -532,7 +532,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         String leftNodeType = PgJsonReader.readNodeType(leftPath);
         String tableName = PgJsonReader.readTableName(path.toString()).split("\\.")[1];
         if (nodeTypeRef.isAggregateNode(leftNodeType) && nodeTypeRef.isIndexScanNode(nodeType)) {
-            logger.error("cannot deal with " + path);
+            logger.error("cannot deal with {}", path);
             getExecutionTreeRes(PgJsonReader.move2LeftChild(leftPath));
             return !tableName.equals(getTableNameFromOutput(leftPath));
         } else {
