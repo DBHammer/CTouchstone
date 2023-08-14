@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author wangqingshuai 数据库驱动连接器
@@ -202,9 +203,14 @@ public abstract class DbConnector {
     private String getColumnDistributionSql(List<String> canonicalColumnNames) throws TouchstoneException {
         StringBuilder sql = new StringBuilder();
         for (String canonicalColumnName : canonicalColumnNames) {
-            switch (ColumnManager.getInstance().getColumnType(canonicalColumnName)) {
+            ColumnType type = ColumnManager.getInstance().getColumnType(canonicalColumnName);
+            String[] canonicalColumnNameList = canonicalColumnName.split("\\.");
+            canonicalColumnName = Arrays.stream(canonicalColumnNameList)
+                    .map(s->String.format("\"%s\"",s))
+                    .collect(Collectors.joining("."));
+            switch (type) {
                 case DATE, DATETIME, DECIMAL -> sql.append(String.format("min(%1$s), max(%1$s), ", canonicalColumnName));
-                case INTEGER -> sql.append(String.format("min(%1$s), max(%1$s), count(distinct %1$s),", canonicalColumnName));
+                case INTEGER -> sql.append(String.format("min(%1$s::int), max(%1$s::int), count(distinct %1$s::int),", canonicalColumnName));
                 case VARCHAR -> sql.append(String.format("avg(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
                 case BOOL -> sql.append(String.format("avg(%s)", canonicalColumnName));
                 default -> throw new TouchstoneException("未匹配到的类型");
