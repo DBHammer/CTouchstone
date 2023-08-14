@@ -81,7 +81,7 @@ public class QueryReader {
         stmt.accept(statVisitor);
         HashSet<String> tableName = new HashSet<>();
         for (TableStat.Name name : statVisitor.getTables().keySet()) {
-            tableName.add(aliasVisitor.addDatabaseNamePrefix(name.getName().toLowerCase()));
+            tableName.add(aliasVisitor.addDatabaseNamePrefix(name.getName()));
         }
         return tableName;
     }
@@ -142,7 +142,7 @@ public class QueryReader {
         public boolean visit(SQLExprTableSource x) {
             if (x.getAlias() != null) {
                 try {
-                    aliasMap.put(x.getAlias().toLowerCase(), addDatabaseNamePrefix(x.getName().toString().toLowerCase()));
+                    aliasMap.put(x.getAlias(), addDatabaseNamePrefix(x.getName().toString()));
                 } catch (IllegalQueryTableNameException e) {
                     e.printStackTrace();
                 }
