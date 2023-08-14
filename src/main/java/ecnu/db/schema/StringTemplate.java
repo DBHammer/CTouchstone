@@ -5,8 +5,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 class StringTemplate {
-    private static final char[] randomCharSet = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray();
-    private static final char[] likeRandomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+    private static final char[] randomCharSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+    private static final char[] likeRandomCharSet = "0123456789".toCharArray();
 
     private static final char NO_EXIST_TAIL_CHAR = '-';
 
