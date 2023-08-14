@@ -21,11 +21,11 @@ public enum ColumnType {
 
     public static ColumnType getColumnType(int dataType) {
         return switch (dataType) {
-            case Types.INTEGER, Types.BIGINT -> INTEGER;
+            case Types.INTEGER, Types.BIGINT, Types.SMALLINT, Types.BOOLEAN, Types.BIT -> INTEGER;
             case Types.VARCHAR, Types.CHAR -> VARCHAR;
-            case Types.FLOAT, Types.DECIMAL, Types.NUMERIC -> DECIMAL;
+            case Types.FLOAT, Types.DOUBLE, Types.DECIMAL, Types.NUMERIC -> DECIMAL;
             case Types.DATE -> DATE;
-            case Types.TIMESTAMP -> DATETIME;
+            case Types.TIMESTAMP, Types.TIME -> DATETIME;
             default -> {
                 logger.error(rb.getString("unsupportedOperatorConversions"), dataType);
                 throw new UnsupportedOperationException();
