@@ -40,11 +40,11 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public static final String TIME_OR_DATE = String.format("(%s|%s|%s|%s|%s|%s)", DATE1, DATE2, DATE3, TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final String TIMESTAMP = String.format("'(%s|%s|%s)'::timestamp(\\([0-9]+\\))? without time zone", TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final Pattern REDUNDANCY = Pattern.compile(INTEGER + "|" + NUMERIC + "|" + DATE + "|" + TIMESTAMP);
-    private static final Pattern CanonicalColumnName = Pattern.compile("(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.[a-zA-Z0-9_]+");
-    private static final Pattern FullCanonicalColumnName = Pattern.compile("([a-zA-Z][a-zA-Z0-9$_]*)\\.(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.[a-zA-Z0-9_]+");
+    private static final Pattern CanonicalColumnName = Pattern.compile("(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.\\w+");
+    private static final Pattern FullCanonicalColumnName = Pattern.compile("([a-zA-Z][a-zA-Z0-9$_]*)\\.(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.\\w+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
-    private static final Pattern HASH_SUB_PLAN = Pattern.compile("\\(NOT \\(hashed SubPlan [0-9]+\\)\\)");
+    private static final Pattern HASH_SUB_PLAN = Pattern.compile("\\(NOT \\(hashed SubPlan \\d+\\)\\)");
     private static final Pattern SUB_QUERY = Pattern.compile("(\\()(\\s)*(SELECT)(.+)(FROM)(.+)(\\))");
     private final PgSelectOperatorInfoParser parser = new PgSelectOperatorInfoParser(new PgSelectOperatorInfoLexer(new StringReader("")), new ComplexSymbolFactory());
     public StringBuilder pathForSplit = null;
@@ -143,14 +143,16 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder thirdChildPath = PgJsonReader.skipNodes(PgJsonReader.move3ThirdChild(currentNodePath));
             ExecutionNode parentAggNode = createParentAggNode(currentNodePath, thirdChildPath);
             int rowCount = PgJsonReader.readRowCount(currentNodePath) + PgJsonReader.readRowsRemovedByJoinFilter(currentNodePath);
-            node.setOutputRows(rowCount);
+            if (node != null) {
+                node.setOutputRows(rowCount);
+            }
             parentAggNode.setLeftNode(node);
             node = parentAggNode;
         }
         //todo fix only for query 20
         if (pathForSplit != null) {
-            if (PgJsonReader.move2LeftChild(currentNodePath).toString().equals(pathForSplit.toString()) ||
-                    PgJsonReader.move2RightChild(currentNodePath).toString().equals(pathForSplit.toString())) {
+            if (PgJsonReader.move2LeftChild(currentNodePath).toString().contentEquals(pathForSplit) ||
+                    PgJsonReader.move2RightChild(currentNodePath).toString().contentEquals(pathForSplit)) {
                 node.setOutputRows(PgJsonReader.readActualLoops(PgJsonReader.move2LeftChild(pathForSplit)));
             }
         }
@@ -162,10 +164,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
         //todo multiple subPlans
         String filterInfo = PgJsonReader.readFilterInfo(path);
         if (nodeTypeRef.isFilterNode(PgJsonReader.readNodeType(path)) && filterInfo != null) {
-            Matcher NotHashSubPlan = HASH_SUB_PLAN.matcher(filterInfo);
-            if (NotHashSubPlan.find()) {
+            Matcher notHashSubPlan = HASH_SUB_PLAN.matcher(filterInfo);
+            if (notHashSubPlan.find()) {
                 int count = 1;
-                while (NotHashSubPlan.find()) {
+                while (notHashSubPlan.find()) {
                     count++;
                 }
                 if (count == 1) {
@@ -194,9 +196,9 @@ public class PgAnalyzer extends AbstractAnalyzer {
         String planId = path.toString();
         String filterInfo = PgJsonReader.readFilterInfo(path);
         if (filterInfo != null && filterInfo.contains("(NOT (hashed SubPlan")) {
-            Matcher HashSubPlan = HASH_SUB_PLAN.matcher(filterInfo);
+            Matcher hashSubPlan = HASH_SUB_PLAN.matcher(filterInfo);
             int count = 0;
-            while (HashSubPlan.find()) {
+            while (hashSubPlan.find()) {
                 count++;
             }
             if (count == 1) {
@@ -240,7 +242,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
             }
         }
         joinInfo = "Hash Cond: " + "(" + joinInfo + ")";
-        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, transColumnName(joinInfo), BigDecimal.ZERO);
+        return new JoinNode(path.toString(), rowCount, joinInfo, true, false, BigDecimal.ZERO);
     }
 
     private ExecutionNode getJoinNode(StringBuilder path, int rowCount) {
@@ -277,7 +279,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         }
         String output = transColumnName(PgJsonReader.readOutput(path).toString());
         boolean isSemiJoin = PgJsonReader.isAntiJoin(path) || PgJsonReader.isSemiJoin(path);
-        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), isSemiJoin, output, pkDistinctProbability);
+        return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), isSemiJoin, pkDistinctProbability);
     }
 
     String readDeep(StringBuilder path) {

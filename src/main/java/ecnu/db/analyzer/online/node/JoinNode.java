@@ -1,6 +1,7 @@
 package ecnu.db.analyzer.online.node;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
 public class JoinNode extends ExecutionNode {
@@ -8,7 +9,6 @@ public class JoinNode extends ExecutionNode {
 
     private final boolean semiJoin;
 
-    private final String output;
     private final CountDownLatch waitSetJoinTag = new CountDownLatch(1);
     /**
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
@@ -19,11 +19,10 @@ public class JoinNode extends ExecutionNode {
     private String indexJoinFilter;
 
 
-    public JoinNode(String id, long outputRows, String info, boolean antiJoin, boolean semiJoin, String output, BigDecimal pkDistinctProbability) {
+    public JoinNode(String id, long outputRows, String info, boolean antiJoin, boolean semiJoin, BigDecimal pkDistinctProbability) {
         super(id, ExecutionNodeType.JOIN, outputRows, info);
         this.antiJoin = antiJoin;
         this.semiJoin = semiJoin;
-        this.output = output;
         this.pkDistinctProbability = pkDistinctProbability;
     }
 
@@ -71,5 +70,36 @@ public class JoinNode extends ExecutionNode {
 
     public void setRowsRemoveByFilterAfterJoin(long rowsRemoveByFilterAfterJoin) {
         this.rowsRemoveByFilterAfterJoin = rowsRemoveByFilterAfterJoin;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        JoinNode joinNode = (JoinNode) o;
+
+        if (antiJoin != joinNode.antiJoin) return false;
+        if (semiJoin != joinNode.semiJoin) return false;
+        if (joinTag != joinNode.joinTag) return false;
+        if (rowsRemoveByFilterAfterJoin != joinNode.rowsRemoveByFilterAfterJoin) return false;
+        if (!waitSetJoinTag.equals(joinNode.waitSetJoinTag)) return false;
+        if (!Objects.equals(pkDistinctProbability, joinNode.pkDistinctProbability))
+            return false;
+        return Objects.equals(indexJoinFilter, joinNode.indexJoinFilter);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (antiJoin ? 1 : 0);
+        result = 31 * result + (semiJoin ? 1 : 0);
+        result = 31 * result + waitSetJoinTag.hashCode();
+        result = 31 * result + joinTag;
+        result = 31 * result + (pkDistinctProbability != null ? pkDistinctProbability.hashCode() : 0);
+        result = 31 * result + (int) (rowsRemoveByFilterAfterJoin ^ (rowsRemoveByFilterAfterJoin >>> 32));
+        result = 31 * result + (indexJoinFilter != null ? indexJoinFilter.hashCode() : 0);
+        return result;
     }
 }
