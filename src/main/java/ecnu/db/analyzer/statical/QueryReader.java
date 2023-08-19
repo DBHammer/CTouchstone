@@ -6,10 +6,12 @@ import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
 import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.dialect.postgresql.visitor.PGASTVisitorAdapter;
+import com.alibaba.druid.sql.parser.ParserException;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
 import ecnu.db.utils.exception.TouchstoneException;
 import ecnu.db.utils.exception.analyze.IllegalQueryTableNameException;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -62,7 +64,14 @@ public class QueryReader {
                 }
             }
         }
-        List<SQLStatement> statementList = SQLUtils.parseStatements(fileContents.toString(), dbType, true);
+        List<SQLStatement> statementList = null;
+        try {
+            statementList = SQLUtils.parseStatements(fileContents.toString(), dbType, true);
+        } catch (ParserException e) {
+            LoggerFactory.getLogger(QueryReader.class).info("Parse SQL failed: {}", file, e);
+            System.exit(-1);
+        }
+
         List<String> sqls = new ArrayList<>();
         for (SQLStatement sqlStatement : statementList) {
             String sql = SQLUtils.format(sqlStatement.toString(), dbType);
