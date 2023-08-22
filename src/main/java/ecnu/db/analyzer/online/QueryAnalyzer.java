@@ -383,7 +383,7 @@ public class QueryAnalyzer {
                 constraintChains.add(new ArrayList<>(forkJoinPool.submit(() -> paths.parallelStream().map(path -> {
                     try {
                         return extractConstraintChain(path, inputNodes);
-                    } catch (TouchstoneException | SQLException e) {
+                    } catch (Exception e) {
                         logger.error(path.toString(), e);
                         return null;
                     }
@@ -423,7 +423,7 @@ public class QueryAnalyzer {
         try {
             return abstractAnalyzer.analyzeSelectOperator(operatorInfo);
         } catch (Exception e) {
-            throw new UnsupportedSelect(operatorInfo, e);
+                throw new UnsupportedSelect(operatorInfo, e);
         }
     }
 
