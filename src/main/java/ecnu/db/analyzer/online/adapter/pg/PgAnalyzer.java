@@ -40,7 +40,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     public static final String TIME_OR_DATE = String.format("(%s|%s|%s|%s|%s|%s)", DATE1, DATE2, DATE3, TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final String TIMESTAMP = String.format("'(%s|%s|%s)'::timestamp(\\([0-9]+\\))? without time zone", TIMESTAMP1, TIMESTAMP2, TIMESTAMP3);
     private static final Pattern REDUNDANCY = Pattern.compile(INTEGER + "|" + NUMERIC + "|" + DATE + "|" + TIMESTAMP);
-    private static final Pattern CanonicalColumnName = Pattern.compile("(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.\\w+");
+    private static final Pattern CanonicalColumnName = Pattern.compile("(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.((\\w+)|(\"\\w+\"))");
     private static final Pattern FullCanonicalColumnName = Pattern.compile("([a-zA-Z][a-zA-Z0-9$_]*)\\.(([a-zA-Z][a-zA-Z0-9$_]*)|(\"[a-zA-Z][a-zA-Z0-9$_]*\"))\\.\\w+");
     private static final Pattern JOIN_EQ_OPERATOR = Pattern.compile("Cond: \\(.*\\)");
     private static final Pattern EQ_OPERATOR = Pattern.compile("\\(([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+) = ([a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+\\.[a-zA-Z0-9_$]+)\\)");
@@ -277,7 +277,6 @@ public class PgAnalyzer extends AbstractAnalyzer {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));
             rowCount = PgJsonReader.readRowCount(leftChildPath) - rowCount;
         }
-        String output = transColumnName(PgJsonReader.readOutput(path).toString());
         boolean isSemiJoin = PgJsonReader.isAntiJoin(path) || PgJsonReader.isSemiJoin(path);
         return new JoinNode(path.toString(), rowCount, joinInfo, PgJsonReader.isAntiJoin(path), isSemiJoin, pkDistinctProbability);
     }
@@ -428,7 +427,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
         StringBuilder filter = new StringBuilder();
         while (m.find()) {
             String[] tableNameAndColName = m.group().split("\\.");
-            m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0].replaceAll("\"", "")) + "." + tableNameAndColName[1]);
+            m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0].replace("\"", "")) + "." + tableNameAndColName[1].replace("\"", ""));
         }
         m.appendTail(filter);
         return removeRedundancy(filter.toString(), false);
