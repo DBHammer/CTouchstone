@@ -59,6 +59,7 @@ non terminal          CompareOperator           null_expr;
 non terminal          AbstractFilterOperation   not_expr;
 non terminal          CompareOperator           in_expr;
 non terminal          CompareOperator           like_expr;
+non terminal          ArithmeticNode            agg_columnName;
 
 /* start with */
 start with expr;
@@ -311,39 +312,43 @@ arithmetic_expr ::=
                                                                                       ((NumericNode) node).setConstant(num);
                                                                                       RESULT = node;
                                                                                   :}
-        |SUM:sum LPAREN LPAREN CANONICAL_COLUMN_NAME:col arithmetic_operator LPAREN CANONICAL_COLUMN_NAME:col2 RPAREN RPAREN RPAREN                              {:
+        |SUM:sum LPAREN LPAREN CANONICAL_COLUMN_NAME:col arithmetic_operator  agg_columnName RPAREN RPAREN                              {:
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(sum);
                                                                                       ArithmeticNode leftNode = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
                                                                                       ((ColumnNode) leftNode).setCanonicalColumnName(col);
                                                                                       node.setLeftNode(leftNode);
                                                                                       RESULT = node;
                                                                                   :}
-        |AVG:avg LPAREN CANONICAL_COLUMN_NAME:col RPAREN                          {:
+        |AVG:avg agg_columnName:leftNode                          {:
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(avg);
-                                                                                      ArithmeticNode leftNode = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
-                                                                                      ((ColumnNode) leftNode).setCanonicalColumnName(col);
                                                                                       node.setLeftNode(leftNode);
                                                                                       RESULT = node;
                                                                                   :}
-        |MIN:min LPAREN CANONICAL_COLUMN_NAME:col RPAREN                          {:
+        |MIN:min agg_columnName:leftNode                          {:
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(min);
-                                                                                      ArithmeticNode leftNode = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
-                                                                                      ((ColumnNode) leftNode).setCanonicalColumnName(col);
                                                                                       node.setLeftNode(leftNode);
                                                                                       RESULT = node;
                                                                                   :}
-        |MAX:max LPAREN CANONICAL_COLUMN_NAME:col RPAREN                          {:
+        |MAX:max agg_columnName:leftNode                          {:
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(max);
-                                                                                      ArithmeticNode leftNode = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
-                                                                                      ((ColumnNode) leftNode).setCanonicalColumnName(col);
                                                                                       node.setLeftNode(leftNode);
                                                                                       RESULT = node;
                                                                                   :}
-        |SUM:sum LPAREN CANONICAL_COLUMN_NAME:col RPAREN                          {:
+        |SUM:sum agg_columnName:leftNode                                                  {:
                                                                                       ArithmeticNode node = ArithmeticNodeFactory.create(sum);
-                                                                                      ArithmeticNode leftNode = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
-                                                                                      ((ColumnNode) leftNode).setCanonicalColumnName(col);
                                                                                       node.setLeftNode(leftNode);
+                                                                                      RESULT = node;
+                                                                                  :}
+        ;
+agg_columnName ::=
+        LPAREN LPAREN CANONICAL_COLUMN_NAME:col RPAREN RPAREN                     {:
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
+                                                                                      ((ColumnNode) node).setCanonicalColumnName(col);
+                                                                                      RESULT = node;
+                                                                                  :}
+        | LPAREN CANONICAL_COLUMN_NAME:col RPAREN                                 {:
+                                                                                      ArithmeticNode node = ArithmeticNodeFactory.create(ArithmeticNodeType.COLUMN);
+                                                                                      ((ColumnNode) node).setCanonicalColumnName(col);
                                                                                       RESULT = node;
                                                                                   :}
         ;
