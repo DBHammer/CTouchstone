@@ -160,10 +160,15 @@ DATE=(({DIGIT}{4}-{DIGIT}{2}-{DIGIT}{2}\ {DIGIT}{2}:{DIGIT}{2}:{DIGIT}{2}\.{DIGI
   /* type */
   "::text" {}
   "::text[]" {}
-  "::bpchar[]" {}
   "::bpchar" {}
+  "::bpchar[]" {}
+  "::integer" {}
   "::integer[]" {}
+  "::bigint" {}
+  "::bigint[]" {}
   "::date" {}
+  "::date[]" {}
+  "::double precision" {}
   "::timestamp without time zone" {}
   "::numeric" {}
   "$" {}
