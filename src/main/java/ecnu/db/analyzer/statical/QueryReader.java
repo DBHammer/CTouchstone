@@ -59,7 +59,7 @@ public class QueryReader {
             String line;
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.length() > 0 && !line.startsWith("--")) {
+                if (!line.isEmpty() && !line.startsWith("--")) {
                     fileContents.append(line).append(System.lineSeparator());
                 }
             }
