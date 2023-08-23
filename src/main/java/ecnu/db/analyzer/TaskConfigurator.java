@@ -124,6 +124,7 @@ public class TaskConfigurator implements Callable<Integer> {
             throws IOException, TouchstoneException, SQLException {
         List<File> queryFiles = queryReader.loadQueryFiles();
         List<String> tableNames = queryReader.fetchTableNames(queryFiles);
+        Map<String, Set<String>> tableName2Columns = queryReader.fetchQueryColumnNames(queryFiles);
         logger.info(rb.getString("GetTableNameSuccessfully"), tableNames);
         for (String canonicalTableName : tableNames) {
             logger.info(rb.getString("StartGettingColumnMetadata"), canonicalTableName);
@@ -136,8 +137,9 @@ public class TaskConfigurator implements Callable<Integer> {
                 TableManager.getInstance().addSchema(canonicalTableName, table);
                 logger.info(rb.getString("GetColumnMetadataSuccessfully"), canonicalTableName);
                 logger.info(rb.getString("StartGettingTheDataDistributionOfTable"), canonicalTableName);
-                ColumnManager.getInstance().setDataRangeBySqlResult(table.getCanonicalColumnNames(),
-                        dbConnector.getDataRange(canonicalTableName, table.getCanonicalColumnNames()));
+                List<String> allColumns = tableName2Columns.get(canonicalTableName).stream().toList();
+                ColumnManager.getInstance().setDataRangeBySqlResult(allColumns,
+                        dbConnector.getDataRange(canonicalTableName, allColumns));
                 logger.info(rb.getString("GetTheDataDistributionOfTableSuccessfully"), canonicalTableName);
             }
 

@@ -31,12 +31,11 @@ public class QueryReader {
     private final String queriesDir;
     private DbType dbType;
 
+    private static String defaultDatabaseName;
+
     public QueryReader(String defaultDatabaseName, String queriesDir) {
-        if (defaultDatabaseName == null) {
-            this.aliasVisitor = new ExportTableAliasVisitor();
-        } else {
-            this.aliasVisitor = new ExportTableAliasVisitor(defaultDatabaseName);
-        }
+        QueryReader.defaultDatabaseName = defaultDatabaseName;
+        aliasVisitor = new ExportTableAliasVisitor();
         this.queriesDir = queriesDir;
     }
 
@@ -90,10 +89,11 @@ public class QueryReader {
         stmt.accept(statVisitor);
         HashSet<String> tableName = new HashSet<>();
         for (TableStat.Name name : statVisitor.getTables().keySet()) {
-            tableName.add(aliasVisitor.addDatabaseNamePrefix(name.getName()));
+            tableName.add(addDatabaseNamePrefix(name.getName()));
         }
         return tableName;
     }
+
 
     public Map<String, String> getTableAlias(String sql) throws TouchstoneException {
         SQLStatement sqlStatement = SQLUtils.parseStatements(sql, dbType).get(0);
@@ -102,6 +102,23 @@ public class QueryReader {
         }
         statement.accept(aliasVisitor);
         return aliasVisitor.getAliasMap();
+    }
+
+    public Map<String, Set<String>> getInvolvedColumnName(String sql) throws TouchstoneException {
+        SQLStatement sqlStatement = SQLUtils.parseStatements(sql, dbType).get(0);
+        SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(dbType);
+        sqlStatement.accept(statVisitor);
+        Map<String, Set<String>> table2ColumnNames = new HashMap<>();
+        for (TableStat.Condition condition : statVisitor.getConditions()) {
+            String[] result = condition.getColumn().getFullName().split("\\.");
+            if (result.length != 2) {
+                throw new TouchstoneException("Druid Api Change");
+            }
+            String tableName = addDatabaseNamePrefix(result[0]);
+            table2ColumnNames.putIfAbsent(tableName, new HashSet<>());
+            table2ColumnNames.get(tableName).add(tableName + "." + result[1]);
+        }
+        return table2ColumnNames;
     }
 
     /**
@@ -121,31 +138,46 @@ public class QueryReader {
         return tableNames;
     }
 
+    /**
+     * @param files SQL文件
+     * @return 所有查询中涉及到的表名
+     * @throws IOException 从SQL文件中获取Query失败
+     */
+    public Map<String, Set<String>> fetchQueryColumnNames(List<File> files) throws IOException, TouchstoneException {
+        Map<String, Set<String>> tableNames = new HashMap<>();
+        for (File sqlFile : files) {
+            List<String> queries = getQueriesFromFile(sqlFile.getPath());
+            for (String query : queries) {
+                for (Map.Entry<String, Set<String>> tableName2Columns : getInvolvedColumnName(query).entrySet()) {
+                    tableNames.putIfAbsent(tableName2Columns.getKey(), new HashSet<>());
+                    tableNames.get(tableName2Columns.getKey()).addAll(tableName2Columns.getValue());
+                }
+            }
+        }
+        return tableNames;
+    }
+
+    /**
+     * 单个数据库时把表转换为<database>.<table>的形式
+     *
+     * @param tableName 表名
+     * @return 转换后的表名
+     */
+    private static String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
+        List<List<String>> matches = matchPattern(QueryReader.CANONICAL_TBL_NAME, tableName);
+        if (matches.size() == 1 && matches.get(0).get(0).length() == tableName.length()) {
+            return tableName;
+        } else {
+            if (defaultDatabaseName == null) {
+                throw new IllegalQueryTableNameException();
+            }
+            return String.format("%s.%s", defaultDatabaseName, tableName);
+        }
+    }
+
 
     private static class ExportTableAliasVisitor extends PGASTVisitorAdapter {
         private final Map<String, String> aliasMap = new HashMap<>();
-        private final String defaultDatabaseName;
-
-        public ExportTableAliasVisitor(String defaultDatabaseName) {
-            this.defaultDatabaseName = defaultDatabaseName;
-        }
-
-        public ExportTableAliasVisitor() {
-            this.defaultDatabaseName = null;
-        }
-
-        private static String convertTableName2CanonicalTableName(String canonicalTableName,
-                                                                  String defaultDatabase) throws IllegalQueryTableNameException {
-            List<List<String>> matches = matchPattern(QueryReader.CANONICAL_TBL_NAME, canonicalTableName);
-            if (matches.size() == 1 && matches.get(0).get(0).length() == canonicalTableName.length()) {
-                return canonicalTableName;
-            } else {
-                if (defaultDatabase == null) {
-                    throw new IllegalQueryTableNameException();
-                }
-                return String.format("%s.%s", defaultDatabase, canonicalTableName);
-            }
-        }
 
         @Override
         public boolean visit(SQLExprTableSource x) {
@@ -161,16 +193,6 @@ public class QueryReader {
 
         public Map<String, String> getAliasMap() {
             return aliasMap;
-        }
-
-        /**
-         * 单个数据库时把表转换为<database>.<table>的形式
-         *
-         * @param tableName 表名
-         * @return 转换后的表名
-         */
-        public String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
-            return convertTableName2CanonicalTableName(tableName, defaultDatabaseName);
         }
     }
 
