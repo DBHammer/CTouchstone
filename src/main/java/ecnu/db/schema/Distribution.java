@@ -193,7 +193,9 @@ public class Distribution {
         }
         // 如果没有找到
         if (minCDF.compareTo(BigDecimal.ZERO) == 0) {
-            throw new TouchstoneException(String.format("不存在可以放置的range, 概率为%s", probability));
+            if (tempParameterList.size() == 1 || !dealWithInPredicatesGreedily(probability, tempParameterList)) {
+                throw new TouchstoneException(String.format("不存在可以放置的range, 概率为%s", probability));
+            }
         } else if (tempParameterList.stream().anyMatch(Parameter::isCanMerge)) {
             BigDecimal eachPb = probability.divide(BigDecimal.valueOf(tempParameterList.size()), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
             for (Parameter parameter : tempParameterList) {
@@ -207,6 +209,46 @@ public class Distribution {
             BigDecimal eqCDf = minCDF.subtract(remainCapacity);
             pvAndPbList.put(eqCDf, new LinkedList<>(tempParameterList));
         }
+    }
+
+    private boolean dealWithInPredicatesGreedily(BigDecimal probability, List<Parameter> tempParameterList) {
+        TreeMap<BigDecimal, List<Parameter>> range2StartForEq = new TreeMap<>();
+        TreeMap<BigDecimal, BigDecimal> range2StartForNoEq = new TreeMap<>();
+        for (var currentCDF : pvAndPbList.entrySet()) {
+            if (isNonEqualRange(currentCDF.getValue())) {
+                range2StartForNoEq.put(getRange(currentCDF.getKey()), currentCDF.getKey());
+            } else {
+                range2StartForEq.put(getRange(currentCDF.getKey()), currentCDF.getValue());
+            }
+        }
+        for (Map.Entry<BigDecimal, List<Parameter>> mostRange2Start : range2StartForEq.descendingMap().entrySet()) {
+            boolean canDivide = tempParameterList.size() > 1 && mostRange2Start.getKey().compareTo(probability) <= 0;
+            boolean canPutIn = tempParameterList.size() == 1 && mostRange2Start.getKey().compareTo(probability) == 0;
+            if (canDivide || canPutIn) {
+                probability = probability.subtract(mostRange2Start.getKey());
+                if (probability.compareTo(BigDecimal.ZERO) == 0) {
+                    mostRange2Start.getValue().addAll(tempParameterList);
+                    return true;
+                } else {
+                    mostRange2Start.getValue().add(tempParameterList.remove(0));
+                }
+            }
+        }
+        for (Map.Entry<BigDecimal, BigDecimal> mostRange2Start : range2StartForNoEq.descendingMap().entrySet()) {
+            probability = probability.subtract(mostRange2Start.getKey());
+            if (probability.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal eqCDf = mostRange2Start.getValue().subtract(mostRange2Start.getKey());
+                pvAndPbList.put(eqCDf, new LinkedList<>(Collections.singletonList(tempParameterList.remove(0))));
+                if (tempParameterList.isEmpty()) {
+                    return false;
+                }
+            } else {
+                BigDecimal eqCDf = mostRange2Start.getValue().add(probability);
+                pvAndPbList.put(eqCDf, new LinkedList<>(tempParameterList));
+                return true;
+            }
+        }
+        return probability.compareTo(BigDecimal.ZERO) == 0;
     }
 
     private boolean isNonEqualRange(List<Parameter> parameters) {
