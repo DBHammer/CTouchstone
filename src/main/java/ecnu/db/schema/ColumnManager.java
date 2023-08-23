@@ -89,6 +89,9 @@ public class ColumnManager {
     }
 
     public long getMin(String columnName) {
+        if (!columns.containsKey(columnName)) {
+            return 0;
+        }
         return columns.get(columnName).getMin();
     }
 
