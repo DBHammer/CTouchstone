@@ -280,12 +280,16 @@ public class Distribution {
                 .map(e -> getRange(e.getKey()))
                 // sum all range
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (!pvAndPbList.containsKey(BigDecimal.ONE)) {
+            remainRange = remainRange.add(getRange(BigDecimal.ONE));
+        }
         BigDecimal cardinalityPercentage;
         if (remainRange.compareTo(BigDecimal.ZERO) > 0) {
             if (remainCardinality < 0) {
                 addCardinality = -remainCardinality;
                 remainCardinality = 0;
             }
+            remainRange = remainRange.multiply(BigDecimal.valueOf(range));
             cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
         } else {
             if (remainCardinality > 0) {
@@ -325,7 +329,7 @@ public class Distribution {
             return new long[0];
         }
         // 生成为左开右闭，因此lastParaData始终比上一右边界大
-        long lastParaData = 1;
+        long lastParaData = 0;
         List<Long> allBoundPvs = offset2Pv.values().stream().toList();
         List<long[]> rangeValues = new ArrayList<>();
         for (Map.Entry<Long, BigDecimal> data2Probability : paraData2Probability.entrySet()) {
