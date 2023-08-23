@@ -53,8 +53,8 @@ public class ColumnManager {
         try {
             getColumn(columnName).getDistribution().applyUniVarConstraint(probability, operator, parameters);
         } catch (TouchstoneException e) {
-            logger.error(e.getMessage());
-            e.printStackTrace();
+            logger.error(columnName, e);
+
         }
     }
 
