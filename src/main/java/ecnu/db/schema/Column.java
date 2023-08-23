@@ -19,7 +19,7 @@ public class Column {
     private ColumnType columnType;
     private long min;
     private String originalType;
-    private long range;
+    private long range = 1;
     private long specialValue;
     private BigDecimal nullPercentage = BigDecimal.ZERO;
     private int avgLength;

@@ -328,8 +328,8 @@ public class Distribution {
         if (paraData2Probability.size() == 1 && paraData2Probability.lastKey() == -1) {
             return new long[0];
         }
-        // 生成为左开右闭，因此lastParaData始终比上一右边界大
-        long lastParaData = 0;
+        // 生成为左闭右开，因此lastParaData始终比上一右边界大
+        long lastParaData = 1;
         List<Long> allBoundPvs = offset2Pv.values().stream().toList();
         List<long[]> rangeValues = new ArrayList<>();
         for (Map.Entry<Long, BigDecimal> data2Probability : paraData2Probability.entrySet()) {
