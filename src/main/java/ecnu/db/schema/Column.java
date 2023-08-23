@@ -21,7 +21,7 @@ public class Column {
     private String originalType;
     private long range;
     private long specialValue;
-    private BigDecimal nullPercentage;
+    private BigDecimal nullPercentage = BigDecimal.ZERO;
     private int avgLength;
     private int maxLength;
     @JsonIgnore
@@ -212,7 +212,7 @@ public class Column {
         };
     }
 
-    public void addSubStringIndex(long dataId){
+    public void addSubStringIndex(long dataId) {
         stringTemplate.addSubStringIndex(dataId);
     }
 
