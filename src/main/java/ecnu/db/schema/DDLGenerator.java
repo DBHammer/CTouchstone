@@ -59,7 +59,7 @@ public class DDLGenerator implements Callable<Integer> {
         StringBuilder importData = new StringBuilder("\\c " + dataBase + ";\n");
         for (Map.Entry<String, Table> tableName2Schema : TableManager.getInstance().getSchemas().entrySet()) {
             String tableName = tableName2Schema.getKey();
-            String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM " + "'" + "./data/" + tableName + "0" + "' DELIMITER ',';\n";
+            String inData = "\\Copy " + tableName.split("\\.")[1] + " FROM PROGRAM" + "'" + "cat ./data/" + tableName + "-*" + "' DELIMITER ',';\n";
             importData.append(inData);
         }
         CommonUtils.writeFile(this.importData, importData.toString());
