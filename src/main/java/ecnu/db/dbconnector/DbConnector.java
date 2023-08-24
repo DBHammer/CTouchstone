@@ -76,9 +76,7 @@ public abstract class DbConnector {
         ResultSet rs = databaseMetaData.getColumns(null, schemaAndTable[0], schemaAndTable[1], null);
         while (rs.next()) {
             String columnName = rs.getString("COLUMN_NAME").trim();
-            if (columnName.contains(" ")) {
-                columnName = String.format("\"%s\"", columnName);
-            }
+            columnName = String.format("\"%s\"", columnName);
             String canonicalColumnName = canonicalTableName + "." + columnName;
             columnNames.add(canonicalColumnName);
             int columnType = rs.getInt("DATA_TYPE");
