@@ -199,7 +199,7 @@ public class Table {
         for (String canonicalColumnName : allColumns) {
             String columnName = canonicalColumnName.split("\\.")[2].toUpperCase();
             Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
-            String addColumn = columnName + " " + column.getOriginalType() + ",";
+            String addColumn = "\""+ columnName + "\" " + column.getOriginalType() + ",";
             head.append("  ").append(addColumn).append("\n");
         }
         head = new StringBuilder(head.substring(0, head.length() - 2));
