@@ -174,7 +174,7 @@ public class Table {
         allColumns.addAll(0, foreignKeysList);
         allColumns.addAll(0, tempPrimayKeys);
         for (String canonicalColumnName : allColumns) {
-            String columnName = canonicalColumnName.split("\\.")[2].toUpperCase();
+            String columnName = canonicalColumnName.split("\\.")[2];
             Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
             String addColumn = columnName + " " + column.getOriginalType() + ",";
             head.append(addColumn);
@@ -197,7 +197,7 @@ public class Table {
         allColumns.addAll(0, foreignKeysList);
         allColumns.addAll(0, tempPrimayKeys);
         for (String canonicalColumnName : allColumns) {
-            String columnName = canonicalColumnName.split("\\.")[2].toUpperCase();
+            String columnName = canonicalColumnName.split("\\.")[2];
             Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
             String columnType = column.getOriginalType();
             if(columnType.contains("TIME ")){
