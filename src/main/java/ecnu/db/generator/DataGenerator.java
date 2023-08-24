@@ -219,14 +219,19 @@ public class DataGenerator implements Callable<Integer> {
         return pkJoinTag2ChainIndex.values().stream().mapToInt(Integer::intValue).toArray();
     }
 
-    private void generateTableWithoutChains(long pkStart, long tableSize, String schemaName) {
+    private void generateTableWithoutChains(String pkName, long tableSize, String schemaName) {
+        long pkStart = ColumnManager.getInstance().getMin(pkName);
         while (batchStart < tableSize) {
             int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
             //生成属性列数据
             ColumnManager.getInstance().prepareGeneration(range);
             String[] attRows = ColumnManager.getInstance().generateAttRows(range);
             StringBuilder[] rowData = new StringBuilder[range];
-            IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder().append(batchStart + i + pkStart).append(","));
+            if (pkName.isEmpty()) {
+                IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder());
+            } else {
+                IntStream.range(0, range).parallel().forEach(i -> rowData[i] = new StringBuilder().append(batchStart + i + pkStart).append(","));
+            }
             dataWriter.addWriteTask(schemaName, rowData, attRows);
             batchStart += range + stepRange;
         }
@@ -249,7 +254,7 @@ public class DataGenerator implements Callable<Integer> {
             List<ConstraintChain> allChains = schema2chains.get(schemaName);
             if (allChains == null) {
                 // todo 当前假设主键是连续的
-                generateTableWithoutChains(ColumnManager.getInstance().getMin(pkName), tableSize, schemaName);
+                generateTableWithoutChains(pkName, tableSize, schemaName);
                 continue;
             }
             // 设置chain的索引
