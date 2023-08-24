@@ -1,6 +1,7 @@
 package ecnu.db.dbconnector;
 
 import ecnu.db.LanguageManager;
+import ecnu.db.dbconnector.adapter.PgConnector;
 import ecnu.db.schema.Column;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.ColumnType;
@@ -91,6 +92,9 @@ public abstract class DbConnector {
                 case Types.NUMERIC -> "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")";
                 default -> getTypeName(columnType);
             } + (rs.getInt("NULLABLE") == 0 ? " NOT NULL" : " DEFAULT NULL");
+            if (this instanceof PgConnector && originalType.contains("DOUBLE")) {
+                originalType = originalType.replace("DOUBLE", "DOUBLE PRECISION");
+            }
             ColumnManager.getInstance().getColumn(canonicalColumnName).setOriginalType(originalType);
             if (ColumnManager.getInstance().getColumnType(canonicalColumnName) == ColumnType.DECIMAL) {
                 ColumnManager.getInstance().setSpecialValue(canonicalColumnName, (int) Math.pow(10, rs.getInt("DECIMAL_DIGITS")));
