@@ -301,7 +301,7 @@ public class Distribution {
         paraData2Probability.clear();
         for (var CDF2Parameters : pvAndPbList.entrySet()) {
             dataIndex++;
-            BigDecimal rangeSize = getRange(CDF2Parameters.getKey());
+            BigDecimal rangeSize = getRange(CDF2Parameters.getKey()).multiply(BigDecimal.valueOf(range));
             if (isNonEqualRange(CDF2Parameters.getValue())) {
                 dataIndex += cardinalityPercentage.multiply(rangeSize).setScale(0, RoundingMode.HALF_UP).intValue();
             }
