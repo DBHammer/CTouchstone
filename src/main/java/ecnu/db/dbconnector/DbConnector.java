@@ -75,9 +75,13 @@ public abstract class DbConnector {
         DatabaseMetaData databaseMetaData = conn.getMetaData();
         ResultSet rs = databaseMetaData.getColumns(null, schemaAndTable[0], schemaAndTable[1], null);
         while (rs.next()) {
-            String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
+            String columnName = rs.getString("COLUMN_NAME").trim();
+            if (columnName.contains(" ")) {
+                columnName = String.format("\"%s\"", columnName);
+            }
+            String canonicalColumnName = canonicalTableName + "." + columnName;
             columnNames.add(canonicalColumnName);
-            int columnType=rs.getInt("DATA_TYPE");
+            int columnType = rs.getInt("DATA_TYPE");
             ColumnManager.getInstance().addColumn(canonicalColumnName, new Column(ColumnType.getColumnType(columnType)));
             String originalType = switch (columnType) {
                 case Types.CHAR -> getTypeName(columnType) + "(" + rs.getInt("CHAR_OCTET_LENGTH") + ")";
@@ -86,10 +90,11 @@ public abstract class DbConnector {
                     if (charLength == Integer.MAX_VALUE) {
                         yield "TEXT";
                     } else {
-                        yield getTypeName(columnType) + "(" + charLength +")";
+                        yield getTypeName(columnType) + "(" + charLength + ")";
                     }
                 }
-                case Types.NUMERIC -> "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")";
+                case Types.NUMERIC ->
+                        "DECIMAL" + "(" + rs.getInt("COLUMN_SIZE") + "," + rs.getInt("DECIMAL_DIGITS") + ")";
                 default -> getTypeName(columnType);
             } + (rs.getInt("NULLABLE") == 0 ? " NOT NULL" : " DEFAULT NULL");
             if (this instanceof PgConnector && originalType.contains("DOUBLE")) {
@@ -210,12 +215,15 @@ public abstract class DbConnector {
             ColumnType type = ColumnManager.getInstance().getColumnType(canonicalColumnName);
             String[] canonicalColumnNameList = canonicalColumnName.split("\\.");
             canonicalColumnName = Arrays.stream(canonicalColumnNameList)
-                    .map(s->String.format("\"%s\"",s))
+                    .map(s -> String.format("\"%s\"", s))
                     .collect(Collectors.joining("."));
             switch (type) {
-                case DATE, DATETIME, DECIMAL -> sql.append(String.format("min(%1$s), max(%1$s), ", canonicalColumnName));
-                case INTEGER -> sql.append(String.format("min(%1$s::int), max(%1$s::int), count(distinct %1$s::int),", canonicalColumnName));
-                case VARCHAR -> sql.append(String.format("avg(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
+                case DATE, DATETIME, DECIMAL ->
+                        sql.append(String.format("min(%1$s), max(%1$s), ", canonicalColumnName));
+                case INTEGER ->
+                        sql.append(String.format("min(%1$s::int), max(%1$s::int), count(distinct %1$s::int),", canonicalColumnName));
+                case VARCHAR ->
+                        sql.append(String.format("avg(length(%1$s)), max(length(%1$s)), count(distinct %1$s),", canonicalColumnName));
                 case BOOL -> sql.append(String.format("avg(%s)", canonicalColumnName));
                 default -> throw new TouchstoneException("未匹配到的类型");
             }
@@ -228,7 +236,7 @@ public abstract class DbConnector {
         String[] schemaAndTable = canonicalTableName.split("\\.");
         List<String> primaryKeys = new ArrayList<>();
         DatabaseMetaData databaseMetaData = conn.getMetaData();
-        ResultSet rs = databaseMetaData.getPrimaryKeys(null,schemaAndTable[0],schemaAndTable[1]);
+        ResultSet rs = databaseMetaData.getPrimaryKeys(null, schemaAndTable[0], schemaAndTable[1]);
         while (rs.next()) {
             String canonicalColumnName = canonicalTableName + "." + rs.getString("COLUMN_NAME");
             primaryKeys.add(canonicalColumnName);
