@@ -289,7 +289,6 @@ public class Distribution {
                 addCardinality = -remainCardinality;
                 remainCardinality = 0;
             }
-            remainRange = remainRange.multiply(BigDecimal.valueOf(range));
             cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
         } else {
             if (remainCardinality > 0) {
@@ -301,7 +300,7 @@ public class Distribution {
         paraData2Probability.clear();
         for (var CDF2Parameters : pvAndPbList.entrySet()) {
             dataIndex++;
-            BigDecimal rangeSize = getRange(CDF2Parameters.getKey()).multiply(BigDecimal.valueOf(range));
+            BigDecimal rangeSize = getRange(CDF2Parameters.getKey());
             if (isNonEqualRange(CDF2Parameters.getValue())) {
                 dataIndex += cardinalityPercentage.multiply(rangeSize).setScale(0, RoundingMode.HALF_UP).intValue();
             }
