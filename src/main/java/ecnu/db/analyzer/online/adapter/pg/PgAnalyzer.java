@@ -423,14 +423,21 @@ public class PgAnalyzer extends AbstractAnalyzer {
             matcherOnlyForOpenGauss.appendReplacement(tmpStr, tableNameAndColName[1] + "." + tableNameAndColName[2]);
         }
         matcherOnlyForOpenGauss.appendTail(tmpStr);
-        Matcher m = CanonicalColumnName.matcher(tmpStr.toString());
-        StringBuilder filter = new StringBuilder();
-        while (m.find()) {
-            String[] tableNameAndColName = m.group().split("\\.");
-            m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0].replace("\"", "")) + "." + tableNameAndColName[1].replace("\"", ""));
+
+        String[] splitResults = tmpStr.toString().split("'");
+        for (int i = 0; i < splitResults.length; i++) {
+            if (i % 2 == 0) {
+                StringBuilder filter = new StringBuilder();
+                Matcher m = CanonicalColumnName.matcher(splitResults[i]);
+                while (m.find()) {
+                    String[] tableNameAndColName = m.group().split("\\.");
+                    m.appendReplacement(filter, aliasDic.get(tableNameAndColName[0].replace("\"", "")) + "." + tableNameAndColName[1].replace("\"", ""));
+                }
+                m.appendTail(filter);
+                splitResults[i] = filter.toString();
+            }
         }
-        m.appendTail(filter);
-        return removeRedundancy(filter.toString(), false);
+        return removeRedundancy(String.join("'", splitResults), false);
     }
 
     public String removeRedundancy(String filterInfo, boolean keepQuotes) {
