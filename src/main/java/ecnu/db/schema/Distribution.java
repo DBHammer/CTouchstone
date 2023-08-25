@@ -77,7 +77,7 @@ public class Distribution {
             pvAndPbList.putIfAbsent(probability, new ArrayList<>());
             pvAndPbList.get(probability).addAll(parameters);
         } else {
-            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? -1 : range + 100;
+            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? -1 : range + 20;
             for (Parameter parameter : parameters) {
                 parameter.setData(dataIndex);
             }
