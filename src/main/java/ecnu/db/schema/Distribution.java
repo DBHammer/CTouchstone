@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Distribution {
-    private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.15);
+    private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.08);
 
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
@@ -77,7 +77,7 @@ public class Distribution {
             pvAndPbList.putIfAbsent(probability, new ArrayList<>());
             pvAndPbList.get(probability).addAll(parameters);
         } else {
-            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? -1 : range + 1;
+            long dataIndex = probability.compareTo(BigDecimal.ZERO) <= 0 ? -1 : range + 100;
             for (Parameter parameter : parameters) {
                 parameter.setData(dataIndex);
             }
