@@ -139,6 +139,9 @@ public class Parameter {
         if (type == ParameterType.LIKE) {
             dataValue = '%' + dataValue;
         }
+        if (dataValue.endsWith("00:00:00")) {
+            dataValue = dataValue.substring(0, dataValue.length() - 9);
+        }
         this.dataValue = dataValue;
     }
 
