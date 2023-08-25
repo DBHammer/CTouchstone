@@ -84,7 +84,9 @@ public class Parameter {
                 dataValue = dataValue.split(" ")[0];
             }
         }
-
+        if (dataValue!=null && dataValue.endsWith("00:00:00")) {
+            dataValue = dataValue.substring(0, dataValue.length() - 9);
+        }
         this.dataValue = dataValue;
     }
 
