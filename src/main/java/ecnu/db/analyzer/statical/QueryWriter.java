@@ -85,11 +85,11 @@ public class QueryWriter {
                 if (!col.equals("DATE")) {
                     lastColumn = col;
                 }
-            } else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS||token == Token.SUB) {
-                if(token == Token.SUB){
+            } else if (token == Token.LITERAL_INT || token == Token.LITERAL_FLOAT || token == Token.LITERAL_CHARS || token == Token.SUB) {
+                if (token == Token.SUB) {
                     nextIntIsNegavive = true;
                 }
-                if(token == Token.LITERAL_INT && nextIntIsNegavive){
+                if (token == Token.LITERAL_INT && nextIntIsNegavive) {
                     lastPos--;
                     nextIntIsNegavive = false;
                 }
@@ -131,7 +131,12 @@ public class QueryWriter {
             String data = parameter.getRealDataValue();
             List<parameterColumnName2Location> matches = literalMap.getOrDefault(data, new ArrayList<>());
             if (literalMap.containsKey("'" + data + "'")) {
-                matches.addAll(literalMap.get("'" + data + "'"));
+                List<parameterColumnName2Location> name2Locations = literalMap.get("'" + data + "'");
+                for (parameterColumnName2Location name2Location : name2Locations) {
+                    if (parameter.getOperand().endsWith(name2Location.columnName)) {
+                        matches.add(name2Location);
+                    }
+                }
             }
 
             if (matches.isEmpty()) {
