@@ -20,14 +20,15 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static ecnu.db.generator.constraintchain.filter.operation.CompareOperator.EQ;
 import static ecnu.db.utils.CommonUtils.readFile;
 
 public class getInputTouchstone {
-    private static String schemaInfoPath = "D:\\eclipse-workspace\\Mirage\\resultTSTPCDS\\schema.json";
+    private static String schemaInfoPath = "D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\schema.json";
 
-    private static String columnInfoPath = "D:\\eclipse-workspace\\Mirage\\resultTSTPCDS\\column.csv";
+    private static String columnInfoPath = "D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\column.csv";
 
-    private static String constraintChainPath = "D:\\eclipse-workspace\\Mirage\\resultTSTPCDS\\workload";
+    private static String constraintChainPath = "D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\workload";
 
     private static final LinkedHashMap<String, Column> columns = new LinkedHashMap<>();
 
@@ -43,7 +44,7 @@ public class getInputTouchstone {
             "public.inventory", "public.catalog_sales", "public.store_returns", "public.catalog_returns", "public.customer_address",
             "public.customer", "public.web_sales", "public.call_center", "public.web_page", "public.web_returns"};
 
-    private static final int SF = 1000;
+    private static final int SF = 1;
 
     public static void main(String[] args) throws IOException, TouchstoneException {
         getColumnInput();
@@ -51,7 +52,7 @@ public class getInputTouchstone {
         //System.out.println(columnInfo);
         String schemaInfo = getSchemaInput();
         //System.out.println(schemaInfo);
-        String outputPath1 = "D:\\eclipse-workspace\\Touchstone\\conf\\tpcds_schema_sf_1.txt";
+        String outputPath1 = "D:\\eclipse-workspace\\Touchstone\\conf\\bibench_schema_sf_1.txt";
         FileWriter fw = new FileWriter(outputPath1);
         BufferedWriter bw = new BufferedWriter(fw);
         bw.write(schemaInfo);
@@ -61,7 +62,7 @@ public class getInputTouchstone {
         fw.close();
         getConstraintChainInput();
         String allCCInfo = getConstraintString();
-        String outputPath2 = "D:\\eclipse-workspace\\Touchstone\\conf\\tpcds_cardinality_constraints_sf_1.txt";
+        String outputPath2 = "D:\\eclipse-workspace\\Touchstone\\conf\\bibench_cardinality_constraints_sf_1.txt";
         FileWriter fw2 = new FileWriter(outputPath2);
         BufferedWriter bw2 = new BufferedWriter(fw2);
         bw2.write(allCCInfo);
@@ -89,7 +90,7 @@ public class getInputTouchstone {
     }
 
     private static List<String> getColumnSequence() throws IOException {
-        LinkedHashMap<String, Table> schemas = CommonUtils.MAPPER.readValue(CommonUtils.readFile("D:\\eclipse-workspace\\Mirage\\resultTSTPCDS\\schema.json"), new TypeReference<>() {
+        LinkedHashMap<String, Table> schemas = CommonUtils.MAPPER.readValue(CommonUtils.readFile("D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\schema.json"), new TypeReference<>() {
         });
         List<String> columnSequence = new ArrayList<>();
         for (Map.Entry<String, Table> stringTableEntry : schemas.entrySet()) {
@@ -162,21 +163,27 @@ public class getInputTouchstone {
             if (tableSize < 500) {
                 tableSize *= 100;
             }
-            if(Arrays.stream(changeableTableInTPCDS).toList().contains(tableName)){
-                tableSize = tableSize*SF;
-            }
+//            if(Arrays.stream(changeableTableInTPCDS).toList().contains(tableName)){
+//                tableSize = tableSize*SF;
+//            }
             currentSchemaInfo.append(tableSize).append("; ");
             //加列信息
             List<String> columnNameList = getEachColumnSeq(currentTable);
+            int start = 0;
             for (String cname : columnNameList) {
                 String columnType = columns.get(cname).getColumnType().toString();
                 String simpleColomnName = cname.split("\\.")[2];
-                currentSchemaInfo.append(simpleColomnName).append(", ").append(columnType).append("; ");
+                if (start != columnNameList.size() - 1) {
+                    currentSchemaInfo.append(simpleColomnName).append(", ").append(columnType).append("; ");
+                } else {
+                    currentSchemaInfo.append(simpleColomnName).append(", ").append(columnType);
+                }
+                start++;
             }
             //加主键信息
             List<String> primaryKeys = currentTable.getPrimaryKeysList();
             if (primaryKeys.size() != 0) {
-                currentSchemaInfo.append("P(");
+                currentSchemaInfo.append(" P(");
                 for (int i = 0; i < primaryKeys.size(); i++) {
                     String simplePK = primaryKeys.get(i).split("\\.")[2];
                     if (i == (primaryKeys.size() - 1)) {
@@ -301,7 +308,7 @@ public class getInputTouchstone {
                         //throw new TouchstoneException("cantdeal");
                     }
                 }
-                if (boolInfo.length() != 0) {
+                if (!boolInfo.isEmpty()) {
                     filterInfo.append(boolInfo).append("#").append(type).append(", ");
                 }
             } else {
@@ -324,7 +331,15 @@ public class getInputTouchstone {
         StringBuilder uniVarInfo = new StringBuilder();
         String columnName = operation.getCanonicalColumnName().split("\\.")[2];
         uniVarInfo.append(columnName).append("@");
+
         CompareOperator op = operation.getOperator();
+        if (op == EQ) {
+            ColumnType columnType = columns.get(operation.getCanonicalColumnName()).getColumnType();
+            if (columnType != ColumnType.INTEGER && columnType != ColumnType.VARCHAR) {
+                System.out.println(operation);
+                System.out.println("wqs");
+            }
+        }
         switch (op) {
             case EQ -> uniVarInfo.append("=");
             case LT -> uniVarInfo.append("<");

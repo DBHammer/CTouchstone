@@ -10,28 +10,31 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class getOutPut {
     public static void main(String[] args) throws IOException, SQLException, TouchstoneException {
-        File oldSqlFile = new File("D:\\eclipse-workspace\\Mirage\\conf\\queriesSSB");
-        File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultSSB\\queries");
+        File oldSqlFile = new File("D:\\eclipse-workspace\\public_bi_benchmark\\benchmark-classified-andor\\and");
+        File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\queries");
         List<String> arrayList1 = new ArrayList<>();
         List<String> arrayList2 = new ArrayList<>();
         List<String> requireFileOld = getRequireFile(oldSqlFile, ".sql", arrayList1);
         List<String> requireFileNew = getRequireFile(newSqlFile, ".sql", arrayList2);
-        DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "ssb");
+        DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "bibench");
         DbConnector dbConnector1 = new PgConnector(config1);
-        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("biui.me", "5432", "postgres", "Biui1227..", "ssbdemo");
+        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "bibenchdemo");
         DbConnector dbConnector2 = new PgConnector(config2);
         for (int i = 0; i < requireFileOld.size(); i++) {
             String sql1 = requireFileOld.get(i);
             String sql2 = requireFileNew.get(i);
-            sql1 = replaceCount(sql1);
-            sql2 = replaceCount(sql2);
-            sql1 = sql1.replaceFirst("\\*", "count(*)");
-            sql2 = sql2.replaceFirst("\\*", "count(*)");
+            sql1 = handleSql4BibenchOld(sql1);
+            sql2 = handleSql4BibenchNew(sql2);
+//            sql1 = replaceCount(sql1);
+//            sql2 = replaceCount(sql2);
+//            sql1 = sql1.replaceFirst("\\*", "count(*)");
+//            sql2 = sql2.replaceFirst("\\*", "count(*)");
             /*for (int i1 = 0; i1 < 3; i1++) {
                 dbConnector1.getSqlResult(sql1);
             }*/
@@ -50,7 +53,7 @@ public class getOutPut {
             if (r1 != r2 || r1 == 0) {
                 System.out.println(i + " " + r1 + " " + r2);
             } else {
-                System.out.println(i);
+                System.out.println(i + " " + r1 + " " + r2);
             }
         }
 
@@ -60,6 +63,14 @@ public class getOutPut {
     public static List<String> getRequireFile(File file, String suffix, List<String> arrayList) throws IOException {
         File[] listFiles = file.listFiles();
         assert listFiles != null;
+        List<File> fileList = Arrays.asList(listFiles);
+        fileList.sort((o1, o2) -> {
+            if (o1.isDirectory() && o2.isFile())
+                return -1;
+            if (o1.isFile() && o2.isDirectory())
+                return 1;
+            return o1.getName().replace("_1.sql",".sql").compareTo(o2.getName().replace("_1.sql",".sql"));
+        });
         for (File file2 : listFiles) {
             if (file2.getName().endsWith(suffix)) {
                 BufferedReader bufferedReader = new BufferedReader(new FileReader(file2));
@@ -71,15 +82,13 @@ public class getOutPut {
                     }
                 }
                 arrayList.add(content.toString());
-            } else if (file2.isDirectory()) {
-                getRequireFile(file2, suffix, arrayList);
             }
         }
         return arrayList;
     }
 
-    public static String replaceCount(String query){
-        String[] queryRow= query.split("\n");
+    public static String replaceCount(String query) {
+        String[] queryRow = query.split("\n");
         String queryFirstRow = queryRow[0];
         StringBuilder result = new StringBuilder("select *");
         for (int i = 1; i < queryRow.length; i++) {
@@ -87,5 +96,32 @@ public class getOutPut {
             result.append("\n");
         }
         return result.toString();
+    }
+
+    public static String handleSql4BibenchOld(String originQuery) {
+        String query = "SELECT count(*) FROM ";
+        //将select的内容统一替换为count(*)
+        String a = originQuery.split("FROM")[1];
+        String b = a.split("GROUP BY")[0];
+        query += originQuery.split("FROM")[originQuery.split("FROM").length-1].split("GROUP BY")[0];
+        return query;
+    }
+
+    public static String handleSql4BibenchNew(String originQuery) {
+        String query = "select count(*) from ";
+        //将select的内容统一替换为count(*)
+        query += originQuery.split("from")[originQuery.split("from").length-1].split("group by")[0];
+        query += ";";
+        Pattern cast = Pattern.compile("cast\\([0-9a-zA-Z:'_\\-. ]+\\)");
+        Matcher matcher = cast.matcher(query);
+        while (matcher.find()) {
+            String castStr = matcher.group(0);
+            String castInner = castStr.substring(5, castStr.length() - 1);
+            query = query.replace(castStr, castInner);
+        }
+        query = query.replace(" as DATE", "");
+        query = query.replace(" as BIGINT", "");
+        query = query.replace(" as double precision", "");
+        return query;
     }
 }
