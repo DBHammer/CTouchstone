@@ -17,14 +17,15 @@ import java.util.regex.Pattern;
 public class getOutPut {
     public static void main(String[] args) throws IOException, SQLException, TouchstoneException {
         File oldSqlFile = new File("D:\\eclipse-workspace\\public_bi_benchmark\\benchmark-classified-andor\\and");
-        File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\queries");
+        //File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\queries");
+        File newSqlFile = new File("D:\\eclipse-workspace\\Touchstone\\bibench");
         List<String> arrayList1 = new ArrayList<>();
         List<String> arrayList2 = new ArrayList<>();
         List<String> requireFileOld = getRequireFile(oldSqlFile, ".sql", arrayList1);
         List<String> requireFileNew = getRequireFile(newSqlFile, ".sql", arrayList2);
         DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "bibench");
         DbConnector dbConnector1 = new PgConnector(config1);
-        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "bibenchdemo");
+        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "tsbibenchdemo");
         DbConnector dbConnector2 = new PgConnector(config2);
         for (int i = 0; i < requireFileOld.size(); i++) {
             String sql1 = requireFileOld.get(i);
@@ -53,7 +54,7 @@ public class getOutPut {
             if (r1 != r2 || r1 == 0) {
                 System.out.println(i + " " + r1 + " " + r2);
             } else {
-                System.out.println(i + " " + r1 + " " + r2);
+                System.out.println(i);
             }
         }
 
@@ -71,6 +72,10 @@ public class getOutPut {
                 return 1;
             return o1.getName().replace("_1.sql",".sql").compareTo(o2.getName().replace("_1.sql",".sql"));
         });
+        for (File file1 : fileList) {
+            System.out.print(file1.getName()+"\t");
+        }
+        System.out.println();
         for (File file2 : listFiles) {
             if (file2.getName().endsWith(suffix)) {
                 BufferedReader bufferedReader = new BufferedReader(new FileReader(file2));

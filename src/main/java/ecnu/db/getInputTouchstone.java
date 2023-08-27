@@ -295,9 +295,13 @@ public class getInputTouchstone {
                 StringBuilder boolInfo = new StringBuilder();
                 List<BoolExprNode> children = ((LogicNode) realRoot).getChildren();
                 int i = 1;
+                HashMap<String, List<CompareOperator>> column2Operators = new HashMap<>();
                 for (BoolExprNode child : children) {
                     if (child.getType() == BoolExprType.UNI_FILTER_OPERATION) {
-                        String uniVarInfo = handleUnivar((UniVarFilterOperation) child);
+                        UniVarFilterOperation uniVarFilterOperation = (UniVarFilterOperation) child;
+                        column2Operators.putIfAbsent(uniVarFilterOperation.getCanonicalColumnName(), new ArrayList<>());
+                        column2Operators.get(uniVarFilterOperation.getCanonicalColumnName()).add(uniVarFilterOperation.getOperator());
+                        String uniVarInfo = handleUnivar(uniVarFilterOperation);
                         if (i == children.size()) {
                             boolInfo.append(uniVarInfo);
                         } else {
@@ -306,6 +310,11 @@ public class getInputTouchstone {
                         i++;
                     } else {
                         //throw new TouchstoneException("cantdeal");
+                    }
+                }
+                for (List<CompareOperator> value : column2Operators.values()) {
+                    if(value.size()>=2 && value.contains(CompareOperator.NOT_IN)){
+                        System.out.println(value);
                     }
                 }
                 if (!boolInfo.isEmpty()) {
@@ -352,7 +361,7 @@ public class getInputTouchstone {
             case NOT_IN -> uniVarInfo.append("not in");
             case NOT_LIKE -> uniVarInfo.append("not like");
         }
-        System.out.println(operation.getParameters().stream().mapToInt(Parameter::getId).boxed().toList());
+//        System.out.println(operation.getParameters().stream().mapToInt(Parameter::getId).boxed().toList());
         return uniVarInfo.toString();
     }
 
