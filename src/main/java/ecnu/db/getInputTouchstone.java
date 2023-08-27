@@ -312,13 +312,26 @@ public class getInputTouchstone {
                         //throw new TouchstoneException("cantdeal");
                     }
                 }
-                for (List<CompareOperator> value : column2Operators.values()) {
-                    if(value.size()>=2 && value.contains(CompareOperator.NOT_IN)){
-                        System.out.println(value);
+                HashSet<String> betColumns = new HashSet<>();
+                for (var value : column2Operators.entrySet()) {
+                    if (value.getValue().size() == 2) {
+                        betColumns.add(value.getKey().split("\\.")[2]);
+                    }
+                }
+                String[] infos = boolInfo.toString().split("#");
+                HashSet<String> removeColumns = new HashSet<>();
+                StringBuilder finalInfo = new StringBuilder();
+                for (String info : infos) {
+                    String column = info.split("@")[0];
+                    if (betColumns.remove(column)) {
+                        removeColumns.add(column);
+                        finalInfo.append(column).append("@bet#");
+                    } else if (!removeColumns.contains(column)) {
+                        finalInfo.append(info).append("#");
                     }
                 }
                 if (!boolInfo.isEmpty()) {
-                    filterInfo.append(boolInfo).append("#").append(type).append(", ");
+                    filterInfo.append(finalInfo).append(type).append(", ");
                 }
             } else {
                 //throw new TouchstoneException("cantdeal");
