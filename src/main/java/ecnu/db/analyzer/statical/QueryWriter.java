@@ -133,7 +133,7 @@ public class QueryWriter {
             if (literalMap.containsKey("'" + data + "'")) {
                 List<parameterColumnName2Location> name2Locations = literalMap.get("'" + data + "'");
                 for (parameterColumnName2Location name2Location : name2Locations) {
-                    if (parameter.getOperand().endsWith(name2Location.columnName)) {
+                    if (parameter.getOperand() == null || parameter.getOperand().endsWith(name2Location.columnName)) {
                         matches.add(name2Location);
                     }
                 }
