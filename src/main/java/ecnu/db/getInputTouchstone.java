@@ -371,8 +371,8 @@ public class getInputTouchstone {
             case LIKE -> uniVarInfo.append("like");
             case IN -> uniVarInfo.append("in").append("(").append(operation.getParameters().size()).append(")");
             case NE -> uniVarInfo.append("<>");
-            case NOT_IN -> uniVarInfo.append("not in");
-            case NOT_LIKE -> uniVarInfo.append("not like");
+            case NOT_IN -> uniVarInfo.append("notin").append("(").append(operation.getParameters().size()).append(")");
+            case NOT_LIKE -> uniVarInfo.append("notlike");
         }
 //        System.out.println(operation.getParameters().stream().mapToInt(Parameter::getId).boxed().toList());
         return uniVarInfo.toString();
