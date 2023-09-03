@@ -9,7 +9,6 @@ import ecnu.db.generator.joininfo.MergedRuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
-import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,6 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
+
+import static ecnu.db.utils.CommonUtils.DECIMAL_DIVIDE_SCALE;
 
 public class FkGenerator {
     private final long tableSize;
@@ -78,7 +79,7 @@ public class FkGenerator {
 
 
     private void applySharePkConstraint(ConstructCpModel cpModel, int range) {
-        BigDecimal batchPercentage = BigDecimal.valueOf(range).divide(BigDecimal.valueOf(tableSize), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+        BigDecimal batchPercentage = BigDecimal.valueOf(range).divide(BigDecimal.valueOf(tableSize), DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP);
         for (var distinctFKIndex : distinctFkIndex2Cardinality.keySet()) {
             Map<JoinStatus, ArrayList<Integer>> status2PkIndex = new HashMap<>();
             for (int i = 0; i < jointPkStatus.length; i++) {
