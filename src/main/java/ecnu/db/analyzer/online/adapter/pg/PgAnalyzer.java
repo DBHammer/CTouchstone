@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -271,7 +272,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 throw new UnsupportedOperationException();
             }
             pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - rowCount)
-                    .divide(BigDecimal.valueOf(fkRowCount), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+                    .divide(BigDecimal.valueOf(fkRowCount), RoundingMode.HALF_UP);
             rowCount = fkRowCount;
         } else if (PgJsonReader.isAntiJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));

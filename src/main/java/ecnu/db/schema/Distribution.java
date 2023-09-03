@@ -3,7 +3,6 @@ package ecnu.db.schema;
 import ecnu.db.LanguageManager;
 import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
-import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -197,8 +196,13 @@ public class Distribution {
                 throw new TouchstoneException(String.format("不存在可以放置的range, 概率为%s", probability));
             }
         } else if (tempParameterList.stream().anyMatch(Parameter::isCanMerge)) {
-            BigDecimal eachPb = probability.divide(BigDecimal.valueOf(tempParameterList.size()), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
-            for (Parameter parameter : tempParameterList) {
+            BigDecimal eachPb = probability.divide(BigDecimal.valueOf(tempParameterList.size()), 2, RoundingMode.FLOOR);
+            probability = probability.subtract(eachPb.multiply(BigDecimal.valueOf(tempParameterList.size() - 1)));
+            for (int i = 0; i < tempParameterList.size(); i++) {
+                Parameter parameter = tempParameterList.get(i);
+                if (i == tempParameterList.size() - 1) {
+                    eachPb = probability;
+                }
                 BigDecimal remainCapacity = minRange.subtract(eachPb);
                 BigDecimal eqCDf = minCDF.subtract(remainCapacity);
                 pvAndPbList.put(eqCDf, new LinkedList<>(Collections.singletonList(parameter)));
@@ -289,7 +293,7 @@ public class Distribution {
                 addCardinality = -remainCardinality;
                 remainCardinality = 0;
             }
-            cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, RoundingMode.HALF_UP);
         } else {
             if (remainCardinality > 0) {
                 addCardinality = -remainCardinality;

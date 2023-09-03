@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -289,7 +290,7 @@ public class ColumnManager {
             String[] tags = canonicalColumnName.split("\\.");
             String tableName = tags[0] + "." + tags[1];
             BigDecimal tableSize = BigDecimal.valueOf(TableManager.getInstance().getTableSize(tableName));
-            column.setNullPercentage(new BigDecimal(sqlResult[index++]).divide(tableSize, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION));
+            column.setNullPercentage(new BigDecimal(sqlResult[index++]).divide(tableSize, RoundingMode.HALF_UP));
             column.init();
         }
     }

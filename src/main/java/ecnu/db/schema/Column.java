@@ -7,6 +7,7 @@ import ecnu.db.generator.constraintchain.filter.operation.CompareOperator;
 import ecnu.db.utils.CommonUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -238,7 +239,7 @@ public class Column {
 
     public void setSpecialValue(long specialValue) {
         if (columnType == ColumnType.DECIMAL) {
-            decimalPre = BigDecimal.ONE.divide(BigDecimal.valueOf(specialValue), CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            decimalPre = BigDecimal.ONE.divide(BigDecimal.valueOf(specialValue), RoundingMode.HALF_UP);
         }
         this.specialValue = specialValue;
     }

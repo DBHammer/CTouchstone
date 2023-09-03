@@ -15,7 +15,6 @@ import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNodeDeserializer;
 
 import java.io.*;
-import java.math.MathContext;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -31,7 +30,6 @@ import java.util.stream.Collectors;
  */
 public class CommonUtils {
     public static final int STEP_SIZE = 700000;
-    public static final MathContext BIG_DECIMAL_DEFAULT_PRECISION = new MathContext(10);
     public static final String CANONICAL_NAME_CONTACT_SYMBOL = ".";
     public static final String CANONICAL_NAME_SPLIT_REGEX = "\\.";
     public static final int SAMPLE_DOUBLE_PRECISION = (int) 1E6;

@@ -2,11 +2,11 @@ package ecnu.db.generator.constraintchain;
 
 import ecnu.db.generator.constraintchain.filter.ConstraintChainFilterNode;
 import ecnu.db.schema.ColumnManager;
-import ecnu.db.utils.CommonUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +56,7 @@ class QueryInstantiationTest {
             boolean[] evaluation = filterNode.getRoot().evaluate();
             long satisfyRowCount = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count();
             BigDecimal bSatisfyRowCount = BigDecimal.valueOf(satisfyRowCount);
-            BigDecimal realFilterProbability = bSatisfyRowCount.divide(sampleSize, CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION);
+            BigDecimal realFilterProbability = bSatisfyRowCount.divide(sampleSize, RoundingMode.HALF_UP);
             double rate = filterNode.getProbability().subtract(realFilterProbability).doubleValue();
             assertEquals(0, rate, delta, filterNode.toString());
         });

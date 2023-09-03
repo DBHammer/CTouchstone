@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 
-import static ecnu.db.utils.CommonUtils.BIG_DECIMAL_DEFAULT_PRECISION;
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
 
 public class QueryAnalyzer {
@@ -148,7 +148,7 @@ public class QueryAnalyzer {
         if (inputRowCount == 0) {
             return BigDecimal.ZERO;
         } else {
-            return BigDecimal.valueOf(outputRowCount).divide(BigDecimal.valueOf(inputRowCount), BIG_DECIMAL_DEFAULT_PRECISION);
+            return BigDecimal.valueOf(outputRowCount).divide(BigDecimal.valueOf(inputRowCount), RoundingMode.HALF_UP);
         }
     }
 
