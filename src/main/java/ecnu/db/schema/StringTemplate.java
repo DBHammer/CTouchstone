@@ -45,7 +45,8 @@ class StringTemplate {
         } else {
             int startId = 0;
             if (subStringIndex.contains(dataId)) {
-                values[0] = likeRandomCharSet[subStringIndex.headSet(dataId).size()];
+                // todo : mod may be error
+                values[0] = likeRandomCharSet[subStringIndex.headSet(dataId).size() % likeRandomCharSet.length];
                 startId++;
             }
             for (int i = tag - 1; i >= startId; i--) {
