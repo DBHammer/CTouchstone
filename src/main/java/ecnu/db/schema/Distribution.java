@@ -215,39 +215,47 @@ public class Distribution {
         }
     }
 
+    private record RangeStart2RangeBound(BigDecimal start, BigDecimal bound) {
+    }
+
+    private record RangeBound2Parameters(BigDecimal range, List<Parameter> parameters) {
+    }
+
     private boolean dealWithInPredicatesGreedily(BigDecimal probability, List<Parameter> tempParameterList) {
-        TreeMap<BigDecimal, List<Parameter>> range2StartForEq = new TreeMap<>();
-        TreeMap<BigDecimal, BigDecimal> range2StartForNoEq = new TreeMap<>();
+        List<RangeBound2Parameters> range2StartForEq = new LinkedList<>();
+        List<RangeStart2RangeBound> range2StartForNoEq = new LinkedList<>();
         for (var currentCDF : pvAndPbList.entrySet()) {
             if (isNonEqualRange(currentCDF.getValue())) {
-                range2StartForNoEq.put(getRange(currentCDF.getKey()), currentCDF.getKey());
+                range2StartForNoEq.add(new RangeStart2RangeBound(currentCDF.getKey(), getRange(currentCDF.getKey())));
             } else {
-                range2StartForEq.put(getRange(currentCDF.getKey()), currentCDF.getValue());
+                range2StartForEq.add(new RangeBound2Parameters(getRange(currentCDF.getKey()), currentCDF.getValue()));
             }
         }
-        for (Map.Entry<BigDecimal, List<Parameter>> mostRange2Start : range2StartForEq.descendingMap().entrySet()) {
-            boolean canDivide = tempParameterList.size() > 1 && mostRange2Start.getKey().compareTo(probability) <= 0;
-            boolean canPutIn = tempParameterList.size() == 1 && mostRange2Start.getKey().compareTo(probability) == 0;
+        range2StartForEq.sort((o1, o2) -> o2.range().compareTo(o1.range()));
+        for (RangeBound2Parameters mostRange2Start : range2StartForEq) {
+            boolean canDivide = tempParameterList.size() > 1 && mostRange2Start.range().compareTo(probability) <= 0;
+            boolean canPutIn = tempParameterList.size() == 1 && mostRange2Start.range().compareTo(probability) == 0;
             if (canDivide || canPutIn) {
-                probability = probability.subtract(mostRange2Start.getKey());
+                probability = probability.subtract(mostRange2Start.range());
                 if (probability.compareTo(BigDecimal.ZERO) == 0) {
-                    mostRange2Start.getValue().addAll(tempParameterList);
+                    mostRange2Start.parameters().addAll(tempParameterList);
                     return true;
                 } else {
-                    mostRange2Start.getValue().add(tempParameterList.remove(0));
+                    mostRange2Start.parameters().add(tempParameterList.remove(0));
                 }
             }
         }
-        for (Map.Entry<BigDecimal, BigDecimal> mostRange2Start : range2StartForNoEq.descendingMap().entrySet()) {
-            probability = probability.subtract(mostRange2Start.getKey());
+        range2StartForNoEq.sort((o1, o2) -> o2.bound().compareTo(o1.bound()));
+        for (RangeStart2RangeBound mostRange2Start : range2StartForNoEq) {
+            probability = probability.subtract(mostRange2Start.bound());
             if (probability.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal eqCDf = mostRange2Start.getValue().subtract(mostRange2Start.getKey());
+                BigDecimal eqCDf = mostRange2Start.start().subtract(mostRange2Start.bound());
                 pvAndPbList.put(eqCDf, new LinkedList<>(Collections.singletonList(tempParameterList.remove(0))));
                 if (tempParameterList.isEmpty()) {
                     return false;
                 }
             } else {
-                BigDecimal eqCDf = mostRange2Start.getValue().add(probability);
+                BigDecimal eqCDf = mostRange2Start.start().add(probability);
                 pvAndPbList.put(eqCDf, new LinkedList<>(tempParameterList));
                 return true;
             }
