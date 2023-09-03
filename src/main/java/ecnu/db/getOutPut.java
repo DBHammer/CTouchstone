@@ -15,23 +15,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class getOutPut {
+    private static final Pattern fromPattern = Pattern.compile("FROM [a-zA-Z0-9_\",]+ ");
+
     public static void main(String[] args) throws IOException, SQLException, TouchstoneException {
-        File oldSqlFile = new File("D:\\eclipse-workspace\\public_bi_benchmark\\benchmark-classified-andor\\and");
+        File oldSqlFile = new File("C:\\Users\\82084\\Desktop\\学习资料\\HYDRA\\新建文件夹\\2\\test\\sqlqueries");
         //File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\queries");
-        File newSqlFile = new File("D:\\eclipse-workspace\\Touchstone\\bibench");
+        File newSqlFile = new File("C:\\Users\\82084\\Desktop\\学习资料\\HYDRA\\新建文件夹\\2\\test\\anonymizedsqlqueries");
         List<String> arrayList1 = new ArrayList<>();
         List<String> arrayList2 = new ArrayList<>();
         List<String> requireFileOld = getRequireFile(oldSqlFile, ".sql", arrayList1);
         List<String> requireFileNew = getRequireFile(newSqlFile, ".sql", arrayList2);
         DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "bibench");
         DbConnector dbConnector1 = new PgConnector(config1);
-        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "tsbibenchdemo");
+        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "hydrabibenchdemo");
         DbConnector dbConnector2 = new PgConnector(config2);
         for (int i = 0; i < requireFileOld.size(); i++) {
             String sql1 = requireFileOld.get(i);
             String sql2 = requireFileNew.get(i);
-            sql1 = handleSql4BibenchOld(sql1);
-            sql2 = handleSql4BibenchNew(sql2);
+            sql1 = sql1.replace("SELECT * ", "SELECT COUNT(*) ");
+            sql2 = sql2.replace("SELECT * ", "SELECT COUNT(*) ");
+//            sql1 = handleSql4BibenchOld(sql1);
+//            sql2 = handleSql4BibenchNew(sql2);
 //            sql1 = replaceCount(sql1);
 //            sql2 = replaceCount(sql2);
 //            sql1 = sql1.replaceFirst("\\*", "count(*)");
@@ -51,10 +55,15 @@ public class getOutPut {
             long round2 = System.currentTimeMillis() - start;
             //System.out.print(round2 + " ");
             //System.out.println(((double) (Math.abs(round2 - round1))) / (double) round1 + " ");
+            String tableName = "";
+            Matcher matcher = fromPattern.matcher(sql1);
+            if (matcher.find()) {
+                tableName = matcher.group(0);
+            }
             if (r1 != r2 || r1 == 0) {
                 System.out.println(i + " " + r1 + " " + r2);
             } else {
-                System.out.println(i);
+                System.out.println(i + " " + r1 + " " + r2);
             }
         }
 
@@ -70,10 +79,10 @@ public class getOutPut {
                 return -1;
             if (o1.isFile() && o2.isDirectory())
                 return 1;
-            return o1.getName().replace("_1.sql",".sql").compareTo(o2.getName().replace("_1.sql",".sql"));
+            return o1.getName().replace("_1.sql", ".sql").compareTo(o2.getName().replace("_1.sql", ".sql"));
         });
         for (File file1 : fileList) {
-            System.out.print(file1.getName()+"\t");
+            System.out.print(file1.getName() + "\t");
         }
         System.out.println();
         for (File file2 : listFiles) {
@@ -108,14 +117,14 @@ public class getOutPut {
         //将select的内容统一替换为count(*)
         String a = originQuery.split("FROM")[1];
         String b = a.split("GROUP BY")[0];
-        query += originQuery.split("FROM")[originQuery.split("FROM").length-1].split("GROUP BY")[0];
+        query += originQuery.split("FROM")[originQuery.split("FROM").length - 1].split("GROUP BY")[0];
         return query;
     }
 
     public static String handleSql4BibenchNew(String originQuery) {
         String query = "select count(*) from ";
         //将select的内容统一替换为count(*)
-        query += originQuery.split("from")[originQuery.split("from").length-1].split("group by")[0];
+        query += originQuery.split("from")[originQuery.split("from").length - 1].split("group by")[0];
         query += ";";
         Pattern cast = Pattern.compile("cast\\([0-9a-zA-Z:'_\\-. ]+\\)");
         Matcher matcher = cast.matcher(query);
