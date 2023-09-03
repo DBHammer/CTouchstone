@@ -109,8 +109,12 @@ public class QueryReader {
         SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(dbType);
         sqlStatement.accept(statVisitor);
         Map<String, Set<String>> table2ColumnNames = new HashMap<>();
+        boolean hasMultipleTable = statVisitor.getTables().size() > 1;
         for (TableStat.Condition condition : statVisitor.getConditions()) {
             String[] result = condition.getColumn().getFullName().split("\\.");
+            if (hasMultipleTable && !sql.replace("\"", "").contains(condition.getColumn().getFullName())) {
+                result[0] = "UNKNOWN";
+            }
             if (result.length != 2) {
                 throw new TouchstoneException("Druid Api Change");
             }

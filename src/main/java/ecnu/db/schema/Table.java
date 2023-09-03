@@ -54,6 +54,10 @@ public class Table {
         }
     }
 
+    public boolean containColumn(String columnName) {
+        return primaryKeys.contains(columnName) || foreignKeys.containsKey(columnName) || canonicalColumnNames.contains(columnName);
+    }
+
 
     /**
      * 本表的列是否参照目标列
@@ -89,7 +93,7 @@ public class Table {
     }
 
     public void addTmpForeignKey(String localTable, String localColumnName,
-                              String referencingTable, String referencingInfo) throws TouchstoneException {
+                                 String referencingTable, String referencingInfo) throws TouchstoneException {
         addForeignKey(tmpForeignKeys, localTable, localColumnName, referencingTable, referencingInfo);
     }
 
@@ -200,10 +204,10 @@ public class Table {
             String columnName = canonicalColumnName.split("\\.")[2];
             Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
             String columnType = column.getOriginalType();
-            if(columnType.contains("TIME ")){
-                columnType = columnType.replace("TIME " ,"TIMESTAMP ");
+            if (columnType.contains("TIME ")) {
+                columnType = columnType.replace("TIME ", "TIMESTAMP ");
             }
-            String addColumn = "\""+ columnName + "\" " + columnType + ",";
+            String addColumn = "\"" + columnName + "\" " + columnType + ",";
             head.append("  ").append(addColumn).append("\n");
         }
         head = new StringBuilder(head.substring(0, head.length() - 2));

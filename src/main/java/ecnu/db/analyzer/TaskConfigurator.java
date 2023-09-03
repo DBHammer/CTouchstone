@@ -120,11 +120,30 @@ public class TaskConfigurator implements Callable<Integer> {
         return 0;
     }
 
+    public void dealWithUnknownTable(Set<String> unKnownCols, Table table,
+                                     String canonicalTableName,
+                                     Map<String, Set<String>> tableName2Columns) {
+        for (String unKnownCol : unKnownCols) {
+            String completeCol = canonicalTableName + "." + unKnownCol.split("\\.")[2];
+            if (table.containColumn(completeCol)) {
+                tableName2Columns.putIfAbsent(canonicalTableName, new HashSet<>());
+                tableName2Columns.get(canonicalTableName).add(completeCol);
+            }
+        }
+    }
+
+
     private List<File> querySchemaMetadataAndColumnMetadata(QueryReader queryReader, DbConnector dbConnector)
             throws IOException, TouchstoneException, SQLException {
         List<File> queryFiles = queryReader.loadQueryFiles();
         List<String> tableNames = queryReader.fetchTableNames(queryFiles);
         Map<String, Set<String>> tableName2Columns = queryReader.fetchQueryColumnNames(queryFiles);
+        Set<String> unKnownCols = new HashSet<>();
+        for (String s : new HashSet<>(tableName2Columns.keySet())) {
+            if (s.split("\\.")[1].equals("UNKNOWN")) {
+                unKnownCols = tableName2Columns.remove(s);
+            }
+        }
         logger.info(rb.getString("GetTableNameSuccessfully"), tableNames);
         for (String canonicalTableName : tableNames) {
             logger.info(rb.getString("StartGettingColumnMetadata"), canonicalTableName);
@@ -134,6 +153,7 @@ public class TaskConfigurator implements Callable<Integer> {
                 Table table = new Table(dbConnector.getColumnMetadata(canonicalTableName),
                         dbConnector.getTableSize(canonicalTableName));
                 table.setPrimaryKeys(dbConnector.getPrimaryKey(canonicalTableName));
+                dealWithUnknownTable(unKnownCols, table, canonicalTableName, tableName2Columns);
                 TableManager.getInstance().addSchema(canonicalTableName, table);
                 logger.info(rb.getString("GetColumnMetadataSuccessfully"), canonicalTableName);
                 logger.info(rb.getString("StartGettingTheDataDistributionOfTable"), canonicalTableName);
