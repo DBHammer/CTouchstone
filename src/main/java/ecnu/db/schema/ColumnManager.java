@@ -290,7 +290,7 @@ public class ColumnManager {
             String[] tags = canonicalColumnName.split("\\.");
             String tableName = tags[0] + "." + tags[1];
             BigDecimal tableSize = BigDecimal.valueOf(TableManager.getInstance().getTableSize(tableName));
-            column.setNullPercentage(new BigDecimal(sqlResult[index++]).divide(tableSize, RoundingMode.HALF_UP));
+            column.setNullPercentage(new BigDecimal(sqlResult[index++]).divide(tableSize, DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP));
             column.init();
         }
     }

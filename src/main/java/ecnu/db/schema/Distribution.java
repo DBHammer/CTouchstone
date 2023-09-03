@@ -12,6 +12,8 @@ import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static ecnu.db.utils.CommonUtils.DECIMAL_DIVIDE_SCALE;
+
 public class Distribution {
     private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.08);
 
@@ -301,7 +303,7 @@ public class Distribution {
                 addCardinality = -remainCardinality;
                 remainCardinality = 0;
             }
-            cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, RoundingMode.HALF_UP);
+            cardinalityPercentage = BigDecimal.valueOf(remainCardinality).divide(remainRange, DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP);
         } else {
             if (remainCardinality > 0) {
                 addCardinality = -remainCardinality;

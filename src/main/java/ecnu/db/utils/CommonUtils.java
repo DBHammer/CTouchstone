@@ -30,6 +30,9 @@ import java.util.stream.Collectors;
  */
 public class CommonUtils {
     public static final int STEP_SIZE = 700000;
+
+    public static final int DECIMAL_DIVIDE_SCALE = 10;
+
     public static final String CANONICAL_NAME_CONTACT_SYMBOL = ".";
     public static final String CANONICAL_NAME_SPLIT_REGEX = "\\.";
     public static final int SAMPLE_DOUBLE_PRECISION = (int) 1E6;

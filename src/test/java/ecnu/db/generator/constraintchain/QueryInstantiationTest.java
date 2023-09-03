@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static ecnu.db.utils.CommonUtils.DECIMAL_DIVIDE_SCALE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryInstantiationTest {
@@ -56,7 +57,7 @@ class QueryInstantiationTest {
             boolean[] evaluation = filterNode.getRoot().evaluate();
             long satisfyRowCount = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count();
             BigDecimal bSatisfyRowCount = BigDecimal.valueOf(satisfyRowCount);
-            BigDecimal realFilterProbability = bSatisfyRowCount.divide(sampleSize, RoundingMode.HALF_UP);
+            BigDecimal realFilterProbability = bSatisfyRowCount.divide(sampleSize, DECIMAL_DIVIDE_SCALE,RoundingMode.HALF_UP);
             double rate = filterNode.getProbability().subtract(realFilterProbability).doubleValue();
             assertEquals(0, rate, delta, filterNode.toString());
         });

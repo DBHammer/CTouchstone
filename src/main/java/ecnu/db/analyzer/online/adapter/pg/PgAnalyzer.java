@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static ecnu.db.utils.CommonUtils.DECIMAL_DIVIDE_SCALE;
 import static ecnu.db.utils.CommonUtils.matchPattern;
 
 public class PgAnalyzer extends AbstractAnalyzer {
@@ -272,7 +273,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 throw new UnsupportedOperationException();
             }
             pkDistinctProbability = BigDecimal.valueOf(pkRowCount + fkRowCount - rowCount)
-                    .divide(BigDecimal.valueOf(fkRowCount), RoundingMode.HALF_UP);
+                    .divide(BigDecimal.valueOf(fkRowCount), DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP);
             rowCount = fkRowCount;
         } else if (PgJsonReader.isAntiJoin(path)) {
             StringBuilder leftChildPath = PgJsonReader.skipNodes(PgJsonReader.move2LeftChild(path));

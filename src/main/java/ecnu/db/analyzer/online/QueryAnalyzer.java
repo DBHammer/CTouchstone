@@ -29,6 +29,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 
 import static ecnu.db.utils.CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL;
+import static ecnu.db.utils.CommonUtils.DECIMAL_DIVIDE_SCALE;
 
 public class QueryAnalyzer {
 
@@ -148,7 +149,7 @@ public class QueryAnalyzer {
         if (inputRowCount == 0) {
             return BigDecimal.ZERO;
         } else {
-            return BigDecimal.valueOf(outputRowCount).divide(BigDecimal.valueOf(inputRowCount), RoundingMode.HALF_UP);
+            return BigDecimal.valueOf(outputRowCount).divide(BigDecimal.valueOf(inputRowCount), DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP);
         }
     }
 

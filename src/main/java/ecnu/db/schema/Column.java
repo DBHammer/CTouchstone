@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 
+import static ecnu.db.utils.CommonUtils.DECIMAL_DIVIDE_SCALE;
+
 /**
  * @author wangqingshuai
  */
@@ -239,7 +241,7 @@ public class Column {
 
     public void setSpecialValue(long specialValue) {
         if (columnType == ColumnType.DECIMAL) {
-            decimalPre = BigDecimal.ONE.divide(BigDecimal.valueOf(specialValue), RoundingMode.HALF_UP);
+            decimalPre = BigDecimal.ONE.divide(BigDecimal.valueOf(specialValue), DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP);
         }
         this.specialValue = specialValue;
     }
