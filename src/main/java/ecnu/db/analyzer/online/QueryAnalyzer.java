@@ -149,7 +149,7 @@ public class QueryAnalyzer {
         if (inputRowCount == 0) {
             return BigDecimal.ZERO;
         } else {
-            return BigDecimal.valueOf(outputRowCount).divide(BigDecimal.valueOf(inputRowCount), DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP);
+            return BigDecimal.valueOf(outputRowCount).divide(BigDecimal.valueOf(inputRowCount), DECIMAL_DIVIDE_SCALE, RoundingMode.DOWN);
         }
     }
 
