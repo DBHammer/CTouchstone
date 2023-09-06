@@ -137,7 +137,7 @@ public class ConstraintChainFkJoinNode extends ConstraintChainNode {
         BigDecimal bFilterSize = BigDecimal.valueOf(filterSize).multiply(probability);
         filterSize = bFilterSize.setScale(0, RoundingMode.HALF_UP).longValue();
         cpModel.addJoinCardinalityConstraint(filterSize);
-        logger.info(rb.getString("statusDataOutput"), filterSize, joinStatusIndex, joinStatusLocation);
+        logger.info(rb.getString("statusDataOutput"), filterSize, joinStatusLocation, joinStatusIndex);
         return filterSize;
     }
 
