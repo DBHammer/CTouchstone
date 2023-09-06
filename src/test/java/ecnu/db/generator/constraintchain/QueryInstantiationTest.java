@@ -57,7 +57,7 @@ class QueryInstantiationTest {
             boolean[] evaluation = filterNode.getRoot().evaluate();
             long satisfyRowCount = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count();
             BigDecimal bSatisfyRowCount = BigDecimal.valueOf(satisfyRowCount);
-            BigDecimal realFilterProbability = bSatisfyRowCount.divide(sampleSize, DECIMAL_DIVIDE_SCALE,RoundingMode.HALF_UP);
+            BigDecimal realFilterProbability = bSatisfyRowCount.divide(sampleSize, DECIMAL_DIVIDE_SCALE,RoundingMode.DOWN);
             double rate = filterNode.getProbability().subtract(realFilterProbability).doubleValue();
             assertEquals(0, rate, delta, filterNode.toString());
         });
