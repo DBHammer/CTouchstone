@@ -18,24 +18,25 @@ public class getOutPut {
     private static final Pattern fromPattern = Pattern.compile("FROM [a-zA-Z0-9_\",]+ ");
 
     public static void main(String[] args) throws IOException, SQLException, TouchstoneException {
-        File oldSqlFile = new File("C:\\Users\\82084\\Desktop\\学习资料\\HYDRA\\新建文件夹\\2\\test\\sqlqueries");
+        File oldSqlFile = new File("D:\\eclipse-workspace\\public_bi_benchmark\\benchmark-classified\\oneWhere");
         //File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\resultBIBENCH\\queries");
-        File newSqlFile = new File("C:\\Users\\82084\\Desktop\\学习资料\\HYDRA\\新建文件夹\\2\\test\\anonymizedsqlqueries");
+        File newSqlFile = new File("D:\\eclipse-workspace\\Mirage\\result5\\queries");
         List<String> arrayList1 = new ArrayList<>();
         List<String> arrayList2 = new ArrayList<>();
         List<String> requireFileOld = getRequireFile(oldSqlFile, ".sql", arrayList1);
         List<String> requireFileNew = getRequireFile(newSqlFile, ".sql", arrayList2);
         DatabaseConnectorConfig config1 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "bibench");
         DbConnector dbConnector1 = new PgConnector(config1);
-        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "hydrabibenchdemo");
+        DatabaseConnectorConfig config2 = new DatabaseConnectorConfig("49.52.27.35", "5632", "postgres", "Biui1227..", "bibenchdemo");
         DbConnector dbConnector2 = new PgConnector(config2);
         for (int i = 0; i < requireFileOld.size(); i++) {
             String sql1 = requireFileOld.get(i);
             String sql2 = requireFileNew.get(i);
             sql1 = sql1.replace("SELECT * ", "SELECT COUNT(*) ");
             sql2 = sql2.replace("SELECT * ", "SELECT COUNT(*) ");
-//            sql1 = handleSql4BibenchOld(sql1);
-//            sql2 = handleSql4BibenchNew(sql2);
+            sql1 = handleSql4BibenchOld(sql1);
+            sql2 = handleSql4BibenchNew(sql2);
+            //System.out.println(sql1);
 //            sql1 = replaceCount(sql1);
 //            sql2 = replaceCount(sql2);
 //            sql1 = sql1.replaceFirst("\\*", "count(*)");
@@ -59,6 +60,9 @@ public class getOutPut {
             Matcher matcher = fromPattern.matcher(sql1);
             if (matcher.find()) {
                 tableName = matcher.group(0);
+            }
+            if(Math.abs(r1-r2) > 10){
+                System.out.println((Math.abs(r1-r2) + sql1.substring(sql1.toLowerCase().indexOf("from"), sql1.toLowerCase().indexOf("from")+20)));
             }
             if (r1 != r2 || r1 == 0) {
                 System.out.println(i + " " + r1 + " " + r2);
