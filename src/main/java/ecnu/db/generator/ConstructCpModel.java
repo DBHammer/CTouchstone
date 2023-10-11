@@ -30,6 +30,7 @@ public class ConstructCpModel {
     }
 
     public long[][] solve() {
+        logger.debug("num of vars is {}", model.model().getVariablesCount());
         solver.getParameters().setEnumerateAllSolutions(false);
         solver.getParameters().setNumWorkers(Runtime.getRuntime().availableProcessors());
         CpSolverStatus status = solver.solve(model);
@@ -148,7 +149,7 @@ public class ConstructCpModel {
         if (eqJoinSize == 1 || eqJoinSize == 2) {
             model.addLinearConstraint(LinearExpr.sum(involvedVars.toArray(new IntVar[0])), eqJoinSize - 2, eqJoinSize + 2);
         } else {
-            model.addEquality(LinearExpr.sum(involvedVars.toArray(new IntVar[0])), eqJoinSize);
+            model.addLinearConstraint(LinearExpr.sum(involvedVars.toArray(new IntVar[0])), (long) (eqJoinSize*0.96), (long) (eqJoinSize*1.04));
         }
 
         involvedVars.clear();

@@ -1,12 +1,12 @@
 {
   "databaseConnectorConfig": {
-    "databaseIp": "49.52.27.20",
-    "databaseName": "tpch1",
-    "databasePort": "15432",
-    "databasePwd": "0peng@uss",
+    "databaseIp": "49.52.27.35",
+    "databaseName": "bibench",
+    "databasePort": "5632",
+    "databasePwd": "postgresql",
     "databaseUser": "postgres"
   },
-  "queriesDirectory": "conf/sqls",
-  "resultDirectory": "result",
+  "queriesDirectory": "D:\\eclipse-workspace\\public_bi_benchmark\\benchmark-classified\\oneWhere",
+  "resultDirectory": "result5",
   "defaultSchemaName": "public"
 }

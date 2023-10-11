@@ -15,7 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static ecnu.db.utils.CommonUtils.DECIMAL_DIVIDE_SCALE;
 
 public class Distribution {
-    private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.08);
+    private static final BigDecimal reuseEqProbabilityLimit = BigDecimal.valueOf(0.05);
 
     private final Logger logger = LoggerFactory.getLogger(Distribution.class);
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
@@ -198,7 +198,7 @@ public class Distribution {
                 throw new TouchstoneException(String.format("不存在可以放置的range, 概率为%s", probability));
             }
         } else if (tempParameterList.stream().anyMatch(Parameter::isCanMerge)) {
-            BigDecimal eachPb = probability.divide(BigDecimal.valueOf(tempParameterList.size()), 2, RoundingMode.FLOOR);
+            BigDecimal eachPb = probability.divide(BigDecimal.valueOf(tempParameterList.size()), 8, RoundingMode.FLOOR);
             probability = probability.subtract(eachPb.multiply(BigDecimal.valueOf(tempParameterList.size() - 1)));
             for (int i = 0; i < tempParameterList.size(); i++) {
                 Parameter parameter = tempParameterList.get(i);
