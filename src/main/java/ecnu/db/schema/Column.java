@@ -59,7 +59,7 @@ public class Column {
     public void init() {
         distribution = new Distribution(nullPercentage, range);
         if (columnType == ColumnType.VARCHAR) {
-            stringTemplate = new StringTemplate(avgLength, maxLength, specialValue, range);
+            stringTemplate = new StringTemplate(avgLength, maxLength, specialValue, range + 20);
         }
     }
 
