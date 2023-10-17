@@ -12,7 +12,7 @@ Mirage is a query-aware database generator. Mirage aims to generate a synthetic 
 4. In Section 5.3, we add the details for constructing foreign keys on multiple tables.
 5. In Section 6.1, we extend the disscusstion of the error bound.
 6. In Section 6.3, we add the discussion of Assumption And Conflict.
-7. In Section 7.1, we extend Mirage to support AQTs in the form of $selection\ after\ join$.
+7. In Section 7.1, we extend Mirage to support AQTs in the form of *selection after join*.
 8. In Section 7.2, we extend Mirage to support subqueries.
 9. In Section 8.1, we compare support capabilities and accuracy in detail with related work.
 
