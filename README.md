@@ -11,10 +11,11 @@ Mirage is a query-aware database generator. Mirage aims to generate a synthetic 
 3. In Section 5.2, we disscuss the number of partitions is much smaller than $2^m$.
 4. In Section 5.3, we add the details for constructing foreign keys on multiple tables.
 5. In Section 6.1, we extend the disscusstion of the error bound.
-6. In Section 6.3, we add the discussion of Assumption And Conflict.
+6. In Section 6.2, we add the discussion of Time Complexity.
+7. In Section 6.3, we add the discussion of Assumption And Conflict.
 7. In Section 7.1, we extend Mirage to support AQTs in the form of *selection after join*.
 8. In Section 7.2, we extend Mirage to support subqueries.
-9. In Section 8.1, we compare support capabilities and accuracy in detail with related work.
+9. In Section 9.1, we add the details for the experiment *Generation Scalability*.
 
 ## Manual
 Mirage supports all the versions from PostgreSQL 12 to PostgreSQL 15. Mirage's workflow is divided into four steps: query analysis; parameter instantiation; data generation; and schema generation, which can be executed directly using the given command line.
