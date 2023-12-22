@@ -200,7 +200,7 @@
             <plugin>
                 <groupId>com.github.vbmacher</groupId>
                 <artifactId>cup-maven-plugin</artifactId>
-                <version>11b-20160615-2</version>
+                <version>11b-20160615-3</version>
                 <executions>
                     <execution>
                         <id>TidbSelectOperatorInfoParser</id>
