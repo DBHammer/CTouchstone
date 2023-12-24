@@ -42,7 +42,7 @@ public class ConstraintChainManager {
     }
 
     public static Map<String, List<ConstraintChain>> loadConstrainChainResult(String resultDir) throws IOException {
-        String path = resultDir + "/workload";
+        String path = resultDir + WORKLOAD_DIR;
         File sqlDic = new File(path);
         File[] sqlArray = sqlDic.listFiles();
         assert sqlArray != null;
@@ -99,7 +99,7 @@ public class ConstraintChainManager {
             CommonUtils.writeFile(resultDir + WORKLOAD_DIR + "/" + entry.getKey().split("\\.")[0] + "/" + entry.getKey() + ".json", constraintChainsContent);
         }
         for (Map.Entry<String, List<ConstraintChain>> stringListEntry : query2constraintChains.entrySet()) {
-            String path = resultDir + "/workload" + "/" + stringListEntry.getKey().split("\\.")[0] + "/" + stringListEntry.getKey() + ".dot";
+            String path = resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0] + "/" + stringListEntry.getKey() + ".dot";
             File file = new File(resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0]);
             File[] array = file.listFiles();
             assert array != null;
@@ -118,7 +118,7 @@ public class ConstraintChainManager {
                     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                     String currentTime = format.format(date.getTime());
                     String newPath = resultDir + WORKLOAD_DIR + "/" + stringListEntry.getKey().split("\\.")[0] + "/" + currentTime + stringListEntry.getKey() + ".dot";
-                    CommonUtils.writeFile(newPath + "", graph);
+                    CommonUtils.writeFile(newPath, graph);
                     logger.warn("graph {} is different", stringListEntry.getKey());
                 }
             }
@@ -131,7 +131,7 @@ public class ConstraintChainManager {
 
     private String presentConstraintChains(String queryName, List<ConstraintChain> constraintChains) {
         StringBuilder graph = new StringBuilder();
-        HashMap<String, ConstraintChain.SubGraph> subGraphHashMap = new HashMap<>(constraintChains.size());
+        HashMap<String, ConstraintChain.SubGraph> subGraphHashMap = HashMap.newHashMap(constraintChains.size());
         constraintChains.sort(Comparator.comparing(ConstraintChain::getTableName));
         isDraw = true;
         for (int i = 0; i < constraintChains.size(); i++) {
@@ -145,8 +145,8 @@ public class ConstraintChainManager {
 
 
     private String removeData(String graph) {
-        String newGraph = graph.replaceAll("\\{id:[0-9]+, data:[^}]+", "");
-        newGraph = newGraph.replaceAll("key[0-9]+", "key");
+        String newGraph = graph.replaceAll("\\{id:\\d+, data:[^}]+", "");
+        newGraph = newGraph.replaceAll("key\\d+", "key");
         newGraph = newGraph.replaceAll("color=\"#[F|C]+\"", "color");
         return newGraph;
     }
