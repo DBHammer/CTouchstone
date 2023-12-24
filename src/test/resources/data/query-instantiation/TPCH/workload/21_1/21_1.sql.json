@@ -11,7 +11,7 @@
                 "parameters" : [
                   {
                     "id" : 96,
-                    "data" : -341,
+                    "data" : -341000000,
                     "type" : "ACTUAL"
                   }
                 ],
