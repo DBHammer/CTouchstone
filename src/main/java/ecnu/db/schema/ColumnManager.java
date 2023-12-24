@@ -175,6 +175,7 @@ public class ColumnManager {
     }
 
     public void loadColumnMetaData() throws IOException {
+        columns.clear();
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(distributionInfoPath.getPath() + COLUMN_METADATA_INFO))) {
             bufferedReader.readLine();
             String line;

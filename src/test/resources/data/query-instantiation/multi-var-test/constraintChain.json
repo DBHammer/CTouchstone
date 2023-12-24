@@ -1,24 +1,19 @@
 {
   "t1_2.sql": [
     {
-      "tableName": "test.test",
-      "parameters": [
-        {
-          "id": 1,
-          "data": "10",
-          "isDate": false
-        }
-      ],
       "nodes": [
         {
-          "tableName": "test.test",
           "constraintChainNodeType": "FILTER",
           "root": {
             "type": "AND",
             "children": [
               {
                 "parameters": [
-                  1
+                  {
+                    "id" : 1,
+                    "data" : 10,
+                    "type" : "ACTUAL"
+                  }
                 ],
                 "operator": "GT",
                 "probability": null,
@@ -76,24 +71,19 @@
   ],
   "t1_1.sql": [
     {
-      "tableName": "test.test",
-      "parameters": [
-        {
-          "id": 0,
-          "data": "40",
-          "isDate": false
-        }
-      ],
       "nodes": [
         {
-          "tableName": "test.test",
           "constraintChainNodeType": "FILTER",
           "root": {
             "type": "AND",
             "children": [
               {
                 "parameters": [
-                  0
+                  {
+                    "id" : 0,
+                    "data" : 40,
+                    "type" : "ACTUAL"
+                  }
                 ],
                 "operator": "GT",
                 "probability": null,

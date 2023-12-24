@@ -6,9 +6,7 @@ import ecnu.db.generator.constraintchain.filter.Parameter;
 import ecnu.db.generator.constraintchain.filter.arithmetic.ArithmeticNode;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.utils.CommonUtils;
-import ecnu.db.utils.exception.TouchstoneException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -33,7 +31,6 @@ class QueryInstantiationMultiVarTest {
         ColumnManager.getInstance().loadColumnMetaData();
     }
 
-    @Disabled
     @Test
     void computeMultiVarTest() throws Exception {
 
@@ -58,15 +55,17 @@ class QueryInstantiationMultiVarTest {
             v[i] = c2[i] + 2 * c3[i] * c4[i];
         }
         Arrays.sort(v);
-        int target = (int) v[(int) ((1 - 0.3270440252) * samplingSize)].floatValue();
-        assertEquals(target, Integer.parseInt(id2Parameter.get(0).getDataValue()), 2);
+        double target = v[(int) ((1 - 0.3270440252) * samplingSize)];
+        String parameterValue = id2Parameter.get(0).getDataValue().replace("'","").trim();
+        assertEquals(target, Double.parseDouble(parameterValue), 3);
         // ====================== t1.sql_2: c2 + 2 * c3 + c4 > p1 (ratio = 0.8364779874)
         for (int i = 0; i < samplingSize; i++) {
             v[i] = c2[i] + 2 * c3[i] + c4[i];
         }
         Arrays.sort(v);
-        target = (int) v[(int) ((1 - 0.8364779874) * samplingSize)].floatValue();
-        assertEquals(target, Integer.parseInt(id2Parameter.get(1).getDataValue()), 2);
+        target = v[(int) ((1 - 0.8364779874) * samplingSize)];
+        parameterValue = id2Parameter.get(1).getDataValue().replace("'","").trim();
+        assertEquals(target, Double.parseDouble(parameterValue), 3);
 
         // ******************************
         // *    test data generation    *
@@ -74,28 +73,25 @@ class QueryInstantiationMultiVarTest {
         List<ConstraintChain> chains;
         double rate;
         chains = query2chains.get("t1_1.sql");
-        rate = getRate(chains).get("test.test");
+        rate = getRate(chains);
         assertEquals(0.3270440252, rate, 0.03);
 
         chains = query2chains.get("t1_2.sql");
-        rate = getRate(chains).get("test.test");
+        rate = getRate(chains);
         assertEquals(0.8364779874, rate, 0.03);
 
     }
 
-    private Map<String, Double> getRate(List<ConstraintChain> chains) throws TouchstoneException {
-        Map<String, Double> ret = new HashMap<>();
+    private double getRate(List<ConstraintChain> chains) {
         for (ConstraintChain chain : chains) {
-            String tableName = chain.getTableName();
             for (ConstraintChainNode node : chain.getNodes()) {
                 if (node instanceof ConstraintChainFilterNode) {
                     boolean[] evaluation = ((ConstraintChainFilterNode) node).getRoot().evaluate();
-                    double rate = IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count() * 1.0 / evaluation.length;
-                    ret.put(tableName, rate);
+                    return IntStream.range(0, evaluation.length).filter((i) -> evaluation[i]).count() * 1.0 / evaluation.length;
                 }
             }
         }
-        return ret;
+        return -1;
     }
 
     public void initVectorData(int test_size, Float[] c2, int c2_min, int c2_max, Random random) {
