@@ -50,7 +50,7 @@ public class MergedRuleTable {
             for (PkRange pkRange : status2PkRanges.getValue()) {
                 beforeNums[i] = totalNum;
                 delta[i] = pkRange.start() - totalNum;
-                totalNum += pkRange.end() - pkRange.start();
+                totalNum += (int) (pkRange.end() - pkRange.start());
                 i++;
             }
             status2Rule.put(status2PkRanges.getKey(), new Rule(beforeNums, delta, totalNum, 0L, 0L));
@@ -65,7 +65,7 @@ public class MergedRuleTable {
         }
         // deal with null
         if (withNull) {
-            int statusLength = new ArrayList<>(status2Rule.keySet()).get(0).status().length;
+            int statusLength = new ArrayList<>(status2Rule.keySet()).getFirst().status().length;
             JoinStatus allFalseStatus = new JoinStatus(new boolean[statusLength]);
             if (!status2Rule.containsKey(allFalseStatus)) {
                 JoinStatus[] copy = new JoinStatus[pkStatuses.length + 1];
@@ -88,7 +88,7 @@ public class MergedRuleTable {
         });
     }
 
-    public long getKey(JoinStatus joinStatus, int index) {
+    public long getKey(JoinStatus joinStatus, long index) {
         Rule rule = status2Rule.get(joinStatus);
         if (rule == null) {
             return Long.MIN_VALUE;
