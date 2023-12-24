@@ -88,7 +88,7 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
     public boolean[] evaluate() {
         double[] data = arithmeticTree.calculate();
         boolean[] ret = new boolean[data.length];
-        double parameterValue = parameters.get(0).getData();
+        double parameterValue = (double) parameters.getFirst().getData() / CommonUtils.SAMPLE_DOUBLE_PRECISION;
         switch (operator) {
             case LT -> {
                 for (int i = 0; i < ret.length; i++) {
@@ -161,19 +161,19 @@ public class MultiVarFilterOperation extends AbstractFilterOperation {
         }
         Arrays.sort(vector);
         double postSmallestNumber = vector[pos];
-        long internalValue = (long) (postSmallestNumber * CommonUtils.SAMPLE_DOUBLE_PRECISION) / CommonUtils.SAMPLE_DOUBLE_PRECISION;
+        long internalValue = (long) (postSmallestNumber * CommonUtils.SAMPLE_DOUBLE_PRECISION);
         parameters.forEach(param -> param.setData(internalValue));
         var columns = arithmeticTree.getColumns();
-        boolean isDate = ColumnManager.getInstance().isDateColumn(columns.get(0));
+        boolean isDate = ColumnManager.getInstance().isDateColumn(columns.getFirst());
         for (int i = 1; i < columns.size(); i++) {
             if (isDate != ColumnManager.getInstance().isDateColumn(columns.get(i))) {
                 throw new UnsupportedOperationException("不支持混合计算date和数值类型");
             }
         }
         if (isDate) {
-            parameters.forEach(param -> param.setDataValue("interval '" + internalValue + "' day"));
+            parameters.forEach(param -> param.setDataValue("interval '" + internalValue / CommonUtils.SAMPLE_DOUBLE_PRECISION + "' day"));
         } else {
-            parameters.forEach(param -> param.setDataValue(" '" + internalValue + "' "));
+            parameters.forEach(param -> param.setDataValue(" '" + (double) internalValue / CommonUtils.SAMPLE_DOUBLE_PRECISION + "' "));
         }
     }
 
