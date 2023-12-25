@@ -379,8 +379,7 @@ public class QueryAnalyzer {
             HashSet<ExecutionNode> allNodes = new HashSet<>();
             paths.forEach(allNodes::addAll);
             Set<ExecutionNode> inputNodes = ConcurrentHashMap.newKeySet();
-            ForkJoinPool forkJoinPool = new ForkJoinPool(paths.size());
-            try {
+            try (ForkJoinPool forkJoinPool = new ForkJoinPool(paths.size())){
                 constraintChains.add(new ArrayList<>(forkJoinPool.submit(() -> paths.parallelStream().map(path -> {
                     try {
                         return extractConstraintChain(path, inputNodes);
@@ -392,8 +391,6 @@ public class QueryAnalyzer {
             } catch (InterruptedException | ExecutionException e) {
                 logger.error(rb.getString("FailToConstructConstraintChain"), e);
                 Thread.currentThread().interrupt();
-            } finally {
-                forkJoinPool.shutdown();
             }
             allNodes.removeAll(inputNodes);
             if (!allNodes.isEmpty()) {
