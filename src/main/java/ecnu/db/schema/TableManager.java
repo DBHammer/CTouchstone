@@ -28,6 +28,7 @@ public class TableManager {
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
     public TableManager() {
+        // only for json reader
     }
 
     public static TableManager getInstance() {
@@ -38,7 +39,7 @@ public class TableManager {
         return schemas.get(schemaName).getFk2PkTableSize();
     }
 
-    public LinkedHashMap<String, Table> getSchemas() {
+    public Map<String, Table> getSchemas() {
         return schemas;
     }
 
@@ -47,7 +48,7 @@ public class TableManager {
     }
 
     public void storeSchemaInfo() throws IOException {
-        // todo 假设主键是单列的
+        // 假设主键为单列，复合主键中其他列的值作为辅助列
         schemas.values().forEach(Table::cleanPrimaryKey);
         String content = CommonUtils.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(schemas);
         CommonUtils.writeFile(schemaInfoPath.getPath(), content);
@@ -120,7 +121,8 @@ public class TableManager {
 
 
     public void setForeignKeys(String localTable, String localColumns, String refTable, String refColumns) throws TouchstoneException {
-        logger.debug(rb.getString("AddReferenceDependencies"), localTable, localColumns, refTable, refColumns);
+        String addReferenceDependencies = rb.getString("AddReferenceDependencies");
+        logger.debug(addReferenceDependencies, localTable, localColumns, refTable, refColumns);
         getSchema(localTable).addForeignKey(localTable, localColumns, refTable, refColumns);
     }
 
