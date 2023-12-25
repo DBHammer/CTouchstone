@@ -1,10 +1,11 @@
 package ecnu.db.analyzer.online.adapter.pg;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
-import net.minidev.json.JSONObject;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -76,8 +77,8 @@ public class PgJsonReader {
         return new StringBuilder("$.[0]['Plan']");
     }
 
-    static String formatPlan(String query){
-        return  "[{\"Plan\":" + query + "}]";
+    static String formatPlan(String query) {
+        return "[{\"Plan\":" + query + "}]";
     }
 
     // deal with subPlan
@@ -100,7 +101,11 @@ public class PgJsonReader {
 
     static String readPlan(StringBuilder path, int index) {
         LinkedHashMap<String, Object> data = readContext.read(path + "['Plans'][" + index + "]");
-        return JSONObject.toJSONString(data);
+        try {
+            return new ObjectMapper().writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     static String readSubPlanIndex(StringBuilder path) {
@@ -117,7 +122,11 @@ public class PgJsonReader {
 
     static String readTheWholePlan() {
         LinkedHashMap<String, Object> data = readContext.read("$.[0]");
-        return "[" + JSONObject.toJSONString(data) + "]";
+        try {
+            return "[" + new ObjectMapper().writeValueAsString(data) + "]";
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     static String readSubPlanIndex(StringBuilder path, int index) {
