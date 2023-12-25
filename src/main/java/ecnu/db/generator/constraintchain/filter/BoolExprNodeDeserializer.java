@@ -40,7 +40,6 @@ public class BoolExprNodeDeserializer extends StdDeserializer<BoolExprNode> {
             case UNI_FILTER_OPERATION -> mapper.readValue(node.toString(), UniVarFilterOperation.class);
             case MULTI_FILTER_OPERATION -> mapper.readValue(node.toString(), MultiVarFilterOperation.class);
             case ISNULL_FILTER_OPERATION -> mapper.readValue(node.toString(), IsNullFilterOperation.class);
-            default -> throw new IOException(String.format("无法识别的BoolExpr数据 %s", node));
         };
     }
 }
