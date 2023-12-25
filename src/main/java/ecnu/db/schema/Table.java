@@ -135,11 +135,11 @@ public class Table {
 
     @JsonGetter
     @SuppressWarnings("unused")
-    public String getPrimaryKeys() {
+    public synchronized String getPrimaryKeys() {
         return String.join(",", primaryKeys);
     }
 
-    public void setPrimaryKeys(List<String> primaryKeys) {
+    public synchronized void setPrimaryKeys(List<String> primaryKeys) {
         this.primaryKeys = primaryKeys;
     }
 
