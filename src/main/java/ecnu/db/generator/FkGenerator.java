@@ -39,6 +39,23 @@ public class FkGenerator {
 
     private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(CORE_NUM);
 
+    private long populateFKTime = 0;
+
+    private long constructHistogram = 0;
+
+    private long solveCPTime = 0;
+
+    public long getPopulateFKTime() {
+        return populateFKTime;
+    }
+
+    public long getSolveCPTime() {
+        return solveCPTime;
+    }
+
+    public long getConstructHistogram() {
+        return constructHistogram;
+    }
 
     FkGenerator(List<ConstraintChain> fkConstrainChains, List<String> fkGroup, long tableSize) {
         this.tableSize = tableSize;
@@ -76,7 +93,6 @@ public class FkGenerator {
             fkIndex2Cardinality.setValue(fkColCardinality);
         }
     }
-
 
     private void applySharePkConstraint(ConstructCpModel cpModel, int range) {
         BigDecimal batchPercentage = BigDecimal.valueOf(range).divide(BigDecimal.valueOf(tableSize), DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP);
@@ -167,6 +183,8 @@ public class FkGenerator {
         }
     }
 
+
+
     /**
      * 计算CP问题的解
      *
@@ -177,7 +195,7 @@ public class FkGenerator {
      */
     private void solveCP(boolean[][] statusVectorOfEachRow, int[] pkStatuses, int[] filterIndexes,
                          Map<Integer, FkRange[][]> fkIndex2Range) {
-        long start = System.currentTimeMillis();
+        long startConstructHistogram = System.currentTimeMillis();
         int range = statusVectorOfEachRow.length;
         JoinStatus[] involvedStatuses = new JoinStatus[range];
         // 根据右表状态计算统计直方图
@@ -191,8 +209,8 @@ public class FkGenerator {
         }
         // 为每一行数据记录位置
         IntStream.range(0, range).parallel().forEach(rowId -> filterIndexes[rowId] = status2Index.get(involvedStatuses[rowId]));
-        DataGenerator.constructHistogram += System.currentTimeMillis() - start;
-        start = System.currentTimeMillis();
+        long endConstruction = System.currentTimeMillis();
+        constructHistogram += endConstruction - startConstructHistogram;
         // 给定一个populateSolution，计算每一行数据需要填充的主键状态，以及剩余未填充的数据量
         int[] filterStatusPkPopulatedIndex = new int[statusHistogram.size()];
         // 构建并求解CP问题
@@ -213,7 +231,7 @@ public class FkGenerator {
             pkStatuses[rowId] = pkStatusIndex;
             populateSolution[filterIndex][pkStatusIndex]--;
         }
-        DataGenerator.solveCP += System.currentTimeMillis() - start;
+        solveCPTime += System.currentTimeMillis() - endConstruction;
     }
 
 
@@ -262,7 +280,7 @@ public class FkGenerator {
 
         solveCP(statusVectorOfEachRow, pkStatuses, filterIndexes, fkIndex2Range);
 
-        long start = System.currentTimeMillis();
+        long startPopulateFK = System.currentTimeMillis();
         int fkColNum = jointPkStatus[0].length;
         long[][] fkColValues = new long[fkColNum][range];
         List<Future<long[]>> futureFkCols = new ArrayList<>();
@@ -291,7 +309,7 @@ public class FkGenerator {
                 statusVectorOfEachRow[rowId][fkColIndex] &= outputStatus[fkColIndex];
             }
         });
-        DataGenerator.populateKey += System.currentTimeMillis() - start;
+        populateFKTime += System.currentTimeMillis() - startPopulateFK;
         return fkColValues;
     }
 
@@ -405,4 +423,5 @@ public class FkGenerator {
         }
         return ret;
     }
+
 }

@@ -71,18 +71,6 @@ public class DataGenerator implements Callable<Integer> {
         return schema2chains;
     }
 
-    public static long populateKey = 0;
-
-    public static long solveCP = 0;
-
-    public static long generate = 0;
-
-    public static long transferTime = 0;
-
-    public static long populatePk = 0;
-    public static long generateView = 0;
-
-    public static long constructHistogram = 0;
 
     private void init() throws IOException {
         //载入schema配置文件
@@ -166,7 +154,8 @@ public class DataGenerator implements Callable<Integer> {
             JoinStatus[] allStatuses = new JoinStatus[range];
             Map<JoinStatus, Long> pkHistogram = new HashMap<>();
             FkGenerator.staticsStatusHistogram(statusVectorOfEachRow, allStatuses, pkStatusChainIndexes, pkHistogram);
-            logger.info(rb.getString("showStatusVectorTable"), pkName);
+            String showStatusVectorTable = rb.getString("showStatusVectorTable");
+            logger.info(showStatusVectorTable, pkName);
             for (Map.Entry<JoinStatus, Long> joinStatusLongEntry : pkHistogram.entrySet()) {
                 logger.info("size:{}, status:{}", joinStatusLongEntry.getValue(), joinStatusLongEntry.getKey().status());
             }
@@ -237,14 +226,19 @@ public class DataGenerator implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        //System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", threadNum);
         init();
+        long generateNonKeyTime = 0;
+        long solveCPTime = 0;
+        long computeStatusVectorTime = 0;
+        long populateKeyTime = 0;
+
         long start = System.currentTimeMillis();
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
             long tableSize = TableManager.getInstance().getTableSize(schemaName);
             String pkName = TableManager.getInstance().getPrimaryKeys(schemaName);
             computeStepRange(tableSize);
-            logger.info(rb.getString("startDataOutPut"), schemaName, tableSize);
+            String startDataOutPut = rb.getString("startDataOutPut");
+            logger.info(startDataOutPut, schemaName, tableSize);
             // 准备生成的属性列生成器
             List<String> attColumnNames = TableManager.getInstance().getAttributeColumnNames(schemaName);
             ColumnManager.getInstance().cacheAttributeColumn(attColumnNames);
@@ -272,18 +266,19 @@ public class DataGenerator implements Callable<Integer> {
             // 开始生成
             while (batchStart < tableSize) {
                 int range = (int) (Math.min(batchStart + batchSize, tableSize) - batchStart);
-                logger.info(rb.getString("generateFromTo"), batchStart, batchStart + range);
+                String generateFromTo = rb.getString("generateFromTo");
+                logger.info(generateFromTo, batchStart, batchStart + range);
                 long start1 = System.currentTimeMillis();
                 ColumnManager.getInstance().prepareGeneration(range);
-                generate += (System.currentTimeMillis() - start1);
-                long start5 = System.currentTimeMillis();
+                generateNonKeyTime += (System.currentTimeMillis() - start1);
+                long startComputeStatusVector = System.currentTimeMillis();
                 boolean[][] statusVectorOfEachRow = generateStatusViewOfEachRow(allChains, range);
-                generateView += System.currentTimeMillis() - start5;
+                computeStatusVectorTime += System.currentTimeMillis() - startComputeStatusVector;
                 Map<String, long[]> fkCol2Values = generateFks(statusVectorOfEachRow, fkGenerators, fkGroups);
                 generateFksNoConstraints(fkCol2Values, allFk2TableSize, range);
-                long startNew = System.currentTimeMillis();
+                long startPopulatePK = System.currentTimeMillis();
                 StringBuilder[] keyData = generatePks(statusVectorOfEachRow, pkStatusChainIndexes, pkName);
-                populatePk += System.currentTimeMillis() - startNew;
+                populateKeyTime += System.currentTimeMillis() - startPopulatePK;
                 IntStream.range(0, keyData.length).parallel().forEach(index -> {
                     StringBuilder row = keyData[index];
                     for (long[] fks : fkCol2Values.values()) {
@@ -296,17 +291,18 @@ public class DataGenerator implements Callable<Integer> {
                     }
                 });
                 //转换为字符串准备输出
-                long start2 = System.currentTimeMillis();
                 String[] data = ColumnManager.getInstance().generateAttRows(range);
-                transferTime += (System.currentTimeMillis() - start2);
                 dataWriter.addWriteTask(schemaName, keyData, data);
                 batchStart += range + stepRange;
             }
+            computeStatusVectorTime += Arrays.stream(fkGenerators).mapToLong(FkGenerator::getConstructHistogram).sum();
+            populateKeyTime += Arrays.stream(fkGenerators).mapToLong(FkGenerator::getPopulateFKTime).sum();
+            solveCPTime += Arrays.stream(fkGenerators).mapToLong(FkGenerator::getSolveCPTime).sum();
         }
-        logger.info("GD:{}", generate);
-        logger.info("CS:{}", generateView + constructHistogram);
-        logger.info("CP:{}", solveCP);
-        logger.info("PF:{}", populateKey + populatePk);
+        logger.info("GN:{}", generateNonKeyTime);
+        logger.info("CS:{}", computeStatusVectorTime);
+        logger.info("CP:{}", solveCPTime);
+        logger.info("PK:{}", populateKeyTime);
         logger.info("total time: {}", System.currentTimeMillis() - start);
         if (dataWriter.waitWriteFinish()) {
             logger.info("Output table data completed");
