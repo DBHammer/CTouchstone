@@ -41,8 +41,6 @@ public class DataGenerator implements Callable<Integer> {
     private int generatorNum;
     @CommandLine.Option(names = {"-l", "--step_size"}, description = "the size of each batch", defaultValue = "7000000")
     private int stepSize;
-    /*@CommandLine.Option(names = {"-t", "--thread_num"}, description = "the thread num", defaultValue = "8")
-    private String threadNum;*/
 
     private Map<String, List<ConstraintChain>> schema2chains;
 
