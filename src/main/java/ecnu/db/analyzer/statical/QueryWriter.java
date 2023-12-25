@@ -199,7 +199,7 @@ public class QueryWriter {
     public String evaluate(String str, boolean isDate) throws SQLException {
         String h2ConnUrl = "jdbc:h2:mem:h2DB;MODE=MYSQL;";
         try (Connection conn = DriverManager.getConnection(h2ConnUrl, "root", "root")) {
-            try (Statement statement = conn.createStatement();) {
+            try (Statement statement = conn.createStatement()) {
                 String date = isDate ? "DATE " : " ";
                 ResultSet resultSet = statement.executeQuery("SELECT " + date + str);
                 return resultSet.next() ? "'" + resultSet.getString(1) + "'" : "";
