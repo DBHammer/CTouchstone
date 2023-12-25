@@ -1,12 +1,10 @@
 package ecnu.db;
-import ecnu.db.schema.ColumnManager;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class LanguageManager {
-    //private final Locale lc = Locale.getDefault();
-    private final Locale lc = new Locale("en", "US");
+    private final Locale lc = Locale.of("en", "US");
     private final ResourceBundle rb = ResourceBundle.getBundle("messageResource", lc);
     private static final LanguageManager INSTANCE = new LanguageManager();
     public static LanguageManager getInstance() {
