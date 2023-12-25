@@ -56,7 +56,7 @@ public class QueryInstantiate implements Callable<Integer> {
         logger.info(rb.getString("StartPopulatingTheQueryTemplate"));
         writeQuery(queryName2QueryTemplates, id2Parameter);
         logger.info(rb.getString("FillInTheQueryTemplateComplete"));
-        if (id2Parameter.size() > 0) {
+        if (!id2Parameter.isEmpty()) {
             logger.info(rb.getString("TheParametersThatWereNotSuccessfullyReplaced"), id2Parameter.values());
         }
         return null;
