@@ -167,7 +167,7 @@ public class Column {
         switch (columnType) {
             case DATE, DATETIME -> {
                 for (int i = 0; i < columnData.length; i++) {
-                    ret[i] = columnData[i] + min;
+                    ret[i] = (columnData[i] + min);
                 }
             }
             case DECIMAL -> {
