@@ -329,7 +329,7 @@ public class QueryAnalyzer {
      * @param paths       需要返回的路径
      */
     private void getPathsIterate(ExecutionNode currentNode, List<List<ExecutionNode>> paths, List<ExecutionNode> currentPath) {
-        currentPath.add(0, currentNode);
+        currentPath.addFirst(currentNode);
         if (currentNode.getLeftNode() == null && currentNode.getRightNode() == null) {
             paths.add(new ArrayList<>(currentPath));
         }
@@ -339,7 +339,7 @@ public class QueryAnalyzer {
         if (currentNode.getRightNode() != null) {
             getPathsIterate(currentNode.getRightNode(), paths, currentPath);
         }
-        currentPath.remove(0);
+        currentPath.removeFirst();
     }
 
     /**
@@ -400,7 +400,7 @@ public class QueryAnalyzer {
             }
         }
         if (constraintChains.size() > 1) {
-            for (ConstraintChain constraintChain : constraintChains.get(0)) {
+            for (ConstraintChain constraintChain : constraintChains.getFirst()) {
                 for (Parameter parameter : constraintChain.getParameters()) {
                     parameter.setSubPlan(true);
                 }
