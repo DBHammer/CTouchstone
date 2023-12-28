@@ -309,7 +309,7 @@ public class QueryAnalyzer {
                     throw new UnsupportedOperationException();
                 }
             } catch (TouchstoneException e) {
-                e.printStackTrace();
+                logger.error("extract constraint chain fail", e);
                 // 小于设置的阈值以后略去后续的节点
                 if (executionNode.getOutputRows() * 1.0 / TableManager.getInstance().getTableSize(executionNode.getTableName()) < skipNodeThreshold) {
                     logger.error(rb.getString("FailToExtractConstraintChain"), e);
@@ -421,7 +421,7 @@ public class QueryAnalyzer {
         try {
             return abstractAnalyzer.analyzeSelectOperator(operatorInfo);
         } catch (Exception e) {
-                throw new UnsupportedSelect(operatorInfo, e);
+            throw new UnsupportedSelect(operatorInfo, e);
         }
     }
 
