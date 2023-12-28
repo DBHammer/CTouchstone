@@ -1,5 +1,6 @@
 package ecnu.db.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -22,6 +23,7 @@ public class Table {
     @JsonIgnore
     private int joinTag = 0;
 
+    @JsonCreator
     public Table() {
         this.primaryKeys = new ArrayList<>();
     }
@@ -50,7 +52,7 @@ public class Table {
 
     public void cleanPrimaryKey() {
         while (primaryKeys.size() > 1) {
-            primaryKeys.remove(0);
+            primaryKeys.removeFirst();
         }
     }
 
@@ -123,7 +125,7 @@ public class Table {
         this.tableSize = tableSize;
     }
 
-    public Map<String, String> getForeignKeys() {
+    public synchronized Map<String, String> getForeignKeys() {
         return foreignKeys;
     }
 
@@ -168,15 +170,7 @@ public class Table {
     public void toSQL(DbConnector dbConnector, String tableName) throws SQLException {
         StringBuilder head = new StringBuilder("CREATE TABLE ");
         head.append(tableName).append(" (");
-        List<String> allColumns = new ArrayList<>(canonicalColumnNames);
-        List<String> tempPrimayKeys = new ArrayList<>(primaryKeys);
-        tempPrimayKeys.removeAll(foreignKeys.keySet());
-        allColumns.removeAll(tempPrimayKeys);
-        allColumns.removeAll(foreignKeys.keySet());
-        List<String> foreignKeysList = new ArrayList<>(foreignKeys.keySet());
-        Collections.sort(foreignKeysList);
-        allColumns.addAll(0, foreignKeysList);
-        allColumns.addAll(0, tempPrimayKeys);
+        List<String> allColumns = produceKeySQL();
         for (String canonicalColumnName : allColumns) {
             String columnName = canonicalColumnName.split("\\.")[2];
             Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
@@ -191,15 +185,7 @@ public class Table {
     public String getSql(String tableName) {
         StringBuilder head = new StringBuilder("CREATE TABLE ");
         head.append(tableName).append(" (\n");
-        List<String> allColumns = new ArrayList<>(canonicalColumnNames);
-        List<String> tempPrimayKeys = new ArrayList<>(primaryKeys);
-        tempPrimayKeys.removeAll(foreignKeys.keySet());
-        allColumns.removeAll(tempPrimayKeys);
-        allColumns.removeAll(foreignKeys.keySet());
-        List<String> foreignKeysList = new ArrayList<>(foreignKeys.keySet());
-        Collections.sort(foreignKeysList);
-        allColumns.addAll(0, foreignKeysList);
-        allColumns.addAll(0, tempPrimayKeys);
+        List<String> allColumns = produceKeySQL();
         for (String canonicalColumnName : allColumns) {
             String columnName = canonicalColumnName.split("\\.")[2];
             Column column = ColumnManager.getInstance().getColumn(canonicalColumnName);
@@ -213,6 +199,19 @@ public class Table {
         head = new StringBuilder(head.substring(0, head.length() - 2));
         head.append("\n);\n");
         return head.toString();
+    }
+
+    private List<String> produceKeySQL() {
+        List<String> allColumns = new ArrayList<>(canonicalColumnNames);
+        List<String> tempPrimayKeys = new ArrayList<>(primaryKeys);
+        tempPrimayKeys.removeAll(foreignKeys.keySet());
+        allColumns.removeAll(tempPrimayKeys);
+        allColumns.removeAll(foreignKeys.keySet());
+        List<String> foreignKeysList = new ArrayList<>(foreignKeys.keySet());
+        Collections.sort(foreignKeysList);
+        allColumns.addAll(0, foreignKeysList);
+        allColumns.addAll(0, tempPrimayKeys);
+        return allColumns;
     }
 
     @Override
