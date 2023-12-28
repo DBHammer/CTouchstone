@@ -464,8 +464,8 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 throw new UnsupportedOperationException();
             }
             List<List<String>> matches = matchPattern(EQ_OPERATOR, joinInfo);
-            String[] leftJoinInfos = matches.get(0).get(1).split("\\.");
-            String[] rightJoinInfos = matches.get(0).get(2).split("\\.");
+            String[] leftJoinInfos = matches.getFirst().get(1).split("\\.");
+            String[] rightJoinInfos = matches.getFirst().get(2).split("\\.");
             String leftTable = leftJoinInfos[0] + CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL + leftJoinInfos[1];
             String rightTable = rightJoinInfos[0] + CommonUtils.CANONICAL_NAME_CONTACT_SYMBOL + rightJoinInfos[1];
             List<String> leftCols = new ArrayList<>();
