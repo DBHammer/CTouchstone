@@ -35,12 +35,14 @@ public class QueryAnalyzer {
 
     protected static final Logger logger = LoggerFactory.getLogger(QueryAnalyzer.class);
     private static final int SKIP_JOIN_TAG = -1;
-    private static final int STOP_CONSTRUCT = -3;
-    private static final int SKIP_SELF_JOIN = -4;
+    private static final int STOP_CONSTRUCT = -2;
+    private static final int SKIP_SELF_JOIN = -3;
     private final AbstractAnalyzer abstractAnalyzer;
     private final DbConnector dbConnector;
     protected double skipNodeThreshold = 0.01;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
+
+    private static final boolean OPEN_SKIP_JOIN_FEATURE = false;
 
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector) {
@@ -154,19 +156,20 @@ public class QueryAnalyzer {
     }
 
     private long analyzeJoinNode(JoinNode node, ConstraintChain constraintChain, long lastNodeLineCount) throws TouchstoneException, SQLException {
-        String[] joinColumnInfos = abstractAnalyzer.analyzeJoinInfo(node.getInfo());
+        String[] joinColumnInfos = new String[4];
+        double fkJoinProbability = abstractAnalyzer.analyzeJoinInfo(node.getInfo(), joinColumnInfos);
         String localTable = joinColumnInfos[0];
         String localCol = joinColumnInfos[1];
         String externalTable = joinColumnInfos[2];
         String externalCol = joinColumnInfos[3];
         if (localTable.equals(externalTable)) {
-            node.setJoinTag(SKIP_SELF_JOIN);
+            node.setJoinStatus(SKIP_SELF_JOIN);
             logger.error(rb.getString("SkipSelfJoinNode"), node.getInfo());
             return STOP_CONSTRUCT;
         }
         // 如果当前的join节点，不属于之前遍历的节点
         if (!constraintChain.getTableName().equals(localTable) && !constraintChain.getTableName().equals(externalTable)) {
-            if (node.getJoinTag() == SKIP_JOIN_TAG)
+            if (node.getJoinStatus() == SKIP_JOIN_TAG)
                 return node.getOutputRows();
             else
                 return STOP_CONSTRUCT;
@@ -183,7 +186,7 @@ public class QueryAnalyzer {
             //设置主键
             if (constraintChain.getJoinTables().contains(externalTable)) {
                 logger.error(rb.getString("skipSelfJoin"), node.getInfo());
-                node.setJoinTag(SKIP_SELF_JOIN);
+                node.setJoinStatus(SKIP_SELF_JOIN);
                 return STOP_CONSTRUCT;
             } else {
                 constraintChain.addJoinTable(externalTable);
@@ -197,10 +200,13 @@ public class QueryAnalyzer {
                 }
             }
             boolean joinIsNotOuterJoin = node.getPkDistinctSize().compareTo(BigDecimal.ZERO) == 0;
+            boolean skipTheJoinNode = false;
             if (pkAllRowsInput && fkColIsNotNull && joinIsNotOuterJoin) {
                 logger.debug(rb.getString("SkipNodeDueToFullTableScan"), node.getInfo());
-                node.setJoinTag(SKIP_JOIN_TAG);
-            } else {
+                node.setJoinStatus(SKIP_JOIN_TAG);
+                skipTheJoinNode = OPEN_SKIP_JOIN_FEATURE;
+            }
+            if (!skipTheJoinNode) {
                 node.setJoinTag(TableManager.getInstance().getJoinTag(localTable));
                 ConstraintChainPkJoinNode pkJoinNode = new ConstraintChainPkJoinNode(node.getJoinTag(), localCol.split(","));
                 constraintChain.addNode(pkJoinNode);
@@ -210,19 +216,26 @@ public class QueryAnalyzer {
         } else {
             constraintChain.addJoinTable(externalTable);
             logger.debug("{} wait join tag", node.getInfo());
-            int fkJoinTag = node.getJoinTag();
+            int joinStatus = node.getJoinStatus();
             logger.debug("{} get join tag", node.getInfo());
             TableManager.getInstance().setTmpForeignKeys(localTable, localCol, externalTable, externalCol);
-            if (fkJoinTag == SKIP_JOIN_TAG) {
+            if (joinStatus == SKIP_JOIN_TAG && OPEN_SKIP_JOIN_FEATURE) {
                 logger.debug(rb.getString("SkipNodeDueToFullPk"), node.getInfo());
                 return node.getOutputRows();
-            } else if (fkJoinTag == SKIP_SELF_JOIN) {
+            } else if (joinStatus == SKIP_SELF_JOIN) {
                 logger.error(rb.getString("SkipSelfJoinNode"), node.getInfo());
+                return STOP_CONSTRUCT;
+            } else if (constraintChain.hasAggNode()) {
+                logger.error("cannot support join {} after aggregation currently", node.getInfo());
                 return STOP_CONSTRUCT;
             }
             TableManager.getInstance().setForeignKeys(localTable, localCol, externalTable, externalCol);
             BigDecimal probability = computeFilterProbability(node.getOutputRows(), lastNodeLineCount);
-            ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, fkJoinTag, probability);
+            probability = probability.divide(BigDecimal.valueOf(fkJoinProbability), DECIMAL_DIVIDE_SCALE, RoundingMode.HALF_UP);
+            if (probability.compareTo(BigDecimal.ONE) > 0 || joinStatus == SKIP_JOIN_TAG) {
+                probability = BigDecimal.ONE;
+            }
+            ConstraintChainFkJoinNode fkJoinNode = new ConstraintChainFkJoinNode(localTable + "." + localCol, externalTable + "." + externalCol, node.getJoinTag(), probability);
             // deal with index join
             String leftTable = null;
             String rightTable = null;

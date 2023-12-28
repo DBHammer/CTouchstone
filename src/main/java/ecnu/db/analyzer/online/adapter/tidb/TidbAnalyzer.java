@@ -288,14 +288,13 @@ public class TidbAnalyzer extends AbstractAnalyzer {
      * @throws TouchstoneException 无法分析的join条件
      */
     @Override
-    public String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException {
+    public double analyzeJoinInfo(String joinInfo, String[] result) throws TouchstoneException {
         if (joinInfo.contains("other cond:")) {
             throw new TouchstoneException("join中包含其他条件,暂不支持");
         }
         if (matchPattern(INNER_JOIN, joinInfo).isEmpty()) {
             throw new UnsupportedJoin(joinInfo);
         }
-        String[] result = new String[4];
         String leftTable, leftCol, rightTable, rightCol;
         Matcher eqCondition = JOIN_EQ_OPERATOR.matcher(joinInfo);
         if (eqCondition.find()) {
@@ -351,7 +350,7 @@ public class TidbAnalyzer extends AbstractAnalyzer {
         if (result[3].contains(")")) {
             result[3] = result[3].substring(0, result[3].indexOf(')'));
         }
-        return result;
+        return 1;
     }
 
     @Override

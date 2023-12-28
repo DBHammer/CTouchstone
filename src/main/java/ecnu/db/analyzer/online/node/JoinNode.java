@@ -10,6 +10,21 @@ public class JoinNode extends ExecutionNode {
     private final boolean semiJoin;
 
     private final CountDownLatch waitSetJoinTag = new CountDownLatch(1);
+
+    public int getJoinTag() {
+        return joinTag;
+    }
+
+    public void setJoinTag(int joinTag) {
+        this.joinTag = joinTag;
+        waitSetJoinTag.countDown();
+    }
+
+    /**
+     * 记录Join的状态
+     */
+    private int joinStatus = Integer.MIN_VALUE;
+
     /**
      * 记录主键的join tag，第一次访问该节点后设置join tag，后续的访问可以找到之前对应的join tag
      */
@@ -29,18 +44,18 @@ public class JoinNode extends ExecutionNode {
     /**
      * @return 当前表最新的join tag
      */
-    public int getJoinTag() {
+    public int getJoinStatus() {
         try {
             waitSetJoinTag.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
             Thread.currentThread().interrupt();
         }
-        return joinTag;
+        return joinStatus;
     }
 
-    public void setJoinTag(int joinTag) {
-        this.joinTag = joinTag;
+    public void setJoinStatus(int joinStatus) {
+        this.joinStatus = joinStatus;
         waitSetJoinTag.countDown();
     }
 
@@ -82,7 +97,7 @@ public class JoinNode extends ExecutionNode {
 
         if (antiJoin != joinNode.antiJoin) return false;
         if (semiJoin != joinNode.semiJoin) return false;
-        if (joinTag != joinNode.joinTag) return false;
+        if (joinStatus != joinNode.joinStatus) return false;
         if (rowsRemoveByFilterAfterJoin != joinNode.rowsRemoveByFilterAfterJoin) return false;
         if (!waitSetJoinTag.equals(joinNode.waitSetJoinTag)) return false;
         if (!Objects.equals(pkDistinctProbability, joinNode.pkDistinctProbability))
@@ -96,7 +111,7 @@ public class JoinNode extends ExecutionNode {
         result = 31 * result + (antiJoin ? 1 : 0);
         result = 31 * result + (semiJoin ? 1 : 0);
         result = 31 * result + waitSetJoinTag.hashCode();
-        result = 31 * result + joinTag;
+        result = 31 * result + joinStatus;
         result = 31 * result + (pkDistinctProbability != null ? pkDistinctProbability.hashCode() : 0);
         result = 31 * result + (int) (rowsRemoveByFilterAfterJoin ^ (rowsRemoveByFilterAfterJoin >>> 32));
         result = 31 * result + (indexJoinFilter != null ? indexJoinFilter.hashCode() : 0);

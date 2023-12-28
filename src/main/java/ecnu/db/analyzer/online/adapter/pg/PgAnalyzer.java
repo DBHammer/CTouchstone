@@ -6,6 +6,7 @@ import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoLexer;
 import ecnu.db.analyzer.online.adapter.pg.parser.PgSelectOperatorInfoParser;
 import ecnu.db.analyzer.online.node.*;
 import ecnu.db.generator.constraintchain.filter.LogicNode;
+import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
 import ecnu.db.utils.CommonUtils;
 import ecnu.db.utils.exception.TouchstoneException;
@@ -455,10 +456,10 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     @Override
-    public String[] analyzeJoinInfo(String joinInfo) {
+    public double analyzeJoinInfo(String joinInfo, String[] result) {
         joinInfo = transColumnName(joinInfo);
-        String[] result = new String[4];
         Matcher eqCondition = JOIN_EQ_OPERATOR.matcher(joinInfo);
+        double filterProbability = 1;
         if (eqCondition.find()) {
             if (eqCondition.groupCount() > 1) {
                 throw new UnsupportedOperationException();
@@ -478,7 +479,9 @@ public class PgAnalyzer extends AbstractAnalyzer {
                 String currRightTable = String.format("%s.%s", rightJoinInfos[0], rightJoinInfos[1]);
                 String currRightCol = rightJoinInfos[2];
                 if (!leftTable.equals(currLeftTable) || !rightTable.equals(currRightTable)) {
-                    logger.error(rb.getString("UnsupportedMulyiTablesInConstraints"));
+                    double tmpFilterProbability = computeMatchProbability(String.join(".", leftJoinInfos), String.join(".", rightJoinInfos));
+                    logger.info("deal with multiple fks {}", tmpFilterProbability);
+                    filterProbability *= tmpFilterProbability;
                     break;
                 }
                 leftCols.add(currLeftCol);
@@ -491,7 +494,26 @@ public class PgAnalyzer extends AbstractAnalyzer {
             result[2] = rightTable;
             result[3] = rightCol;
         }
-        return result;
+        return filterProbability;
+    }
+
+
+    public double computeMatchProbability(String leftColName, String rightColName) {
+        boolean withTheSameColumnType = ColumnManager.getInstance().getColumnType(leftColName)
+                .equals(ColumnManager.getInstance().getColumnType(rightColName));
+        boolean withTheSameSpecialValue = ColumnManager.getInstance().getColumn(leftColName).getSpecialValue() ==
+                ColumnManager.getInstance().getColumn(rightColName).getSpecialValue();
+        boolean withTheSameStart = ColumnManager.getInstance().getMin(leftColName) ==
+                ColumnManager.getInstance().getMin(rightColName);
+        boolean withTheSameRange = ColumnManager.getInstance().getNdv(leftColName) ==
+                ColumnManager.getInstance().getNdv(rightColName);
+        if (withTheSameColumnType && withTheSameRange && withTheSameSpecialValue && withTheSameStart) {
+            logger.warn("infer {} and {} reference the same primary key column", leftColName, rightColName);
+            return 1.0 / ColumnManager.getInstance().getNdv(leftColName);
+        } else {
+            logger.error("infer {} and {} may not reference the same primary key column", leftColName, rightColName);
+            return 1.0;
+        }
     }
 
     @Override

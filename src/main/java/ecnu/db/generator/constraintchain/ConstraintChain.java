@@ -98,6 +98,10 @@ public class ConstraintChain {
         return nodes.stream().anyMatch(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.FK_JOIN);
     }
 
+    public boolean hasAggNode(){
+        return nodes.stream().anyMatch(node -> node.getConstraintChainNodeType() == ConstraintChainNodeType.AGGREGATE);
+    }
+
     @JsonIgnore
     public List<ConstraintChainFkJoinNode> getFkNodes() {
         return nodes.stream().filter(constraintChainNode ->

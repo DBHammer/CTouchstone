@@ -31,10 +31,11 @@ public abstract class AbstractAnalyzer {
      * 分析join信息
      *
      * @param joinInfo join字符串
-     * @return 长度为4的字符串数组，0，1为join info左侧的表名和列名，2，3为join右侧的表明和列名
+     * @param result  长度为4的字符串数组，0，1为join info左侧的表名和列名，2，3为join右侧的表明和列名
+     * @return 如果包含FK-FK的Join谓词，按照独立同分布计算其可能的概率
      * @throws TouchstoneException 无法分析的join条件
      */
-    public abstract String[] analyzeJoinInfo(String joinInfo) throws TouchstoneException;
+    public abstract double analyzeJoinInfo(String joinInfo, String[] result) throws TouchstoneException;
 
 
     /**
