@@ -72,12 +72,19 @@ public class QueryReader {
         }
 
         List<String> sqls = new ArrayList<>();
-        for (SQLStatement sqlStatement : statementList) {
-            String sql = SQLUtils.format(sqlStatement.toString(), dbType);
-            sql = sql.replace(System.lineSeparator(), " ");
-            sql = sql.replace('\t', ' ');
-            sql = sql.replaceAll(" +", " ");
-            sqls.add(sql);
+        // temp fix for druid parse, the bug is that
+        // input query : select * from (t1 cross join t2) cross join (t3 cross join t4)
+        // output query : select * from t1 cross join t2 cross join t3 cross join t4
+        if (statementList.size() == 1) {
+            sqls.add(fileContents.toString());
+        } else {
+            for (SQLStatement sqlStatement : statementList) {
+                String sql = SQLUtils.format(sqlStatement.toString(), dbType);
+                sql = sql.replace(System.lineSeparator(), " ");
+                sql = sql.replace('\t', ' ');
+                sql = sql.replaceAll(" +", " ");
+                sqls.add(sql);
+            }
         }
         return sqls;
     }
