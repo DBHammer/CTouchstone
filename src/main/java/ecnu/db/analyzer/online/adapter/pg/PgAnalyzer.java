@@ -551,7 +551,7 @@ public class PgAnalyzer extends AbstractAnalyzer {
     }
 
     private String getTableNameFromOutput(StringBuilder path) {
-        String outPut = PgJsonReader.readOutput(path).get(0);
+        String outPut = PgJsonReader.readOutput(path).getFirst();
         Set<String> tableNames = aliasDic.keySet().stream().filter(outPut::contains)
                 .map(alias -> aliasDic.get(alias)).collect(Collectors.toSet());
         if (tableNames.size() > 1) {

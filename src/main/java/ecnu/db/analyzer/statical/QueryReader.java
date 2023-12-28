@@ -169,7 +169,7 @@ public class QueryReader {
      */
     private static String addDatabaseNamePrefix(String tableName) throws IllegalQueryTableNameException {
         List<List<String>> matches = matchPattern(QueryReader.CANONICAL_TBL_NAME, tableName);
-        if (matches.size() == 1 && matches.get(0).get(0).length() == tableName.length()) {
+        if (matches.size() == 1 && matches.getFirst().getFirst().length() == tableName.length()) {
             return tableName;
         } else {
             if (defaultDatabaseName == null) {

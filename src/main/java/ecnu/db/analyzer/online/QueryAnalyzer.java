@@ -273,7 +273,7 @@ public class QueryAnalyzer {
         if (path == null || path.isEmpty()) {
             throw new TouchstoneException(String.format("invalid path input '%s'", path));
         }
-        ExecutionNode headNode = path.get(0);
+        ExecutionNode headNode = path.getFirst();
         ConstraintChain constraintChain;
         long lastNodeLineCount;
         //分析约束链的第一个node
@@ -379,7 +379,7 @@ public class QueryAnalyzer {
             HashSet<ExecutionNode> allNodes = new HashSet<>();
             paths.forEach(allNodes::addAll);
             Set<ExecutionNode> inputNodes = ConcurrentHashMap.newKeySet();
-            try (ForkJoinPool forkJoinPool = new ForkJoinPool(paths.size())){
+            try (ForkJoinPool forkJoinPool = new ForkJoinPool(paths.size())) {
                 constraintChains.add(new ArrayList<>(forkJoinPool.submit(() -> paths.parallelStream().map(path -> {
                     try {
                         return extractConstraintChain(path, inputNodes);
