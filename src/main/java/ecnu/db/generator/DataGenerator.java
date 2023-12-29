@@ -46,6 +46,8 @@ public class DataGenerator implements Callable<Integer> {
     private boolean closeTopologicalReduce;
     @CommandLine.Option(names = {"--expand-rule"}, description = "expand the status vector histogram", defaultValue = "false")
     private boolean expandRules;
+    @CommandLine.Option(names = {"-sf", "--scale-factor"}, description = "the size of each batch", defaultValue = "1")
+    private int scaleFactor;
 
 
     private Map<String, List<ConstraintChain>> schema2chains;
@@ -246,7 +248,7 @@ public class DataGenerator implements Callable<Integer> {
 
         long start = System.currentTimeMillis();
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
-            long tableSize = TableManager.getInstance().getTableSize(schemaName);
+            long tableSize = TableManager.getInstance().getTableSize(schemaName) * scaleFactor;
             String pkName = TableManager.getInstance().getPrimaryKeys(schemaName);
             computeStepRange(tableSize);
             String startDataOutPut = rb.getString("startDataOutPut");
