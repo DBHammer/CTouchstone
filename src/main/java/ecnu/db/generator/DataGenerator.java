@@ -8,6 +8,7 @@ import ecnu.db.generator.constraintchain.ConstraintChainNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainFkJoinNode;
 import ecnu.db.generator.constraintchain.join.ConstraintChainPkJoinNode;
 import ecnu.db.generator.joininfo.JoinStatus;
+import ecnu.db.generator.joininfo.RuleTable;
 import ecnu.db.generator.joininfo.RuleTableManager;
 import ecnu.db.schema.ColumnManager;
 import ecnu.db.schema.TableManager;
@@ -41,6 +42,11 @@ public class DataGenerator implements Callable<Integer> {
     private int generatorNum;
     @CommandLine.Option(names = {"-l", "--step_size"}, description = "the size of each batch", defaultValue = "7000000")
     private int stepSize;
+    @CommandLine.Option(names = {"--close-topological"}, description = "close topological optimization", defaultValue = "false")
+    private boolean closeTopologicalReduce;
+    @CommandLine.Option(names = {"--expand-rule"}, description = "expand the status vector histogram", defaultValue = "false")
+    private boolean expandRules;
+
 
     private Map<String, List<ConstraintChain>> schema2chains;
 
@@ -106,12 +112,15 @@ public class DataGenerator implements Callable<Integer> {
                 allFkCols.add(fkJoinNode.getLocalCols());
             }
         }
+        if (closeTopologicalReduce) {
+            return Collections.singletonList(new ArrayList<>(allFkCols));
+        }
         for (String fkCol : allFkCols) {
             graph.addVertex(fkCol);
         }
         for (ConstraintChain haveFkConstrainChain : haveFkConstrainChains) {
             List<ConstraintChainFkJoinNode> fkJoinNodes = haveFkConstrainChain.getFkNodes();
-            String lastColName = fkJoinNodes.get(0).getLocalCols();
+            String lastColName = fkJoinNodes.getFirst().getLocalCols();
             for (int i = 1; i < fkJoinNodes.size(); i++) {
                 String currentColName = fkJoinNodes.get(i).getLocalCols();
                 graph.addEdge(lastColName, currentColName);
@@ -226,6 +235,9 @@ public class DataGenerator implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+        if (expandRules) {
+            RuleTable.openExpandRuleMap();
+        }
         init();
         long generateNonKeyTime = 0;
         long solveCPTime = 0;

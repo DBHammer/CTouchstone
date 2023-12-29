@@ -8,11 +8,28 @@ import java.util.List;
 import java.util.Map;
 
 public class RuleTable {
+    private static boolean expandRuleMap = false;
+
+    public static void openExpandRuleMap(){
+        expandRuleMap = true;
+    }
+
     Map<JoinStatus, List<PkRange>> rules = new HashMap<>();
 
     public void addRule(JoinStatus status, long start, long end) {
         rules.computeIfAbsent(status, value -> new ArrayList<>());
-        rules.get(status).add(new PkRange(start, end));
+        if (expandRuleMap) {
+            List<PkRange> ranges = rules.get(status);
+            long i = start;
+            for (; i <= end - 2; i += 2) {
+                ranges.add(new PkRange(i, i + 2));
+            }
+            if (i < end) {
+                ranges.add(new PkRange(i, end));
+            }
+        } else {
+            rules.get(status).add(new PkRange(start, end));
+        }
     }
 
     public MergedRuleTable mergeRules(int[] location) {
