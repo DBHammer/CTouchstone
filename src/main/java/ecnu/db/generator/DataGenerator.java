@@ -245,6 +245,8 @@ public class DataGenerator implements Callable<Integer> {
         long solveCPTime = 0;
         long computeStatusVectorTime = 0;
         long populateKeyTime = 0;
+        long freeMemory = Long.MAX_VALUE;
+        Runtime runtime = Runtime.getRuntime();
 
         long start = System.currentTimeMillis();
         for (String schemaName : TableManager.getInstance().createTopologicalOrder()) {
@@ -309,6 +311,7 @@ public class DataGenerator implements Callable<Integer> {
                 dataWriter.addWriteTask(schemaName, keyData, data);
                 batchStart += range + stepRange;
             }
+            freeMemory = Math.min(freeMemory, runtime.freeMemory());
             computeStatusVectorTime += Arrays.stream(fkGenerators).mapToLong(FkGenerator::getConstructHistogram).sum();
             populateKeyTime += Arrays.stream(fkGenerators).mapToLong(FkGenerator::getPopulateFKTime).sum();
             solveCPTime += Arrays.stream(fkGenerators).mapToLong(FkGenerator::getSolveCPTime).sum();
@@ -318,6 +321,7 @@ public class DataGenerator implements Callable<Integer> {
         logger.info("CP:{}", solveCPTime);
         logger.info("PK:{}", populateKeyTime);
         logger.info("total time: {}", System.currentTimeMillis() - start);
+        logger.info("used memory (MB): {}", (runtime.totalMemory() - freeMemory) / 1024 / 1024);
         if (dataWriter.waitWriteFinish()) {
             logger.info("Output table data completed");
         }
