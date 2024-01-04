@@ -102,7 +102,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
-            <version>1.2.20</version>
+            <version>1.2.21</version>
         </dependency>
 
         <!--junit libs-->
