@@ -270,7 +270,7 @@ The fill method here is actually constructing c_acctbal > -1000, that is, runnin
 ### Join
 Mirage can only handle PK-FK joins. For joins between primary and foreign keys. Mirage supports equi join, anti join, outer join, semi join。
 
-Mirage cannot handel**foreign key join**,**non-key column join** and **self join**
+Mirage cannot handel **foreign key join**,**non-key column join** and **self join**
 ###   Select
 
 1. Unary selection: Mirage can handle equivalence (=, ≠, in, like, not in, not like) and inequality arithmetic (>, <, ≥, ≤) for integers, floating point numbers, characters, and dates.
