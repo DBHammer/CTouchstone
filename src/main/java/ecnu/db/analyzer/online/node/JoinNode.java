@@ -36,6 +36,10 @@ public class JoinNode extends ExecutionNode {
 
     public JoinNode(String id, long outputRows, String info, boolean antiJoin, boolean semiJoin, BigDecimal pkDistinctProbability) {
         super(id, ExecutionNodeType.JOIN, outputRows, info);
+        if (info.contains("<>") && info.indexOf("<>") == info.lastIndexOf("<>")) {
+            this.setInfo(info.replace("<>", "="));
+            antiJoin = !antiJoin;
+        }
         this.antiJoin = antiJoin;
         this.semiJoin = semiJoin;
         this.pkDistinctProbability = pkDistinctProbability;
