@@ -42,7 +42,7 @@ public class QueryAnalyzer {
     protected double skipNodeThreshold = 0.01;
     private final ResourceBundle rb = LanguageManager.getInstance().getRb();
 
-    private static final boolean OPEN_SKIP_JOIN_FEATURE = false;
+    private static final boolean OPEN_SKIP_JOIN_FEATURE = true;
 
 
     public QueryAnalyzer(AbstractAnalyzer abstractAnalyzer, DbConnector dbConnector) {
