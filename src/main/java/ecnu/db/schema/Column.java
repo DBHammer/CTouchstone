@@ -105,12 +105,22 @@ public class Column {
         }
         boolean[] ret = new boolean[columnData.length];
         switch (operator) {
-            case EQ, LIKE, ISNULL -> {
+            case ISNULL -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] == Long.MIN_VALUE;
+                }
+            }
+            case IS_NOT_NULL -> {
+                for (int i = 0; i < columnData.length; i++) {
+                    ret[i] = columnData[i] != Long.MIN_VALUE;
+                }
+            }
+            case EQ, LIKE -> {
                 for (int i = 0; i < columnData.length; i++) {
                     ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] == value;
                 }
             }
-            case NE, NOT_LIKE, IS_NOT_NULL -> {
+            case NE, NOT_LIKE -> {
                 for (int i = 0; i < columnData.length; i++) {
                     ret[i] = columnData[i] != Long.MIN_VALUE && columnData[i] != value;
                 }
