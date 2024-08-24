@@ -2,6 +2,19 @@
 
 Mirage is a query-aware database generator. Mirage aims to generate a synthetic data processing environment to simulate the real-world application with specific  data and workload characteristics.
 
+## Citation
+Please cite our papers, if you find this work useful or use it in your paper as a baseline.
+```
+@inproceedings{wang2024mirage,
+  title={Mirage: Generating Enormous Databases for Complex Workloads},
+  author={Wang, Qingshuai and Li, Hao and Hu, Zirui and Zhang, Rong and Yang, Chengcheng and Cai, Peng and Zhou, Xuan and Zhou, Aoying},
+  booktitle={2024 IEEE 40th International Conference on Data Engineering (ICDE)},
+  pages={3989--4001},
+  year={2024},
+  organization={IEEE}
+}
+```
+
 ## Technical Report
 
 [Here](./Mirage-Tech-Report.pdf) is our technical report, which is a extention of our submitted paper. Main new content is marked in blue.
