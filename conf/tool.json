@@ -2,11 +2,11 @@
   "databaseConnectorConfig": {
     "databaseIp": "49.52.27.35",
     "databaseName": "bibench",
-    "databasePort": "5632",
-    "databasePwd": "postgresql",
+    "databasePort": "5633",
+    "databasePwd": "qwer",
     "databaseUser": "postgres"
   },
-  "queriesDirectory": "D:\\eclipse-workspace\\public_bi_benchmark\\benchmark-classified\\oneWhere",
-  "resultDirectory": "result5",
+  "queriesDirectory": "/home/qswang/hxh_Mirage_TKDE_test/MirageSqls/queries_bibench_noGroupBy_onlyLoki_singletable/Bimbo",
+  "resultDirectory": "result",
   "defaultSchemaName": "public"
 }

@@ -260,9 +260,13 @@ public class DataGenerator implements Callable<Integer> {
             ColumnManager.getInstance().cacheAttributeColumn(attColumnNames);
             // 获得所有约束链
             List<ConstraintChain> allChains = schema2chains.get(schemaName);
+            logger.info("used memory before GN(MB): {}", (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024);
             if (allChains == null) {
                 // todo 当前假设主键是连续的
+                long start1 = System.currentTimeMillis();
                 generateTableWithoutChains(pkName, tableSize, schemaName);
+                generateNonKeyTime = (System.currentTimeMillis() - start1);
+                logger.info("used memory after GN(MB): {}", (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024);
                 continue;
             }
             // 设置chain的索引
